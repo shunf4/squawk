@@ -1,0 +1,43 @@
+#ifndef MODELS_ACCOUNTS_H
+#define MODELS_ACCOUNTS_H
+
+#include <qabstractitemmodel.h>
+#include <deque>
+
+namespace Models
+{
+    struct Account;
+
+class Accounts : public QAbstractTableModel
+{
+    Q_OBJECT
+public:
+    Accounts(QObject* parent = 0);
+    ~Accounts();
+    
+    void addAccount(const QMap<QString, QVariant>& map);
+    
+    
+    QVariant data ( const QModelIndex& index, int role ) const override;
+    int columnCount ( const QModelIndex& parent ) const override;
+    int rowCount ( const QModelIndex& parent ) const override;
+    QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
+
+private:
+    std::deque<Account> accs;
+    
+    static std::deque<QString> columns;
+    
+};
+
+struct Account {
+    QString name;
+    QString server;
+    QString login;
+    QString password;
+    int state;
+};
+
+}
+
+#endif // MODELS_ACCOUNT_H

@@ -12,6 +12,8 @@ find_package(Qt5Widgets CONFIG REQUIRED)
 set(squawkUI_SRC
   squawk.cpp
   accounts.cpp
+  account.cpp
+  models/accounts.cpp
 )
 
 # Tell CMake to create the helloworld executable

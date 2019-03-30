@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QScopedPointer>
 #include <QCloseEvent>
+#include <deque>
 
 #include "accounts.h"
 
@@ -18,11 +19,19 @@ class Squawk : public QMainWindow
 public:
     explicit Squawk(QWidget *parent = nullptr);
     ~Squawk() override;
-
+    
+signals:
+    void newAccountRequest(const QMap<QString, QVariant>&);
+    
+public slots:
+    void newAccount(const QMap<QString, QVariant>& account);
+    
 private:
+    typedef std::deque<QMap<QString, QVariant>> AC;
     QScopedPointer<Ui::Squawk> m_ui;
     
     Accounts* accounts;
+    AC accountsCache;
     
 protected:
     void closeEvent(QCloseEvent * event) override;

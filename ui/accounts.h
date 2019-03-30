@@ -4,14 +4,14 @@
 #include <QWidget>
 #include <QScopedPointer>
 
+#include "account.h"
+#include "models/accounts.h"
+
 namespace Ui
 {
 class Accounts;
 }
 
-/**
- * @todo write docs
- */
 class Accounts : public QWidget
 {
     Q_OBJECT
@@ -19,8 +19,19 @@ public:
     explicit Accounts(QWidget *parent = nullptr);
     ~Accounts() override;
 
+    void addAccount(const QMap<QString, QVariant>&);
+    
+signals:
+    void newAccount(const QMap<QString, QVariant>&);
+    
+private slots:
+    void onAddButton(bool clicked = 0);
+    void onAccountAccepted();
+    void onAccountRejected();
+    
 private:
     QScopedPointer<Ui::Accounts> m_ui;
+    Models::Accounts tableModel;
 };
 
 #endif // ACCOUNTS_H

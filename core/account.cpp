@@ -2,9 +2,11 @@
 
 using namespace Core;
 
-Account::Account(const QString& p_jid, const QString& p_password, QObject* parent):
+Account::Account(const QString& p_login, const QString& p_server, const QString& p_password, const QString& p_name, QObject* parent):
     QObject(parent),
-    jid(p_jid),
+    name(p_name),
+    login(p_login),
+    server(p_server),
     password(p_password),
     client()
 {
