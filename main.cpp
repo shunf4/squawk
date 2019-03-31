@@ -18,8 +18,11 @@ int main(int argc, char *argv[])
     QObject::connect(coreThread, SIGNAL(started()), squawk, SLOT(start()));
     
     QObject::connect(&w, SIGNAL(newAccountRequest(const QMap<QString, QVariant>&)), squawk, SLOT(newAccountRequest(const QMap<QString, QVariant>&)));
+    QObject::connect(&w, SIGNAL(connectAccount(const QString&)), squawk, SLOT(connectAccount(const QString&)));
+    QObject::connect(&w, SIGNAL(disconnectAccount(const QString&)), squawk, SLOT(disconnectAccount(const QString&)));
     
     QObject::connect(squawk, SIGNAL(newAccount(const QMap<QString, QVariant>&)), &w, SLOT(newAccount(const QMap<QString, QVariant>&)));
+    QObject::connect(squawk, SIGNAL(accountConnectionStateChanged(const QString&, int)), &w, SLOT(accountConnectionStateChanged(const QString&, int)));
     
     //QObject::connect(this, &Controller::operate, worker, &Worker::doWork);
     //QObject::connect(worker, &Worker::resultReady, this, &Controller::handleResults);

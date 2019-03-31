@@ -14,6 +14,7 @@ set(squawkUI_SRC
   accounts.cpp
   account.cpp
   models/accounts.cpp
+  models/roster.cpp
 )
 
 # Tell CMake to create the helloworld executable

@@ -3,7 +3,8 @@
 
 Core::Squawk::Squawk(QObject* parent):
     QObject(parent),
-    accounts()
+    accounts(),
+    amap()
 {
 
 }
@@ -35,13 +36,44 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
 {
     Account* acc = new Account(login, server, password, name);
     accounts.push_back(acc);
+    amap.insert(std::make_pair(name, acc));
+    
+    connect(acc, SIGNAL(connectionStateChanged(int)), this, SLOT(onAccountConnectionStateChanged(int)));
     
     QMap<QString, QVariant> map = {
         {"login", login},
         {"server", server},
         {"name", name},
         {"password", password},
-        {"state", 0}
+        {"state", Shared::disconnected}
     };
     emit newAccount(map);
 }
+
+void Core::Squawk::connectAccount(const QString& account)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug("An attempt to connect non existing account, skipping");
+        return;
+    }
+    itr->second->connect();
+}
+
+void Core::Squawk::disconnectAccount(const QString& account)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug("An attempt to connect non existing account, skipping");
+        return;
+    }
+    
+    itr->second->connect();
+}
+
+void Core::Squawk::onAccountConnectionStateChanged(int state)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit accountConnectionStateChanged(acc->getName(), state);
+}
+
