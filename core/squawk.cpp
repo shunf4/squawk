@@ -68,7 +68,7 @@ void Core::Squawk::disconnectAccount(const QString& account)
         return;
     }
     
-    itr->second->connect();
+    itr->second->disconnect();
 }
 
 void Core::Squawk::onAccountConnectionStateChanged(int state)

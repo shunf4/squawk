@@ -5,6 +5,7 @@
 #include <QScopedPointer>
 #include <QCloseEvent>
 #include <deque>
+#include <map>
 
 #include "accounts.h"
 #include "models/roster.h"
@@ -34,10 +35,12 @@ public slots:
     
 private:
     typedef std::deque<QMap<QString, QVariant>> AC;
+    typedef std::map<QString, QMap<QString, QVariant>*> AI;
     QScopedPointer<Ui::Squawk> m_ui;
     
     Accounts* accounts;
     AC accountsCache;
+    AI accountsIndex;
     Models::Roster rosterModel;
     
 protected:

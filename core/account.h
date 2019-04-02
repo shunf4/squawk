@@ -35,7 +35,7 @@ private:
     
 private slots:
     void onClientConnected();
-    void onClientDisonnected();
+    void onClientDisconnected();
     
 };
 

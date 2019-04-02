@@ -1,4 +1,7 @@
 #include "accounts.h"
+#include "../../global.h"
+
+#include <QIcon>
 
 std::deque<QString> Models::Accounts::columns = {
     "name",
@@ -32,10 +35,15 @@ QVariant Models::Accounts::data ( const QModelIndex& index, int role ) const
                     answer = acc.server;
                     break;
                 case 2:
-                    answer = acc.state;
+                    answer = Shared::ConnectionStateNames[acc.state];
                 break;
             }
         }
+            break;
+        case Qt::DecorationRole:
+            if (index.column() == 2) {
+                answer = QIcon::fromTheme(Shared::ConnectionStateThemeIcons[accs[index.row()].state]);
+            }
             break;
         default:
             break;
@@ -75,3 +83,27 @@ void Models::Accounts::addAccount(const QMap<QString, QVariant>& map)
     });
     endInsertRows();
 }
+
+void Models::Accounts::updateAccount(const QString& account, const QString& field, const QVariant& value)
+{
+    for (int i = 0; i < accs.size(); ++i) {
+        Account& acc = accs[i];
+        if (acc.name == account) {
+            if (field == "name") {
+                acc.name = value.toString();
+                emit dataChanged(createIndex(i, 0), createIndex(i, 0));
+            } else if (field == "server") {
+                acc.server = value.toString();
+                emit dataChanged(createIndex(i, 1), createIndex(i, 1));
+            } else if (field == "login") {
+                acc.login = value.toString();
+            } else if (field == "password") {
+                acc.password = value.toString();
+            } else if (field == "state") {
+                acc.state = value.toInt();
+                emit dataChanged(createIndex(i, 2), createIndex(i, 2));
+            }
+        }
+    }
+}
+

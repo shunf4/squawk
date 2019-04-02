@@ -20,6 +20,7 @@ public:
     ~Accounts() override;
 
     void addAccount(const QMap<QString, QVariant>&);
+    void updateAccount(const QString& account, const QString& field, const QVariant& value);
     
 signals:
     void newAccount(const QMap<QString, QVariant>&);

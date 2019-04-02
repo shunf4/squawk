@@ -116,6 +116,12 @@
    </item>
   </layout>
  </widget>
+ <tabstops>
+  <tabstop>name</tabstop>
+  <tabstop>login</tabstop>
+  <tabstop>server</tabstop>
+  <tabstop>password</tabstop>
+ </tabstops>
  <resources/>
  <connections>
   <connection>

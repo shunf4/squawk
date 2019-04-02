@@ -16,7 +16,7 @@ public:
     ~Accounts();
     
     void addAccount(const QMap<QString, QVariant>& map);
-    
+    void updateAccount(const QString& account, const QString& field, const QVariant& value);
     
     QVariant data ( const QModelIndex& index, int role ) const override;
     int columnCount ( const QModelIndex& parent ) const override;

@@ -41,3 +41,9 @@ void Accounts::addAccount(const QMap<QString, QVariant>& map)
 {
     tableModel.addAccount(map);
 }
+
+void Accounts::updateAccount(const QString& account, const QString& field, const QVariant& value)
+{
+    tableModel.updateAccount(account, field, value);
+}
+

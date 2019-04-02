@@ -1,16 +1,19 @@
 #include "squawk.h"
 #include "ui_squawk.h"
+#include <QDebug>
 
 Squawk::Squawk(QWidget *parent) :
     QMainWindow(parent),
     m_ui(new Ui::Squawk),
     accounts(0),
     accountsCache(),
+    accountsIndex(),
     rosterModel()
 {
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
     
+    connect(m_ui->actionAccounts, SIGNAL(triggered()), this, SLOT(onAccounts()));
     connect(m_ui->comboBox, SIGNAL(activated(int)), this, SLOT(onComboboxActivated(int)));
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
 }
@@ -60,6 +63,8 @@ void Squawk::onAccountsClosed(QObject* parent)
 void Squawk::newAccount(const QMap<QString, QVariant>& account)
 {
     accountsCache.push_back(account);
+    QMap<QString, QVariant>* acc = &accountsCache.back();
+    accountsIndex.insert(std::make_pair(acc->value("name").toString(), acc));
     rosterModel.addAccount(account);
     if (accounts != 0) {
         accounts->addAccount(account);
@@ -97,5 +102,17 @@ void Squawk::onComboboxActivated(int index)
 
 void Squawk::accountConnectionStateChanged(const QString& account, int state)
 {
-    
+    AI::iterator itr = accountsIndex.find(account);
+    if (itr != accountsIndex.end()) {
+        QMap<QString, QVariant>* acc = itr->second;
+        acc->insert("state", state);
+        
+        if (accounts != 0) {
+            accounts->updateAccount(account, "state", state);
+        }
+    } else {
+        QString msg("A notification about connection state change of an unknown account ");
+        msg += account + ", skipping";
+        qDebug("%s", msg.toStdString().c_str());
+    }
 }

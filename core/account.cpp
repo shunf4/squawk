@@ -56,7 +56,7 @@ void Core::Account::onClientConnected()
     }
 }
 
-void Core::Account::onClientDisonnected()
+void Core::Account::onClientDisconnected()
 {
     if (state != Shared::disconnected) {
         state = Shared::disconnected;
