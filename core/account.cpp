@@ -40,7 +40,7 @@ void Core::Account::connect()
 void Core::Account::disconnect()
 {
     if (state != Shared::disconnected) {
-        client.disconnect();
+        client.disconnectFromServer();
         state = Shared::disconnected;
         emit connectionStateChanged(state);
     }
@@ -71,4 +71,17 @@ QString Core::Account::getName() const
     return name;
 }
 
+QString Core::Account::getLogin() const
+{
+    return login;
+}
 
+QString Core::Account::getPassword() const
+{
+    return password;
+}
+
+QString Core::Account::getServer() const
+{
+    return server;
+}

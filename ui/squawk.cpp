@@ -107,6 +107,7 @@ void Squawk::accountConnectionStateChanged(const QString& account, int state)
         QMap<QString, QVariant>* acc = itr->second;
         acc->insert("state", state);
         
+        rosterModel.updateAccount(account, "state", state);
         if (accounts != 0) {
             accounts->updateAccount(account, "state", state);
         }

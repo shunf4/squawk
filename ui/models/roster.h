@@ -4,6 +4,7 @@
 #include <qabstractitemmodel.h>
 #include <deque>
 #include <map>
+#include "../../global.h"
 
 namespace Models
 {
@@ -12,24 +13,26 @@ class Roster : public QAbstractItemModel
 {
     class Item;
     class ElId;
+    class Account;
     Q_OBJECT
 public:
     Roster(QObject* parent = 0);
     ~Roster();
 
     void addAccount(const QMap<QString, QVariant> &data);
+    void updateAccount(const QString& account, const QString& field, const QVariant& value);
     
-    QVariant data ( const QModelIndex& index, int role ) const;
+    QVariant data ( const QModelIndex& index, int role ) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-    int columnCount ( const QModelIndex& parent ) const;
-    int rowCount ( const QModelIndex& parent ) const;
-    QModelIndex parent ( const QModelIndex& child ) const;
-    QModelIndex index ( int row, int column, const QModelIndex& parent ) const;
+    int columnCount ( const QModelIndex& parent ) const override;
+    int rowCount ( const QModelIndex& parent ) const override;
+    QModelIndex parent ( const QModelIndex& child ) const override;
+    QModelIndex index ( int row, int column, const QModelIndex& parent ) const override;
     
 private:
     Item* root;
-    std::map<QString, Item*> accounts;
+    std::map<QString, Account*> accounts;
     std::map<ElId, Item*> elements;
     
 private:
@@ -48,6 +51,7 @@ private:
         
         void appendChild(Item *child);
         QString name() const;
+        void setName(const QString& name);
         
         Item *child(int row);
         int childCount() const;
@@ -58,10 +62,18 @@ private:
         
         const Type type;
         
-    private:
+    protected:
         std::deque<Item*> childItems;
         std::deque<QVariant> itemData;
         Item* parent;
+    };
+    
+    class Account : public Item {
+    public:
+        explicit Account(const QMap<QString, QVariant> &data, Item *parentItem = 0);
+        ~Account();
+        
+        void setState(int state);
     };
     
     class ElId {

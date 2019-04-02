@@ -21,6 +21,9 @@ public:
     
     Shared::ConnectionState getState() const;
     QString getName() const;
+    QString getLogin() const;
+    QString getServer() const;
+    QString getPassword() const;
     
 signals:
     void connectionStateChanged(int);

@@ -1,4 +1,5 @@
 #include "roster.h"
+#include <QIcon>
 
 using namespace Models;
 
@@ -16,7 +17,7 @@ Models::Roster::~Roster()
 
 void Models::Roster::addAccount(const QMap<QString, QVariant>& data)
 {
-    Item* acc = new Item(Item::account, data, root);
+    Account* acc = new Account(data, root);
     beginInsertRows(QModelIndex(), root->childCount(), root->childCount());
     root->appendChild(acc);
     accounts.insert(std::make_pair(acc->name(), acc));
@@ -31,18 +32,44 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
     
     QVariant result;
     
+    Item *item = static_cast<Item*>(index.internalPointer());
     switch (role) {
         case Qt::DisplayRole:
         {
-            Item *item = static_cast<Item*>(index.internalPointer());
             result = item->data(index.column());
         }
+            break;
+        case Qt::DecorationRole:
+            switch (item->type) {
+                case Item::account:{
+                    int state = item->data(1).toInt();
+                    switch (state) {
+                        case Shared::disconnected:
+                            result = QIcon::fromTheme("im-user-offline");
+                            break;
+                        case Shared::connecting:
+                            result = QIcon::fromTheme(Shared::ConnectionStateThemeIcons[state]);
+                            break;
+                        case Shared::connected:
+                            result = QIcon::fromTheme("im-user-online");
+                            break;
+                    }
+                }
+                    break;
+                default:
+                    break;
+            }
             break;
         default:
             break;
     }
     
     return result;
+}
+
+void Models::Roster::Item::setName(const QString& name)
+{
+    itemData[0] = name;
 }
 
 int Models::Roster::columnCount (const QModelIndex& parent) const
@@ -53,6 +80,26 @@ int Models::Roster::columnCount (const QModelIndex& parent) const
         return root->columnCount();
     }
 }
+
+void Models::Roster::updateAccount(const QString& account, const QString& field, const QVariant& value)
+{
+    std::map<QString, Account*>::iterator itr = accounts.find(account);
+    if (itr != accounts.end()) {
+        Account* acc = itr->second;
+        if (field == "name") {
+            acc->setName(value.toString());
+            accounts.erase(itr);
+            accounts.insert(std::make_pair(acc->name(), acc));
+            int row = acc->row();
+            emit dataChanged(createIndex(row, 0, acc), createIndex(row, 0, acc));
+        } else if (field == "state") {
+            acc->setState(value.toInt());
+            int row = acc->row();
+            emit dataChanged(createIndex(row, 0, acc), createIndex(row, 0, acc));
+        }
+    }
+}
+
 
 Qt::ItemFlags Models::Roster::flags(const QModelIndex& index) const
 {
@@ -92,6 +139,10 @@ QModelIndex Models::Roster::parent (const QModelIndex& child) const
     }
     
     Item *childItem = static_cast<Item*>(child.internalPointer());
+    if (childItem == root) {
+        return QModelIndex();
+    }
+    
     Item *parentItem = childItem->parentItem();
     
     if (parentItem == root) {
@@ -210,3 +261,20 @@ bool Models::Roster::ElId::operator <(const Models::Roster::ElId& other) const
         return account < other.account;
     }
 }
+
+Models::Roster::Account::Account(const QMap<QString, QVariant>& data, Models::Roster::Item* parentItem):
+    Item(account, data, parentItem)
+{
+    itemData.push_back(data.value("state"));
+}
+
+Models::Roster::Account::~Account()
+{
+}
+
+void Models::Roster::Account::setState(int state)
+{
+    itemData[1] = state;
+}
+
+

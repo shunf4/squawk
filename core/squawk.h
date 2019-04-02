@@ -22,11 +22,13 @@ public:
     ~Squawk();
 
 signals:
+    void quit();
     void newAccount(const QMap<QString, QVariant>&);
     void accountConnectionStateChanged(const QString&, int);
     
 public slots:
     void start();
+    void stop();
     void newAccountRequest(const QMap<QString, QVariant>& map);
     void connectAccount(const QString& account);
     void disconnectAccount(const QString& account);

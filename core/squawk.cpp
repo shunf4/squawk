@@ -1,5 +1,6 @@
 #include "squawk.h"
 #include <QDebug>
+#include <QSettings>
 
 Core::Squawk::Squawk(QObject* parent):
     QObject(parent),
@@ -14,12 +15,46 @@ Core::Squawk::~Squawk()
     Accounts::const_iterator itr = accounts.begin(); 
     Accounts::const_iterator end = accounts.end();
     for (; itr != end; ++itr) {
-        (*itr)->deleteLater();
+        delete (*itr);
     }
+}
+
+void Core::Squawk::stop()
+{
+    qDebug("Stopping squawk core..");
+    
+    QSettings settings;
+    settings.beginGroup("core");
+    settings.beginWriteArray("accounts");
+    for (int i = 0; i < accounts.size(); ++i) {
+        settings.setArrayIndex(i);
+        Account* acc = accounts[i];
+        settings.setValue("name", acc->getName());
+        settings.setValue("server", acc->getServer());
+        settings.setValue("login", acc->getLogin());
+        settings.setValue("password", acc->getPassword());
+    }
+    settings.endArray();
+    settings.endGroup();
+    
+    settings.sync();
+    
+    emit quit();
 }
 
 void Core::Squawk::start()
 {
+    qDebug("Starting squawk core..");
+    
+    QSettings settings;
+    settings.beginGroup("core");
+    int size = settings.beginReadArray("accounts");
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+        addAccount(settings.value("login").toString(), settings.value("server").toString(), settings.value("password").toString(), settings.value("name").toString());
+    }
+    settings.endArray();
+    settings.endGroup();
 }
 
 void Core::Squawk::newAccountRequest(const QMap<QString, QVariant>& map)

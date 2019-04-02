@@ -11,6 +11,7 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt5Widgets CONFIG REQUIRED)
 set(squawk_SRC
   main.cpp
+  signalcatcher.cpp
 )
 
 # Tell CMake to create the helloworld executable
