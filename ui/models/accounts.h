@@ -6,7 +6,6 @@
 
 namespace Models
 {
-    struct Account;
 
 class Accounts : public QAbstractTableModel
 {
@@ -24,20 +23,11 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
 private:
-    std::deque<Account> accs;
+    std::deque<Account*> accs;
     
     static std::deque<QString> columns;
     
 };
-
-struct Account {
-    QString name;
-    QString server;
-    QString login;
-    QString password;
-    int state;
-};
-
 }
 
 #endif // MODELS_ACCOUNT_H
