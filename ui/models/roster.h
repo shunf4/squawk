@@ -23,6 +23,9 @@ public:
 
     void addAccount(const QMap<QString, QVariant> &data);
     void updateAccount(const QString& account, const QString& field, const QVariant& value);
+    void addGroup(const QString& account, const QString& name);
+    void removeGroup(const QString& account, const QString& name);
+    void addContact(const QString& account, const QString& jid, const QString& name, const QString& group);
     
     QVariant data ( const QModelIndex& index, int role ) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
@@ -37,6 +40,8 @@ public:
 private:
     Item* root;
     std::map<QString, Account*> accounts;
+    std::map<QString, Item*> groups;
+    std::map<QString, Item*> contacts;
     std::map<ElId, Item*> elements;
     
 private slots:

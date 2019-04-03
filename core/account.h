@@ -2,6 +2,7 @@
 #define CORE_ACCOUNT_H
 
 #include <QtCore/QObject>
+#include <map>
 
 #include <qxmpp/QXmppClient.h>
 #include "../global.h"
@@ -27,6 +28,9 @@ public:
     
 signals:
     void connectionStateChanged(int);
+    void addGroup(const QString& name);
+    void removeGroup(const QString& name);
+    void addContact(const QString& jid, const QString& name, const QString& group);
     
 private:
     QString name;
@@ -35,10 +39,12 @@ private:
     QString password;
     QXmppClient client;
     Shared::ConnectionState state;
+    std::map<QString, int> groups;
     
 private slots:
     void onClientConnected();
     void onClientDisconnected();
+    void onRosterReceived();
     
 };
 

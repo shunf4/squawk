@@ -1,4 +1,5 @@
 #include "account.h"
+#include <qxmpp/QXmppRosterManager.h>
 
 using namespace Core;
 
@@ -9,15 +10,19 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     server(p_server),
     password(p_password),
     client(),
-    state(Shared::disconnected)
+    state(Shared::disconnected),
+    groups()
 {
     QObject::connect(&client, SIGNAL(connected()), this, SLOT(onClientConnected()));
     QObject::connect(&client, SIGNAL(disconnected()), this, SLOT(onClientDisconnected()));
+    
+    
+    QXmppRosterManager& rm = client.rosterManager();
+    QObject::connect(&rm, SIGNAL(rosterReceived()), this, SLOT(onRosterReceived()));
 }
 
 Account::~Account()
 {
-    
 }
 
 Shared::ConnectionState Core::Account::getState() const
@@ -85,3 +90,31 @@ QString Core::Account::getServer() const
 {
     return server;
 }
+
+void Core::Account::onRosterReceived()
+{
+    QXmppRosterManager& rm = client.rosterManager();
+    QStringList bj = rm.getRosterBareJids();
+    for (int i = 0; i < bj.size(); ++i) {
+        const QString& jid = bj[i];
+        QXmppRosterIq::Item re = rm.getRosterEntry(jid);
+        QSet<QString> gr = re.groups();
+        int grCount = 0;
+        for (QSet<QString>::const_iterator itr = gr.begin(), end = gr.end(); itr != end; ++itr) {
+            const QString& groupName = *itr;
+            std::map<QString, int>::iterator gItr = groups.find(groupName);
+            if (gItr == groups.end()) {
+                gItr = groups.insert(std::make_pair(groupName, 0)).first;
+                emit addGroup(groupName);
+            }
+            gItr->second++;
+            emit addContact(jid, re.name(), groupName);
+            grCount++;
+        }
+        
+        if (grCount == 0) {
+            emit addContact(jid, re.name(), "");
+        }
+    }
+}
+

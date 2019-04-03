@@ -85,3 +85,21 @@ void Squawk::accountConnectionStateChanged(const QString& account, int state)
 {
     rosterModel.updateAccount(account, "state", state);
 }
+
+void Squawk::addContact(const QString& account, const QString& jid, const QString& name, const QString& group)
+{
+    rosterModel.addContact(account, jid, name, group);
+}
+
+void Squawk::addGroup(const QString& account, const QString& name)
+{
+    rosterModel.addGroup(account, name);
+}
+
+void Squawk::removeGroup(const QString& account, const QString& name)
+{
+}
+
+
+
+

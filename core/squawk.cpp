@@ -74,6 +74,9 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     amap.insert(std::make_pair(name, acc));
     
     connect(acc, SIGNAL(connectionStateChanged(int)), this, SLOT(onAccountConnectionStateChanged(int)));
+    connect(acc, SIGNAL(addContact(const QString&, const QString&, const QString&)), this, SLOT(onAccountAddContact(const QString&, const QString&, const QString&)));
+    connect(acc, SIGNAL(addGroup(const QString&)), this, SLOT(onAccountAddGroup(const QString&)));
+    connect(acc, SIGNAL(removeGroup(const QString&)), this, SLOT(onAccountRemoveGroup(const QString&)));
     
     QMap<QString, QVariant> map = {
         {"login", login},
@@ -112,3 +115,20 @@ void Core::Squawk::onAccountConnectionStateChanged(int state)
     emit accountConnectionStateChanged(acc->getName(), state);
 }
 
+void Core::Squawk::onAccountAddContact(const QString& jid, const QString& name, const QString& group)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit addContact(acc->getName(), jid, name, group);
+}
+
+void Core::Squawk::onAccountAddGroup(const QString& name)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit addGroup(acc->getName(), name);
+}
+
+void Core::Squawk::onAccountRemoveGroup(const QString& name)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit removeGroup(acc->getName(), name);
+}

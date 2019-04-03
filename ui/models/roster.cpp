@@ -1,4 +1,5 @@
 #include "roster.h"
+#include <QDebug>
 #include <QIcon>
 
 using namespace Models;
@@ -8,6 +9,8 @@ Models::Roster::Roster(QObject* parent):
     accountsModel(new Accounts()),
     root(new Item(Item::root, {{"name", "root"}})),
     accounts(),
+    groups(),
+    contacts(),
     elements()
 {
     connect(accountsModel, 
@@ -193,4 +196,54 @@ void Models::Roster::onAccountDataChanged(const QModelIndex& tl, const QModelInd
     }
 }
 
+void Models::Roster::addGroup(const QString& account, const QString& name)
+{
+    std::map<QString, Account*>::iterator itr = accounts.find(account);
+    if (itr != accounts.end()) {
+        Account* acc = itr->second;
+        Item* group = new Item(Item::group, {{"name", name}}, acc);
+        beginInsertRows(createIndex(acc->row(), 0, acc), acc->childCount(), acc->childCount());
+        acc->appendChild(group);
+        groups.insert(std::make_pair(name, group));
+        elements.insert({{account, name}, group});
+        endInsertRows();
+    } else {
+        qDebug() << "An attempt to add group " << name << " to non existing account " << account << ", skipping";
+    }
+}
+
+void Models::Roster::addContact(const QString& account, const QString& jid, const QString& name, const QString& group)
+{
+    Item* parent;
+    if (group == "") {
+        std::map<QString, Account*>::iterator itr = accounts.find(account);
+        if (itr == accounts.end()) {
+            qDebug() << "An attempt to add a contact " << name << " to non existing account " << account << ", skipping";
+            return;
+        }
+        parent = itr->second;
+    } else {
+        std::map<QString, Item*>::iterator itr = groups.find(group);
+        if (itr == groups.end()) {
+            qDebug() << "An attempt to add a contact " << name << " to non existing group " << group << ", skipping";
+            return;
+        }
+        parent = itr->second;
+    }
+    
+    QString sName = name;
+    if (sName == "") {
+        sName = jid;
+    }
+    Item* contact = new Item(Item::contact, {{"name", sName}}, parent);
+    beginInsertRows(createIndex(parent->row(), 0, parent), parent->childCount(), parent->childCount());
+    parent->appendChild(contact);
+    contacts.insert(std::make_pair(jid, contact));
+    elements.insert({{account, jid}, contact});
+    endInsertRows();
+}
+
+void Models::Roster::removeGroup(const QString& account, const QString& name)
+{
+}
 

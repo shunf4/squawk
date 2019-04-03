@@ -34,6 +34,10 @@ int main(int argc, char *argv[])
     
     QObject::connect(squawk, SIGNAL(newAccount(const QMap<QString, QVariant>&)), &w, SLOT(newAccount(const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(accountConnectionStateChanged(const QString&, int)), &w, SLOT(accountConnectionStateChanged(const QString&, int)));
+    QObject::connect(squawk, SIGNAL(addContact(const QString&, const QString&, const QString&, const QString&)), 
+                     &w, SLOT(addContact(const QString&, const QString&, const QString&, const QString&)));
+    QObject::connect(squawk, SIGNAL(addGroup(const QString&, const QString&)), &w, SLOT(addGroup(const QString&, const QString&)));
+    QObject::connect(squawk, SIGNAL(removeGroup(const QString&, const QString&)), &w, SLOT(removeGroup(const QString&, const QString&)));
     
     coreThread->start();
 

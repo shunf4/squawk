@@ -32,6 +32,9 @@ signals:
 public slots:
     void newAccount(const QMap<QString, QVariant>& account);
     void accountConnectionStateChanged(const QString& account, int state);
+    void addGroup(const QString& account, const QString& name);
+    void removeGroup(const QString& account, const QString& name);
+    void addContact(const QString& account, const QString& jid, const QString& name, const QString& group);
     
 private:
     QScopedPointer<Ui::Squawk> m_ui;

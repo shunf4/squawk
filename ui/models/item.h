@@ -15,7 +15,7 @@ class Item : public QObject{
         enum Type {
             account,
             group,
-            contect,
+            contact,
             conversation,
             root
         };
