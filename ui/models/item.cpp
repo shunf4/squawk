@@ -3,6 +3,7 @@
 using namespace Models;
 
 Models::Item::Item(Type p_type, const QMap<QString, QVariant> &p_data, Item *p_parent):
+    QObject(),
     type(p_type),
     name(p_data.value("name").toString()),
     childItems(),
@@ -21,7 +22,10 @@ Models::Item::~Item()
 
 void Models::Item::setName(const QString& p_name)
 {
-    name = p_name;
+    if (name != p_name) {
+        name = p_name;
+        emit changed(0);
+    }
 }
 
 void Models::Item::appendChild(Models::Item* child)

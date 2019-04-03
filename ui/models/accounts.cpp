@@ -21,28 +21,16 @@ Models::Accounts::~Accounts()
 
 }
 
-QVariant Models::Accounts::data ( const QModelIndex& index, int role ) const
+QVariant Models::Accounts::data (const QModelIndex& index, int role) const
 {
     QVariant answer;
     switch (role) {
-        case Qt::DisplayRole: {
-            const Account& acc = accs[index.row()];
-            switch (index.column()) {
-                case 0:
-                    answer = acc.name;
-                    break;
-                case 1:
-                    answer = acc.server;
-                    break;
-                case 2:
-                    answer = Shared::ConnectionStateNames[acc.state];
-                break;
-            }
-        }
+        case Qt::DisplayRole: 
+            answer = accs[index.row()]->data(index.column());
             break;
         case Qt::DecorationRole:
             if (index.column() == 2) {
-                answer = QIcon::fromTheme(Shared::ConnectionStateThemeIcons[accs[index.row()].state]);
+                answer = QIcon::fromTheme(Shared::ConnectionStateThemeIcons[accs[index.row()]->getState()]);
             }
             break;
         default:
@@ -71,39 +59,25 @@ QVariant Models::Accounts::headerData(int section, Qt::Orientation orientation, 
 }
 
 
-void Models::Accounts::addAccount(const QMap<QString, QVariant>& map)
+void Models::Accounts::addAccount(Account* account)
 {
     beginInsertRows(QModelIndex(), accs.size(), accs.size());
-    accs.push_back({
-        map.value("name").toString(),
-        map.value("server").toString(),
-        map.value("login").toString(),
-        map.value("password").toString(),
-        map.value("state").toInt()
-    });
+    accs.push_back(account);
+    connect(account, SIGNAL(changed(int)), this, SLOT(onAccountChanged(int)));
     endInsertRows();
 }
 
-void Models::Accounts::updateAccount(const QString& account, const QString& field, const QVariant& value)
+void Models::Accounts::onAccountChanged(int column)
 {
-    for (int i = 0; i < accs.size(); ++i) {
-        Account& acc = accs[i];
-        if (acc.name == account) {
-            if (field == "name") {
-                acc.name = value.toString();
-                emit dataChanged(createIndex(i, 0), createIndex(i, 0));
-            } else if (field == "server") {
-                acc.server = value.toString();
-                emit dataChanged(createIndex(i, 1), createIndex(i, 1));
-            } else if (field == "login") {
-                acc.login = value.toString();
-            } else if (field == "password") {
-                acc.password = value.toString();
-            } else if (field == "state") {
-                acc.state = value.toInt();
-                emit dataChanged(createIndex(i, 2), createIndex(i, 2));
-            }
-        }
+    Account* acc = static_cast<Account*>(sender());
+    
+    if (column < columnCount(QModelIndex())) {
+        int row = acc->row();
+        emit dataChanged(createIndex(row, column, this), createIndex(row, column, this));
     }
 }
 
+Models::Account * Models::Accounts::getAccount(int index)
+{
+    return accs[index];
+}

@@ -5,13 +5,20 @@ using namespace Models;
 
 Models::Roster::Roster(QObject* parent):
     QAbstractItemModel(parent),
-    root(0)
+    accountsModel(new Accounts()),
+    root(new Item(Item::root, {{"name", "root"}})),
+    accounts(),
+    elements()
 {
-    root = new Item(Item::root, {{"name", "root"}});
+    connect(accountsModel, 
+            SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)), 
+            this, 
+            SLOT(onAccountDataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)));
 }
 
 Models::Roster::~Roster()
 {
+    delete accountsModel;
     delete root;
 }
 
@@ -21,6 +28,7 @@ void Models::Roster::addAccount(const QMap<QString, QVariant>& data)
     beginInsertRows(QModelIndex(), root->childCount(), root->childCount());
     root->appendChild(acc);
     accounts.insert(std::make_pair(acc->getName(), acc));
+    accountsModel->addAccount(acc);
     endInsertRows();
 }
 
@@ -42,7 +50,8 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
         case Qt::DecorationRole:
             switch (item->type) {
                 case Item::account:{
-                    int state = item->data(1).toInt();
+                    Account* acc = static_cast<Account*>(item);
+                    int state = acc->getState();
                     switch (state) {
                         case Shared::disconnected:
                             result = QIcon::fromTheme("im-user-offline");
@@ -81,17 +90,7 @@ void Models::Roster::updateAccount(const QString& account, const QString& field,
     std::map<QString, Account*>::iterator itr = accounts.find(account);
     if (itr != accounts.end()) {
         Account* acc = itr->second;
-        if (field == "name") {
-            acc->setName(value.toString());
-            accounts.erase(itr);
-            accounts.insert(std::make_pair(acc->name(), acc));
-            int row = acc->row();
-            emit dataChanged(createIndex(row, 0, acc), createIndex(row, 0, acc));
-        } else if (field == "state") {
-            acc->setState(value.toInt());
-            int row = acc->row();
-            emit dataChanged(createIndex(row, 0, acc), createIndex(row, 0, acc));
-        }
+        acc->update(field, value);
     }
 }
 
@@ -169,15 +168,10 @@ QModelIndex Models::Roster::index (int row, int column, const QModelIndex& paren
     }
 }
 
-
-
-
 Models::Roster::ElId::ElId(const QString& p_account, const QString& p_name):
     account(p_account),
     name(p_name)
-{
-    
-}
+{}
 
 bool Models::Roster::ElId::operator <(const Models::Roster::ElId& other) const
 {
@@ -185,6 +179,17 @@ bool Models::Roster::ElId::operator <(const Models::Roster::ElId& other) const
         return name < other.name;
     } else {
         return account < other.account;
+    }
+}
+
+void Models::Roster::onAccountDataChanged(const QModelIndex& tl, const QModelIndex& br, const QVector<int>& roles)
+{
+    if (tl.column() == 0) {
+        emit dataChanged(tl, br, roles);
+    } else if (tl.column() == 2) {
+        int row = tl.row();
+        Account* acc = accountsModel->getAccount(row);
+        emit dataChanged(createIndex(row, 0, acc), createIndex(br.row(), 0, acc), roles);
     }
 }
 

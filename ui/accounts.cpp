@@ -3,14 +3,13 @@
 
 #include <QDebug>
 
-Accounts::Accounts(QWidget *parent) :
-    m_ui(new Ui::Accounts),
-    tableModel()
+Accounts::Accounts(Models::Accounts* model, QWidget *parent) :
+    m_ui(new Ui::Accounts)
 {
     m_ui->setupUi(this);
     
     connect(m_ui->addButton, SIGNAL(clicked(bool)), this, SLOT(onAddButton(bool)));
-    m_ui->tableView->setModel(&tableModel);
+    m_ui->tableView->setModel(model);
 }
 
 Accounts::~Accounts() = default;
@@ -36,14 +35,3 @@ void Accounts::onAccountRejected()
     Account* acc = static_cast<Account*>(sender());
     acc->deleteLater();
 }
-
-void Accounts::addAccount(const QMap<QString, QVariant>& map)
-{
-    tableModel.addAccount(map);
-}
-
-void Accounts::updateAccount(const QString& account, const QString& field, const QVariant& value)
-{
-    tableModel.updateAccount(account, field, value);
-}
-

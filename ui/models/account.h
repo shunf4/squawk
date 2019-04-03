@@ -1,7 +1,9 @@
 #ifndef MODELS_ACCOUNT_H
 #define MODELS_ACCOUNT_H
 
+#include "../../global.h"
 #include "item.h"
+#include <QVariant>
 
 namespace Models {
     class Account : public Item {
@@ -23,6 +25,8 @@ namespace Models {
         
         QVariant data(int column) const override;
         int columnCount() const override;
+        
+        void update(const QString& field, const QVariant& value);
         
     private:
         QString login;

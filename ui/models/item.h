@@ -9,7 +9,8 @@
 
 namespace Models {
 
-class Item {
+class Item : public QObject{
+    Q_OBJECT
     public:
         enum Type {
             account,
@@ -22,6 +23,10 @@ class Item {
         explicit Item(Type p_type, const QMap<QString, QVariant> &data, Item *parentItem = 0);
         ~Item();
         
+    signals:
+        void changed(int col);
+    
+    public:
         void appendChild(Item *child);
         QString getName() const;
         void setName(const QString& name);

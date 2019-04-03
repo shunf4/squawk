@@ -4,6 +4,7 @@
 #include <qabstractitemmodel.h>
 #include <deque>
 #include <map>
+#include <QVector>
 #include "../../global.h"
 #include "accounts.h"
 #include "item.h"
@@ -37,6 +38,9 @@ private:
     Item* root;
     std::map<QString, Account*> accounts;
     std::map<ElId, Item*> elements;
+    
+private slots:
+    void onAccountDataChanged(const QModelIndex& tl, const QModelIndex& br, const QVector<int>& roles);
     
 private:
     class ElId {

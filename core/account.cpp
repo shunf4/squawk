@@ -62,7 +62,7 @@ void Core::Account::onClientDisconnected()
         state = Shared::disconnected;
         emit connectionStateChanged(state);
     } else {
-        qDebug("Something weird had happened - xmpp client reported about being disconnection but account was already in disconnected state");
+        //qDebug("Something weird had happened - xmpp client reported about being disconnection but account was already in disconnected state");
     }
 }
 

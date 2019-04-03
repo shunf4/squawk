@@ -15,7 +15,10 @@ Models::Account::~Account()
 
 void Models::Account::setState(int p_state)
 {
-    state = p_state;
+    if (state != p_state) {
+        state = p_state;
+        emit changed(2);
+    }
 }
 
 QString Models::Account::getLogin() const
@@ -40,17 +43,26 @@ int Models::Account::getState() const
 
 void Models::Account::setLogin(const QString& p_login)
 {
-    login = p_login;
+    if (login != p_login) {
+        login = p_login;
+        emit changed(3);
+    }
 }
 
 void Models::Account::setPassword(const QString& p_password)
 {
-    password = p_password;
+    if (password != p_password) {
+        password = p_password;
+        emit changed(4);
+    }
 }
 
 void Models::Account::setServer(const QString& p_server)
 {
-    server = p_server;
+    if (server != p_server) {
+        server = p_server;
+        emit changed(1);
+    }
 }
 
 QVariant Models::Account::data(int column) const
@@ -61,7 +73,7 @@ QVariant Models::Account::data(int column) const
         case 1:
             return server;
         case 2:
-            return state;
+            return Shared::ConnectionStateNames[state];
         case 3:
             return login;
         case 4:
@@ -74,4 +86,19 @@ QVariant Models::Account::data(int column) const
 int Models::Account::columnCount() const
 {
     return 5;
+}
+
+void Models::Account::update(const QString& field, const QVariant& value)
+{
+    if (field == "name") {
+        setName(value.toString());
+    } else if (field == "server") {
+        setServer(value.toString());
+    } else if (field == "login") {
+        setLogin(value.toString());
+    } else if (field == "password") {
+        setPassword(value.toString());
+    } else if (field == "state") {
+        setState(value.toInt());
+    }
 }

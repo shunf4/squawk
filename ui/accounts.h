@@ -16,11 +16,8 @@ class Accounts : public QWidget
 {
     Q_OBJECT
 public:
-    explicit Accounts(QWidget *parent = nullptr);
+    explicit Accounts(Models::Accounts* model, QWidget *parent = nullptr);
     ~Accounts() override;
-
-    void addAccount(const QMap<QString, QVariant>&);
-    void updateAccount(const QString& account, const QString& field, const QVariant& value);
     
 signals:
     void newAccount(const QMap<QString, QVariant>&);
@@ -32,7 +29,6 @@ private slots:
     
 private:
     QScopedPointer<Ui::Accounts> m_ui;
-    Models::Accounts tableModel;
 };
 
 #endif // ACCOUNTS_H

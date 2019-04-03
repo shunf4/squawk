@@ -34,13 +34,9 @@ public slots:
     void accountConnectionStateChanged(const QString& account, int state);
     
 private:
-    typedef std::deque<QMap<QString, QVariant>> AC;
-    typedef std::map<QString, QMap<QString, QVariant>*> AI;
     QScopedPointer<Ui::Squawk> m_ui;
     
     Accounts* accounts;
-    AC accountsCache;
-    AI accountsIndex;
     Models::Roster rosterModel;
     
 protected:
