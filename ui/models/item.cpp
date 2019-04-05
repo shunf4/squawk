@@ -82,3 +82,17 @@ QVariant Models::Item::data(int column) const
     }
     return name;
 }
+
+void Models::Item::removeChild(int index)
+{
+    childItems.erase(childItems.begin() + index);
+}
+
+void Models::Item::setParent(Models::Item* p_parent)
+{
+    parent = p_parent;
+}
+
+
+
+

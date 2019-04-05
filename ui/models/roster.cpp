@@ -1,6 +1,7 @@
 #include "roster.h"
 #include <QDebug>
 #include <QIcon>
+#include <QFont>
 
 using namespace Models;
 
@@ -10,8 +11,7 @@ Models::Roster::Roster(QObject* parent):
     root(new Item(Item::root, {{"name", "root"}})),
     accounts(),
     groups(),
-    contacts(),
-    elements()
+    contacts()
 {
     connect(accountsModel, 
             SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)), 
@@ -68,10 +68,40 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     }
                 }
                     break;
+                case Item::contact:{
+                    Contact* contact = static_cast<Contact*>(item);
+                    int state = contact->getState();
+                    switch (state) {
+                        case 0:
+                            result = QIcon::fromTheme("im-user-offline");
+                            break;
+                        case 1:
+                            result = QIcon::fromTheme("im-user-online");
+                            break;
+                    }
+                }
+                    break;
                 default:
                     break;
             }
             break;
+        case Qt::FontRole:
+            switch (item->type) {
+                case Item::account:{
+                    QFont font;
+                    font.setBold(true);
+                    result = font;
+                }
+                    break;
+                case Item::group:{
+                    QFont font;
+                    font.setItalic(true);
+                    result = font;
+                }
+                    break;
+                default:
+                    break;
+            }
         default:
             break;
     }
@@ -198,14 +228,19 @@ void Models::Roster::onAccountDataChanged(const QModelIndex& tl, const QModelInd
 
 void Models::Roster::addGroup(const QString& account, const QString& name)
 {
+    ElId id(account, name);
+    std::map<ElId, Item*>::const_iterator gItr = groups.find(id);
+    if (gItr != groups.end()) {
+        qDebug() << "An attempt to add group " << name << " to account " << account <<" which already exists there, skipping";
+        return;
+    }
     std::map<QString, Account*>::iterator itr = accounts.find(account);
     if (itr != accounts.end()) {
         Account* acc = itr->second;
         Item* group = new Item(Item::group, {{"name", name}}, acc);
         beginInsertRows(createIndex(acc->row(), 0, acc), acc->childCount(), acc->childCount());
         acc->appendChild(group);
-        groups.insert(std::make_pair(name, group));
-        elements.insert({{account, name}, group});
+        groups.insert(std::make_pair(id, group));
         endInsertRows();
     } else {
         qDebug() << "An attempt to add group " << name << " to non existing account " << account << ", skipping";
@@ -215,35 +250,125 @@ void Models::Roster::addGroup(const QString& account, const QString& name)
 void Models::Roster::addContact(const QString& account, const QString& jid, const QString& name, const QString& group)
 {
     Item* parent;
-    if (group == "") {
+    Account* acc;
+    Contact* contact;
+    ElId id(account, jid);
+    
+    {
         std::map<QString, Account*>::iterator itr = accounts.find(account);
         if (itr == accounts.end()) {
             qDebug() << "An attempt to add a contact " << name << " to non existing account " << account << ", skipping";
             return;
         }
-        parent = itr->second;
+        acc = itr->second;
+    }
+    
+    if (group == "") {
+        std::multimap<ElId, Contact*>::iterator itr = contacts.lower_bound(id);
+        std::multimap<ElId, Contact*>::iterator eItr = contacts.upper_bound(id);
+        while (itr != eItr) {
+            if (itr->second->parentItem() == acc) {
+                qDebug() << "An attempt to add a contact " << name << " ungrouped to non the account " << account << " for the second time, skipping";
+                return;
+            }
+        }
+        parent = acc;
     } else {
-        std::map<QString, Item*>::iterator itr = groups.find(group);
+        std::map<ElId, Item*>::iterator itr = groups.find({account, group});
         if (itr == groups.end()) {
             qDebug() << "An attempt to add a contact " << name << " to non existing group " << group << ", skipping";
             return;
         }
+        
         parent = itr->second;
+        
+        for (int i = 0; i < parent->childCount(); ++i) {
+            Item* item = parent->child(i);
+            if (item->type == Item::contact) {
+                Contact* ca = static_cast<Contact*>(item);
+                if (ca->getJid() == jid) {
+                    qDebug() << "An attempt to add a contact " << name << " to the group " << group << " for the second time, skipping";
+                    return;
+                }
+            }
+        }
+        
+        for (int i = 0; i < acc->childCount(); ++i) {
+            Item* item = acc->child(i);
+            if (item->type == Item::contact) {
+                Contact* ca = static_cast<Contact*>(item);
+                if (ca->getJid() == jid) {
+                    qDebug() << "An attempt to add a already existing contact " << name << " to the group " << group << ", contact will be moved from ungrouped contacts of " << account;
+                    
+                    beginMoveRows(createIndex(acc->row(), 0, acc), i, i, createIndex(parent->row(), 0, parent), parent->childCount());
+                    contact = ca;
+                    acc->removeChild(i);
+                    ca->setParent(parent);
+                    parent->appendChild(ca);
+                    endMoveRows();
+                    return;
+                }
+            }
+        }
+        
     }
-    
-    QString sName = name;
-    if (sName == "") {
-        sName = jid;
-    }
-    Item* contact = new Item(Item::contact, {{"name", sName}}, parent);
+    contact = new Contact({{"name", name}, {"jid", jid}, {"state", 0}}, parent);
     beginInsertRows(createIndex(parent->row(), 0, parent), parent->childCount(), parent->childCount());
     parent->appendChild(contact);
-    contacts.insert(std::make_pair(jid, contact));
-    elements.insert({{account, jid}, contact});
+    contacts.insert(std::make_pair(id, contact));
     endInsertRows();
+    
 }
 
 void Models::Roster::removeGroup(const QString& account, const QString& name)
 {
+    ElId id(account, name);
+    std::map<ElId, Item*>::const_iterator gItr = groups.find(id);
+    if (gItr == groups.end()) {
+        qDebug() << "An attempt to remove group " << name << " from account " << account <<" which doesn't exist there, skipping";
+        return;
+    }
+    Item* item = gItr->second;
+    Item* parent = item->parentItem();
+    int row = item->row();
+    
+    beginRemoveRows(createIndex(parent->row(), 1, parent), row, row);
+    parent->removeChild(row);
+    endRemoveRows();
+    
+    std::deque<Contact*> toInsert;
+    for (int i = 0; item->childCount() > 0; ++i) {
+        Contact* cont = static_cast<Contact*>(item->child(0));
+        item->removeChild(0);
+        
+        std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound({account, cont->getJid()});
+        std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound({account, cont->getJid()});
+        
+        int count = std::distance(cBeg, cEnd);
+        if (count > 1) {
+            for (; cBeg != cEnd; ++count, ++cBeg) {
+                if (cBeg->second == cont) {
+                    delete cont;
+                    contacts.erase(cBeg);
+                    break;
+                }
+            }
+        } else {
+            toInsert.push_back(cont);
+        }
+    }
+    
+    if (toInsert.size() > 0) {
+        Account* acc = accounts.find("account")->second;
+        beginInsertRows(createIndex(acc->row(), 0, acc), acc->childCount(), acc->childCount() + toInsert.size() - 1);
+        for (int i = 0; i < toInsert.size(); ++i) {
+            Contact* cont = toInsert[i];
+            cont->setParent(acc);
+            acc->appendChild(cont);
+        }
+        endInsertRows();
+    }
+    
+    delete item;
 }
 

@@ -9,6 +9,7 @@
 #include "accounts.h"
 #include "item.h"
 #include "account.h"
+#include "contact.h"
 
 namespace Models
 {
@@ -40,9 +41,8 @@ public:
 private:
     Item* root;
     std::map<QString, Account*> accounts;
-    std::map<QString, Item*> groups;
-    std::map<QString, Item*> contacts;
-    std::map<ElId, Item*> elements;
+    std::map<ElId, Item*> groups;
+    std::multimap<ElId, Contact*> contacts;
     
 private slots:
     void onAccountDataChanged(const QModelIndex& tl, const QModelIndex& br, const QVector<int>& roles);

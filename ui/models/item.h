@@ -28,6 +28,7 @@ class Item : public QObject{
     
     public:
         void appendChild(Item *child);
+        void removeChild(int index);
         QString getName() const;
         void setName(const QString& name);
         
@@ -37,6 +38,7 @@ class Item : public QObject{
         virtual QVariant data(int column) const;
         int row() const;
         Item *parentItem();
+        void setParent(Item* p_parent);
         
         const Type type;
         
