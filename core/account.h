@@ -3,6 +3,7 @@
 
 #include <QtCore/QObject>
 #include <map>
+#include <set>
 
 #include <qxmpp/QXmppClient.h>
 #include "../global.h"
@@ -31,6 +32,9 @@ signals:
     void addGroup(const QString& name);
     void removeGroup(const QString& name);
     void addContact(const QString& jid, const QString& name, const QString& group);
+    void removeContact(const QString& jid);
+    void removeContact(const QString& jid, const QString& group);
+    void changeContact(const QString& jid, const QString& name);
     
 private:
     QString name;
@@ -39,13 +43,18 @@ private:
     QString password;
     QXmppClient client;
     Shared::ConnectionState state;
-    std::map<QString, int> groups;
+    std::map<QString, std::set<QString>> groups;
     
 private slots:
     void onClientConnected();
     void onClientDisconnected();
     void onRosterReceived();
-    
+    void onRosterItemAdded(const QString &bareJid);
+    void onRosterItemChanged(const QString &bareJid);
+    void onRosterItemRemoved(const QString &bareJid);
+  
+private:
+    void addedAccount(const QString &bareJid);
 };
 
 }

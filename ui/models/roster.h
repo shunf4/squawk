@@ -27,6 +27,9 @@ public:
     void addGroup(const QString& account, const QString& name);
     void removeGroup(const QString& account, const QString& name);
     void addContact(const QString& account, const QString& jid, const QString& name, const QString& group);
+    void removeContact(const QString& account, const QString& jid, const QString& group);
+    void removeContact(const QString& account, const QString& jid);
+    void changeContact(const QString& account, const QString& jid, const QString& name);
     
     QVariant data ( const QModelIndex& index, int role ) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;

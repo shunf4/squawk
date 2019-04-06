@@ -77,6 +77,9 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     connect(acc, SIGNAL(addContact(const QString&, const QString&, const QString&)), this, SLOT(onAccountAddContact(const QString&, const QString&, const QString&)));
     connect(acc, SIGNAL(addGroup(const QString&)), this, SLOT(onAccountAddGroup(const QString&)));
     connect(acc, SIGNAL(removeGroup(const QString&)), this, SLOT(onAccountRemoveGroup(const QString&)));
+    connect(acc, SIGNAL(removeContact(const QString&)), this, SLOT(onAccountRemoveContact(const QString&)));
+    connect(acc, SIGNAL(removeContact(const QString&, const QString&)), this, SLOT(onAccountRemoveContact(const QString&, const QString&)));
+    connect(acc, SIGNAL(changeContact(const QString&, const QString&)), this, SLOT(onAccountChangeContact(const QString&, const QString&)));
     
     QMap<QString, QVariant> map = {
         {"login", login},
@@ -131,4 +134,22 @@ void Core::Squawk::onAccountRemoveGroup(const QString& name)
 {
     Account* acc = static_cast<Account*>(sender());
     emit removeGroup(acc->getName(), name);
+}
+
+void Core::Squawk::onAccountChangeContact(const QString& jid, const QString& name)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit changeContact(acc->getName(), jid, name);
+}
+
+void Core::Squawk::onAccountRemoveContact(const QString& jid)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit removeContact(acc->getName(), jid);
+}
+
+void Core::Squawk::onAccountRemoveContact(const QString& jid, const QString& group)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit removeContact(acc->getName(), jid, group);
 }

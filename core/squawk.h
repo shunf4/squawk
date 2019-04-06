@@ -28,6 +28,9 @@ signals:
     void addGroup(const QString& account, const QString& name);
     void removeGroup(const QString& account, const QString& name);
     void addContact(const QString& account, const QString& jid, const QString& name, const QString& group);
+    void removeContact(const QString& account, const QString& jid);
+    void removeContact(const QString& account, const QString& jid, const QString& group);
+    void changeContact(const QString& account, const QString& jid, const QString& name);
     
 public slots:
     void start();
@@ -51,6 +54,9 @@ private slots:
     void onAccountAddGroup(const QString& name);
     void onAccountRemoveGroup(const QString& name);
     void onAccountAddContact(const QString& jid, const QString& name, const QString& group);
+    void onAccountRemoveContact(const QString& jid);
+    void onAccountRemoveContact(const QString& jid, const QString& group);
+    void onAccountChangeContact(const QString& jid, const QString& name);
 };
 
 }

@@ -38,6 +38,9 @@ int main(int argc, char *argv[])
                      &w, SLOT(addContact(const QString&, const QString&, const QString&, const QString&)));
     QObject::connect(squawk, SIGNAL(addGroup(const QString&, const QString&)), &w, SLOT(addGroup(const QString&, const QString&)));
     QObject::connect(squawk, SIGNAL(removeGroup(const QString&, const QString&)), &w, SLOT(removeGroup(const QString&, const QString&)));
+    QObject::connect(squawk, SIGNAL(removeContact(const QString&, const QString&)), &w, SLOT(removeContact(const QString&, const QString&)));
+    QObject::connect(squawk, SIGNAL(removeContact(const QString&, const QString&, const QString&)), &w, SLOT(removeContact(const QString&, const QString&, const QString&)));
+    QObject::connect(squawk, SIGNAL(changeContact(const QString&, const QString&, const QString&)), &w, SLOT(changeContact(const QString&, const QString&, const QString&)));
     
     coreThread->start();
 

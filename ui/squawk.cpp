@@ -98,8 +98,23 @@ void Squawk::addGroup(const QString& account, const QString& name)
 
 void Squawk::removeGroup(const QString& account, const QString& name)
 {
+    rosterModel.removeGroup(account, name);
 }
 
+void Squawk::changeContact(const QString& account, const QString& jid, const QString& name)
+{
+    rosterModel.changeContact(account, jid, name);
+}
+
+void Squawk::removeContact(const QString& account, const QString& jid)
+{
+    rosterModel.removeContact(account, jid);
+}
+
+void Squawk::removeContact(const QString& account, const QString& jid, const QString& group)
+{
+    rosterModel.removeContact(account, jid, group);
+}
 
 
 

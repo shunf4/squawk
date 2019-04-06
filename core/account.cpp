@@ -18,7 +18,11 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     
     
     QXmppRosterManager& rm = client.rosterManager();
+    
     QObject::connect(&rm, SIGNAL(rosterReceived()), this, SLOT(onRosterReceived()));
+    QObject::connect(&rm, SIGNAL(itemAdded(const QString&)), this, SLOT(onRosterItemAdded(const QString&)));
+    QObject::connect(&rm, SIGNAL(itemRemoved(const QString&)), this, SLOT(onRosterItemRemoved(const QString&)));
+    QObject::connect(&rm, SIGNAL(itemChanged(const QString&)), this, SLOT(onRosterItemChanged(const QString&)));
 }
 
 Account::~Account()
@@ -29,7 +33,6 @@ Shared::ConnectionState Core::Account::getState() const
 {
     return state;
 }
-
 
 void Core::Account::connect()
 {
@@ -97,24 +100,107 @@ void Core::Account::onRosterReceived()
     QStringList bj = rm.getRosterBareJids();
     for (int i = 0; i < bj.size(); ++i) {
         const QString& jid = bj[i];
-        QXmppRosterIq::Item re = rm.getRosterEntry(jid);
-        QSet<QString> gr = re.groups();
-        int grCount = 0;
-        for (QSet<QString>::const_iterator itr = gr.begin(), end = gr.end(); itr != end; ++itr) {
-            const QString& groupName = *itr;
-            std::map<QString, int>::iterator gItr = groups.find(groupName);
-            if (gItr == groups.end()) {
-                gItr = groups.insert(std::make_pair(groupName, 0)).first;
-                emit addGroup(groupName);
+        addedAccount(jid);
+    }
+}
+
+void Core::Account::onRosterItemAdded(const QString& bareJid)
+{
+    addedAccount(bareJid);
+}
+
+void Core::Account::onRosterItemChanged(const QString& bareJid)
+{
+    QXmppRosterManager& rm = client.rosterManager();
+    QXmppRosterIq::Item re = rm.getRosterEntry(bareJid);
+    QSet<QString> newGroups = re.groups();
+    QSet<QString> oldGroups;
+    
+    emit changeContact(bareJid, re.name());
+    
+    for (std::map<QString, std::set<QString>>::iterator itr = groups.begin(), end = groups.end(); itr != end; ++itr) {
+        std::set<QString>& contacts = itr->second;
+        std::set<QString>::const_iterator cItr = contacts.find(bareJid);
+        if (cItr != contacts.end()) {
+            oldGroups.insert(itr->first);
+        }
+    }
+    
+    QSet<QString> toRemove = oldGroups - newGroups;
+    QSet<QString> toAdd = newGroups - oldGroups;
+    
+    QSet<QString> removeGroups;
+    for (QSet<QString>::iterator itr = toRemove.begin(), end = toRemove.end(); itr != end; ++itr) {
+        const QString& groupName = *itr;
+        std::set<QString>& contacts = groups.find(groupName)->second;
+        contacts.erase(bareJid);
+        emit removeContact(bareJid, groupName);
+        if (contacts.size() == 0) {
+            removeGroups.insert(groupName);
+        }
+    }
+    
+    for (QSet<QString>::iterator itr = toAdd.begin(), end = toAdd.end(); itr != end; ++itr) {
+        const QString& groupName = *itr;
+        std::map<QString, std::set<QString>>::iterator cItr = groups.find(groupName);
+        if (cItr == groups.end()) {
+            cItr = groups.insert(std::make_pair(groupName, std::set<QString>())).first;
+            emit addGroup(groupName);
+        }
+        cItr->second.insert(bareJid);
+        emit addContact(bareJid, re.name(), groupName);
+    }
+    
+    for (QSet<QString>::iterator itr = removeGroups.begin(), end = removeGroups.end(); itr != end; ++itr) {
+        const QString& groupName = *itr;
+        emit removeGroup(groupName);
+        groups.erase(groupName);
+    }
+}
+
+void Core::Account::onRosterItemRemoved(const QString& bareJid)
+{
+    emit removeContact(bareJid);
+    
+    QSet<QString> toRemove;
+    for (std::map<QString, std::set<QString>>::iterator itr = groups.begin(), end = groups.end(); itr != end; ++itr) {
+        std::set<QString> contacts = itr->second;
+        std::set<QString>::const_iterator cItr = contacts.find(bareJid);
+        if (cItr != contacts.end()) {
+            contacts.erase(cItr);
+            if (contacts.size() == 0) {
+                toRemove.insert(itr->first);
             }
-            gItr->second++;
-            emit addContact(jid, re.name(), groupName);
-            grCount++;
         }
-        
-        if (grCount == 0) {
-            emit addContact(jid, re.name(), "");
+    }
+    
+    for (QSet<QString>::iterator itr = toRemove.begin(), end = toRemove.end(); itr != end; ++itr) {
+        const QString& groupName = *itr;
+        emit removeGroup(groupName);
+        groups.erase(groupName);
+    }
+}
+
+void Core::Account::addedAccount(const QString& jid)
+{
+    QXmppRosterManager& rm = client.rosterManager();
+    QXmppRosterIq::Item re = rm.getRosterEntry(jid);
+    QSet<QString> gr = re.groups();
+    int grCount = 0;
+    for (QSet<QString>::const_iterator itr = gr.begin(), end = gr.end(); itr != end; ++itr) {
+        const QString& groupName = *itr;
+        std::map<QString, std::set<QString>>::iterator gItr = groups.find(groupName);
+        if (gItr == groups.end()) {
+            gItr = groups.insert(std::make_pair(groupName, std::set<QString>())).first;
+            emit addGroup(groupName);
         }
+        gItr->second.insert(jid);
+        emit addContact(jid, re.name(), groupName);
+        grCount++;
+    }
+    
+    if (grCount == 0) {
+        emit addContact(jid, re.name(), "");
     }
 }
 

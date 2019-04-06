@@ -35,6 +35,9 @@ public slots:
     void addGroup(const QString& account, const QString& name);
     void removeGroup(const QString& account, const QString& name);
     void addContact(const QString& account, const QString& jid, const QString& name, const QString& group);
+    void removeContact(const QString& account, const QString& jid, const QString& group);
+    void removeContact(const QString& account, const QString& jid);
+    void changeContact(const QString& account, const QString& jid, const QString& name);
     
 private:
     QScopedPointer<Ui::Squawk> m_ui;

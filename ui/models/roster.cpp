@@ -332,7 +332,7 @@ void Models::Roster::removeGroup(const QString& account, const QString& name)
     Item* parent = item->parentItem();
     int row = item->row();
     
-    beginRemoveRows(createIndex(parent->row(), 1, parent), row, row);
+    beginRemoveRows(createIndex(parent->row(), 0, parent), row, row);
     parent->removeChild(row);
     endRemoveRows();
     
@@ -372,3 +372,76 @@ void Models::Roster::removeGroup(const QString& account, const QString& name)
     delete item;
 }
 
+void Models::Roster::changeContact(const QString& account, const QString& jid, const QString& name)
+{
+    ElId id(account, jid);
+    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(id);
+    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(id);
+    
+    for (; cBeg != cEnd; ++cBeg) {
+        cBeg->second->setName(name);
+    }
+}
+
+void Models::Roster::removeContact(const QString& account, const QString& jid)
+{
+    ElId id(account, jid);
+    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(id);
+    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(id);
+    
+    QSet<QString> toRemove;
+    for (; cBeg != cEnd; ++cBeg) {
+        Contact* contact = cBeg->second;
+        Item* parent = contact->parentItem();
+        if (parent->type == Item::group && parent->childCount() == 1) {
+            toRemove.insert(parent->getName());
+        }
+        int row = contact->row();
+        beginRemoveRows(createIndex(parent->row(), 0, parent), row, row);
+        parent->removeChild(row);
+        endRemoveRows();
+        delete contact;
+    }
+    
+    for (QSet<QString>::const_iterator itr = toRemove.begin(), end = toRemove.end(); itr != end; ++itr) {
+        removeGroup(account, *itr);
+    }
+}
+
+void Models::Roster::removeContact(const QString& account, const QString& jid, const QString& group)
+{
+    ElId contactId(account, jid);
+    ElId groupId(account, group);
+    
+    std::map<ElId, Item*>::iterator gItr = groups.find(groupId);
+    if (gItr == groups.end()) {
+        qDebug() << "An attempt to remove contact " << jid << " from non existing group " << group << " of account " << account <<", skipping";
+        return;
+    }
+    Item* gr = gItr->second;
+    Contact* cont = 0;
+    
+    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId);
+    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(contactId);
+    for (;cBeg != cEnd; ++cBeg) {
+        if (cBeg->second->parentItem() == gr) {
+            cont = cBeg->second;
+            break;
+        }
+    }
+    
+    if (cont == 0) {
+        qDebug() << "An attempt to remove contact " << jid << " of account " << account << " from group " << group  <<", but there is no such contact in that group, skipping";
+        return;
+    }
+    
+    int row = cont->row();
+    beginRemoveRows(createIndex(gr->row(), 0, gr), row, row);
+    gr->removeChild(row);
+    endRemoveRows();
+    delete cont;
+    
+    if (gr->childCount() == 0) {
+        removeGroup(account, group);
+    }
+}
