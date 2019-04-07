@@ -35,6 +35,8 @@ signals:
     void removeContact(const QString& jid);
     void removeContact(const QString& jid, const QString& group);
     void changeContact(const QString& jid, const QString& name);
+    void addPresence(const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
+    void removePresence(const QString& jid, const QString& name);
     
 private:
     QString name;
@@ -49,9 +51,11 @@ private slots:
     void onClientConnected();
     void onClientDisconnected();
     void onRosterReceived();
-    void onRosterItemAdded(const QString &bareJid);
-    void onRosterItemChanged(const QString &bareJid);
-    void onRosterItemRemoved(const QString &bareJid);
+    void onRosterItemAdded(const QString& bareJid);
+    void onRosterItemChanged(const QString& bareJid);
+    void onRosterItemRemoved(const QString& bareJid);
+    void onRosterPresenceChanged(const QString& bareJid, const QString& resource);
+    void onPresenceReceived(const QXmppPresence& presence);
   
 private:
     void addedAccount(const QString &bareJid);

@@ -63,17 +63,19 @@ void Models::Accounts::addAccount(Account* account)
 {
     beginInsertRows(QModelIndex(), accs.size(), accs.size());
     accs.push_back(account);
-    connect(account, SIGNAL(changed(int)), this, SLOT(onAccountChanged(int)));
+    connect(account, SIGNAL(childChanged(Item*, int, int)), this, SLOT(onAccountChanged(Item*, int, int)));
     endInsertRows();
 }
 
-void Models::Accounts::onAccountChanged(int column)
+void Models::Accounts::onAccountChanged(Item* item, int row, int col)
 {
-    Account* acc = static_cast<Account*>(sender());
+    Account* acc = getAccount(row);
+    if (item != acc) {
+        return;     //it means the signal is emitted by one of accounts' children, not exactly him, this model has no interest in that
+    }
     
-    if (column < columnCount(QModelIndex())) {
-        int row = acc->row();
-        emit dataChanged(createIndex(row, column, this), createIndex(row, column, this));
+    if (col < columnCount(QModelIndex())) {
+        emit dataChanged(createIndex(row, col, this), createIndex(row, col, this));
     }
 }
 

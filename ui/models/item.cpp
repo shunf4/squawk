@@ -1,7 +1,5 @@
 #include "item.h"
 
-using namespace Models;
-
 Models::Item::Item(Type p_type, const QMap<QString, QVariant> &p_data, Item *p_parent):
     QObject(),
     type(p_type),
@@ -24,13 +22,38 @@ void Models::Item::setName(const QString& p_name)
 {
     if (name != p_name) {
         name = p_name;
-        emit changed(0);
+        changed(0);
     }
 }
 
 void Models::Item::appendChild(Models::Item* child)
 {
+    bool moving = false;
+    int oldRow = child->row();
+    int newRow = this->childCount();
+    if (child->parent != 0) {
+        moving = true;
+        emit childIsAboutToBeMoved(child->parent, oldRow, oldRow, this, newRow);
+        child->parent->_removeChild(oldRow);
+    } else {
+        emit childIsAboutToBeInserted(this, newRow, newRow);
+    }
     childItems.push_back(child);
+    child->parent = this;
+    
+    QObject::connect(child, SIGNAL(childChanged(Item*, int, int)), this, SIGNAL(childChanged(Item*, int, int)));
+    QObject::connect(child, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SIGNAL(childIsAboutToBeInserted(Item*, int, int)));
+    QObject::connect(child, SIGNAL(childInserted()), this, SIGNAL(childInserted()));
+    QObject::connect(child, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)));
+    QObject::connect(child, SIGNAL(childRemoved()), this, SIGNAL(childRemoved()));
+    QObject::connect(child, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)), this, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)));
+    QObject::connect(child, SIGNAL(childMoved()), this, SIGNAL(childMoved()));
+    
+    if (moving) {
+        emit childMoved();
+    } else {
+        emit childInserted();
+    }
 }
 
 Models::Item * Models::Item::child(int row)
@@ -74,7 +97,6 @@ QString Models::Item::getName() const
     return name;
 }
 
-
 QVariant Models::Item::data(int column) const
 {
     if (column != 0) {
@@ -85,14 +107,31 @@ QVariant Models::Item::data(int column) const
 
 void Models::Item::removeChild(int index)
 {
-    childItems.erase(childItems.begin() + index);
+    emit childIsAboutToBeRemoved(this, index, index);
+    removeChild(index);
+    emit childRemoved();
 }
 
-void Models::Item::setParent(Models::Item* p_parent)
+void Models::Item::_removeChild(int index)
 {
-    parent = p_parent;
+    Item* child = childItems[index];
+    
+    QObject::connect(child, SIGNAL(childChanged(Item*, int, int)), this, SIGNAL(childChanged(Item*, int, int)));
+    QObject::connect(child, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SIGNAL(childIsAboutToBeInserted(Item*, int, int)));
+    QObject::connect(child, SIGNAL(childInserted()), this, SIGNAL(childInserted()));
+    QObject::connect(child, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)));
+    QObject::connect(child, SIGNAL(childRemoved()), this, SIGNAL(childRemoved()));
+    QObject::connect(child, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)), this, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)));
+    QObject::connect(child, SIGNAL(childMoved()), this, SIGNAL(childMoved()));
+    
+    childItems.erase(childItems.begin() + index);
+    child->parent = 0;
 }
 
 
-
-
+void Models::Item::changed(int col)
+{
+    if (parent != 0) {
+        emit childChanged(this, row(), col);
+    }
+}

@@ -17,6 +17,13 @@ Models::Roster::Roster(QObject* parent):
             SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)), 
             this, 
             SLOT(onAccountDataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)));
+    connect(root, SIGNAL(childChanged(Item*, int, int)), this, SLOT(onChildChanged(Item*, int, int)));
+    connect(root, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SLOT(onChildIsAboutToBeInserted(Item*, int, int)));
+    connect(root, SIGNAL(childInserted()), this, SLOT(onChildInserted()));
+    connect(root, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SLOT(onChildIsAboutToBeRemoved(Item*, int, int)));
+    connect(root, SIGNAL(childRemoved()), this, SLOT(onChildRemoved()));
+    connect(root, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)), this, SLOT(onChildIsAboutToBeMoved(Item*, int, int, Item*, int)));
+    connect(root, SIGNAL(childMoved()), this, SLOT(onChildMoved()));
 }
 
 Models::Roster::~Roster()
@@ -27,12 +34,10 @@ Models::Roster::~Roster()
 
 void Models::Roster::addAccount(const QMap<QString, QVariant>& data)
 {
-    Account* acc = new Account(data, root);
-    beginInsertRows(QModelIndex(), root->childCount(), root->childCount());
+    Account* acc = new Account(data);
     root->appendChild(acc);
     accounts.insert(std::make_pair(acc->getName(), acc));
     accountsModel->addAccount(acc);
-    endInsertRows();
 }
 
 QVariant Models::Roster::data (const QModelIndex& index, int role) const
@@ -70,15 +75,12 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     break;
                 case Item::contact:{
                     Contact* contact = static_cast<Contact*>(item);
-                    int state = contact->getState();
-                    switch (state) {
-                        case 0:
-                            result = QIcon::fromTheme("im-user-offline");
-                            break;
-                        case 1:
-                            result = QIcon::fromTheme("im-user-online");
-                            break;
-                    }
+                    result = QIcon::fromTheme(Shared::AvailabilityIcons[contact->getState()]);
+                }
+                    break;
+                case Item::presence:{
+                    Presence* presence = static_cast<Presence*>(item);
+                    result = QIcon::fromTheme(Shared::AvailabilityIcons[presence->getAvailability()]);
                 }
                     break;
                 default:
@@ -237,11 +239,9 @@ void Models::Roster::addGroup(const QString& account, const QString& name)
     std::map<QString, Account*>::iterator itr = accounts.find(account);
     if (itr != accounts.end()) {
         Account* acc = itr->second;
-        Item* group = new Item(Item::group, {{"name", name}}, acc);
-        beginInsertRows(createIndex(acc->row(), 0, acc), acc->childCount(), acc->childCount());
+        Item* group = new Item(Item::group, {{"name", name}});
         acc->appendChild(group);
         groups.insert(std::make_pair(id, group));
-        endInsertRows();
     } else {
         qDebug() << "An attempt to add group " << name << " to non existing account " << account << ", skipping";
     }
@@ -300,24 +300,16 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
                 if (ca->getJid() == jid) {
                     qDebug() << "An attempt to add a already existing contact " << name << " to the group " << group << ", contact will be moved from ungrouped contacts of " << account;
                     
-                    beginMoveRows(createIndex(acc->row(), 0, acc), i, i, createIndex(parent->row(), 0, parent), parent->childCount());
-                    contact = ca;
-                    acc->removeChild(i);
-                    ca->setParent(parent);
                     parent->appendChild(ca);
-                    endMoveRows();
                     return;
                 }
             }
         }
         
     }
-    contact = new Contact({{"name", name}, {"jid", jid}, {"state", 0}}, parent);
-    beginInsertRows(createIndex(parent->row(), 0, parent), parent->childCount(), parent->childCount());
+    contact = new Contact({{"name", name}, {"jid", jid}, {"state", 0}});
     parent->appendChild(contact);
     contacts.insert(std::make_pair(id, contact));
-    endInsertRows();
-    
 }
 
 void Models::Roster::removeGroup(const QString& account, const QString& name)
@@ -332,9 +324,7 @@ void Models::Roster::removeGroup(const QString& account, const QString& name)
     Item* parent = item->parentItem();
     int row = item->row();
     
-    beginRemoveRows(createIndex(parent->row(), 0, parent), row, row);
     parent->removeChild(row);
-    endRemoveRows();
     
     std::deque<Contact*> toInsert;
     for (int i = 0; item->childCount() > 0; ++i) {
@@ -360,13 +350,10 @@ void Models::Roster::removeGroup(const QString& account, const QString& name)
     
     if (toInsert.size() > 0) {
         Account* acc = accounts.find("account")->second;
-        beginInsertRows(createIndex(acc->row(), 0, acc), acc->childCount(), acc->childCount() + toInsert.size() - 1);
         for (int i = 0; i < toInsert.size(); ++i) {
             Contact* cont = toInsert[i];
-            cont->setParent(acc);
-            acc->appendChild(cont);
+            acc->appendChild(cont);             //TODO optimisation
         }
-        endInsertRows();
     }
     
     delete item;
@@ -396,10 +383,8 @@ void Models::Roster::removeContact(const QString& account, const QString& jid)
         if (parent->type == Item::group && parent->childCount() == 1) {
             toRemove.insert(parent->getName());
         }
-        int row = contact->row();
-        beginRemoveRows(createIndex(parent->row(), 0, parent), row, row);
-        parent->removeChild(row);
-        endRemoveRows();
+        
+        parent->removeChild(contact->row());
         delete contact;
     }
     
@@ -435,13 +420,84 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
         return;
     }
     
-    int row = cont->row();
-    beginRemoveRows(createIndex(gr->row(), 0, gr), row, row);
-    gr->removeChild(row);
-    endRemoveRows();
+    gr->removeChild(cont->row());
     delete cont;
     
     if (gr->childCount() == 0) {
         removeGroup(account, group);
+    }
+}
+
+void Models::Roster::onChildChanged(Models::Item* item, int row, int col)
+{
+    QModelIndex index = createIndex(row, col, item);
+    emit dataChanged(index, index);
+}
+
+void Models::Roster::onChildIsAboutToBeInserted(Models::Item* parent, int first, int last)
+{
+    int row = 0;
+    if (parent != root) {
+        row = parent->row();
+        beginInsertRows(createIndex(row, 0, parent), first, last);
+    } else {
+        beginInsertRows(QModelIndex(), first, last);
+    }
+}
+
+void Models::Roster::onChildIsAboutToBeMoved(Models::Item* source, int first, int last, Models::Item* destination, int newIndex)
+{
+    int oldRow = 0;
+    if (source != root) {
+        oldRow = source->row();
+    }
+    int newRow = 0;
+    if (destination != root) {
+        newRow = destination->row();
+    }
+    beginMoveRows(createIndex(oldRow, 0, source), first, last, createIndex(newRow, 0, destination), newIndex);
+}
+
+void Models::Roster::onChildIsAboutToBeRemoved(Models::Item* parent, int first, int last)
+{
+    int row = 0;
+    if (parent != root) {
+        row = parent->row();
+    }
+    beginRemoveRows(createIndex(row, 0, parent), first, last);
+}
+
+void Models::Roster::onChildInserted()
+{
+    endInsertRows();
+}
+
+void Models::Roster::onChildMoved()
+{
+    endMoveRows();
+}
+
+void Models::Roster::onChildRemoved()
+{
+    endRemoveRows();
+}
+
+void Models::Roster::addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data)
+{
+    ElId contactId(account, jid);
+    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId);
+    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(contactId);
+    for (;cBeg != cEnd; ++cBeg) {
+        cBeg->second->addPresence(name, data);
+    }
+}
+
+void Models::Roster::removePresence(const QString& account, const QString& jid, const QString& name)
+{
+    ElId contactId(account, jid);
+    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId);
+    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(contactId);
+    for (;cBeg != cEnd; ++cBeg) {
+        cBeg->second->removePresence(name);
     }
 }

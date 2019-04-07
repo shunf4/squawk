@@ -2,6 +2,9 @@
 #define MODELS_CONTACT_H
 
 #include "item.h"
+#include "presence.h"
+#include "../../global.h"
+#include <QMap>
 
 namespace Models {
 
@@ -13,19 +16,32 @@ public:
     ~Contact();
     
     QString getJid() const;
-    void setJid(const QString p_jid);
     
-    int getState() const;
-    void  setState(int p_state);
+    Shared::Availability getState() const;
     
     int columnCount() const override;
     QVariant data(int column) const override;
         
     void update(const QString& field, const QVariant& value);
     
+    void addPresence(const QString& name, const QMap<QString, QVariant>& data);
+    void removePresence(const QString& name);
+    
+    void appendChild(Models::Item * child) override;
+    
+protected:
+    void refresh();
+    void changed(int col) override;
+    void _removeChild(int index) override;
+    
+protected:
+    void setState(Shared::Availability p_state);
+    void setJid(const QString p_jid);
+    
 private:
     QString jid;
-    int state;
+    Shared::Availability state;
+    QMap<QString, Presence*> presences;
 };
 
 }

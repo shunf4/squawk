@@ -116,5 +116,15 @@ void Squawk::removeContact(const QString& account, const QString& jid, const QSt
     rosterModel.removeContact(account, jid, group);
 }
 
+void Squawk::addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data)
+{
+    rosterModel.addPresence(account, jid, name, data);
+}
+
+void Squawk::removePresence(const QString& account, const QString& jid, const QString& name)
+{
+    rosterModel.removePresence(account, jid, name);
+}
+
 
 

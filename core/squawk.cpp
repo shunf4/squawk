@@ -80,6 +80,9 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     connect(acc, SIGNAL(removeContact(const QString&)), this, SLOT(onAccountRemoveContact(const QString&)));
     connect(acc, SIGNAL(removeContact(const QString&, const QString&)), this, SLOT(onAccountRemoveContact(const QString&, const QString&)));
     connect(acc, SIGNAL(changeContact(const QString&, const QString&)), this, SLOT(onAccountChangeContact(const QString&, const QString&)));
+    connect(acc, SIGNAL(addPresence(const QString&, const QString&, const QMap<QString, QVariant>&)), 
+            this, SLOT(onAccountAddPresence(const QString&, const QString&, const QMap<QString, QVariant>&)));
+    connect(acc, SIGNAL(removePresence(const QString&, const QString&)), this, SLOT(onAccountRemovePresence(const QString&, const QString&)));
     
     QMap<QString, QVariant> map = {
         {"login", login},
@@ -152,4 +155,16 @@ void Core::Squawk::onAccountRemoveContact(const QString& jid, const QString& gro
 {
     Account* acc = static_cast<Account*>(sender());
     emit removeContact(acc->getName(), jid, group);
+}
+
+void Core::Squawk::onAccountAddPresence(const QString& jid, const QString& name, const QMap<QString, QVariant>& data)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit addPresence(acc->getName(), jid, name, data);
+}
+
+void Core::Squawk::onAccountRemovePresence(const QString& jid, const QString& name)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit removePresence(acc->getName(), jid, name);
 }

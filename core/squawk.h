@@ -31,6 +31,8 @@ signals:
     void removeContact(const QString& account, const QString& jid);
     void removeContact(const QString& account, const QString& jid, const QString& group);
     void changeContact(const QString& account, const QString& jid, const QString& name);
+    void addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
+    void removePresence(const QString& account, const QString& jid, const QString& name);
     
 public slots:
     void start();
@@ -57,6 +59,8 @@ private slots:
     void onAccountRemoveContact(const QString& jid);
     void onAccountRemoveContact(const QString& jid, const QString& group);
     void onAccountChangeContact(const QString& jid, const QString& name);
+    void onAccountAddPresence(const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
+    void onAccountRemovePresence(const QString& jid, const QString& name);
 };
 
 }

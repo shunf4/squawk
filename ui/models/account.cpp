@@ -17,7 +17,7 @@ void Models::Account::setState(int p_state)
 {
     if (state != p_state) {
         state = p_state;
-        emit changed(2);
+        changed(2);
     }
 }
 
@@ -45,7 +45,7 @@ void Models::Account::setLogin(const QString& p_login)
 {
     if (login != p_login) {
         login = p_login;
-        emit changed(3);
+        changed(3);
     }
 }
 
@@ -53,7 +53,7 @@ void Models::Account::setPassword(const QString& p_password)
 {
     if (password != p_password) {
         password = p_password;
-        emit changed(4);
+        changed(4);
     }
 }
 
@@ -61,7 +61,7 @@ void Models::Account::setServer(const QString& p_server)
 {
     if (server != p_server) {
         server = p_server;
-        emit changed(1);
+        changed(1);
     }
 }
 

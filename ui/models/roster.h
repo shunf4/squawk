@@ -30,6 +30,8 @@ public:
     void removeContact(const QString& account, const QString& jid, const QString& group);
     void removeContact(const QString& account, const QString& jid);
     void changeContact(const QString& account, const QString& jid, const QString& name);
+    void addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
+    void removePresence(const QString& account, const QString& jid, const QString& name);
     
     QVariant data ( const QModelIndex& index, int role ) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
@@ -49,6 +51,13 @@ private:
     
 private slots:
     void onAccountDataChanged(const QModelIndex& tl, const QModelIndex& br, const QVector<int>& roles);
+    void onChildChanged(Item* item, int row, int col);
+    void onChildIsAboutToBeInserted(Item* parent, int first, int last);
+    void onChildInserted();
+    void onChildIsAboutToBeRemoved(Item* parent, int first, int last);
+    void onChildRemoved();
+    void onChildIsAboutToBeMoved(Item* source, int first, int last, Item* destination, int newIndex);
+    void onChildMoved();
     
 private:
     class ElId {

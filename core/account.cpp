@@ -1,5 +1,6 @@
 #include "account.h"
 #include <qxmpp/QXmppRosterManager.h>
+#include <QDateTime>
 
 using namespace Core;
 
@@ -15,7 +16,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
 {
     QObject::connect(&client, SIGNAL(connected()), this, SLOT(onClientConnected()));
     QObject::connect(&client, SIGNAL(disconnected()), this, SLOT(onClientDisconnected()));
-    
+    QObject::connect(&client, SIGNAL(presenceReceived(const QXmppPresence&)), this, SLOT(onPresenceReceived(const QXmppPresence&)));
     
     QXmppRosterManager& rm = client.rosterManager();
     
@@ -23,6 +24,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     QObject::connect(&rm, SIGNAL(itemAdded(const QString&)), this, SLOT(onRosterItemAdded(const QString&)));
     QObject::connect(&rm, SIGNAL(itemRemoved(const QString&)), this, SLOT(onRosterItemRemoved(const QString&)));
     QObject::connect(&rm, SIGNAL(itemChanged(const QString&)), this, SLOT(onRosterItemChanged(const QString&)));
+    //QObject::connect(&rm, SIGNAL(presenceChanged(const QString&, const QString&)), this, SLOT(onRosterPresenceChanged(const QString&, const QString&)));
 }
 
 Account::~Account()
@@ -116,6 +118,9 @@ void Core::Account::onRosterItemChanged(const QString& bareJid)
     QSet<QString> newGroups = re.groups();
     QSet<QString> oldGroups;
     
+    
+    QStringList res = rm.getResources(bareJid);
+    
     emit changeContact(bareJid, re.name());
     
     for (std::map<QString, std::set<QString>>::iterator itr = groups.begin(), end = groups.end(); itr != end; ++itr) {
@@ -202,5 +207,52 @@ void Core::Account::addedAccount(const QString& jid)
     if (grCount == 0) {
         emit addContact(jid, re.name(), "");
     }
+}
+
+void Core::Account::onPresenceReceived(const QXmppPresence& presence)
+{
+    QString id = presence.from();
+    QStringList comps = id.split("/");
+    QString jid = comps.front();
+    QString resource = comps.back();
+    
+    switch (presence.type()) {
+        case QXmppPresence::Error:
+            qDebug() << "An error reported by presence from " << id;
+            break;
+        case QXmppPresence::Available:{
+            QDateTime lastInteraction = presence.lastUserInteraction();
+            if (!lastInteraction.isValid()) {
+                lastInteraction = QDateTime::currentDateTime();
+            }
+            emit addPresence(jid, resource, {
+                {"lastActivity", lastInteraction},
+                {"availability", presence.availableStatusType()},           //TODO check and handle invisible
+                {"status", presence.statusText()}
+            });
+        }
+            break;
+        case QXmppPresence::Unavailable:
+            emit removePresence(jid, resource);
+            break;
+        case QXmppPresence::Subscribe:
+            qDebug("xmpp presence \"subscribe\" received, do not yet know what to do, skipping");
+        case QXmppPresence::Subscribed:
+            qDebug("xmpp presence \"subscribed\" received, do not yet know what to do, skipping");
+        case QXmppPresence::Unsubscribe:
+            qDebug("xmpp presence \"unsubscribe\" received, do not yet know what to do, skipping");
+        case QXmppPresence::Unsubscribed:
+            qDebug("xmpp presence \"unsubscribed\" received, do not yet know what to do, skipping");
+        case QXmppPresence::Probe:
+            qDebug("xmpp presence \"probe\" received, do not yet know what to do, skipping");
+            break;
+    }
+}
+
+void Core::Account::onRosterPresenceChanged(const QString& bareJid, const QString& resource)
+{
+    //not used for now;
+    qDebug() << "presence changed for " << bareJid << " resource " << resource;
+    const QXmppPresence& presence = client.rosterManager().getPresence(bareJid, resource);
 }
 

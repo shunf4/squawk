@@ -17,6 +17,7 @@ class Item : public QObject{
             group,
             contact,
             conversation,
+            presence,
             root
         };
         
@@ -24,11 +25,17 @@ class Item : public QObject{
         ~Item();
         
     signals:
-        void changed(int col);
-    
+        void childChanged(Item* item, int row, int col);
+        void childIsAboutToBeInserted(Item* parent, int first, int last);
+        void childInserted();
+        void childIsAboutToBeRemoved(Item* parent, int first, int last);
+        void childRemoved();
+        void childIsAboutToBeMoved(Item* source, int first, int last, Item* destination, int newIndex);
+        void childMoved();
+        
     public:
-        void appendChild(Item *child);
-        void removeChild(int index);
+        virtual void appendChild(Item *child);
+        virtual void removeChild(int index);
         QString getName() const;
         void setName(const QString& name);
         
@@ -38,16 +45,32 @@ class Item : public QObject{
         virtual QVariant data(int column) const;
         int row() const;
         Item *parentItem();
-        void setParent(Item* p_parent);
         
         const Type type;
+        
+    protected:
+        virtual void changed(int col);
+        virtual void _removeChild(int index);
         
     protected:
         QString name;
         std::deque<Item*> childItems;
         Item* parent;
+        
+    protected slots:
     };
 
+}
+
+namespace Shared {
+    static const std::deque<QString> AvailabilityIcons = {
+        "im-user-online",
+        "im-user-away",
+        "im-user-away",
+        "im-user-busy",
+        "im-user-online",
+        "im-user-offline"
+    };
 }
 
 #endif // MODELS_ITEM_H
