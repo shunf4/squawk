@@ -62,15 +62,4 @@ class Item : public QObject{
 
 }
 
-namespace Shared {
-    static const std::deque<QString> AvailabilityIcons = {
-        "im-user-online",
-        "im-user-away",
-        "im-user-away",
-        "im-user-busy",
-        "im-user-online",
-        "im-user-offline"
-    };
-}
-
 #endif // MODELS_ITEM_H

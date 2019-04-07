@@ -1,12 +1,17 @@
 #include "contact.h"
 #include <QDebug>
 
-Models::Contact::Contact(const QMap<QString, QVariant>& data, Models::Item* parentItem):
+Models::Contact::Contact(const QString& p_jid ,const QMap<QString, QVariant> &data, Item *parentItem):
     Item(Item::contact, data, parentItem),
-    jid(data.value("jid").toString()),
-    state(Shared::offline),
+    jid(p_jid),
+    availability(Shared::offline),
+    state(Shared::none),
     presences()
 {
+    QMap<QString, QVariant>::const_iterator itr = data.find("state");
+    if (itr != data.end()) {
+        setState(itr.value().toUInt());
+    }
 }
 
 Models::Contact::~Contact()
@@ -26,22 +31,42 @@ void Models::Contact::setJid(const QString p_jid)
     }
 }
 
-Shared::Availability Models::Contact::getState() const
+void Models::Contact::setAvailability(unsigned int p_state)
 {
-    return state;
+    if (p_state <= Shared::availabilityHighest) {
+        Shared::Availability state = static_cast<Shared::Availability>(p_state);
+        setAvailability(state);
+    } else {
+        qDebug() << "An attempt to set invalid availability " << p_state << " to the contact " << jid;
+    }
 }
 
-void Models::Contact::setState(Shared::Availability p_state)
+void Models::Contact::setState(unsigned int p_state)
 {
-    if (state != p_state) {
-        state = p_state;
-        changed(2);
+    if (p_state <= Shared::subscriptionStateHighest) {
+        Shared::SubscriptionState state = static_cast<Shared::SubscriptionState>(p_state);
+        setState(state);
+    } else {
+        qDebug() << "An attempt to set invalid subscription state " << p_state << " to the contact " << jid;
+    }
+}
+
+Shared::Availability Models::Contact::getAvailability() const
+{
+    return availability;
+}
+
+void Models::Contact::setAvailability(Shared::Availability p_state)
+{
+    if (availability != p_state) {
+        availability = p_state;
+        changed(3);
     }
 }
 
 int Models::Contact::columnCount() const
 {
-    return 3;
+    return 4;
 }
 
 QVariant Models::Contact::data(int column) const
@@ -56,6 +81,8 @@ QVariant Models::Contact::data(int column) const
         case 1:
             return jid;
         case 2:
+            return availability;
+        case 3:
             return state;
         default:
             return QVariant();
@@ -68,14 +95,10 @@ void Models::Contact::update(const QString& field, const QVariant& value)
         setName(value.toString());
     } else if (field == "jid") {
         setJid(value.toString());
+    } else if (field == "availability") {
+        setAvailability(value.toUInt());
     } else if (field == "state") {
-        unsigned int iState = value.toUInt();
-        if (iState <= Shared::availabilityHighest) {
-            Shared::Availability state = static_cast<Shared::Availability>(iState);
-            setState(state);
-        } else {
-            qDebug("An attempt to set wrong state to the contact");
-        }
+        setState(value.toUInt());
     }
 }
 
@@ -123,7 +146,9 @@ void Models::Contact::refresh()
     }
     
     if (presence != 0) {
-        setState(presence->getAvailability());
+        setAvailability(presence->getAvailability());
+    } else {
+        setAvailability(Shared::offline);
     }
 }
 
@@ -143,4 +168,26 @@ void Models::Contact::changed(int col)
 {
     Item::changed(col);
     refresh();
+}
+
+Shared::SubscriptionState Models::Contact::getState() const
+{
+    return state;
+}
+
+void Models::Contact::setState(Shared::SubscriptionState p_state)
+{
+    if (state != p_state) {
+        state = p_state;
+        changed(2);
+    }
+}
+
+QIcon Models::Contact::getStatusIcon() const
+{
+    if (state == Shared::both) {
+        return QIcon::fromTheme(Shared::availabilityThemeIcons[availability]);
+    } else {
+        return QIcon::fromTheme(Shared::subscriptionStateThemeIcons[state]);
+    }
 }

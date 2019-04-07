@@ -74,12 +74,15 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     amap.insert(std::make_pair(name, acc));
     
     connect(acc, SIGNAL(connectionStateChanged(int)), this, SLOT(onAccountConnectionStateChanged(int)));
-    connect(acc, SIGNAL(addContact(const QString&, const QString&, const QString&)), this, SLOT(onAccountAddContact(const QString&, const QString&, const QString&)));
+    connect(acc, SIGNAL(availabilityChanged(int)), this, SLOT(onAccountAvailabilityChanged(int)));
+    connect(acc, SIGNAL(addContact(const QString&, const QString&, const QMap<QString, QVariant>&)), 
+            this, SLOT(onAccountAddContact(const QString&, const QString&, const QMap<QString, QVariant>&)));
     connect(acc, SIGNAL(addGroup(const QString&)), this, SLOT(onAccountAddGroup(const QString&)));
     connect(acc, SIGNAL(removeGroup(const QString&)), this, SLOT(onAccountRemoveGroup(const QString&)));
     connect(acc, SIGNAL(removeContact(const QString&)), this, SLOT(onAccountRemoveContact(const QString&)));
     connect(acc, SIGNAL(removeContact(const QString&, const QString&)), this, SLOT(onAccountRemoveContact(const QString&, const QString&)));
-    connect(acc, SIGNAL(changeContact(const QString&, const QString&)), this, SLOT(onAccountChangeContact(const QString&, const QString&)));
+    connect(acc, SIGNAL(changeContact(const QString&, const QMap<QString, QVariant>&)), 
+            this, SLOT(onAccountChangeContact(const QString&, const QMap<QString, QVariant>&)));
     connect(acc, SIGNAL(addPresence(const QString&, const QString&, const QMap<QString, QVariant>&)), 
             this, SLOT(onAccountAddPresence(const QString&, const QString&, const QMap<QString, QVariant>&)));
     connect(acc, SIGNAL(removePresence(const QString&, const QString&)), this, SLOT(onAccountRemovePresence(const QString&, const QString&)));
@@ -89,9 +92,24 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
         {"server", server},
         {"name", name},
         {"password", password},
-        {"state", Shared::disconnected}
+        {"state", Shared::disconnected},
+        {"offline", Shared::offline}
     };
     emit newAccount(map);
+}
+
+void Core::Squawk::changeState(int p_state)
+{
+    Shared::Availability avail;
+    if (p_state < Shared::availabilityLowest && p_state > Shared::availabilityHighest) {
+        qDebug("An attempt to set invalid availability to Squawk core, skipping");
+    }
+    avail = static_cast<Shared::Availability>(p_state);
+    state = avail;
+    
+    for (std::deque<Account*>::iterator itr = accounts.begin(), end = accounts.end(); itr != end; ++itr) {
+        (*itr)->setAvailability(state);
+    }
 }
 
 void Core::Squawk::connectAccount(const QString& account)
@@ -121,10 +139,10 @@ void Core::Squawk::onAccountConnectionStateChanged(int state)
     emit accountConnectionStateChanged(acc->getName(), state);
 }
 
-void Core::Squawk::onAccountAddContact(const QString& jid, const QString& name, const QString& group)
+void Core::Squawk::onAccountAddContact(const QString& jid, const QString& group, const QMap<QString, QVariant>& data)
 {
     Account* acc = static_cast<Account*>(sender());
-    emit addContact(acc->getName(), jid, name, group);
+    emit addContact(acc->getName(), jid, group, data);
 }
 
 void Core::Squawk::onAccountAddGroup(const QString& name)
@@ -139,10 +157,10 @@ void Core::Squawk::onAccountRemoveGroup(const QString& name)
     emit removeGroup(acc->getName(), name);
 }
 
-void Core::Squawk::onAccountChangeContact(const QString& jid, const QString& name)
+void Core::Squawk::onAccountChangeContact(const QString& jid, const QMap<QString, QVariant>& data)
 {
     Account* acc = static_cast<Account*>(sender());
-    emit changeContact(acc->getName(), jid, name);
+    emit changeContact(acc->getName(), jid, data);
 }
 
 void Core::Squawk::onAccountRemoveContact(const QString& jid)
@@ -167,4 +185,10 @@ void Core::Squawk::onAccountRemovePresence(const QString& jid, const QString& na
 {
     Account* acc = static_cast<Account*>(sender());
     emit removePresence(acc->getName(), jid, name);
+}
+
+void Core::Squawk::onAccountAvailabilityChanged(int state)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit accountAvailabilityChanged(acc->getName(), state);
 }

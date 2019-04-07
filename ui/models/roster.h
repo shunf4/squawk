@@ -26,10 +26,10 @@ public:
     void updateAccount(const QString& account, const QString& field, const QVariant& value);
     void addGroup(const QString& account, const QString& name);
     void removeGroup(const QString& account, const QString& name);
-    void addContact(const QString& account, const QString& jid, const QString& name, const QString& group);
+    void addContact(const QString& account, const QString& jid, const QString& group, const QMap<QString, QVariant>& data);
     void removeContact(const QString& account, const QString& jid, const QString& group);
     void removeContact(const QString& account, const QString& jid);
-    void changeContact(const QString& account, const QString& jid, const QString& name);
+    void changeContact(const QString& account, const QString& jid, const QMap<QString, QVariant>& data);
     void addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& account, const QString& jid, const QString& name);
     

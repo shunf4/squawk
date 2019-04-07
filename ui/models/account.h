@@ -4,6 +4,7 @@
 #include "../../global.h"
 #include "item.h"
 #include <QVariant>
+#include <QIcon>
 
 namespace Models {
     class Account : public Item {
@@ -11,8 +12,9 @@ namespace Models {
         explicit Account(const QMap<QString, QVariant> &data, Item *parentItem = 0);
         ~Account();
         
-        void setState(int p_state);
-        int getState() const;
+        void setState(unsigned int p_state);
+        void setState(Shared::ConnectionState p_state);
+        Shared::ConnectionState getState() const;
         
         void setLogin(const QString& p_login);
         QString getLogin() const;
@@ -23,6 +25,12 @@ namespace Models {
         void setPassword(const QString& p_password);
         QString getPassword() const;
         
+        void setAvailability(Shared::Availability p_avail);
+        void setAvailability(unsigned int p_avail);
+        Shared::Availability getAvailability() const;
+        
+        QIcon getStatusIcon() const;
+        
         QVariant data(int column) const override;
         int columnCount() const override;
         
@@ -32,7 +40,8 @@ namespace Models {
         QString login;
         QString password;
         QString server;
-        int state;
+        Shared::ConnectionState state;
+        Shared::Availability availability;
     };
 
 }

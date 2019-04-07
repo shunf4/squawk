@@ -108,7 +108,7 @@ QVariant Models::Item::data(int column) const
 void Models::Item::removeChild(int index)
 {
     emit childIsAboutToBeRemoved(this, index, index);
-    removeChild(index);
+    _removeChild(index);
     emit childRemoved();
 }
 

@@ -7,13 +7,16 @@ using namespace Core;
 Account::Account(const QString& p_login, const QString& p_server, const QString& p_password, const QString& p_name, QObject* parent):
     QObject(parent),
     name(p_name),
-    login(p_login),
-    server(p_server),
-    password(p_password),
     client(),
+    config(),
+    presence(),
     state(Shared::disconnected),
     groups()
 {
+    config.setUser(p_login);
+    config.setDomain(p_server);
+    config.setPassword(p_password);
+    
     QObject::connect(&client, SIGNAL(connected()), this, SLOT(onClientConnected()));
     QObject::connect(&client, SIGNAL(disconnected()), this, SLOT(onClientDisconnected()));
     QObject::connect(&client, SIGNAL(presenceReceived(const QXmppPresence&)), this, SLOT(onPresenceReceived(const QXmppPresence&)));
@@ -39,7 +42,7 @@ Shared::ConnectionState Core::Account::getState() const
 void Core::Account::connect()
 {
     if (state == Shared::disconnected) {
-        client.connectToServer(login + "@" + server, password);
+        client.connectToServer(config, presence);
         state = Shared::connecting;
         emit connectionStateChanged(state);
     } else {
@@ -83,17 +86,17 @@ QString Core::Account::getName() const
 
 QString Core::Account::getLogin() const
 {
-    return login;
+    return config.user();
 }
 
 QString Core::Account::getPassword() const
 {
-    return password;
+    return config.password();
 }
 
 QString Core::Account::getServer() const
 {
-    return server;
+    return config.domain();
 }
 
 void Core::Account::onRosterReceived()
@@ -120,8 +123,16 @@ void Core::Account::onRosterItemChanged(const QString& bareJid)
     
     
     QStringList res = rm.getResources(bareJid);
+    unsigned int state = re.subscriptionType();
+    if (state == QXmppRosterIq::Item::NotSet) {
+        state = Shared::unknown;
+    }
+    QMap<QString, QVariant> cData({
+        {"name", re.name()},
+        {"state", state}
+    });
     
-    emit changeContact(bareJid, re.name());
+    emit changeContact(bareJid, cData);
     
     for (std::map<QString, std::set<QString>>::iterator itr = groups.begin(), end = groups.end(); itr != end; ++itr) {
         std::set<QString>& contacts = itr->second;
@@ -153,7 +164,7 @@ void Core::Account::onRosterItemChanged(const QString& bareJid)
             emit addGroup(groupName);
         }
         cItr->second.insert(bareJid);
-        emit addContact(bareJid, re.name(), groupName);
+        emit addContact(bareJid, groupName, cData);
     }
     
     for (QSet<QString>::iterator itr = removeGroups.begin(), end = removeGroups.end(); itr != end; ++itr) {
@@ -191,6 +202,14 @@ void Core::Account::addedAccount(const QString& jid)
     QXmppRosterManager& rm = client.rosterManager();
     QXmppRosterIq::Item re = rm.getRosterEntry(jid);
     QSet<QString> gr = re.groups();
+    unsigned int state = re.subscriptionType();
+    if (state == QXmppRosterIq::Item::NotSet) {
+        state = Shared::unknown;
+    }
+    QMap<QString, QVariant> cData({
+        {"name", re.name()},
+        {"state", state}
+    });
     int grCount = 0;
     for (QSet<QString>::const_iterator itr = gr.begin(), end = gr.end(); itr != end; ++itr) {
         const QString& groupName = *itr;
@@ -200,12 +219,12 @@ void Core::Account::addedAccount(const QString& jid)
             emit addGroup(groupName);
         }
         gItr->second.insert(jid);
-        emit addContact(jid, re.name(), groupName);
+        emit addContact(jid, groupName, cData);
         grCount++;
     }
     
     if (grCount == 0) {
-        emit addContact(jid, re.name(), "");
+        emit addContact(jid, "", cData);
     }
 }
 
@@ -215,6 +234,16 @@ void Core::Account::onPresenceReceived(const QXmppPresence& presence)
     QStringList comps = id.split("/");
     QString jid = comps.front();
     QString resource = comps.back();
+    
+    QString myJid = getLogin() + "@" + getServer();
+    
+    if (jid == myJid) {
+        if (resource == getResource()) {
+            emit availabilityChanged(presence.availableStatusType());
+        } else {
+            qDebug() << "Received a presence for another resource of my " << name << " account, skipping";
+        }
+    }
     
     switch (presence.type()) {
         case QXmppPresence::Error:
@@ -256,3 +285,48 @@ void Core::Account::onRosterPresenceChanged(const QString& bareJid, const QStrin
     const QXmppPresence& presence = client.rosterManager().getPresence(bareJid, resource);
 }
 
+void Core::Account::setLogin(const QString& p_login)
+{
+    config.setUser(p_login);
+}
+
+void Core::Account::setName(const QString& p_name)
+{
+    name = p_name;
+}
+
+void Core::Account::setPassword(const QString& p_password)
+{
+    config.setPassword(p_password);
+}
+
+void Core::Account::setServer(const QString& p_server)
+{
+    config.setDomain(p_server);
+}
+
+Shared::Availability Core::Account::getAvailability() const
+{
+    QXmppPresence::AvailableStatusType pres = presence.availableStatusType();
+    return static_cast<Shared::Availability>(pres);         //TODO that's a shame! gotta do something about it
+}
+
+void Core::Account::setAvailability(Shared::Availability avail)
+{
+    QXmppPresence::AvailableStatusType pres = static_cast<QXmppPresence::AvailableStatusType>(avail);
+    
+    presence.setAvailableStatusType(pres);
+    if (state != Shared::disconnected) {        //TODO not sure how to do here - changing state may cause connection or disconnection
+        client.setClientPresence(presence);
+    }
+}
+
+QString Core::Account::getResource() const
+{
+    return config.resource();
+}
+
+void Core::Account::setResource(const QString& p_resource)
+{
+    config.setResource(p_resource);
+}

@@ -36,27 +36,11 @@
        <bool>false</bool>
       </property>
       <property name="currentText">
-       <string>Disconnected</string>
+       <string/>
       </property>
       <property name="currentIndex">
-       <number>1</number>
+       <number>-1</number>
       </property>
-      <item>
-       <property name="text">
-        <string>Available</string>
-       </property>
-       <property name="icon">
-        <iconset theme="im-user-online"/>
-       </property>
-      </item>
-      <item>
-       <property name="text">
-        <string>Disconnected</string>
-       </property>
-       <property name="icon">
-        <iconset theme="im-user-offline"/>
-       </property>
-      </item>
      </widget>
     </item>
     <item row="1" column="0">

@@ -28,18 +28,21 @@ signals:
     void newAccountRequest(const QMap<QString, QVariant>&);
     void connectAccount(const QString&);
     void disconnectAccount(const QString&);
+    void changeState(int state);
     
 public slots:
     void newAccount(const QMap<QString, QVariant>& account);
     void accountConnectionStateChanged(const QString& account, int state);
+    void accountAvailabilityChanged(const QString& account, int state);
     void addGroup(const QString& account, const QString& name);
     void removeGroup(const QString& account, const QString& name);
-    void addContact(const QString& account, const QString& jid, const QString& name, const QString& group);
+    void addContact(const QString& account, const QString& jid, const QString& group, const QMap<QString, QVariant>& data);
     void removeContact(const QString& account, const QString& jid, const QString& group);
     void removeContact(const QString& account, const QString& jid);
-    void changeContact(const QString& account, const QString& jid, const QString& name);
+    void changeContact(const QString& account, const QString& jid, const QMap<QString, QVariant>& data);
     void addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& account, const QString& jid, const QString& name);
+    void stateChanged(int state);
     
 private:
     QScopedPointer<Ui::Squawk> m_ui;

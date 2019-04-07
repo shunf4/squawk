@@ -1,6 +1,7 @@
 #include "squawk.h"
 #include "ui_squawk.h"
 #include <QDebug>
+#include <QIcon>
 
 Squawk::Squawk(QWidget *parent) :
     QMainWindow(parent),
@@ -10,6 +11,11 @@ Squawk::Squawk(QWidget *parent) :
 {
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
+    
+    for (int i = 0; i < Shared::availabilityNames.size(); ++i) {
+        m_ui->comboBox->addItem(QIcon::fromTheme(Shared::availabilityThemeIcons[i]), Shared::availabilityNames[i]);
+    }
+    m_ui->comboBox->setCurrentIndex(Shared::offline);
     
     connect(m_ui->actionAccounts, SIGNAL(triggered()), this, SLOT(onAccounts()));
     connect(m_ui->comboBox, SIGNAL(activated(int)), this, SLOT(onComboboxActivated(int)));
@@ -58,9 +64,10 @@ void Squawk::newAccount(const QMap<QString, QVariant>& account)
 
 void Squawk::onComboboxActivated(int index)
 {
-    if (index == 0) {
+    if (index != Shared::offline) {
         int size = rosterModel.accountsModel->rowCount(QModelIndex());
         if (size > 0) {
+            emit changeState(index);
             for (int i = 0; i < size; ++i) {
                 Models::Account* acc = rosterModel.accountsModel->getAccount(i);
                 if (acc->getState() == Shared::disconnected) {
@@ -68,9 +75,10 @@ void Squawk::onComboboxActivated(int index)
                 }
             }
         } else {
-            m_ui->comboBox->setCurrentIndex(1);
+            m_ui->comboBox->setCurrentIndex(Shared::offline);
         }
-    } else if (index == 1) {
+    } else {
+        emit changeState(index);
         int size = rosterModel.accountsModel->rowCount(QModelIndex());
         for (int i = 0; i != size; ++i) {
             Models::Account* acc = rosterModel.accountsModel->getAccount(i);
@@ -86,9 +94,14 @@ void Squawk::accountConnectionStateChanged(const QString& account, int state)
     rosterModel.updateAccount(account, "state", state);
 }
 
-void Squawk::addContact(const QString& account, const QString& jid, const QString& name, const QString& group)
+void Squawk::accountAvailabilityChanged(const QString& account, int state)
 {
-    rosterModel.addContact(account, jid, name, group);
+    rosterModel.updateAccount(account, "availability", state);
+}
+
+void Squawk::addContact(const QString& account, const QString& jid, const QString& group, const QMap<QString, QVariant>& data)
+{
+    rosterModel.addContact(account, jid, group, data);
 }
 
 void Squawk::addGroup(const QString& account, const QString& name)
@@ -101,9 +114,9 @@ void Squawk::removeGroup(const QString& account, const QString& name)
     rosterModel.removeGroup(account, name);
 }
 
-void Squawk::changeContact(const QString& account, const QString& jid, const QString& name)
+void Squawk::changeContact(const QString& account, const QString& jid, const QMap<QString, QVariant>& data)
 {
-    rosterModel.changeContact(account, jid, name);
+    rosterModel.changeContact(account, jid, data);
 }
 
 void Squawk::removeContact(const QString& account, const QString& jid)
@@ -126,5 +139,8 @@ void Squawk::removePresence(const QString& account, const QString& jid, const QS
     rosterModel.removePresence(account, jid, name);
 }
 
-
+void Squawk::stateChanged(int state)
+{
+    m_ui->comboBox->setCurrentIndex(state);
+}
 

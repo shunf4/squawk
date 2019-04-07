@@ -25,14 +25,16 @@ signals:
     void quit();
     void newAccount(const QMap<QString, QVariant>&);
     void accountConnectionStateChanged(const QString&, int);
+    void accountAvailabilityChanged(const QString&, int);
     void addGroup(const QString& account, const QString& name);
     void removeGroup(const QString& account, const QString& name);
-    void addContact(const QString& account, const QString& jid, const QString& name, const QString& group);
+    void addContact(const QString& account, const QString& jid, const QString& group, const QMap<QString, QVariant>& data);
     void removeContact(const QString& account, const QString& jid);
     void removeContact(const QString& account, const QString& jid, const QString& group);
-    void changeContact(const QString& account, const QString& jid, const QString& name);
+    void changeContact(const QString& account, const QString& jid, const QMap<QString, QVariant>& data);
     void addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& account, const QString& jid, const QString& name);
+    void stateChanged(int state);
     
 public slots:
     void start();
@@ -40,6 +42,7 @@ public slots:
     void newAccountRequest(const QMap<QString, QVariant>& map);
     void connectAccount(const QString& account);
     void disconnectAccount(const QString& account);
+    void changeState(int state);
     
 private:
     typedef std::deque<Account*> Accounts;
@@ -47,18 +50,20 @@ private:
     
     Accounts accounts;
     AccountsMap amap;
+    Shared::Availability state;
     
 private:
     void addAccount(const QString& login, const QString& server, const QString& password, const QString& name);
     
 private slots:
     void onAccountConnectionStateChanged(int state);
+    void onAccountAvailabilityChanged(int state);
     void onAccountAddGroup(const QString& name);
     void onAccountRemoveGroup(const QString& name);
-    void onAccountAddContact(const QString& jid, const QString& name, const QString& group);
+    void onAccountAddContact(const QString& jid, const QString& group, const QMap<QString, QVariant>& data);
     void onAccountRemoveContact(const QString& jid);
     void onAccountRemoveContact(const QString& jid, const QString& group);
-    void onAccountChangeContact(const QString& jid, const QString& name);
+    void onAccountChangeContact(const QString& jid, const QMap<QString, QVariant>& data);
     void onAccountAddPresence(const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void onAccountRemovePresence(const QString& jid, const QString& name);
 };

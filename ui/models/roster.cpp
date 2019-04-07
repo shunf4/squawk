@@ -59,28 +59,17 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
             switch (item->type) {
                 case Item::account:{
                     Account* acc = static_cast<Account*>(item);
-                    int state = acc->getState();
-                    switch (state) {
-                        case Shared::disconnected:
-                            result = QIcon::fromTheme("im-user-offline");
-                            break;
-                        case Shared::connecting:
-                            result = QIcon::fromTheme(Shared::ConnectionStateThemeIcons[state]);
-                            break;
-                        case Shared::connected:
-                            result = QIcon::fromTheme("im-user-online");
-                            break;
-                    }
+                    result = acc->getStatusIcon();
                 }
                     break;
                 case Item::contact:{
                     Contact* contact = static_cast<Contact*>(item);
-                    result = QIcon::fromTheme(Shared::AvailabilityIcons[contact->getState()]);
+                    result = contact->getStatusIcon();
                 }
                     break;
                 case Item::presence:{
                     Presence* presence = static_cast<Presence*>(item);
-                    result = QIcon::fromTheme(Shared::AvailabilityIcons[presence->getAvailability()]);
+                    result = QIcon::fromTheme(Shared::availabilityThemeIcons[presence->getAvailability()]);
                 }
                     break;
                 default:
@@ -247,7 +236,7 @@ void Models::Roster::addGroup(const QString& account, const QString& name)
     }
 }
 
-void Models::Roster::addContact(const QString& account, const QString& jid, const QString& name, const QString& group)
+void Models::Roster::addContact(const QString& account, const QString& jid, const QString& group, const QMap<QString, QVariant>& data)
 {
     Item* parent;
     Account* acc;
@@ -257,7 +246,7 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
     {
         std::map<QString, Account*>::iterator itr = accounts.find(account);
         if (itr == accounts.end()) {
-            qDebug() << "An attempt to add a contact " << name << " to non existing account " << account << ", skipping";
+            qDebug() << "An attempt to add a contact " << jid << " to non existing account " << account << ", skipping";
             return;
         }
         acc = itr->second;
@@ -268,7 +257,7 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
         std::multimap<ElId, Contact*>::iterator eItr = contacts.upper_bound(id);
         while (itr != eItr) {
             if (itr->second->parentItem() == acc) {
-                qDebug() << "An attempt to add a contact " << name << " ungrouped to non the account " << account << " for the second time, skipping";
+                qDebug() << "An attempt to add a contact " << jid << " ungrouped to non the account " << account << " for the second time, skipping";
                 return;
             }
         }
@@ -276,7 +265,7 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
     } else {
         std::map<ElId, Item*>::iterator itr = groups.find({account, group});
         if (itr == groups.end()) {
-            qDebug() << "An attempt to add a contact " << name << " to non existing group " << group << ", skipping";
+            qDebug() << "An attempt to add a contact " << jid << " to non existing group " << group << ", skipping";
             return;
         }
         
@@ -287,7 +276,7 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
             if (item->type == Item::contact) {
                 Contact* ca = static_cast<Contact*>(item);
                 if (ca->getJid() == jid) {
-                    qDebug() << "An attempt to add a contact " << name << " to the group " << group << " for the second time, skipping";
+                    qDebug() << "An attempt to add a contact " << jid << " to the group " << group << " for the second time, skipping";
                     return;
                 }
             }
@@ -298,7 +287,7 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
             if (item->type == Item::contact) {
                 Contact* ca = static_cast<Contact*>(item);
                 if (ca->getJid() == jid) {
-                    qDebug() << "An attempt to add a already existing contact " << name << " to the group " << group << ", contact will be moved from ungrouped contacts of " << account;
+                    qDebug() << "An attempt to add a already existing contact " << jid << " to the group " << group << ", contact will be moved from ungrouped contacts of " << account;
                     
                     parent->appendChild(ca);
                     return;
@@ -307,7 +296,7 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
         }
         
     }
-    contact = new Contact({{"name", name}, {"jid", jid}, {"state", 0}});
+    contact = new Contact(jid, data);
     parent->appendChild(contact);
     contacts.insert(std::make_pair(id, contact));
 }
@@ -359,14 +348,16 @@ void Models::Roster::removeGroup(const QString& account, const QString& name)
     delete item;
 }
 
-void Models::Roster::changeContact(const QString& account, const QString& jid, const QString& name)
+void Models::Roster::changeContact(const QString& account, const QString& jid, const QMap<QString, QVariant>& data)
 {
     ElId id(account, jid);
     std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(id);
     std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(id);
     
     for (; cBeg != cEnd; ++cBeg) {
-        cBeg->second->setName(name);
+        for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
+            cBeg->second->update(itr.key(), itr.value());;
+        }
     }
 }
 
@@ -430,7 +421,7 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
 
 void Models::Roster::onChildChanged(Models::Item* item, int row, int col)
 {
-    QModelIndex index = createIndex(row, col, item);
+    QModelIndex index = createIndex(row, 0, item);
     emit dataChanged(index, index);
 }
 
