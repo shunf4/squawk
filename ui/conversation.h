@@ -21,20 +21,34 @@
 
 #include <QWidget>
 #include <QScopedPointer>
+#include "../global.h"
+#include "models/contact.h"
 
 namespace Ui
 {
 class Conversation;
 }
 
-/**
- * @todo write docs
- */
 class Conversation : public QWidget
 {
     Q_OBJECT
-
+public:
+    Conversation(Models::Contact* p_contact, QWidget* parent = 0);
+    ~Conversation();
+    
+    QString getJid() const;
+    QString getAccount() const;
+    
+protected:
+    void setState(Shared::Availability state);
+    void setStatus(const QString& status);
+    void setName(const QString& name);
+    
+protected slots:
+    void onContactChanged(Models::Item* item, int row, int col);
+    
 private:
+    Models::Contact* contact;
     QScopedPointer<Ui::Conversation> m_ui;
 };
 

@@ -63,7 +63,7 @@ void Models::Accounts::addAccount(Account* account)
 {
     beginInsertRows(QModelIndex(), accs.size(), accs.size());
     accs.push_back(account);
-    connect(account, SIGNAL(childChanged(Item*, int, int)), this, SLOT(onAccountChanged(Item*, int, int)));
+    connect(account, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onAccountChanged(Models::Item*, int, int)));
     endInsertRows();
 }
 

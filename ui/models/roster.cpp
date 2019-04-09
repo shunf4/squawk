@@ -17,7 +17,7 @@ Models::Roster::Roster(QObject* parent):
             SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)), 
             this, 
             SLOT(onAccountDataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)));
-    connect(root, SIGNAL(childChanged(Item*, int, int)), this, SLOT(onChildChanged(Item*, int, int)));
+    connect(root, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onChildChanged(Models::Item*, int, int)));
     connect(root, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SLOT(onChildIsAboutToBeInserted(Item*, int, int)));
     connect(root, SIGNAL(childInserted()), this, SLOT(onChildInserted()));
     connect(root, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SLOT(onChildIsAboutToBeRemoved(Item*, int, int)));

@@ -18,3 +18,68 @@
 
 #include "conversation.h"
 #include "ui_conversation.h"
+#include <QDebug>
+
+Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
+    QWidget(parent),
+    contact(p_contact),
+    m_ui(new Ui::Conversation)
+{
+    m_ui->setupUi(this);
+    m_ui->splitter->setSizes({300, 0});
+    m_ui->splitter->setStretchFactor(1, 0);
+    
+    setName(p_contact->getName());
+    setState(p_contact->getAvailability());
+    
+    connect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
+}
+
+Conversation::~Conversation()
+{
+    disconnect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
+}
+
+void Conversation::setName(const QString& name)
+{
+    if (name == "") {
+        m_ui->nameLabel->setText(getJid());
+    } else {
+        m_ui->nameLabel->setText(name);
+    }
+}
+
+void Conversation::setState(Shared::Availability state)
+{
+    m_ui->statusIcon->setPixmap(QIcon::fromTheme(Shared::availabilityThemeIcons[state]).pixmap(50));
+    m_ui->statusIcon->setToolTip(Shared::availabilityNames[state]);
+}
+
+void Conversation::setStatus(const QString& status)
+{
+    m_ui->statusLabel->setText(status);
+}
+
+QString Conversation::getAccount() const
+{
+    return contact->getAccountName();
+}
+
+QString Conversation::getJid() const
+{
+    return contact->getJid();
+}
+
+void Conversation::onContactChanged(Models::Item* item, int row, int col)
+{
+    if (item == contact) {
+        switch (col) {
+            case 0:
+                setName(contact->getName());
+                break;
+            case 3:
+                setState(contact->getAvailability());
+                break;
+        }
+    }
+}

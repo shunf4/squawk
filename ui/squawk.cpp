@@ -7,7 +7,8 @@ Squawk::Squawk(QWidget *parent) :
     QMainWindow(parent),
     m_ui(new Ui::Squawk),
     accounts(0),
-    rosterModel()
+    rosterModel(),
+    conversations()
 {
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
@@ -19,6 +20,7 @@ Squawk::Squawk(QWidget *parent) :
     
     connect(m_ui->actionAccounts, SIGNAL(triggered()), this, SLOT(onAccounts()));
     connect(m_ui->comboBox, SIGNAL(activated(int)), this, SLOT(onComboboxActivated(int)));
+    connect(m_ui->roster, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(onRosterItemDoubleClicked(const QModelIndex&)));
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
 }
 
@@ -47,6 +49,11 @@ void Squawk::closeEvent(QCloseEvent* event)
     if (accounts != 0) {
         accounts->close();
     }
+    for (Conversations::const_iterator itr = conversations.begin(), end = conversations.end(); itr != end; ++itr) {
+        disconnect(itr->second, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
+        itr->second->close();
+    }
+    conversations.clear();
     
     QMainWindow::closeEvent(event);
 }
@@ -144,3 +151,53 @@ void Squawk::stateChanged(int state)
     m_ui->comboBox->setCurrentIndex(state);
 }
 
+void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
+{
+    if (item.isValid()) {
+        Models::Item* node = static_cast<Models::Item*>(item.internalPointer());
+        Models::Contact* contact = 0;
+        switch (node->type) {
+            case Models::Item::contact:
+                contact = static_cast<Models::Contact*>(node);
+                break;
+            case Models::Item::presence:
+                contact = static_cast<Models::Contact*>(node->parentItem());
+                break;
+            default:
+                m_ui->roster->expand(item);
+                break;
+        }
+        
+        if (contact != 0) {
+            QString jid = contact->getJid();
+            QString account = contact->getAccountName();
+            Models::Roster::ElId id(account, jid);
+            Conversations::const_iterator itr = conversations.find(id);
+            if (itr != conversations.end()) {
+                itr->second->show();
+                itr->second->raise();
+                itr->second->activateWindow();
+            } else {
+                Conversation* conv = new Conversation(contact);
+                
+                conv->setAttribute(Qt::WA_DeleteOnClose);
+                connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
+                
+                conversations.insert(std::make_pair(id, conv));
+                
+                conv->show();
+            }
+        }
+    }
+}
+
+void Squawk::onConversationClosed(QObject* parent)
+{
+    Conversation* conv = static_cast<Conversation*>(sender());
+    Conversations::const_iterator itr = conversations.find({conv->getAccount(), conv->getJid()});
+    if (itr == conversations.end()) {
+        qDebug() << "Conversation has been closed but can not be found among other opened conversations, application is most probably going to crash";
+        return;
+    }
+    conversations.erase(itr);
+}

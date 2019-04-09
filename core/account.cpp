@@ -1,5 +1,6 @@
 #include "account.h"
 #include <qxmpp/QXmppRosterManager.h>
+#include <qxmpp/QXmppMessage.h>
 #include <QDateTime>
 
 using namespace Core;
@@ -20,6 +21,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     QObject::connect(&client, SIGNAL(connected()), this, SLOT(onClientConnected()));
     QObject::connect(&client, SIGNAL(disconnected()), this, SLOT(onClientDisconnected()));
     QObject::connect(&client, SIGNAL(presenceReceived(const QXmppPresence&)), this, SLOT(onPresenceReceived(const QXmppPresence&)));
+    QObject::connect(&client, SIGNAL(messageReceived(const QXmppMessage&)), this, SLOT(onMessageReceived(const QXmppMessage&)));
     
     QXmppRosterManager& rm = client.rosterManager();
     
@@ -329,4 +331,22 @@ QString Core::Account::getResource() const
 void Core::Account::setResource(const QString& p_resource)
 {
     config.setResource(p_resource);
+}
+
+void Core::Account::onMessageReceived(const QXmppMessage& message)
+{
+    qDebug() << "Message received: ";
+    qDebug() << "- from: " << message.from();
+    qDebug() << "- to: " << message.to();
+    qDebug() << "- body: " << message.body();
+    qDebug() << "- type: " << message.type();
+    qDebug() << "- state: " << message.state();
+    qDebug() << "- stamp: " << message.stamp();
+    qDebug() << "- id: " << message.id();
+    qDebug() << "- isAttentionRequested: " << message.isAttentionRequested();
+    qDebug() << "- isReceiptRequested: " << message.isReceiptRequested();
+    qDebug() << "- receiptId: " << message.receiptId();
+    qDebug() << "- subject: " << message.subject();
+    qDebug() << "- thread: " << message.thread();
+    qDebug() << "- isMarkable: " << message.isMarkable();
 }

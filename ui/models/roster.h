@@ -16,9 +16,9 @@ namespace Models
 
 class Roster : public QAbstractItemModel
 {
-    class ElId;
     Q_OBJECT
 public:
+    class ElId;
     Roster(QObject* parent = 0);
     ~Roster();
 
@@ -51,7 +51,7 @@ private:
     
 private slots:
     void onAccountDataChanged(const QModelIndex& tl, const QModelIndex& br, const QVector<int>& roles);
-    void onChildChanged(Item* item, int row, int col);
+    void onChildChanged(Models::Item* item, int row, int col);
     void onChildIsAboutToBeInserted(Item* parent, int first, int last);
     void onChildInserted();
     void onChildIsAboutToBeRemoved(Item* parent, int first, int last);
@@ -59,7 +59,7 @@ private slots:
     void onChildIsAboutToBeMoved(Item* source, int first, int last, Item* destination, int newIndex);
     void onChildMoved();
     
-private:
+public:
     class ElId {
     public:
         ElId (const QString& p_account, const QString& p_name);

@@ -41,7 +41,7 @@ void Models::Item::appendChild(Models::Item* child)
     childItems.push_back(child);
     child->parent = this;
     
-    QObject::connect(child, SIGNAL(childChanged(Item*, int, int)), this, SIGNAL(childChanged(Item*, int, int)));
+    QObject::connect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SIGNAL(childChanged(Models::Item*, int, int)));
     QObject::connect(child, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SIGNAL(childIsAboutToBeInserted(Item*, int, int)));
     QObject::connect(child, SIGNAL(childInserted()), this, SIGNAL(childInserted()));
     QObject::connect(child, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)));
@@ -87,6 +87,11 @@ Models::Item * Models::Item::parentItem()
     return parent;
 }
 
+const Models::Item * Models::Item::parentItemConst() const
+{
+    return parent;
+}
+
 int Models::Item::columnCount() const
 {
     return 1;
@@ -116,7 +121,7 @@ void Models::Item::_removeChild(int index)
 {
     Item* child = childItems[index];
     
-    QObject::connect(child, SIGNAL(childChanged(Item*, int, int)), this, SIGNAL(childChanged(Item*, int, int)));
+    QObject::connect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SIGNAL(childChanged(Models::Item*, int, int)));
     QObject::connect(child, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SIGNAL(childIsAboutToBeInserted(Item*, int, int)));
     QObject::connect(child, SIGNAL(childInserted()), this, SIGNAL(childInserted()));
     QObject::connect(child, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)));

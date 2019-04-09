@@ -30,11 +30,13 @@ public:
     void removePresence(const QString& name);
     
     void appendChild(Models::Item * child) override;
+    QString getAccountName() const;
     
 protected:
-    void refresh();
-    void changed(int col) override;
     void _removeChild(int index) override;
+    
+protected slots:
+    void refresh();
     
 protected:
     void setAvailability(Shared::Availability p_state);

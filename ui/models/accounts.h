@@ -29,7 +29,7 @@ private:
     static std::deque<QString> columns;
     
 private slots:
-    void onAccountChanged(Item* item, int row, int col);
+    void onAccountChanged(Models::Item* item, int row, int col);
     
 };
 }

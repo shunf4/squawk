@@ -25,7 +25,7 @@ class Item : public QObject{
         ~Item();
         
     signals:
-        void childChanged(Item* item, int row, int col);
+        void childChanged(Models::Item* item, int row, int col);
         void childIsAboutToBeInserted(Item* parent, int first, int last);
         void childInserted();
         void childIsAboutToBeRemoved(Item* parent, int first, int last);
@@ -45,6 +45,7 @@ class Item : public QObject{
         virtual QVariant data(int column) const;
         int row() const;
         Item *parentItem();
+        const Item *parentItemConst() const;
         
         const Type type;
         

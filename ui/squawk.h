@@ -8,6 +8,7 @@
 #include <map>
 
 #include "accounts.h"
+#include "conversation.h"
 #include "models/roster.h"
 
 #include "../global.h"
@@ -45,10 +46,12 @@ public slots:
     void stateChanged(int state);
     
 private:
+    typedef std::map<Models::Roster::ElId, Conversation*> Conversations;
     QScopedPointer<Ui::Squawk> m_ui;
     
     Accounts* accounts;
     Models::Roster rosterModel;
+    Conversations conversations;
     
 protected:
     void closeEvent(QCloseEvent * event) override;
@@ -56,7 +59,9 @@ protected:
 private slots:
     void onAccounts();
     void onAccountsClosed(QObject* parent = 0);
+    void onConversationClosed(QObject* parent = 0);
     void onComboboxActivated(int index);
+    void onRosterItemDoubleClicked(const QModelIndex& item);
     
 };
 

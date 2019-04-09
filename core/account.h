@@ -65,6 +65,7 @@ private slots:
     void onRosterItemRemoved(const QString& bareJid);
     void onRosterPresenceChanged(const QString& bareJid, const QString& resource);
     void onPresenceReceived(const QXmppPresence& presence);
+    void onMessageReceived(const QXmppMessage& message);
   
 private:
     void addedAccount(const QString &bareJid);

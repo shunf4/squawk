@@ -81,9 +81,9 @@ QVariant Models::Contact::data(int column) const
         case 1:
             return jid;
         case 2:
-            return availability;
-        case 3:
             return state;
+        case 3:
+            return availability;
         default:
             return QVariant();
     }
@@ -124,6 +124,7 @@ void Models::Contact::removePresence(const QString& name)
     QMap<QString, Presence*>::iterator itr = presences.find(name);
     
     if (itr == presences.end()) {
+        qDebug() << "an attempt to remove non existing presence " << name << " from the contact " << jid << " of account " << getAccountName() << ", skipping";
     } else {
         Presence* pr = itr.value();
         presences.erase(itr);
@@ -154,6 +155,8 @@ void Models::Contact::refresh()
 
 void Models::Contact::_removeChild(int index)
 {
+    Item* child = childItems[index];
+    disconnect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
     Item::_removeChild(index);
     refresh();
 }
@@ -161,12 +164,7 @@ void Models::Contact::_removeChild(int index)
 void Models::Contact::appendChild(Models::Item* child)
 {
     Item::appendChild(child);
-    refresh();
-}
-
-void Models::Contact::changed(int col)
-{
-    Item::changed(col);
+    connect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
     refresh();
 }
 
@@ -191,3 +189,18 @@ QIcon Models::Contact::getStatusIcon() const
         return QIcon::fromTheme(Shared::subscriptionStateThemeIcons[state]);
     }
 }
+
+QString Models::Contact::getAccountName() const
+{
+    const Item* p = this;
+    do {
+        p = p->parentItemConst();
+    } while (p != 0 && p->type != Item::account);
+    
+    if (p == 0) {
+        qDebug() << "An attempt to request account name of the contact " << jid << " but the parent account wasn't found, returning empty string";
+        return "";
+    }
+    return p->getName();
+}
+
