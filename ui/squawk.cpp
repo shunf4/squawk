@@ -184,6 +184,7 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
                 
                 conversations.insert(std::make_pair(id, conv));
+                rosterModel.dropMessages(account, jid);
                 
                 conv->show();
             }
@@ -200,4 +201,17 @@ void Squawk::onConversationClosed(QObject* parent)
         return;
     }
     conversations.erase(itr);
+}
+
+void Squawk::accountMessage(const QString& account, const QMap<QString, QString>& data)
+{
+    const QString& from = data.value("from");
+    Conversations::iterator itr = conversations.find({account, from});
+    if (itr != conversations.end()) {
+        qDebug() << "adding message";
+        itr->second->addMessage(data);
+    } else {
+        qDebug() << "pending message";
+        rosterModel.addMessage(account, data);
+    }
 }

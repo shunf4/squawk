@@ -6,7 +6,9 @@ Models::Contact::Contact(const QString& p_jid ,const QMap<QString, QVariant> &da
     jid(p_jid),
     availability(Shared::offline),
     state(Shared::none),
-    presences()
+    presences(),
+    messages(),
+    childMessages(0)
 {
     QMap<QString, QVariant>::const_iterator itr = data.find("state");
     if (itr != data.end()) {
@@ -66,7 +68,7 @@ void Models::Contact::setAvailability(Shared::Availability p_state)
 
 int Models::Contact::columnCount() const
 {
-    return 4;
+    return 5;
 }
 
 QVariant Models::Contact::data(int column) const
@@ -84,6 +86,8 @@ QVariant Models::Contact::data(int column) const
             return state;
         case 3:
             return availability;
+        case 4:
+            return getMessagesCount();
         default:
             return QVariant();
     }
@@ -136,9 +140,11 @@ void Models::Contact::refresh()
 {
     QDateTime lastActivity;
     Presence* presence = 0;
+    unsigned int count = 0;
     for (QMap<QString, Presence*>::iterator itr = presences.begin(), end = presences.end(); itr != end; ++itr) {
         Presence* pr = itr.value();
         QDateTime la = pr->getLastActivity();
+        count += pr->getMessagesCount();
         
         if (la > lastActivity) {
             lastActivity = la;
@@ -150,6 +156,11 @@ void Models::Contact::refresh()
         setAvailability(presence->getAvailability());
     } else {
         setAvailability(Shared::offline);
+    }
+    
+    if (childMessages != count) {
+        childMessages = count;
+        changed(4);
     }
 }
 
@@ -183,7 +194,9 @@ void Models::Contact::setState(Shared::SubscriptionState p_state)
 
 QIcon Models::Contact::getStatusIcon() const
 {
-    if (state == Shared::both) {
+    if (getMessagesCount() > 0) {
+        return QIcon::fromTheme("mail-message");
+    } else if (state == Shared::both) {
         return QIcon::fromTheme(Shared::availabilityThemeIcons[availability]);
     } else {
         return QIcon::fromTheme(Shared::subscriptionStateThemeIcons[state]);
@@ -204,3 +217,35 @@ QString Models::Contact::getAccountName() const
     return p->getName();
 }
 
+void Models::Contact::addMessage(const QMap<QString, QString>& data)
+{
+    const QString& res = data.value("fromResource");
+    if (res.size() > 0) {
+        QMap<QString, Presence*>::iterator itr = presences.find(res);
+        if (itr == presences.end()) {
+            qDebug() << "An attempt to add message to the roster to the unknown resource " << res << " of contact " << jid << " in account " << getAccountName() << ", skipping";
+            return;
+        }
+        itr.value()->addMessage(data);
+    } else {
+        messages.emplace_back(data);
+        changed(4);
+    }
+}
+
+unsigned int Models::Contact::getMessagesCount() const
+{
+    return messages.size() + childMessages;
+}
+
+void Models::Contact::dropMessages()
+{
+    if (messages.size() > 0) {
+        messages.clear();
+        changed(4);
+    }
+    
+    for (QMap<QString, Presence*>::iterator itr = presences.begin(), end = presences.end(); itr != end; ++itr) {
+        itr.value()->dropMessages();
+    }
+}

@@ -6,6 +6,7 @@
 #include "../../global.h"
 #include <QMap>
 #include <QIcon>
+#include <deque>
 
 namespace Models {
 
@@ -32,6 +33,10 @@ public:
     void appendChild(Models::Item * child) override;
     QString getAccountName() const;
     
+    void addMessage(const QMap<QString, QString>& data);
+    unsigned int getMessagesCount() const;
+    void dropMessages();
+    
 protected:
     void _removeChild(int index) override;
     
@@ -46,10 +51,13 @@ protected:
     void setJid(const QString p_jid);
     
 private:
+    typedef std::deque<QMap<QString, QString>> Messages;
     QString jid;
     Shared::Availability availability;
     Shared::SubscriptionState state;
     QMap<QString, Presence*> presences;
+    Messages messages;
+    unsigned int childMessages;
 };
 
 }

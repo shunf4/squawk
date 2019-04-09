@@ -69,7 +69,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     break;
                 case Item::presence:{
                     Presence* presence = static_cast<Presence*>(item);
-                    result = QIcon::fromTheme(Shared::availabilityThemeIcons[presence->getAvailability()]);
+                    result = presence->getStatusIcon();
                 }
                     break;
                 default:
@@ -490,5 +490,25 @@ void Models::Roster::removePresence(const QString& account, const QString& jid, 
     std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(contactId);
     for (;cBeg != cEnd; ++cBeg) {
         cBeg->second->removePresence(name);
+    }
+}
+
+void Models::Roster::addMessage(const QString& account, const QMap<QString, QString>& data)
+{
+    ElId id(account, data.value("from"));
+    
+    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(id);
+    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(id);
+    
+    for (;cBeg != cEnd; ++cBeg) {
+        cBeg->second->addMessage(data);
+    }
+}
+
+void Models::Roster::dropMessages(const QString& account, const QString& jid)
+{
+    ElId id(account, jid);
+    for (std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(id), cEnd = contacts.upper_bound(id) ;cBeg != cEnd; ++cBeg) {
+        cBeg->second->dropMessages();
     }
 }

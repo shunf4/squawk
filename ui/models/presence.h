@@ -22,6 +22,7 @@
 #include "item.h"
 #include "../../global.h"
 #include <QDateTime>
+#include <QIcon>
 
 namespace Models {
 
@@ -44,13 +45,19 @@ public:
     
     QString getStatus() const;
     void setStatus(const QString& p_state);
+    QIcon getStatusIcon() const;
     
     void update(const QString& key, const QVariant& value);
+    unsigned int getMessagesCount() const;
+    void dropMessages();
+    void addMessage(const QMap<QString, QString>& data);
 
 private:
+    typedef std::deque<QMap<QString, QString>> Messages;
     Shared::Availability availability;
     QDateTime lastActivity;
     QString status;
+    Messages messages;
 };
 
 }

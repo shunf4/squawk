@@ -8,6 +8,8 @@
 
 int main(int argc, char *argv[])
 {
+    qRegisterMetaType<QMap<QString, QString>>("QMap<QString,QString>");
+    
     QApplication app(argc, argv);
     SignalCatcher sc(&app);
     
@@ -48,6 +50,7 @@ int main(int argc, char *argv[])
                      &w, SLOT(addPresence(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(removePresence(const QString&, const QString&, const QString&)), &w, SLOT(removePresence(const QString&, const QString&, const QString&)));
     QObject::connect(squawk, SIGNAL(stateChanged(int)), &w, SLOT(stateChanged(int)));
+    QObject::connect(squawk, SIGNAL(accountMessage(const QString&, const QMap<QString, QString>&)), &w, SLOT(accountMessage(const QString&, const QMap<QString, QString>&)));
     
     coreThread->start();
 

@@ -29,6 +29,16 @@ namespace Ui
 class Conversation;
 }
 
+class KeyEnterReceiver : public QObject
+{
+    Q_OBJECT
+protected:
+    bool eventFilter(QObject* obj, QEvent* event);
+    
+signals:
+    void enterPressed();
+};
+
 class Conversation : public QWidget
 {
     Q_OBJECT
@@ -38,6 +48,7 @@ public:
     
     QString getJid() const;
     QString getAccount() const;
+    void addMessage(const QMap<QString, QString>& data);
     
 protected:
     void setState(Shared::Availability state);
@@ -46,10 +57,12 @@ protected:
     
 protected slots:
     void onContactChanged(Models::Item* item, int row, int col);
+    void onEnterPressed();
     
 private:
     Models::Contact* contact;
     QScopedPointer<Ui::Conversation> m_ui;
+    KeyEnterReceiver ker;
 };
 
 #endif // CONVERSATION_H

@@ -35,6 +35,7 @@ public:
     void setPassword(const QString& p_password);
     void setResource(const QString& p_resource);
     void setAvailability(Shared::Availability avail);
+    QString getFullJid() const;
     
 signals:
     void connectionStateChanged(int);
@@ -47,6 +48,7 @@ signals:
     void changeContact(const QString& jid, const QMap<QString, QVariant>& data);
     void addPresence(const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& jid, const QString& name);
+    void message(const QMap<QString, QString>& data);
     
 private:
     QString name;

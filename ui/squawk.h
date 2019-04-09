@@ -44,6 +44,7 @@ public slots:
     void addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& account, const QString& jid, const QString& name);
     void stateChanged(int state);
+    void accountMessage(const QString& account, const QMap<QString, QString>& data);
     
 private:
     typedef std::map<Models::Roster::ElId, Conversation*> Conversations;

@@ -22,7 +22,8 @@ Models::Presence::Presence(const QMap<QString, QVariant>& data, Item* parentItem
     Item(Item::presence, data, parentItem),
     availability(Shared::offline),
     lastActivity(data.value("lastActivity").toDateTime()),
-    status(data.value("status").toString())
+    status(data.value("status").toString()),
+    messages()
 {
     QMap<QString, QVariant>::const_iterator itr = data.find("availability");
     if (itr != data.end()) {
@@ -36,7 +37,7 @@ Models::Presence::~Presence()
 
 int Models::Presence::columnCount() const
 {
-    return 4;
+    return 5;
 }
 
 QVariant Models::Presence::data(int column) const
@@ -50,6 +51,8 @@ QVariant Models::Presence::data(int column) const
             return availability;
         case 3:
             return status;
+        case 4:
+            return getMessagesCount();
         default:
             return QVariant();
     }
@@ -117,3 +120,32 @@ void Models::Presence::update(const QString& key, const QVariant& value)
         setLastActivity(value.toDateTime());
     }
 }
+
+unsigned int Models::Presence::getMessagesCount() const
+{
+    return messages.size();
+}
+
+void Models::Presence::addMessage(const QMap<QString, QString>& data)
+{
+    messages.emplace_back(data);
+    changed(4);
+}
+
+void Models::Presence::dropMessages()
+{
+    if (messages.size() > 0) {
+        messages.clear();
+        changed(4);
+    }
+}
+
+QIcon Models::Presence::getStatusIcon() const
+{
+    if (getMessagesCount() > 0) {
+        return QIcon::fromTheme("mail-message");
+    } else {
+        return QIcon::fromTheme(Shared::availabilityThemeIcons[availability]);
+    }
+}
+

@@ -86,6 +86,7 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     connect(acc, SIGNAL(addPresence(const QString&, const QString&, const QMap<QString, QVariant>&)), 
             this, SLOT(onAccountAddPresence(const QString&, const QString&, const QMap<QString, QVariant>&)));
     connect(acc, SIGNAL(removePresence(const QString&, const QString&)), this, SLOT(onAccountRemovePresence(const QString&, const QString&)));
+    connect(acc, SIGNAL(message(const QMap<QString, QString>&)), this, SLOT(onAccountMessage(const QMap<QString, QString>&)));
     
     QMap<QString, QVariant> map = {
         {"login", login},
@@ -191,4 +192,10 @@ void Core::Squawk::onAccountAvailabilityChanged(int state)
 {
     Account* acc = static_cast<Account*>(sender());
     emit accountAvailabilityChanged(acc->getName(), state);
+}
+
+void Core::Squawk::onAccountMessage(const QMap<QString, QString>& data)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit accountMessage(acc->getName(), data);
 }

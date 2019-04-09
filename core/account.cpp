@@ -333,20 +333,76 @@ void Core::Account::setResource(const QString& p_resource)
     config.setResource(p_resource);
 }
 
-void Core::Account::onMessageReceived(const QXmppMessage& message)
+void Core::Account::onMessageReceived(const QXmppMessage& msg)
 {
-    qDebug() << "Message received: ";
-    qDebug() << "- from: " << message.from();
-    qDebug() << "- to: " << message.to();
-    qDebug() << "- body: " << message.body();
-    qDebug() << "- type: " << message.type();
-    qDebug() << "- state: " << message.state();
-    qDebug() << "- stamp: " << message.stamp();
-    qDebug() << "- id: " << message.id();
-    qDebug() << "- isAttentionRequested: " << message.isAttentionRequested();
-    qDebug() << "- isReceiptRequested: " << message.isReceiptRequested();
-    qDebug() << "- receiptId: " << message.receiptId();
-    qDebug() << "- subject: " << message.subject();
-    qDebug() << "- thread: " << message.thread();
-    qDebug() << "- isMarkable: " << message.isMarkable();
+    QString from = msg.from();
+    QStringList fcomps = from.split("/");
+    QString fjid = fcomps.front();
+    QString fresource = fcomps.back();
+    
+    QString to = msg.to();
+    QStringList tcomps = to.split("/");
+    QString tjid = tcomps.front();
+    QString tresource = tcomps.back();
+    bool handled = false;
+    switch (msg.type()) {
+        case QXmppMessage::Normal:
+            qDebug() << "received a message with type \"Normal\", not sure what to do with it now, skipping";
+            break;
+        case QXmppMessage::Chat:{
+            QString body(msg.body());
+            if (body.size() != 0) {
+                QString id(msg.id());
+                emit message({
+                    {"body", body},
+                    {"from", fjid},
+                    {"to", tjid},
+                    {"fromResource", fresource},
+                    {"toResource", tresource},
+                    {"id", id}
+                });
+                
+                if (msg.isReceiptRequested() && id.size() > 0) {
+                    QXmppMessage receipt(getFullJid(), from, "");
+                    receipt.setReceiptId(id);
+                    client.sendPacket(receipt);
+                    handled = true;
+                }
+            }
+        }
+            break;
+        case QXmppMessage::GroupChat:
+            qDebug() << "received a message with type \"GroupChat\", not sure what to do with it now, skipping";
+            break;
+        case QXmppMessage::Error:
+            qDebug() << "received a message with type \"Error\", not sure what to do with it now, skipping";
+            break;
+        case QXmppMessage::Headline:
+            qDebug() << "received a message with type \"Headline\", not sure what to do with it now, skipping";
+            break;
+    }
+    if (!handled) {
+        
+        qDebug() << "Message wasn't handled: ";
+        qDebug() << "- from: " << msg.from();
+        qDebug() << "- to: " << msg.to();
+        qDebug() << "- body: " << msg.body();
+        qDebug() << "- type: " << msg.type();
+        qDebug() << "- state: " << msg.state();
+        qDebug() << "- stamp: " << msg.stamp();
+        qDebug() << "- id: " << msg.id();
+        qDebug() << "- isAttentionRequested: " << msg.isAttentionRequested();
+        qDebug() << "- isReceiptRequested: " << msg.isReceiptRequested();
+        qDebug() << "- receiptId: " << msg.receiptId();
+        qDebug() << "- subject: " << msg.subject();
+        qDebug() << "- thread: " << msg.thread();
+        qDebug() << "- isMarkable: " << msg.isMarkable();
+        qDebug() << "==============================";
+    }
 }
+
+QString Core::Account::getFullJid() const
+{
+    return getLogin() + "@" + getServer() + "/" + getResource();
+}
+

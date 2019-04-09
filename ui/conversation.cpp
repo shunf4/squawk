@@ -23,7 +23,8 @@
 Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     QWidget(parent),
     contact(p_contact),
-    m_ui(new Ui::Conversation)
+    m_ui(new Ui::Conversation),
+    ker()
 {
     m_ui->setupUi(this);
     m_ui->splitter->setSizes({300, 0});
@@ -33,6 +34,9 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     setState(p_contact->getAvailability());
     
     connect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
+    connect(&ker, SIGNAL(enterPressed()), this, SLOT(onEnterPressed()));
+    
+    m_ui->dialogBox->installEventFilter(&ker);
 }
 
 Conversation::~Conversation()
@@ -82,4 +86,30 @@ void Conversation::onContactChanged(Models::Item* item, int row, int col)
                 break;
         }
     }
+}
+
+void Conversation::addMessage(const QMap<QString, QString>& data)
+{
+    m_ui->dialogBox->append(data.value("from") + ": " + data.value("body"));
+}
+
+bool KeyEnterReceiver::eventFilter(QObject* obj, QEvent* event)
+{
+    if (event->type()==QEvent::KeyPress) {
+        QKeyEvent* key = static_cast<QKeyEvent*>(event);
+        if ( (key->key()==Qt::Key_Enter) || (key->key()==Qt::Key_Return) ) {
+            emit enterPressed();
+        } else {
+            return QObject::eventFilter(obj, event);
+        }
+        return true;
+    } else {
+        return QObject::eventFilter(obj, event);
+    }
+    return false;
+}
+
+void Conversation::onEnterPressed()
+{
+    qDebug() << "enter";
 }
