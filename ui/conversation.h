@@ -32,7 +32,10 @@ class Conversation;
 class KeyEnterReceiver : public QObject
 {
     Q_OBJECT
+public:
+    KeyEnterReceiver(QObject* parent = 0);
 protected:
+    bool ownEvent;
     bool eventFilter(QObject* obj, QEvent* event);
     
 signals:

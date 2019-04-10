@@ -36,7 +36,7 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     connect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
     connect(&ker, SIGNAL(enterPressed()), this, SLOT(onEnterPressed()));
     
-    m_ui->dialogBox->installEventFilter(&ker);
+    m_ui->messageEditor->installEventFilter(&ker);
 }
 
 Conversation::~Conversation()
@@ -93,20 +93,33 @@ void Conversation::addMessage(const QMap<QString, QString>& data)
     m_ui->dialogBox->append(data.value("from") + ": " + data.value("body"));
 }
 
+KeyEnterReceiver::KeyEnterReceiver(QObject* parent): QObject(parent), ownEvent(false) {}
+
 bool KeyEnterReceiver::eventFilter(QObject* obj, QEvent* event)
 {
-    if (event->type()==QEvent::KeyPress) {
+    QEvent::Type type = event->type();
+    if (type == QEvent::KeyPress) {
         QKeyEvent* key = static_cast<QKeyEvent*>(event);
-        if ( (key->key()==Qt::Key_Enter) || (key->key()==Qt::Key_Return) ) {
-            emit enterPressed();
-        } else {
-            return QObject::eventFilter(obj, event);
+        int k = key->key();
+        if (k == Qt::Key_Enter || k == Qt::Key_Return) {
+            Qt::KeyboardModifiers mod = key->modifiers();
+            if (mod & Qt::ControlModifier) {
+                mod = mod & ~Qt::ControlModifier;
+                QKeyEvent* nEvent = new QKeyEvent(event->type(), k, mod, key->text(), key->isAutoRepeat(), key->count());
+                QCoreApplication::postEvent(obj, nEvent);
+                ownEvent = true;
+                return true;
+            } else {
+                if (ownEvent) {
+                    ownEvent = false;
+                } else {
+                    emit enterPressed();
+                    return true;
+                }
+            }
         }
-        return true;
-    } else {
-        return QObject::eventFilter(obj, event);
     }
-    return false;
+    return QObject::eventFilter(obj, event);
 }
 
 void Conversation::onEnterPressed()
