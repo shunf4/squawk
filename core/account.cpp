@@ -406,3 +406,12 @@ QString Core::Account::getFullJid() const
     return getLogin() + "@" + getServer() + "/" + getResource();
 }
 
+void Core::Account::sendMessage(const QMap<QString, QString>& data)
+{
+    if (state == Shared::connected) {
+        client.sendMessage(data.value("to"), data.value("body"));
+    } else {
+        qDebug() << "An attempt to send message with not connected account " << name << ", skipping";
+    }
+}
+

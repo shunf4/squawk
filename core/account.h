@@ -36,6 +36,7 @@ public:
     void setResource(const QString& p_resource);
     void setAvailability(Shared::Availability avail);
     QString getFullJid() const;
+    void sendMessage(const QMap<QString, QString>& data);
     
 signals:
     void connectionStateChanged(int);

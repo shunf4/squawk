@@ -3,6 +3,7 @@
 
 #include <QString>
 #include <deque>
+#include <QDateTime>
 
 namespace Shared {
     
@@ -50,6 +51,18 @@ static const std::deque<QString> availabilityThemeIcons = {
 static const std::deque<QString> availabilityNames = {"Online", "Away", "Absent", "Busy", "Chatty", "Offline"};
 
 static const std::deque<QString> subscriptionStateThemeIcons = {"edit-none", "arrow-down-double", "arrow-up-double", "dialog-ok", "question"};
+
+class Message {
+public:
+    Message();
+    
+private:
+    QString jFrom;
+    QString rFrom;
+    QString jTo;
+    QString rTo;
+    QDateTime time;
+};
 
 };
 

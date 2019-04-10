@@ -1,5 +1,6 @@
 #include "contact.h"
 #include <QDebug>
+#include "account.h"
 
 Models::Contact::Contact(const QString& p_jid ,const QMap<QString, QVariant> &data, Item *parentItem):
     Item(Item::contact, data, parentItem),
@@ -248,4 +249,31 @@ void Models::Contact::dropMessages()
     for (QMap<QString, Presence*>::iterator itr = presences.begin(), end = presences.end(); itr != end; ++itr) {
         itr.value()->dropMessages();
     }
+}
+
+void Models::Contact::getMessages(Models::Contact::Messages& container) const
+{
+    for (Messages::const_iterator itr = messages.begin(), end = messages.end(); itr != end; ++itr) {
+        const QMap<QString, QString>& msg = *itr;
+        container.push_back(msg);
+    }
+    
+    for (QMap<QString, Presence*>::const_iterator itr = presences.begin(), end = presences.end(); itr != end; ++itr) {
+        itr.value()->getMessages(container);
+    }
+}
+
+QString Models::Contact::getAccountJid() const
+{
+    const Item* p = this;
+    do {
+        p = p->parentItemConst();
+    } while (p != 0 && p->type != Item::account);
+    
+    if (p == 0) {
+        qDebug() << "An attempt to request account jid of the contact " << jid << " but the parent account wasn't found, returning empty string";
+        return "";
+    }
+    const Account* acc = static_cast<const Account*>(p);
+    return acc->getLogin() + "@" + acc->getServer();
 }

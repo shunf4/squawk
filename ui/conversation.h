@@ -53,6 +53,9 @@ public:
     QString getAccount() const;
     void addMessage(const QMap<QString, QString>& data);
     
+signals:
+    void sendMessage(const QString& message);
+    
 protected:
     void setState(Shared::Availability state);
     void setStatus(const QString& status);

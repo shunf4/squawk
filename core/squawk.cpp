@@ -199,3 +199,14 @@ void Core::Squawk::onAccountMessage(const QMap<QString, QString>& data)
     Account* acc = static_cast<Account*>(sender());
     emit accountMessage(acc->getName(), data);
 }
+
+void Core::Squawk::sendMessage(const QString& account, const QMap<QString, QString>& data)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug("An attempt to send a message with non existing account, skipping");
+        return;
+    }
+    
+    itr->second->sendMessage(data);
+}

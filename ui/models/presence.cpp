@@ -149,3 +149,10 @@ QIcon Models::Presence::getStatusIcon() const
     }
 }
 
+void Models::Presence::getMessages(Models::Presence::Messages& container) const
+{
+    for (Messages::const_iterator itr = messages.begin(), end = messages.end(); itr != end; ++itr) {
+        const QMap<QString, QString>& msg = *itr;
+        container.push_back(msg);
+    }
+}

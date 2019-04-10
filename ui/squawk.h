@@ -30,6 +30,7 @@ signals:
     void connectAccount(const QString&);
     void disconnectAccount(const QString&);
     void changeState(int state);
+    void sendMessage(const QString& account, const QMap<QString, QString>& data);
     
 public slots:
     void newAccount(const QMap<QString, QVariant>& account);
@@ -63,6 +64,7 @@ private slots:
     void onConversationClosed(QObject* parent = 0);
     void onComboboxActivated(int index);
     void onRosterItemDoubleClicked(const QModelIndex& item);
+    void onConversationMessage(const QString& item);
     
 };
 

@@ -30,6 +30,7 @@ class Presence : public Models::Item
 {
     Q_OBJECT
 public:
+    typedef std::deque<QMap<QString, QString>> Messages;
     explicit Presence(const QMap<QString, QVariant> &data, Item *parentItem = 0);
     ~Presence();
 
@@ -51,9 +52,10 @@ public:
     unsigned int getMessagesCount() const;
     void dropMessages();
     void addMessage(const QMap<QString, QString>& data);
+    
+    void getMessages(Messages& container) const;
 
 private:
-    typedef std::deque<QMap<QString, QString>> Messages;
     Shared::Availability availability;
     QDateTime lastActivity;
     QString status;

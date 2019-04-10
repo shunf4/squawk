@@ -182,6 +182,7 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 
                 conv->setAttribute(Qt::WA_DeleteOnClose);
                 connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
+                connect(conv, SIGNAL(sendMessage(const QString&)), this, SLOT(onConversationMessage(const QString&)));
                 
                 conversations.insert(std::make_pair(id, conv));
                 rosterModel.dropMessages(account, jid);
@@ -214,4 +215,13 @@ void Squawk::accountMessage(const QString& account, const QMap<QString, QString>
         qDebug() << "pending message";
         rosterModel.addMessage(account, data);
     }
+}
+
+void Squawk::onConversationMessage(const QString& item)
+{
+    Conversation* conv = static_cast<Conversation*>(sender());
+    emit sendMessage(conv->getAccount(), {
+        {"to", conv->getJid()},
+        {"body", item}
+    });
 }

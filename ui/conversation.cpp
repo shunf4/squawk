@@ -37,6 +37,13 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     connect(&ker, SIGNAL(enterPressed()), this, SLOT(onEnterPressed()));
     
     m_ui->messageEditor->installEventFilter(&ker);
+    
+    Models::Contact::Messages deque;
+    contact->getMessages(deque);
+    
+    for (Models::Contact::Messages::const_iterator itr = deque.begin(), end = deque.end(); itr != end; ++itr) {
+        addMessage(*itr);
+    }
 }
 
 Conversation::~Conversation()
@@ -124,5 +131,8 @@ bool KeyEnterReceiver::eventFilter(QObject* obj, QEvent* event)
 
 void Conversation::onEnterPressed()
 {
-    qDebug() << "enter";
+    QString msg(m_ui->messageEditor->toPlainText());
+    m_ui->messageEditor->clear();
+    m_ui->dialogBox->append(contact->getAccountJid() + ": " + msg);
+    emit sendMessage(msg);
 }
