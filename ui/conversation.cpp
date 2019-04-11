@@ -24,6 +24,7 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     QWidget(parent),
     contact(p_contact),
     m_ui(new Ui::Conversation),
+    line(new MessageLine()),
     ker()
 {
     m_ui->setupUi(this);
@@ -44,6 +45,8 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     for (Models::Contact::Messages::const_iterator itr = deque.begin(), end = deque.end(); itr != end; ++itr) {
         addMessage(*itr);
     }
+    
+    m_ui->scrollArea->setWidget(line);
 }
 
 Conversation::~Conversation()
@@ -95,9 +98,9 @@ void Conversation::onContactChanged(Models::Item* item, int row, int col)
     }
 }
 
-void Conversation::addMessage(const QMap<QString, QString>& data)
+void Conversation::addMessage(const Shared::Message& data)
 {
-    m_ui->dialogBox->append(data.value("from") + ": " + data.value("body"));
+    line->message(data);
 }
 
 KeyEnterReceiver::KeyEnterReceiver(QObject* parent): QObject(parent), ownEvent(false) {}
@@ -131,8 +134,13 @@ bool KeyEnterReceiver::eventFilter(QObject* obj, QEvent* event)
 
 void Conversation::onEnterPressed()
 {
-    QString msg(m_ui->messageEditor->toPlainText());
+    QString body(m_ui->messageEditor->toPlainText());
+    const QString& aJid = contact->getAccountJid();
     m_ui->messageEditor->clear();
-    m_ui->dialogBox->append(contact->getAccountJid() + ": " + msg);
+    Shared::Message msg(Shared::Message::chat);
+    msg.setFrom(aJid);
+    msg.setTo(contact->getJid());
+    msg.setBody(body);
+    line->message(msg);
     emit sendMessage(msg);
 }

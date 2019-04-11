@@ -336,14 +336,7 @@ void Core::Account::setResource(const QString& p_resource)
 void Core::Account::onMessageReceived(const QXmppMessage& msg)
 {
     QString from = msg.from();
-    QStringList fcomps = from.split("/");
-    QString fjid = fcomps.front();
-    QString fresource = fcomps.back();
-    
     QString to = msg.to();
-    QStringList tcomps = to.split("/");
-    QString tjid = tcomps.front();
-    QString tresource = tcomps.back();
     bool handled = false;
     switch (msg.type()) {
         case QXmppMessage::Normal:
@@ -353,14 +346,16 @@ void Core::Account::onMessageReceived(const QXmppMessage& msg)
             QString body(msg.body());
             if (body.size() != 0) {
                 QString id(msg.id());
-                emit message({
-                    {"body", body},
-                    {"from", fjid},
-                    {"to", tjid},
-                    {"fromResource", fresource},
-                    {"toResource", tresource},
-                    {"id", id}
-                });
+                QDateTime time(msg.stamp());
+                Shared::Message sMsg(Shared::Message::chat);
+                sMsg.setId(id);
+                sMsg.setFrom(from);
+                sMsg.setTo(to);
+                sMsg.setBody(body);
+                if (time.isValid()) {
+                    sMsg.setTime(time);
+                }
+                emit message(sMsg);
                 
                 if (msg.isReceiptRequested() && id.size() > 0) {
                     QXmppMessage receipt(getFullJid(), from, "");
@@ -384,8 +379,8 @@ void Core::Account::onMessageReceived(const QXmppMessage& msg)
     if (!handled) {
         
         qDebug() << "Message wasn't handled: ";
-        qDebug() << "- from: " << msg.from();
-        qDebug() << "- to: " << msg.to();
+        qDebug() << "- from: " << from;
+        qDebug() << "- to: " << to;
         qDebug() << "- body: " << msg.body();
         qDebug() << "- type: " << msg.type();
         qDebug() << "- state: " << msg.state();
@@ -406,10 +401,10 @@ QString Core::Account::getFullJid() const
     return getLogin() + "@" + getServer() + "/" + getResource();
 }
 
-void Core::Account::sendMessage(const QMap<QString, QString>& data)
+void Core::Account::sendMessage(const Shared::Message& data)
 {
     if (state == Shared::connected) {
-        client.sendMessage(data.value("to"), data.value("body"));
+        client.sendMessage(data.getTo(), data.getBody());
     } else {
         qDebug() << "An attempt to send message with not connected account " << name << ", skipping";
     }

@@ -30,7 +30,7 @@ signals:
     void connectAccount(const QString&);
     void disconnectAccount(const QString&);
     void changeState(int state);
-    void sendMessage(const QString& account, const QMap<QString, QString>& data);
+    void sendMessage(const QString& account, const Shared::Message& data);
     
 public slots:
     void newAccount(const QMap<QString, QVariant>& account);
@@ -45,7 +45,7 @@ public slots:
     void addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& account, const QString& jid, const QString& name);
     void stateChanged(int state);
-    void accountMessage(const QString& account, const QMap<QString, QString>& data);
+    void accountMessage(const QString& account, const Shared::Message& data);
     
 private:
     typedef std::map<Models::Roster::ElId, Conversation*> Conversations;
@@ -64,7 +64,7 @@ private slots:
     void onConversationClosed(QObject* parent = 0);
     void onComboboxActivated(int index);
     void onRosterItemDoubleClicked(const QModelIndex& item);
-    void onConversationMessage(const QString& item);
+    void onConversationMessage(const Shared::Message& msg);
     
 };
 

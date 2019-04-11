@@ -11,6 +11,8 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt5Widgets CONFIG REQUIRED)
 set(squawk_SRC
   main.cpp
+  global.cpp
+  exception.cpp
   signalcatcher.cpp
 )
 

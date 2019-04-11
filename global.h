@@ -54,14 +54,44 @@ static const std::deque<QString> subscriptionStateThemeIcons = {"edit-none", "ar
 
 class Message {
 public:
+    enum Type {
+        error,
+        normal,
+        chat,
+        groupChat,
+        headline
+    };
+    Message(Type p_type);
     Message();
+
+    void setFrom(const QString& from);
+    void setTo(const QString& to);
+    void setTime(const QDateTime& p_time);
+    void setId(const QString& p_id);
+    void setBody(const QString& p_body);
+    
+    QString getFrom() const;
+    QString getFromJid() const;
+    QString getFromResource() const;
+    QString getTo() const;
+    QString getToJid() const;
+    QString getToResource() const;
+    QDateTime getTime() const;
+    QString getId() const;
+    QString getBody() const;
+    
+    QString getPenPalJid() const;
+    QString getPenPalResource() const;
     
 private:
     QString jFrom;
     QString rFrom;
     QString jTo;
     QString rTo;
+    QString id;
+    QString body;
     QDateTime time;
+    Type type;
 };
 
 };

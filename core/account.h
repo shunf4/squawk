@@ -36,7 +36,7 @@ public:
     void setResource(const QString& p_resource);
     void setAvailability(Shared::Availability avail);
     QString getFullJid() const;
-    void sendMessage(const QMap<QString, QString>& data);
+    void sendMessage(const Shared::Message& data);
     
 signals:
     void connectionStateChanged(int);
@@ -49,7 +49,7 @@ signals:
     void changeContact(const QString& jid, const QMap<QString, QVariant>& data);
     void addPresence(const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& jid, const QString& name);
-    void message(const QMap<QString, QString>& data);
+    void message(const Shared::Message& data);
     
 private:
     QString name;

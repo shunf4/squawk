@@ -23,6 +23,7 @@
 #include <QScopedPointer>
 #include "../global.h"
 #include "models/contact.h"
+#include "messageline.h"
 
 namespace Ui
 {
@@ -51,10 +52,10 @@ public:
     
     QString getJid() const;
     QString getAccount() const;
-    void addMessage(const QMap<QString, QString>& data);
+    void addMessage(const Shared::Message& data);
     
 signals:
-    void sendMessage(const QString& message);
+    void sendMessage(const Shared::Message& message);
     
 protected:
     void setState(Shared::Availability state);
@@ -67,6 +68,7 @@ protected slots:
     
 private:
     Models::Contact* contact;
+    MessageLine* line;
     QScopedPointer<Ui::Conversation> m_ui;
     KeyEnterReceiver ker;
 };

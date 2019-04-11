@@ -218,9 +218,9 @@ QString Models::Contact::getAccountName() const
     return p->getName();
 }
 
-void Models::Contact::addMessage(const QMap<QString, QString>& data)
+void Models::Contact::addMessage(const Shared::Message& data)
 {
-    const QString& res = data.value("fromResource");
+    const QString& res = data.getPenPalResource();
     if (res.size() > 0) {
         QMap<QString, Presence*>::iterator itr = presences.find(res);
         if (itr == presences.end()) {
@@ -254,7 +254,7 @@ void Models::Contact::dropMessages()
 void Models::Contact::getMessages(Models::Contact::Messages& container) const
 {
     for (Messages::const_iterator itr = messages.begin(), end = messages.end(); itr != end; ++itr) {
-        const QMap<QString, QString>& msg = *itr;
+        const Shared::Message& msg = *itr;
         container.push_back(msg);
     }
     

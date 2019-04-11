@@ -8,7 +8,7 @@
 
 int main(int argc, char *argv[])
 {
-    qRegisterMetaType<QMap<QString, QString>>("QMap<QString,QString>");
+    qRegisterMetaType<Shared::Message>("Shared::Message");
     
     QApplication app(argc, argv);
     SignalCatcher sc(&app);
@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
     QObject::connect(&w, SIGNAL(connectAccount(const QString&)), squawk, SLOT(connectAccount(const QString&)));
     QObject::connect(&w, SIGNAL(disconnectAccount(const QString&)), squawk, SLOT(disconnectAccount(const QString&)));
     QObject::connect(&w, SIGNAL(changeState(int)), squawk, SLOT(changeState(int)));
-    QObject::connect(&w, SIGNAL(sendMessage(const QString&, const QMap<QString, QString>&)), squawk, SLOT(sendMessage(const QString&, const QMap<QString, QString>&)));
+    QObject::connect(&w, SIGNAL(sendMessage(const QString&, const Shared::Message&)), squawk, SLOT(sendMessage(const QString&, const Shared::Message&)));
     
     QObject::connect(squawk, SIGNAL(newAccount(const QMap<QString, QVariant>&)), &w, SLOT(newAccount(const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(accountAvailabilityChanged(const QString&, int)), &w, SLOT(accountAvailabilityChanged(const QString&, int)));
@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
                      &w, SLOT(addPresence(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(removePresence(const QString&, const QString&, const QString&)), &w, SLOT(removePresence(const QString&, const QString&, const QString&)));
     QObject::connect(squawk, SIGNAL(stateChanged(int)), &w, SLOT(stateChanged(int)));
-    QObject::connect(squawk, SIGNAL(accountMessage(const QString&, const QMap<QString, QString>&)), &w, SLOT(accountMessage(const QString&, const QMap<QString, QString>&)));
+    QObject::connect(squawk, SIGNAL(accountMessage(const QString&, const Shared::Message&)), &w, SLOT(accountMessage(const QString&, const Shared::Message&)));
     
     coreThread->start();
 

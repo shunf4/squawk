@@ -182,7 +182,7 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 
                 conv->setAttribute(Qt::WA_DeleteOnClose);
                 connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
-                connect(conv, SIGNAL(sendMessage(const QString&)), this, SLOT(onConversationMessage(const QString&)));
+                connect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
                 
                 conversations.insert(std::make_pair(id, conv));
                 rosterModel.dropMessages(account, jid);
@@ -204,9 +204,9 @@ void Squawk::onConversationClosed(QObject* parent)
     conversations.erase(itr);
 }
 
-void Squawk::accountMessage(const QString& account, const QMap<QString, QString>& data)
+void Squawk::accountMessage(const QString& account, const Shared::Message& data)
 {
-    const QString& from = data.value("from");
+    const QString& from = data.getPenPalJid();
     Conversations::iterator itr = conversations.find({account, from});
     if (itr != conversations.end()) {
         qDebug() << "adding message";
@@ -217,11 +217,9 @@ void Squawk::accountMessage(const QString& account, const QMap<QString, QString>
     }
 }
 
-void Squawk::onConversationMessage(const QString& item)
+void Squawk::onConversationMessage(const Shared::Message& msg)
 {
     Conversation* conv = static_cast<Conversation*>(sender());
-    emit sendMessage(conv->getAccount(), {
-        {"to", conv->getJid()},
-        {"body", item}
-    });
+    
+    emit sendMessage(conv->getAccount(), msg);
 }

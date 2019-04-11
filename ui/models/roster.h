@@ -32,7 +32,7 @@ public:
     void changeContact(const QString& account, const QString& jid, const QMap<QString, QVariant>& data);
     void addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& account, const QString& jid, const QString& name);
-    void addMessage(const QString& account, const QMap<QString, QString>& data);
+    void addMessage(const QString& account, const Shared::Message& data);
     void dropMessages(const QString& account, const QString& jid);
     
     QVariant data ( const QModelIndex& index, int role ) const override;

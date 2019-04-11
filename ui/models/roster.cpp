@@ -493,9 +493,9 @@ void Models::Roster::removePresence(const QString& account, const QString& jid, 
     }
 }
 
-void Models::Roster::addMessage(const QString& account, const QMap<QString, QString>& data)
+void Models::Roster::addMessage(const QString& account, const Shared::Message& data)
 {
-    ElId id(account, data.value("from"));
+    ElId id(account, data.getPenPalJid());
     
     std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(id);
     std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(id);

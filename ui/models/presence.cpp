@@ -126,7 +126,7 @@ unsigned int Models::Presence::getMessagesCount() const
     return messages.size();
 }
 
-void Models::Presence::addMessage(const QMap<QString, QString>& data)
+void Models::Presence::addMessage(const Shared::Message& data)
 {
     messages.emplace_back(data);
     changed(4);
@@ -152,7 +152,7 @@ QIcon Models::Presence::getStatusIcon() const
 void Models::Presence::getMessages(Models::Presence::Messages& container) const
 {
     for (Messages::const_iterator itr = messages.begin(), end = messages.end(); itr != end; ++itr) {
-        const QMap<QString, QString>& msg = *itr;
+        const Shared::Message& msg = *itr;
         container.push_back(msg);
     }
 }
