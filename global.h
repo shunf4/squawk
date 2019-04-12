@@ -65,10 +65,15 @@ public:
     Message();
 
     void setFrom(const QString& from);
+    void setFromResource(const QString& from);
+    void setFromJid(const QString& from);
     void setTo(const QString& to);
+    void setToResource(const QString& to);
+    void setToJid(const QString& to);
     void setTime(const QDateTime& p_time);
     void setId(const QString& p_id);
     void setBody(const QString& p_body);
+    void setOutgoing(bool og);
     
     QString getFrom() const;
     QString getFromJid() const;
@@ -79,6 +84,7 @@ public:
     QDateTime getTime() const;
     QString getId() const;
     QString getBody() const;
+    bool getOutgoing() const;
     
     QString getPenPalJid() const;
     QString getPenPalResource() const;
@@ -92,6 +98,7 @@ private:
     QString body;
     QDateTime time;
     Type type;
+    bool outgoing;
 };
 
 };

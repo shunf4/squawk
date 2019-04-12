@@ -6,6 +6,7 @@ Models::Account::Account(const QMap<QString, QVariant>& data, Models::Item* pare
     login(data.value("login").toString()),
     password(data.value("password").toString()),
     server(data.value("server").toString()),
+    resource(data.value("resource").toString()),
     state(Shared::disconnected),
     availability(Shared::offline)
 {
@@ -135,6 +136,8 @@ QVariant Models::Account::data(int column) const
             return password;
         case 5:
             return Shared::availabilityNames[availability];
+        case 6:
+            return resource;
         default:
             return QVariant();
     }
@@ -142,7 +145,7 @@ QVariant Models::Account::data(int column) const
 
 int Models::Account::columnCount() const
 {
-    return 6;
+    return 7;
 }
 
 void Models::Account::update(const QString& field, const QVariant& value)
@@ -159,5 +162,21 @@ void Models::Account::update(const QString& field, const QVariant& value)
         setState(value.toUInt());
     } else if (field == "availability") {
         setAvailability(value.toUInt());
+    } else if (field == "resource") {
+        setResource(value.toString());
     }
 }
+
+QString Models::Account::getResource() const
+{
+    return resource;
+}
+
+void Models::Account::setResource(const QString& p_resource)
+{
+    if (resource != p_resource) {
+        resource = p_resource;
+        changed(6);
+    }
+}
+

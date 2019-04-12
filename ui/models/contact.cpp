@@ -206,16 +206,12 @@ QIcon Models::Contact::getStatusIcon() const
 
 QString Models::Contact::getAccountName() const
 {
-    const Item* p = this;
-    do {
-        p = p->parentItemConst();
-    } while (p != 0 && p->type != Item::account);
-    
-    if (p == 0) {
+    const Account* acc = getParentAccount();
+    if (acc == 0) {
         qDebug() << "An attempt to request account name of the contact " << jid << " but the parent account wasn't found, returning empty string";
         return "";
     }
-    return p->getName();
+    return acc->getName();
 }
 
 void Models::Contact::addMessage(const Shared::Message& data)
@@ -265,15 +261,30 @@ void Models::Contact::getMessages(Models::Contact::Messages& container) const
 
 QString Models::Contact::getAccountJid() const
 {
+    const Account* acc = getParentAccount();
+    if (acc == 0) {
+        qDebug() << "An attempt to request account jid of the contact " << jid << " but the parent account wasn't found, returning empty string";
+        return "";
+    }
+    return acc->getLogin() + "@" + acc->getServer();
+}
+
+QString Models::Contact::getAccountResource() const
+{
+    const Account* acc = getParentAccount();
+    if (acc == 0) {
+        qDebug() << "An attempt to request account resource of the contact " << jid << " but the parent account wasn't found, returning empty string";
+        return "";
+    }
+    return acc->getResource();
+}
+
+const Models::Account * Models::Contact::getParentAccount() const
+{
     const Item* p = this;
     do {
         p = p->parentItemConst();
     } while (p != 0 && p->type != Item::account);
     
-    if (p == 0) {
-        qDebug() << "An attempt to request account jid of the contact " << jid << " but the parent account wasn't found, returning empty string";
-        return "";
-    }
-    const Account* acc = static_cast<const Account*>(p);
-    return acc->getLogin() + "@" + acc->getServer();
+    return static_cast<const Account*>(p);
 }

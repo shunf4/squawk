@@ -8,7 +8,8 @@ Shared::Message::Message(Shared::Message::Type p_type):
     id(),
     body(),
     time(),
-    type(p_type)
+    type(p_type),
+    outgoing(false)
 {
 }
 
@@ -20,7 +21,8 @@ Shared::Message::Message():
     id(),
     body(),
     time(),
-    type(Message::normal)
+    type(Message::normal),
+    outgoing(false)
 {
 }
 
@@ -116,10 +118,49 @@ QString Shared::Message::getToResource() const
 
 QString Shared::Message::getPenPalJid() const
 {
-    return jFrom;
+    if (outgoing) {
+        return jTo;
+    } else {
+        return jFrom;
+    }
 }
 
 QString Shared::Message::getPenPalResource() const
 {
-    return rFrom;
+    if (outgoing) {
+        return rTo;
+    } else {
+        return rFrom;
+    }
 }
+
+void Shared::Message::setFromJid(const QString& from)
+{
+    jFrom = from;
+}
+
+void Shared::Message::setFromResource(const QString& from)
+{
+    rFrom = from;
+}
+
+void Shared::Message::setToJid(const QString& to)
+{
+    jTo = to;
+}
+
+void Shared::Message::setToResource(const QString& to)
+{
+    rTo = to;
+}
+
+bool Shared::Message::getOutgoing() const
+{
+    return outgoing;
+}
+
+void Shared::Message::setOutgoing(bool og)
+{
+    outgoing = og;
+}
+

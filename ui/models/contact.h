@@ -9,7 +9,8 @@
 #include <deque>
 
 namespace Models {
-
+    
+class Account;
 class Contact : public Item
 {
     Q_OBJECT
@@ -34,6 +35,7 @@ public:
     void appendChild(Models::Item * child) override;
     QString getAccountName() const;
     QString getAccountJid() const;
+    QString getAccountResource() const;
     
     void addMessage(const Shared::Message& data);
     unsigned int getMessagesCount() const;
@@ -42,6 +44,7 @@ public:
     
 protected:
     void _removeChild(int index) override;
+    const Account* getParentAccount() const;
     
 protected slots:
     void refresh();

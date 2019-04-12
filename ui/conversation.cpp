@@ -36,6 +36,7 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     
     connect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
     connect(&ker, SIGNAL(enterPressed()), this, SLOT(onEnterPressed()));
+    connect(m_ui->sendButton, SIGNAL(clicked(bool)), this, SLOT(onEnterPressed()));
     
     m_ui->messageEditor->installEventFilter(&ker);
     
@@ -138,9 +139,11 @@ void Conversation::onEnterPressed()
     const QString& aJid = contact->getAccountJid();
     m_ui->messageEditor->clear();
     Shared::Message msg(Shared::Message::chat);
-    msg.setFrom(aJid);
+    msg.setFromJid(aJid);
+    msg.setFromResource(contact->getAccountResource());
     msg.setTo(contact->getJid());
     msg.setBody(body);
+    msg.setOutgoing(true);
     line->message(msg);
     emit sendMessage(msg);
 }

@@ -33,6 +33,7 @@ void Core::Squawk::stop()
         settings.setValue("server", acc->getServer());
         settings.setValue("login", acc->getLogin());
         settings.setValue("password", acc->getPassword());
+        settings.setValue("resource", acc->getResource());
     }
     settings.endArray();
     settings.endGroup();
@@ -51,7 +52,13 @@ void Core::Squawk::start()
     int size = settings.beginReadArray("accounts");
     for (int i = 0; i < size; ++i) {
         settings.setArrayIndex(i);
-        addAccount(settings.value("login").toString(), settings.value("server").toString(), settings.value("password").toString(), settings.value("name").toString());
+        addAccount(
+            settings.value("login").toString(), 
+            settings.value("server").toString(), 
+            settings.value("password").toString(), 
+            settings.value("name").toString(), 
+            settings.value("resource").toString()
+        );
     }
     settings.endArray();
     settings.endGroup();
@@ -63,13 +70,15 @@ void Core::Squawk::newAccountRequest(const QMap<QString, QVariant>& map)
     QString login = map.value("login").toString();
     QString server = map.value("server").toString();
     QString password = map.value("password").toString();
+    QString resource = map.value("resource").toString();
     
-    addAccount(login, server, password, name);
+    addAccount(login, server, password, name, resource);
 }
 
-void Core::Squawk::addAccount(const QString& login, const QString& server, const QString& password, const QString& name)
+void Core::Squawk::addAccount(const QString& login, const QString& server, const QString& password, const QString& name, const QString& resource)
 {
     Account* acc = new Account(login, server, password, name);
+    acc->setResource(resource);
     accounts.push_back(acc);
     amap.insert(std::make_pair(name, acc));
     
@@ -93,6 +102,7 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
         {"server", server},
         {"name", name},
         {"password", password},
+        {"resource", resource},
         {"state", Shared::disconnected},
         {"offline", Shared::offline}
     };

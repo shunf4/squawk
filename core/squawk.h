@@ -55,7 +55,7 @@ private:
     Shared::Availability state;
     
 private:
-    void addAccount(const QString& login, const QString& server, const QString& password, const QString& name);
+    void addAccount(const QString& login, const QString& server, const QString& password, const QString& name, const QString& resource);
     
 private slots:
     void onAccountConnectionStateChanged(int state);

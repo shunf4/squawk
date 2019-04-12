@@ -25,6 +25,9 @@ namespace Models {
         void setPassword(const QString& p_password);
         QString getPassword() const;
         
+        void setResource(const QString& p_resource);
+        QString getResource() const;
+        
         void setAvailability(Shared::Availability p_avail);
         void setAvailability(unsigned int p_avail);
         Shared::Availability getAvailability() const;
@@ -40,6 +43,7 @@ namespace Models {
         QString login;
         QString password;
         QString server;
+        QString resource;
         Shared::ConnectionState state;
         Shared::Availability availability;
     };

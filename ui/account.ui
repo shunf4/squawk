@@ -102,6 +102,23 @@
        </property>
       </widget>
      </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_5">
+       <property name="text">
+        <string>Resource</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QLineEdit" name="resource">
+       <property name="toolTip">
+        <string>A resource name like &quot;Home&quot; or &quot;Work&quot;</string>
+       </property>
+       <property name="text">
+        <string>QXmpp</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>

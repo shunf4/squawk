@@ -26,6 +26,7 @@ MessageLine::MessageLine(QWidget* parent):
 {
     setLayout(layout);
     setBackgroundRole(QPalette::Base);
+    layout->addStretch();
 }
 
 MessageLine::~MessageLine()
@@ -38,16 +39,31 @@ void MessageLine::message(const Shared::Message& msg)
     QHBoxLayout* hBox = new QHBoxLayout();
     QWidget* message = new QWidget();
     message->setLayout(vBox);
+    //message->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
+    message->setBackgroundRole(QPalette::AlternateBase);
+    message->setAutoFillBackground(true);;
     
     QLabel* body = new QLabel(msg.getBody());
     QLabel* sender = new QLabel(msg.getFrom());
+    QFont f;
+    f.setBold(true);
+    sender->setFont(f);
     
-    vBox->addWidget(body);
+    body->setWordWrap(true);
+    
     vBox->addWidget(sender);
+    vBox->addWidget(body);
     
-    hBox->addStretch();
-    hBox->addWidget(message);
+    if (msg.getOutgoing()) {
+        body->setAlignment(Qt::AlignRight);
+        sender->setAlignment(Qt::AlignRight);
+        hBox->addStretch();
+        hBox->addWidget(message);
+    } else {
+        hBox->addWidget(message);
+        hBox->addStretch();
+    }
     
-    layout->addItem(hBox);
+    layout->addLayout(hBox);
 }
 

@@ -18,6 +18,7 @@ QMap<QString, QVariant> Account::value() const
     map["password"] = m_ui->password->text();
     map["server"] = m_ui->server->text();
     map["name"] = m_ui->name->text();
+    map["resource"] = m_ui->resource->text();
     
     return map;
 }
