@@ -73,7 +73,10 @@ public:
     void setTime(const QDateTime& p_time);
     void setId(const QString& p_id);
     void setBody(const QString& p_body);
+    void setThread(const QString& p_body);
     void setOutgoing(bool og);
+    void setForwarded(bool fwd);
+    void setType(Type t);
     
     QString getFrom() const;
     QString getFromJid() const;
@@ -84,10 +87,14 @@ public:
     QDateTime getTime() const;
     QString getId() const;
     QString getBody() const;
+    QString getThread() const;
     bool getOutgoing() const;
+    bool getForwarded() const;
+    Type getType() const;
     
     QString getPenPalJid() const;
     QString getPenPalResource() const;
+    void generateRandomId();
     
 private:
     QString jFrom;
@@ -97,8 +104,10 @@ private:
     QString id;
     QString body;
     QDateTime time;
+    QString thread;
     Type type;
     bool outgoing;
+    bool forwarded;
 };
 
 };

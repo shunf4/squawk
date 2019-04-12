@@ -1,6 +1,6 @@
 /*
  * <one line to give the program's name and a brief idea of what it does.>
- * Copyright (C) 2019  Юрий Губич <y.gubich@initi.ru>
+ * Copyright (C) 2019  Yury Gubich <blue@macaw.me>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -34,12 +34,17 @@ public:
     ~MessageLine();
     
     void message(const Shared::Message& msg);
+    void setMyName(const QString& name);
+    void setPalName(const QString& jid, const QString& name);
     
 private:
     typedef W::Order<Shared::Message*> Order;
     std::map<QString, Shared::Message*> messageIndex;
     Order messageOrder;
     QVBoxLayout* layout;
+    
+    QString myName;
+    std::map<QString, QString> palNames;
 };
 
 #endif // MESSAGELINE_H

@@ -1,5 +1,4 @@
 #include "account.h"
-#include <qxmpp/QXmppRosterManager.h>
 #include <qxmpp/QXmppMessage.h>
 #include <QDateTime>
 
@@ -12,7 +11,8 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     config(),
     presence(),
     state(Shared::disconnected),
-    groups()
+    groups(),
+    cm(new QXmppCarbonManager())
 {
     config.setUser(p_login);
     config.setDomain(p_server);
@@ -30,6 +30,11 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     QObject::connect(&rm, SIGNAL(itemRemoved(const QString&)), this, SLOT(onRosterItemRemoved(const QString&)));
     QObject::connect(&rm, SIGNAL(itemChanged(const QString&)), this, SLOT(onRosterItemChanged(const QString&)));
     //QObject::connect(&rm, SIGNAL(presenceChanged(const QString&, const QString&)), this, SLOT(onRosterPresenceChanged(const QString&, const QString&)));
+    
+    client.addExtension(cm);
+    
+    QObject::connect(cm, SIGNAL(messageReceived(const QXmppMessage&)), this, SLOT(onCarbonMessageReceived(const QXmppMessage&)));
+    QObject::connect(cm, SIGNAL(messageSent(const QXmppMessage&)), this, SLOT(onCarbonMessageSent(const QXmppMessage&)));
 }
 
 Account::~Account()
@@ -65,6 +70,7 @@ void Core::Account::onClientConnected()
 {
     if (state == Shared::connecting) {
         state = Shared::connected;
+        cm->setCarbonsEnabled(true);
         emit connectionStateChanged(state);
     } else {
         qDebug("Something weird had happened - xmpp client reported about successful connection but account wasn't in connecting state");
@@ -335,36 +341,13 @@ void Core::Account::setResource(const QString& p_resource)
 
 void Core::Account::onMessageReceived(const QXmppMessage& msg)
 {
-    QString from = msg.from();
-    QString to = msg.to();
     bool handled = false;
     switch (msg.type()) {
         case QXmppMessage::Normal:
             qDebug() << "received a message with type \"Normal\", not sure what to do with it now, skipping";
             break;
-        case QXmppMessage::Chat:{
-            QString body(msg.body());
-            if (body.size() != 0) {
-                QString id(msg.id());
-                QDateTime time(msg.stamp());
-                Shared::Message sMsg(Shared::Message::chat);
-                sMsg.setId(id);
-                sMsg.setFrom(from);
-                sMsg.setTo(to);
-                sMsg.setBody(body);
-                if (time.isValid()) {
-                    sMsg.setTime(time);
-                }
-                emit message(sMsg);
-                
-                if (msg.isReceiptRequested() && id.size() > 0) {
-                    QXmppMessage receipt(getFullJid(), from, "");
-                    receipt.setReceiptId(id);
-                    client.sendPacket(receipt);
-                    handled = true;
-                }
-            }
-        }
+        case QXmppMessage::Chat:
+            handled = handleChatMessage(msg);
             break;
         case QXmppMessage::GroupChat:
             qDebug() << "received a message with type \"GroupChat\", not sure what to do with it now, skipping";
@@ -377,10 +360,9 @@ void Core::Account::onMessageReceived(const QXmppMessage& msg)
             break;
     }
     if (!handled) {
-        
         qDebug() << "Message wasn't handled: ";
-        qDebug() << "- from: " << from;
-        qDebug() << "- to: " << to;
+        qDebug() << "- from: " << msg.from();
+        qDebug() << "- to: " << msg.to();
         qDebug() << "- body: " << msg.body();
         qDebug() << "- type: " << msg.type();
         qDebug() << "- state: " << msg.state();
@@ -404,9 +386,52 @@ QString Core::Account::getFullJid() const
 void Core::Account::sendMessage(const Shared::Message& data)
 {
     if (state == Shared::connected) {
-        client.sendMessage(data.getTo(), data.getBody());
+        QXmppMessage msg(data.getFrom(), data.getTo(), data.getBody(), data.getThread());
+        msg.setId(data.getId());
+        msg.setType(static_cast<QXmppMessage::Type>(data.getType()));       //it is safe here, my type is compatible
+        client.sendPacket(msg);
     } else {
         qDebug() << "An attempt to send message with not connected account " << name << ", skipping";
     }
 }
 
+void Core::Account::onCarbonMessageReceived(const QXmppMessage& msg)
+{
+        handleChatMessage(msg, false, true);
+}
+
+void Core::Account::onCarbonMessageSent(const QXmppMessage& msg)
+{
+        handleChatMessage(msg, true, true);
+}
+
+bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bool forwarded)
+{
+    QString body(msg.body());
+    if (body.size() != 0) {
+        QString id(msg.id());
+        QDateTime time(msg.stamp());
+        Shared::Message sMsg(Shared::Message::chat);
+        sMsg.setId(id);
+        sMsg.setFrom(msg.from());
+        sMsg.setTo(msg.to());
+        sMsg.setBody(body);
+        sMsg.setForwarded(forwarded);
+        sMsg.setOutgoing(outgoing);
+        if (time.isValid()) {
+            sMsg.setTime(time);
+        }
+        emit message(sMsg);
+        
+        if (!forwarded && !outgoing) {
+            if (msg.isReceiptRequested() && id.size() > 0) {
+                QXmppMessage receipt(getFullJid(), msg.from(), "");
+                receipt.setReceiptId(id);
+                client.sendPacket(receipt);
+            }
+        }
+        
+        return true;
+    }
+    return false;
+}

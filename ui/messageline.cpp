@@ -1,6 +1,6 @@
 /*
  * <one line to give the program's name and a brief idea of what it does.>
- * Copyright (C) 2019  Юрий Губич <y.gubich@initi.ru>
+ * Copyright (C) 2019  Yury Gubich <blue@macaw.me>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,7 +22,9 @@ MessageLine::MessageLine(QWidget* parent):
     QWidget(parent),
     messageIndex(),
     messageOrder(),
-    layout(new QVBoxLayout())
+    layout(new QVBoxLayout()),
+    myName(),
+    palNames()
 {
     setLayout(layout);
     setBackgroundRole(QPalette::Base);
@@ -39,12 +41,11 @@ void MessageLine::message(const Shared::Message& msg)
     QHBoxLayout* hBox = new QHBoxLayout();
     QWidget* message = new QWidget();
     message->setLayout(vBox);
-    //message->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
     message->setBackgroundRole(QPalette::AlternateBase);
     message->setAutoFillBackground(true);;
     
     QLabel* body = new QLabel(msg.getBody());
-    QLabel* sender = new QLabel(msg.getFrom());
+    QLabel* sender = new QLabel();
     QFont f;
     f.setBold(true);
     sender->setFont(f);
@@ -57,9 +58,17 @@ void MessageLine::message(const Shared::Message& msg)
     if (msg.getOutgoing()) {
         body->setAlignment(Qt::AlignRight);
         sender->setAlignment(Qt::AlignRight);
+        sender->setText(myName);
         hBox->addStretch();
         hBox->addWidget(message);
     } else {
+        QString jid = msg.getFromJid();
+        std::map<QString, QString>::iterator itr = palNames.find(jid);
+        if (itr != palNames.end()) {
+            sender->setText(itr->second);
+        } else {
+            sender->setText(jid);
+        }
         hBox->addWidget(message);
         hBox->addStretch();
     }
@@ -67,3 +76,17 @@ void MessageLine::message(const Shared::Message& msg)
     layout->addLayout(hBox);
 }
 
+void MessageLine::setMyName(const QString& name)
+{
+    myName = name;
+}
+
+void MessageLine::setPalName(const QString& jid, const QString& name)
+{
+    std::map<QString, QString>::iterator itr = palNames.find(jid);
+    if (itr == palNames.end()) {
+        palNames.insert(std::make_pair(jid, name));
+    } else {
+        itr->second = name;
+    }
+}

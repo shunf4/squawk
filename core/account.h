@@ -5,6 +5,8 @@
 #include <map>
 #include <set>
 
+#include <qxmpp/QXmppRosterManager.h>
+#include <qxmpp/QXmppCarbonManager.h>
 #include <qxmpp/QXmppClient.h>
 #include "../global.h"
 
@@ -58,6 +60,7 @@ private:
     QXmppPresence presence;
     Shared::ConnectionState state;
     std::map<QString, std::set<QString>> groups;
+    QXmppCarbonManager* cm;
     
 private slots:
     void onClientConnected();
@@ -69,9 +72,12 @@ private slots:
     void onRosterPresenceChanged(const QString& bareJid, const QString& resource);
     void onPresenceReceived(const QXmppPresence& presence);
     void onMessageReceived(const QXmppMessage& message);
+    void onCarbonMessageReceived(const QXmppMessage& message);
+    void onCarbonMessageSent(const QXmppMessage& message);
   
 private:
     void addedAccount(const QString &bareJid);
+    bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false);
 };
 
 }

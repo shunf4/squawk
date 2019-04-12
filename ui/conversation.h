@@ -52,7 +52,10 @@ public:
     
     QString getJid() const;
     QString getAccount() const;
+    QString getPalResource() const;
     void addMessage(const Shared::Message& data);
+    
+    void setPalResource(const QString& res);
     
 signals:
     void sendMessage(const Shared::Message& message);
@@ -71,6 +74,8 @@ private:
     MessageLine* line;
     QScopedPointer<Ui::Conversation> m_ui;
     KeyEnterReceiver ker;
+    QString activePalResource;
+    QString thread;
 };
 
 #endif // CONVERSATION_H

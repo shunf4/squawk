@@ -1,4 +1,5 @@
 #include "global.h"
+#include <uuid/uuid.h>
 
 Shared::Message::Message(Shared::Message::Type p_type):
     jFrom(),
@@ -8,8 +9,10 @@ Shared::Message::Message(Shared::Message::Type p_type):
     id(),
     body(),
     time(),
+    thread(),
     type(p_type),
-    outgoing(false)
+    outgoing(false),
+    forwarded(false)
 {
 }
 
@@ -21,8 +24,10 @@ Shared::Message::Message():
     id(),
     body(),
     time(),
+    thread(),
     type(Message::normal),
-    outgoing(false)
+    outgoing(false),
+    forwarded(false)
 {
 }
 
@@ -164,3 +169,42 @@ void Shared::Message::setOutgoing(bool og)
     outgoing = og;
 }
 
+bool Shared::Message::getForwarded() const
+{
+    return forwarded;
+}
+
+void Shared::Message::generateRandomId()
+{
+    uuid_t uuid;
+    uuid_generate(uuid);
+    
+    char uuid_str[37];
+    uuid_unparse_lower(uuid, uuid_str);
+    id = uuid_str;
+}
+
+QString Shared::Message::getThread() const
+{
+    return thread;
+}
+
+void Shared::Message::setForwarded(bool fwd)
+{
+    forwarded = fwd;
+}
+
+void Shared::Message::setThread(const QString& p_body)
+{
+    thread = p_body;
+}
+
+Shared::Message::Type Shared::Message::getType() const
+{
+    return type;
+}
+
+void Shared::Message::setType(Shared::Message::Type t)
+{
+    type = t;
+}

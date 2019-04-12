@@ -25,6 +25,7 @@ add_subdirectory(core)
 
 target_link_libraries(squawk squawkUI)
 target_link_libraries(squawk squawkCORE)
+target_link_libraries(squawk uuid)
 
 # Install the executable
 install(TARGETS squawk DESTINATION bin)

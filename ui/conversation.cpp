@@ -19,13 +19,16 @@
 #include "conversation.h"
 #include "ui_conversation.h"
 #include <QDebug>
+#include <QScrollBar>
 
 Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     QWidget(parent),
     contact(p_contact),
     m_ui(new Ui::Conversation),
     line(new MessageLine()),
-    ker()
+    ker(),
+    activePalResource(),
+    thread()
 {
     m_ui->setupUi(this);
     m_ui->splitter->setSizes({300, 0});
@@ -47,7 +50,10 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
         addMessage(*itr);
     }
     
+    line->setMyName(p_contact->getAccountName());
+    
     m_ui->scrollArea->setWidget(line);
+    m_ui->scrollArea->verticalScrollBar()->setBackgroundRole(QPalette::Base);
 }
 
 Conversation::~Conversation()
@@ -61,6 +67,7 @@ void Conversation::setName(const QString& name)
         m_ui->nameLabel->setText(getJid());
     } else {
         m_ui->nameLabel->setText(name);
+        line->setPalName(getJid(), name);
     }
 }
 
@@ -101,7 +108,19 @@ void Conversation::onContactChanged(Models::Item* item, int row, int col)
 
 void Conversation::addMessage(const Shared::Message& data)
 {
+    int pos = m_ui->scrollArea->verticalScrollBar()->sliderPosition();
+    int max = m_ui->scrollArea->verticalScrollBar()->maximum();
     line->message(data);
+    
+    if (pos == max) {
+        m_ui->scrollArea->verticalScrollBar()->setSliderPosition(m_ui->scrollArea->verticalScrollBar()->maximum());
+    }
+    if (!data.getOutgoing()) {
+        const QString& res = data.getPenPalResource();
+        if (res.size() > 0) {
+            setPalResource(res);
+        }
+    }
 }
 
 KeyEnterReceiver::KeyEnterReceiver(QObject* parent): QObject(parent), ownEvent(false) {}
@@ -133,17 +152,33 @@ bool KeyEnterReceiver::eventFilter(QObject* obj, QEvent* event)
     return QObject::eventFilter(obj, event);
 }
 
+QString Conversation::getPalResource() const
+{
+    return activePalResource;
+}
+
+void Conversation::setPalResource(const QString& res)
+{
+    activePalResource = res;
+}
+
 void Conversation::onEnterPressed()
 {
     QString body(m_ui->messageEditor->toPlainText());
-    const QString& aJid = contact->getAccountJid();
-    m_ui->messageEditor->clear();
-    Shared::Message msg(Shared::Message::chat);
-    msg.setFromJid(aJid);
-    msg.setFromResource(contact->getAccountResource());
-    msg.setTo(contact->getJid());
-    msg.setBody(body);
-    msg.setOutgoing(true);
-    line->message(msg);
-    emit sendMessage(msg);
+    
+    if (body.size() > 0) {
+        const QString& aJid = contact->getAccountJid();
+        m_ui->messageEditor->clear();
+        Shared::Message msg(Shared::Message::chat);
+        msg.setFromJid(aJid);
+        msg.setFromResource(contact->getAccountResource());
+        qDebug() << "sending message from " << contact->getAccountResource();
+        msg.setToJid(contact->getJid());
+        msg.setToResource(activePalResource);
+        msg.setBody(body);
+        msg.setOutgoing(true);
+        msg.generateRandomId();
+        line->message(msg);
+        emit sendMessage(msg);
+    }
 }

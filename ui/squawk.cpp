@@ -156,12 +156,14 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
     if (item.isValid()) {
         Models::Item* node = static_cast<Models::Item*>(item.internalPointer());
         Models::Contact* contact = 0;
+        QString res;
         switch (node->type) {
             case Models::Item::contact:
                 contact = static_cast<Models::Contact*>(node);
                 break;
             case Models::Item::presence:
                 contact = static_cast<Models::Contact*>(node->parentItem());
+                res = node->getName();
                 break;
             default:
                 m_ui->roster->expand(item);
@@ -177,6 +179,10 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 itr->second->show();
                 itr->second->raise();
                 itr->second->activateWindow();
+            
+                if (res.size() > 0) {
+                    itr->second->setPalResource(res);
+                }
             } else {
                 Conversation* conv = new Conversation(contact);
                 
@@ -188,6 +194,10 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 rosterModel.dropMessages(account, jid);
                 
                 conv->show();
+                
+                if (res.size() > 0) {
+                    itr->second->setPalResource(res);
+                }
             }
         }
     }
@@ -209,11 +219,11 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
     const QString& from = data.getPenPalJid();
     Conversations::iterator itr = conversations.find({account, from});
     if (itr != conversations.end()) {
-        qDebug() << "adding message";
         itr->second->addMessage(data);
     } else {
-        qDebug() << "pending message";
-        rosterModel.addMessage(account, data);
+        if (!data.getForwarded()) {
+            rosterModel.addMessage(account, data);
+        }
     }
 }
 
