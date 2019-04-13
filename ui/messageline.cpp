@@ -17,6 +17,7 @@
  */
 
 #include "messageline.h"
+#include <QDebug>
 
 MessageLine::MessageLine(QWidget* parent):
     QWidget(parent),
@@ -24,7 +25,8 @@ MessageLine::MessageLine(QWidget* parent):
     messageOrder(),
     layout(new QVBoxLayout()),
     myName(),
-    palNames()
+    palNames(),
+    views()
 {
     setLayout(layout);
     setBackgroundRole(QPalette::Base);
@@ -33,10 +35,38 @@ MessageLine::MessageLine(QWidget* parent):
 
 MessageLine::~MessageLine()
 {
+    for (Index::const_iterator itr = messageIndex.begin(), end = messageIndex.end(); itr != end; ++itr) {
+        delete itr->second;
+    }
 }
 
-void MessageLine::message(const Shared::Message& msg)
+MessageLine::Position MessageLine::message(const Shared::Message& msg)
 {
+    QString id = msg.getId();
+    Index::iterator itr = messageIndex.find(id);
+    if (itr != messageIndex.end()) {
+        qDebug() << "received more then one message with the same id, skipping yet the new one";
+        return invalid;
+    }
+    
+    Shared::Message* copy = new Shared::Message(msg);
+    std::pair<Order::const_iterator, bool> result = messageOrder.insert(std::make_pair(msg.getTime(), copy));
+    if (!result.second) {
+        qDebug() << "Error appending a message into a message list - seems like the time of that message exactly matches the time of some other message, can't put them in order, skipping yet";
+        delete copy;
+        return invalid;
+    }
+    messageIndex.insert(std::make_pair(id, copy));
+    int index = std::distance<Order::const_iterator>(messageOrder.begin(), result.first);   //need to make with binary indexed tree
+    Position res = invalid;
+    if (index == 0) {
+        res = beggining;
+    } else if (index == messageIndex.size() - 1) {
+        res = end;
+    } else {
+        res = middle;
+    }
+    
     QVBoxLayout* vBox = new QVBoxLayout();
     QHBoxLayout* hBox = new QHBoxLayout();
     QWidget* message = new QWidget();
@@ -73,7 +103,13 @@ void MessageLine::message(const Shared::Message& msg)
         hBox->addStretch();
     }
     
-    layout->addLayout(hBox);
+    if (res == end) {
+        layout->addLayout(hBox);
+    } else {
+        layout->insertLayout(index, hBox);
+    }
+    
+    return res;
 }
 
 void MessageLine::setMyName(const QString& name)
@@ -89,4 +125,10 @@ void MessageLine::setPalName(const QString& jid, const QString& name)
     } else {
         itr->second = name;
     }
+}
+
+void MessageLine::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    emit resize(event->size().height() - event->oldSize().height());
 }

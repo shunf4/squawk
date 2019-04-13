@@ -68,14 +68,21 @@ protected:
 protected slots:
     void onContactChanged(Models::Item* item, int row, int col);
     void onEnterPressed();
+    void onMessagesResize(int amount);
     
 private:
+    enum Scroll {
+        nothing,
+        keep,
+        down
+    };
     Models::Contact* contact;
     MessageLine* line;
     QScopedPointer<Ui::Conversation> m_ui;
     KeyEnterReceiver ker;
     QString activePalResource;
     QString thread;
+    Scroll scroll;
 };
 
 #endif // CONVERSATION_H

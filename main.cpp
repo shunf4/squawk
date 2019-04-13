@@ -35,6 +35,7 @@ int main(int argc, char *argv[])
     QObject::connect(&w, SIGNAL(disconnectAccount(const QString&)), squawk, SLOT(disconnectAccount(const QString&)));
     QObject::connect(&w, SIGNAL(changeState(int)), squawk, SLOT(changeState(int)));
     QObject::connect(&w, SIGNAL(sendMessage(const QString&, const Shared::Message&)), squawk, SLOT(sendMessage(const QString&, const Shared::Message&)));
+    QObject::connect(&w, SIGNAL(requestArchive(const QString&, const QString&)), squawk, SLOT(requestArchive(const QString&, const QString&)));
     
     QObject::connect(squawk, SIGNAL(newAccount(const QMap<QString, QVariant>&)), &w, SLOT(newAccount(const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(accountAvailabilityChanged(const QString&, int)), &w, SLOT(accountAvailabilityChanged(const QString&, int)));

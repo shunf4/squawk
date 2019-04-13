@@ -45,6 +45,7 @@ public slots:
     void disconnectAccount(const QString& account);
     void changeState(int state);
     void sendMessage(const QString& account, const Shared::Message& data);
+    void requestArchive(const QString& account, const QString& jid);
     
 private:
     typedef std::deque<Account*> Accounts;

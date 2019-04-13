@@ -31,6 +31,7 @@ signals:
     void disconnectAccount(const QString&);
     void changeState(int state);
     void sendMessage(const QString& account, const Shared::Message& data);
+    void requestArchive(const QString& account, const QString& jid);
     
 public slots:
     void newAccount(const QMap<QString, QVariant>& account);

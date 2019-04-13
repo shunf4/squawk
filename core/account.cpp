@@ -7,12 +7,14 @@ using namespace Core;
 Account::Account(const QString& p_login, const QString& p_server, const QString& p_password, const QString& p_name, QObject* parent):
     QObject(parent),
     name(p_name),
+    achiveQueries(),
     client(),
     config(),
     presence(),
     state(Shared::disconnected),
     groups(),
-    cm(new QXmppCarbonManager())
+    cm(new QXmppCarbonManager()),
+    am(new QXmppMamManager())
 {
     config.setUser(p_login);
     config.setDomain(p_server);
@@ -35,6 +37,12 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     
     QObject::connect(cm, SIGNAL(messageReceived(const QXmppMessage&)), this, SLOT(onCarbonMessageReceived(const QXmppMessage&)));
     QObject::connect(cm, SIGNAL(messageSent(const QXmppMessage&)), this, SLOT(onCarbonMessageSent(const QXmppMessage&)));
+    
+    client.addExtension(am);
+    
+    QObject::connect(am, SIGNAL(archivedMessageReceived(const QString&, const QXmppMessage&)), this, SLOT(onMamMessageReceived(const QString&, const QXmppMessage&)));
+    QObject::connect(am, SIGNAL(resultsRecieved(const QString&, const QXmppResultSetReply&, bool)), 
+                     this, SLOT(onMamResultsReceived(const QString&, const QXmppResultSetReply&, bool)));
 }
 
 Account::~Account()
@@ -397,15 +405,15 @@ void Core::Account::sendMessage(const Shared::Message& data)
 
 void Core::Account::onCarbonMessageReceived(const QXmppMessage& msg)
 {
-        handleChatMessage(msg, false, true);
+    handleChatMessage(msg, false, true);
 }
 
 void Core::Account::onCarbonMessageSent(const QXmppMessage& msg)
 {
-        handleChatMessage(msg, true, true);
+    handleChatMessage(msg, true, true);
 }
 
-bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bool forwarded)
+bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bool forwarded, bool guessing)
 {
     QString body(msg.body());
     if (body.size() != 0) {
@@ -417,6 +425,13 @@ bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bo
         sMsg.setTo(msg.to());
         sMsg.setBody(body);
         sMsg.setForwarded(forwarded);
+        if (guessing) {
+            if (sMsg.getFromJid() == getLogin() + "@" + getServer()) {
+                outgoing = true;
+            } else {
+                outgoing = false;
+            }
+        }
         sMsg.setOutgoing(outgoing);
         if (time.isValid()) {
             sMsg.setTime(time);
@@ -434,4 +449,33 @@ bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bo
         return true;
     }
     return false;
+}
+
+void Core::Account::onMamMessageReceived(const QString& bareJid, const QXmppMessage& msg)
+{
+    handleChatMessage(msg, false, true, true);
+}
+
+void Core::Account::requestAchive(const QString& jid)
+{
+    QXmppResultSetQuery query;
+    query.setMax(100);
+    QDateTime from = QDateTime::currentDateTime().addDays(-7);
+
+    QString q = am->retrieveArchivedMessages("", "", jid, from, QDateTime(), query);
+    achiveQueries.insert(std::make_pair(q, jid));
+}
+
+void Core::Account::onMamResultsReceived(const QString& queryId, const QXmppResultSetReply& resultSetReply, bool complete)
+{
+    std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
+    QString jid = itr->second;
+    achiveQueries.erase(itr);
+    if (!complete) {
+        QXmppResultSetQuery q;
+        q.setAfter(resultSetReply.last());
+        q.setMax(100);
+        QString nQ = am->retrieveArchivedMessages("", "", jid, QDateTime::currentDateTime().addDays(-7), QDateTime(), q);
+        achiveQueries.insert(std::make_pair(nQ, jid));
+    }
 }

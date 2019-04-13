@@ -220,3 +220,13 @@ void Core::Squawk::sendMessage(const QString& account, const Shared::Message& da
     
     itr->second->sendMessage(data);
 }
+
+void Core::Squawk::requestArchive(const QString& account, const QString& jid)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug("An attempt to request an archive of non existing account, skipping");
+        return;
+    }
+    itr->second->requestAchive(jid);
+}

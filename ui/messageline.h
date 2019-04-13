@@ -21,30 +21,52 @@
 
 #include <QWidget>
 #include <QVBoxLayout>
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QResizeEvent>
 #include "../global.h"
-#include "../order.h"
-
 
 class MessageLine : public QWidget
 {
     Q_OBJECT
 public:
+    enum Position {
+        beggining,
+        middle,
+        end,
+        invalid
+    };
     MessageLine(QWidget* parent = 0);
     ~MessageLine();
     
-    void message(const Shared::Message& msg);
+    Position message(const Shared::Message& msg);
     void setMyName(const QString& name);
     void setPalName(const QString& jid, const QString& name);
     
+signals:
+    void resize(int amount);
+    
+protected:
+    void resizeEvent(QResizeEvent * event) override;
+    
 private:
-    typedef W::Order<Shared::Message*> Order;
-    std::map<QString, Shared::Message*> messageIndex;
+    struct Comparator {
+        bool operator()(const Shared::Message& a, const Shared::Message& b) const {
+            return a.getTime() < b.getTime();
+        }
+        bool operator()(const Shared::Message* a, const Shared::Message* b) const {
+            return a->getTime() < b->getTime();
+        }
+    };
+    typedef std::map<QDateTime, Shared::Message*> Order;
+    typedef std::map<QString, Shared::Message*> Index;
+    Index messageIndex;
     Order messageOrder;
     QVBoxLayout* layout;
     
     QString myName;
     std::map<QString, QString> palNames;
+    std::deque<QHBoxLayout*> views;
 };
 
 #endif // MESSAGELINE_H

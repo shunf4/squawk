@@ -24,11 +24,12 @@
 Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     QWidget(parent),
     contact(p_contact),
-    m_ui(new Ui::Conversation),
     line(new MessageLine()),
+    m_ui(new Ui::Conversation()),
     ker(),
     activePalResource(),
-    thread()
+    thread(),
+    scroll(nothing)
 {
     m_ui->setupUi(this);
     m_ui->splitter->setSizes({300, 0});
@@ -51,9 +52,11 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     }
     
     line->setMyName(p_contact->getAccountName());
+    connect(line, SIGNAL(resize(int)), this, SLOT(onMessagesResize(int)));
     
     m_ui->scrollArea->setWidget(line);
     m_ui->scrollArea->verticalScrollBar()->setBackgroundRole(QPalette::Base);
+    m_ui->scrollArea->verticalScrollBar()->setAutoFillBackground(true);;
 }
 
 Conversation::~Conversation()
@@ -110,10 +113,17 @@ void Conversation::addMessage(const Shared::Message& data)
 {
     int pos = m_ui->scrollArea->verticalScrollBar()->sliderPosition();
     int max = m_ui->scrollArea->verticalScrollBar()->maximum();
-    line->message(data);
+    MessageLine::Position place = line->message(data);
+    if (place == MessageLine::invalid) {
+        return;
+    }
     
-    if (pos == max) {
-        m_ui->scrollArea->verticalScrollBar()->setSliderPosition(m_ui->scrollArea->verticalScrollBar()->maximum());
+    if (scroll == nothing) {
+        if (pos == max) {
+            scroll = down;
+        } else if (place != MessageLine::end) {         //todo make some better handling of that situation
+            scroll = keep;
+        }
     }
     if (!data.getOutgoing()) {
         const QString& res = data.getPenPalResource();
@@ -172,13 +182,28 @@ void Conversation::onEnterPressed()
         Shared::Message msg(Shared::Message::chat);
         msg.setFromJid(aJid);
         msg.setFromResource(contact->getAccountResource());
-        qDebug() << "sending message from " << contact->getAccountResource();
         msg.setToJid(contact->getJid());
         msg.setToResource(activePalResource);
         msg.setBody(body);
         msg.setOutgoing(true);
         msg.generateRandomId();
-        line->message(msg);
+        addMessage(msg);
         emit sendMessage(msg);
     }
 }
+
+void Conversation::onMessagesResize(int amount)
+{
+    switch (scroll) {
+        case down:
+            m_ui->scrollArea->verticalScrollBar()->setValue(m_ui->scrollArea->verticalScrollBar()->maximum());
+            break;
+        case keep:
+            m_ui->scrollArea->verticalScrollBar()->setValue(m_ui->scrollArea->verticalScrollBar()->value() - amount);
+            break;
+        default:
+            break;
+    }
+    scroll = nothing;
+}
+

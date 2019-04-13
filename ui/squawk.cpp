@@ -198,6 +198,7 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 if (res.size() > 0) {
                     itr->second->setPalResource(res);
                 }
+                requestArchive(account, jid);
             }
         }
     }

@@ -7,6 +7,7 @@
 
 #include <qxmpp/QXmppRosterManager.h>
 #include <qxmpp/QXmppCarbonManager.h>
+#include <qxmpp/QXmppMamManager.h>
 #include <qxmpp/QXmppClient.h>
 #include "../global.h"
 
@@ -39,6 +40,7 @@ public:
     void setAvailability(Shared::Availability avail);
     QString getFullJid() const;
     void sendMessage(const Shared::Message& data);
+    void requestAchive(const QString& jid);
     
 signals:
     void connectionStateChanged(int);
@@ -55,12 +57,14 @@ signals:
     
 private:
     QString name;
+    std::map<QString, QString> achiveQueries;
     QXmppClient client;
     QXmppConfiguration config;
     QXmppPresence presence;
     Shared::ConnectionState state;
     std::map<QString, std::set<QString>> groups;
     QXmppCarbonManager* cm;
+    QXmppMamManager* am;
     
 private slots:
     void onClientConnected();
@@ -74,10 +78,12 @@ private slots:
     void onMessageReceived(const QXmppMessage& message);
     void onCarbonMessageReceived(const QXmppMessage& message);
     void onCarbonMessageSent(const QXmppMessage& message);
+    void onMamMessageReceived(const QString& bareJid, const QXmppMessage& message);
+    void onMamResultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
   
 private:
     void addedAccount(const QString &bareJid);
-    bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false);
+    bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
 };
 
 }
