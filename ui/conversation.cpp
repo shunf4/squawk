@@ -29,7 +29,8 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     ker(),
     activePalResource(),
     thread(),
-    scroll(nothing)
+    scroll(down),
+    manualSliderChange(false)
 {
     m_ui->setupUi(this);
     m_ui->splitter->setSizes({300, 0});
@@ -54,9 +55,11 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     line->setMyName(p_contact->getAccountName());
     connect(line, SIGNAL(resize(int)), this, SLOT(onMessagesResize(int)));
     
+    QScrollBar* vs = m_ui->scrollArea->verticalScrollBar();
     m_ui->scrollArea->setWidget(line);
-    m_ui->scrollArea->verticalScrollBar()->setBackgroundRole(QPalette::Base);
-    m_ui->scrollArea->verticalScrollBar()->setAutoFillBackground(true);;
+    vs->setBackgroundRole(QPalette::Base);
+    vs->setAutoFillBackground(true);
+    connect(vs, SIGNAL(valueChanged(int)), this, SLOT(onSliderValueChanged(int)));
 }
 
 Conversation::~Conversation()
@@ -118,13 +121,6 @@ void Conversation::addMessage(const Shared::Message& data)
         return;
     }
     
-    if (scroll == nothing) {
-        if (pos == max) {
-            scroll = down;
-        } else if (place != MessageLine::end) {         //todo make some better handling of that situation
-            scroll = keep;
-        }
-    }
     if (!data.getOutgoing()) {
         const QString& res = data.getPenPalResource();
         if (res.size() > 0) {
@@ -194,16 +190,24 @@ void Conversation::onEnterPressed()
 
 void Conversation::onMessagesResize(int amount)
 {
+    manualSliderChange = true;
     switch (scroll) {
         case down:
             m_ui->scrollArea->verticalScrollBar()->setValue(m_ui->scrollArea->verticalScrollBar()->maximum());
             break;
-        case keep:
-            m_ui->scrollArea->verticalScrollBar()->setValue(m_ui->scrollArea->verticalScrollBar()->value() - amount);
-            break;
         default:
             break;
     }
-    scroll = nothing;
+    manualSliderChange = false;
 }
 
+void Conversation::onSliderValueChanged(int value)
+{
+    if (!manualSliderChange) {
+        if (value == m_ui->scrollArea->verticalScrollBar()->maximum()) {
+            scroll = down;
+        } else {
+            scroll = nothing;
+        }
+    }
+}

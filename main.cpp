@@ -54,6 +54,8 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, SIGNAL(stateChanged(int)), &w, SLOT(stateChanged(int)));
     QObject::connect(squawk, SIGNAL(accountMessage(const QString&, const Shared::Message&)), &w, SLOT(accountMessage(const QString&, const Shared::Message&)));
     
+    //qDebug() << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
+    
     coreThread->start();
 
     int result = app.exec();

@@ -69,6 +69,7 @@ protected slots:
     void onContactChanged(Models::Item* item, int row, int col);
     void onEnterPressed();
     void onMessagesResize(int amount);
+    void onSliderValueChanged(int value);
     
 private:
     enum Scroll {
@@ -83,6 +84,7 @@ private:
     QString activePalResource;
     QString thread;
     Scroll scroll;
+    bool manualSliderChange;
 };
 
 #endif // CONVERSATION_H
