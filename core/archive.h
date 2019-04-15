@@ -22,6 +22,7 @@
 #include <QObject>
 #include "../global.h"
 #include "lmdb++.h"
+#include "../exception.h"
 
 namespace Core {
 
@@ -29,27 +30,75 @@ class Archive : public QObject
 {
     Q_OBJECT
 public:
-    Archive(const QString& jid, QObject* parent);
+    Archive(const QString& jid, QObject* parent = 0);
     ~Archive();
     
     void open(const QString& account);
     
-    QString addElement(const Shared::Message& message);
-    Shared::Message getElement(const QString& id) const;
-    Shared::Message oldest() const;
-    Shared::Message newest() const;
-    void removeElement(const QString& id);
+    void addElement(const Shared::Message& message);
+    Shared::Message getElement(const QString& id);
+    Shared::Message oldest();
+    QString oldestId();
+    Shared::Message newest();
+    QString newestId();
     void clear();
-    void modifyElement(const QString& id, const Shared::Message& newValue);
-    unsigned int size() const;
+    long unsigned int size() const;
     
 public:
     const QString jid;
+    
+public:
+    class Directory: 
+    public Utils::Exception
+    {
+    public:
+        Directory(const std::string& p_path):Exception(), path(p_path){}
+        
+        std::string getMessage() const{return "Can't create directory for database at " + path;}
+    private:
+        std::string path;
+    };
+    
+    class Closed: 
+    public Utils::Exception
+    {
+    public:
+        Closed(const std::string& op, const std::string& acc):Exception(), operation(op), account(acc){}
+        
+        std::string getMessage() const{return "An attempt to perform operation " + operation + " on closed archive for " + account;}
+    private:
+        std::string operation;
+        std::string account;
+    };
+    
+    class NotFound: 
+    public Utils::Exception
+    {
+    public:
+        NotFound(const std::string& k, const std::string& acc):Exception(), key(k), account(acc){}
+        
+        std::string getMessage() const{return "Element for id " + key + " wasn't found in database " + account;}
+    private:
+        std::string key;
+        std::string account;
+    };
+    
+    class Empty: 
+    public Utils::Exception
+    {
+    public:
+        Empty(const std::string& acc):Exception(), account(acc){}
+        
+        std::string getMessage() const{return "An attempt to read ordered elements from database " + account + " but it's empty";}
+    private:
+        std::string account;
+    };
     
 private:
     bool opened;
     lmdb::env environment;
     lmdb::dbi dbi;
+    lmdb::dbi order;
 };
 
 }

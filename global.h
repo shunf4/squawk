@@ -4,6 +4,7 @@
 #include <QString>
 #include <deque>
 #include <QDateTime>
+#include <QDataStream>
 
 namespace Shared {
     
@@ -95,6 +96,9 @@ public:
     QString getPenPalJid() const;
     QString getPenPalResource() const;
     void generateRandomId();
+    
+    void serialize(QDataStream& data) const;
+    void deserialize(QDataStream& data);
     
 private:
     QString jFrom;

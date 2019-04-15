@@ -1558,7 +1558,7 @@ public:
     lmdb::val v{};
     const bool result = lmdb::dbi_get(txn, handle(), k, v);
     if (result) {
-      val = *v.data<const V>();
+      val = std::move(*v.data<const V>());
     }
     return result;
   }

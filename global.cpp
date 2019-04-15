@@ -179,7 +179,7 @@ void Shared::Message::generateRandomId()
     uuid_t uuid;
     uuid_generate(uuid);
     
-    char uuid_str[37];
+    char uuid_str[36];
     uuid_unparse_lower(uuid, uuid_str);
     id = uuid_str;
 }
@@ -207,4 +207,37 @@ Shared::Message::Type Shared::Message::getType() const
 void Shared::Message::setType(Shared::Message::Type t)
 {
     type = t;
+}
+
+void Shared::Message::serialize(QDataStream& data) const
+{
+    data << jFrom;
+    data << rFrom;
+    data << jTo;
+    data << rTo;
+    data << id;
+    data << body;
+    data << time;
+    data << thread;
+    quint8 t = type;
+    data << t;
+    data << outgoing;
+    data << forwarded;
+}
+
+void Shared::Message::deserialize(QDataStream& data)
+{
+    data >> jFrom;
+    data >> rFrom;
+    data >> jTo;
+    data >> rTo;
+    data >> id;
+    data >> body;
+    data >> time;
+    data >> thread;
+    quint8 t;
+    data >> t;
+    type = static_cast<Type>(t);
+    data >> outgoing;
+    data >> forwarded;
 }
