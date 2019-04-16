@@ -21,7 +21,7 @@
 
 #include <QObject>
 #include "../global.h"
-#include "lmdb++.h"
+#include <lmdb.h>
 #include "../exception.h"
 
 namespace Core {
@@ -96,9 +96,9 @@ public:
     
 private:
     bool opened;
-    lmdb::env environment;
-    lmdb::dbi dbi;
-    lmdb::dbi order;
+    MDB_env* environment;
+    MDB_dbi main;
+    MDB_dbi order;
 };
 
 }
