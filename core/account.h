@@ -10,6 +10,7 @@
 #include <qxmpp/QXmppMamManager.h>
 #include <qxmpp/QXmppClient.h>
 #include "../global.h"
+#include "contact.h"
 
 namespace Core
 {
@@ -65,6 +66,7 @@ private:
     std::map<QString, std::set<QString>> groups;
     QXmppCarbonManager* cm;
     QXmppMamManager* am;
+    std::map<QString, Contact*> contacts; 
     
 private slots:
     void onClientConnected();

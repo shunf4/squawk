@@ -12,6 +12,7 @@ set(squawkCORE_SRC
     squawk.cpp
     account.cpp
     archive.cpp
+    contact.cpp
 )
 
 # Tell CMake to create the helloworld executable

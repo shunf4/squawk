@@ -34,6 +34,7 @@ public:
     ~Archive();
     
     void open(const QString& account);
+    void close();
     
     void addElement(const Shared::Message& message);
     Shared::Message getElement(const QString& id);

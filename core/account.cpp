@@ -14,7 +14,8 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     state(Shared::disconnected),
     groups(),
     cm(new QXmppCarbonManager()),
-    am(new QXmppMamManager())
+    am(new QXmppMamManager()),
+    contacts()
 {
     config.setUser(p_login);
     config.setDomain(p_server);
@@ -216,6 +217,12 @@ void Core::Account::onRosterItemRemoved(const QString& bareJid)
 void Core::Account::addedAccount(const QString& jid)
 {
     QXmppRosterManager& rm = client.rosterManager();
+    
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    if (itr == contacts.end()) {
+        
+    }
+    
     QXmppRosterIq::Item re = rm.getRosterEntry(jid);
     QSet<QString> gr = re.groups();
     unsigned int state = re.subscriptionType();

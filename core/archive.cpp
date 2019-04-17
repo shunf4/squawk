@@ -32,16 +32,17 @@ Core::Archive::Archive(const QString& p_jid, QObject* parent):
     main(),
     order()
 {
-    mdb_env_create(&environment);
 }
 
 Core::Archive::~Archive()
 {
+    close();
 }
 
 void Core::Archive::open(const QString& account)
 {
     if (!opened) {
+        mdb_env_create(&environment);
         QString path(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
         path += "/" + account + "/" + jid;
         QDir cache(path);
@@ -56,25 +57,22 @@ void Core::Archive::open(const QString& account)
         mdb_env_set_maxdbs(environment, 2);
         mdb_env_open(environment, path.toStdString().c_str(), 0, 0664);
         
-        int rc;
         MDB_txn *txn;
-        rc = mdb_txn_begin(environment, NULL, 0, &txn);
-        if (rc) {
-            qDebug() << "opening transaction error " << mdb_strerror(rc);
-        }
-        rc = mdb_dbi_open(txn, "main", MDB_CREATE, &main);
-        if (rc) {
-            qDebug() << "main opening error " << mdb_strerror(rc);
-        }
-        rc = mdb_dbi_open(txn, "order", MDB_CREATE | MDB_INTEGERKEY, &order);
-        if (rc) {
-            qDebug() << "order opening error " << mdb_strerror(rc);
-        }
-        rc = mdb_txn_commit(txn);
-        if (rc) {
-            qDebug() << "opening commit transaction error " << mdb_strerror(rc);
-        }
+        mdb_txn_begin(environment, NULL, 0, &txn);
+        mdb_dbi_open(txn, "main", MDB_CREATE, &main);
+        mdb_dbi_open(txn, "order", MDB_CREATE | MDB_INTEGERKEY, &order);
+        mdb_txn_commit(txn);
         opened = true;
+    }
+}
+
+void Core::Archive::close()
+{
+    if (opened) {
+        mdb_dbi_close(environment, order);
+        mdb_dbi_close(environment, main);
+        mdb_env_close(environment);
+        opened = false;
     }
 }
 
@@ -89,12 +87,9 @@ void Core::Archive::addElement(const Shared::Message& message)
     quint64 stamp = message.getTime().toMSecsSinceEpoch();
     const std::string& id = message.getId().toStdString();
     
-    qDebug() << "inserting element with id " << id.c_str();
-    qDebug() << "data size is " << ba.size();
-    
     MDB_val lmdbKey, lmdbData;
     lmdbKey.mv_size = id.size();
-    lmdbKey.mv_data = (uint8_t*)id.c_str();
+    lmdbKey.mv_data = (char*)id.c_str();
     lmdbData.mv_size = ba.size();
     lmdbData.mv_data = (uint8_t*)ba.data();
     MDB_txn *txn;
@@ -141,20 +136,15 @@ Shared::Message Core::Archive::getElement(const QString& id)
         throw Closed("getElement", jid.toStdString());
     }
     
-    qDebug() << "getting an element with id " << id.toStdString().c_str();
+    std::string strKey = id.toStdString();
     
     MDB_val lmdbKey, lmdbData;
-    lmdbKey.mv_size = id.toStdString().size();
-    lmdbKey.mv_data = (uint8_t*)id.toStdString().c_str();
+    lmdbKey.mv_size = strKey.size();
+    lmdbKey.mv_data = (char*)strKey.c_str();
     
     MDB_txn *txn;
     int rc;
-    rc = mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
-    if (rc) {
-        qDebug() <<"Get error: " << mdb_strerror(rc);
-        mdb_txn_abort(txn);
-        throw NotFound(id.toStdString(), jid.toStdString());
-    }
+    mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
     rc = mdb_get(txn, main, &lmdbKey, &lmdbData);
     if (rc) {
         qDebug() <<"Get error: " << mdb_strerror(rc);
@@ -191,16 +181,15 @@ QString Core::Archive::newestId()
     
     rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_LAST);
     if (rc) {
-        std::string sId((char*)lmdbData.mv_data, lmdbData.mv_size);
-        mdb_cursor_close(cursor);
-        mdb_txn_abort(txn);
-        qDebug() << "newest id is " << sId.c_str();
-        return sId.c_str();
-    } else {
         qDebug() << "Error geting newestId " << mdb_strerror(rc);
         mdb_cursor_close(cursor);
         mdb_txn_abort(txn);
         throw new Empty(jid.toStdString());
+    } else {
+        std::string sId((char*)lmdbData.mv_data, lmdbData.mv_size);
+        mdb_cursor_close(cursor);
+        mdb_txn_abort(txn);
+        return sId.c_str();
     }
 }
 
@@ -223,21 +212,23 @@ QString Core::Archive::oldestId()
     
     rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_FIRST);
     if (rc) {
-        std::string sId((char*)lmdbData.mv_data, lmdbData.mv_size);
-        mdb_cursor_close(cursor);
-        mdb_txn_abort(txn);
-        qDebug() << "oldest id is " << sId.c_str();
-        return sId.c_str();
-    } else {
         qDebug() << "Error geting oldestId " << mdb_strerror(rc);
         mdb_cursor_close(cursor);
         mdb_txn_abort(txn);
         throw new Empty(jid.toStdString());
+    } else {
+        std::string sId((char*)lmdbData.mv_data, lmdbData.mv_size);
+        mdb_cursor_close(cursor);
+        mdb_txn_abort(txn);
+        return sId.c_str();
     }
 }
 
 long unsigned int Core::Archive::size() const
 {
+    if (!opened) {
+        throw Closed("size", jid.toStdString());
+    }
     MDB_txn *txn;
     int rc;
     rc = mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);

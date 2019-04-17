@@ -5,7 +5,6 @@
 #include <QtCore/QThread>
 #include <QtCore/QObject>
 #include <QSettings>
-#include "core/archive.h"
 
 int main(int argc, char *argv[])
 {
@@ -56,32 +55,6 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, SIGNAL(accountMessage(const QString&, const Shared::Message&)), &w, SLOT(accountMessage(const QString&, const Shared::Message&)));
     
     //qDebug() << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
-    
-    Core::Archive ar("test1@macaw.me");
-    ar.open("Test");
-    Shared::Message msg1;
-    msg1.generateRandomId();
-    msg1.setBody("oldest");
-    msg1.setTime(QDateTime::currentDateTime().addDays(-7));
-    Shared::Message msg2;
-    msg2.generateRandomId();
-    msg2.setBody("Middle");
-    msg2.setTime(QDateTime::currentDateTime().addDays(-4));
-    Shared::Message msg3;
-    msg3.generateRandomId();
-    msg3.setBody("newest");
-    msg3.setTime(QDateTime::currentDateTime());
-    
-    ar.addElement(msg2);
-    ar.addElement(msg3);
-    ar.addElement(msg1);
-    
-    Shared::Message d0 = ar.getElement(msg1.getId());
-    
-    Shared::Message d1 = ar.newest();
-    Shared::Message d2 = ar.oldest();
-
-    qDebug() << d1.getBody() << ", " << d2.getBody();
     
     coreThread->start();
 
