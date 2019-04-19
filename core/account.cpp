@@ -48,6 +48,9 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
 
 Account::~Account()
 {
+    for (std::map<QString, Contact*>::const_iterator itr = contacts.begin(), end = contacts.end(); itr != end; ++itr) {
+        delete itr->second;
+    }
 }
 
 Shared::ConnectionState Core::Account::getState() const
@@ -133,121 +136,82 @@ void Core::Account::onRosterItemAdded(const QString& bareJid)
 
 void Core::Account::onRosterItemChanged(const QString& bareJid)
 {
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(bareJid);
+    if (itr == contacts.end()) {
+        qDebug() << "An attempt to change non existing contact" << bareJid << "from account" << name << ", skipping";
+        return;
+    }
+    Contact* contact = itr->second;
     QXmppRosterManager& rm = client.rosterManager();
     QXmppRosterIq::Item re = rm.getRosterEntry(bareJid);
-    QSet<QString> newGroups = re.groups();
-    QSet<QString> oldGroups;
-    
     
     QStringList res = rm.getResources(bareJid);
-    unsigned int state = re.subscriptionType();
-    if (state == QXmppRosterIq::Item::NotSet) {
-        state = Shared::unknown;
-    }
-    QMap<QString, QVariant> cData({
-        {"name", re.name()},
-        {"state", state}
-    });
-    
-    emit changeContact(bareJid, cData);
-    
-    for (std::map<QString, std::set<QString>>::iterator itr = groups.begin(), end = groups.end(); itr != end; ++itr) {
-        std::set<QString>& contacts = itr->second;
-        std::set<QString>::const_iterator cItr = contacts.find(bareJid);
-        if (cItr != contacts.end()) {
-            oldGroups.insert(itr->first);
-        }
-    }
-    
-    QSet<QString> toRemove = oldGroups - newGroups;
-    QSet<QString> toAdd = newGroups - oldGroups;
-    
-    QSet<QString> removeGroups;
-    for (QSet<QString>::iterator itr = toRemove.begin(), end = toRemove.end(); itr != end; ++itr) {
-        const QString& groupName = *itr;
-        std::set<QString>& contacts = groups.find(groupName)->second;
-        contacts.erase(bareJid);
-        emit removeContact(bareJid, groupName);
-        if (contacts.size() == 0) {
-            removeGroups.insert(groupName);
-        }
-    }
-    
-    for (QSet<QString>::iterator itr = toAdd.begin(), end = toAdd.end(); itr != end; ++itr) {
-        const QString& groupName = *itr;
-        std::map<QString, std::set<QString>>::iterator cItr = groups.find(groupName);
-        if (cItr == groups.end()) {
-            cItr = groups.insert(std::make_pair(groupName, std::set<QString>())).first;
-            emit addGroup(groupName);
-        }
-        cItr->second.insert(bareJid);
-        emit addContact(bareJid, groupName, cData);
-    }
-    
-    for (QSet<QString>::iterator itr = removeGroups.begin(), end = removeGroups.end(); itr != end; ++itr) {
-        const QString& groupName = *itr;
-        emit removeGroup(groupName);
-        groups.erase(groupName);
-    }
+    Shared::SubscriptionState state = castSubscriptionState(re.subscriptionType());
+
+    contact->setGroups(re.groups());
+    contact->setSubscriptionState(state);
+    contact->setName(name);
 }
 
 void Core::Account::onRosterItemRemoved(const QString& bareJid)
 {
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(bareJid);
+    if (itr == contacts.end()) {
+        qDebug() << "An attempt to remove non existing contact" << bareJid << "from account" << name << ", skipping";
+        return;
+    }
+    Contact* contact = itr->second;
+    QSet<QString> cGroups = contact->getGroups();
+    for (QSet<QString>::const_iterator itr = cGroups.begin(), end = cGroups.end(); itr != end; ++itr) {
+        removeFromGroup(bareJid, *itr);
+    }
     emit removeContact(bareJid);
-    
-    QSet<QString> toRemove;
-    for (std::map<QString, std::set<QString>>::iterator itr = groups.begin(), end = groups.end(); itr != end; ++itr) {
-        std::set<QString> contacts = itr->second;
-        std::set<QString>::const_iterator cItr = contacts.find(bareJid);
-        if (cItr != contacts.end()) {
-            contacts.erase(cItr);
-            if (contacts.size() == 0) {
-                toRemove.insert(itr->first);
-            }
-        }
-    }
-    
-    for (QSet<QString>::iterator itr = toRemove.begin(), end = toRemove.end(); itr != end; ++itr) {
-        const QString& groupName = *itr;
-        emit removeGroup(groupName);
-        groups.erase(groupName);
-    }
 }
 
 void Core::Account::addedAccount(const QString& jid)
 {
     QXmppRosterManager& rm = client.rosterManager();
-    
     std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
-    if (itr == contacts.end()) {
-        
-    }
-    
     QXmppRosterIq::Item re = rm.getRosterEntry(jid);
-    QSet<QString> gr = re.groups();
-    unsigned int state = re.subscriptionType();
-    if (state == QXmppRosterIq::Item::NotSet) {
-        state = Shared::unknown;
-    }
-    QMap<QString, QVariant> cData({
-        {"name", re.name()},
-        {"state", state}
-    });
-    int grCount = 0;
-    for (QSet<QString>::const_iterator itr = gr.begin(), end = gr.end(); itr != end; ++itr) {
-        const QString& groupName = *itr;
-        std::map<QString, std::set<QString>>::iterator gItr = groups.find(groupName);
-        if (gItr == groups.end()) {
-            gItr = groups.insert(std::make_pair(groupName, std::set<QString>())).first;
-            emit addGroup(groupName);
-        }
-        gItr->second.insert(jid);
-        emit addContact(jid, groupName, cData);
-        grCount++;
+    Contact* contact;
+    bool newContact = false;
+    if (itr == contacts.end()) {
+        newContact = true;
+        contact = new Contact(jid, name);
+        contacts.insert(std::make_pair(jid, contact));
+        
+    } else {
+        contact = itr->second;
     }
     
-    if (grCount == 0) {
-        emit addContact(jid, "", cData);
+    QSet<QString> gr = re.groups();
+    Shared::SubscriptionState state = castSubscriptionState(re.subscriptionType());
+    contact->setGroups(gr);
+    contact->setSubscriptionState(state);
+    contact->setName(re.name());
+    
+    if (newContact) {
+        QMap<QString, QVariant> cData({
+            {"name", re.name()},
+            {"state", state}
+        });
+        int grCount = 0;
+        for (QSet<QString>::const_iterator itr = gr.begin(), end = gr.end(); itr != end; ++itr) {
+            const QString& groupName = *itr;
+            addToGroup(jid, groupName);
+            emit addContact(jid, groupName, cData);
+            grCount++;
+        }
+        
+        if (grCount == 0) {
+            emit addContact(jid, "", cData);
+        }
+        
+        QObject::connect(contact, SIGNAL(groupAdded(const QString&)), this, SLOT(onContactGroupAdded(const QString&)));
+        QObject::connect(contact, SIGNAL(groupRemoved(const QString&)), this, SLOT(onContactGroupRemoved(const QString&)));
+        QObject::connect(contact, SIGNAL(nameChanged(const QString&)), this, SLOT(onContactNameChanged(const QString&)));
+        QObject::connect(contact, SIGNAL(subscriptionStateChanged(Shared::SubscriptionState)), 
+                         this, SLOT(onContactSubscriptionStateChanged(Shared::SubscriptionState)));
     }
 }
 
@@ -485,4 +449,88 @@ void Core::Account::onMamResultsReceived(const QString& queryId, const QXmppResu
         QString nQ = am->retrieveArchivedMessages("", "", jid, QDateTime::currentDateTime().addDays(-7), QDateTime(), q);
         achiveQueries.insert(std::make_pair(nQ, jid));
     }
+}
+
+void Core::Account::onContactGroupAdded(const QString& group)
+{
+    Contact* contact = static_cast<Contact*>(sender());
+    if (contact->groupsCount() == 1) {
+        // not sure i need to handle it here, the situation with grouped and ungrouped contacts handled on the client anyway
+    }
+    
+    QMap<QString, QVariant> cData({
+        {"name", contact->getName()},
+        {"state", contact->getSubscriptionState()}
+    });
+    addToGroup(contact->jid, group);
+    emit addContact(contact->jid, group, cData);
+}
+
+void Core::Account::onContactGroupRemoved(const QString& group)
+{
+    Contact* contact = static_cast<Contact*>(sender());
+    if (contact->groupsCount() == 0) {
+        // not sure i need to handle it here, the situation with grouped and ungrouped contacts handled on the client anyway
+    }
+    
+    emit removeContact(contact->jid, group);
+    removeFromGroup(contact->jid, group);
+}
+
+void Core::Account::onContactNameChanged(const QString& cname)
+{
+    Contact* contact = static_cast<Contact*>(sender());
+    QMap<QString, QVariant> cData({
+        {"name", cname},
+    });
+    emit changeContact(contact->jid, cData);
+}
+
+void Core::Account::onContactSubscriptionStateChanged(Shared::SubscriptionState cstate)
+{
+    Contact* contact = static_cast<Contact*>(sender());
+    QMap<QString, QVariant> cData({
+        {"state", cstate},
+    });
+    emit changeContact(contact->jid, cData);
+}
+
+void Core::Account::addToGroup(const QString& jid, const QString& group)
+{
+    std::map<QString, std::set<QString>>::iterator gItr = groups.find(group);
+    if (gItr == groups.end()) {
+        gItr = groups.insert(std::make_pair(group, std::set<QString>())).first;
+        emit addGroup(group);
+    }
+    gItr->second.insert(jid);
+}
+
+void Core::Account::removeFromGroup(const QString& jid, const QString& group)
+{
+    QSet<QString> toRemove;
+    std::map<QString, std::set<QString>>::iterator itr = groups.find(group);
+    if (itr == groups.end()) {
+        qDebug() << "An attempt to remove contact" << jid << "of account" << name << "from non existing group" << group << ", skipping";
+        return;
+    }
+    std::set<QString> contacts = itr->second;
+    std::set<QString>::const_iterator cItr = contacts.find(jid);
+    if (cItr != contacts.end()) {
+        contacts.erase(cItr);
+        if (contacts.size() == 0) {
+            emit removeGroup(group);
+            groups.erase(group);
+        }
+    }
+}
+
+Shared::SubscriptionState Core::Account::castSubscriptionState(QXmppRosterIq::Item::SubscriptionType qs) const
+{
+    Shared::SubscriptionState state;
+    if (qs == QXmppRosterIq::Item::NotSet) {
+        state = Shared::unknown;
+    } else {
+        state = static_cast<Shared::SubscriptionState>(qs);
+    }
+    return state;
 }

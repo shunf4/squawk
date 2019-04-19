@@ -22,6 +22,7 @@
 #include <QObject>
 #include <QSet>
 #include "archive.h"
+#include "../global.h"
 
 namespace Core {
 
@@ -43,6 +44,16 @@ public:
     QString getName() const;
     void setName(const QString& n);
     QSet<QString> getGroups() const;
+    void setGroups(const QSet<QString>& set);
+    void setSubscriptionState(Shared::SubscriptionState state);
+    Shared::SubscriptionState getSubscriptionState() const;
+    unsigned int groupsCount() const;
+    
+signals:
+    void groupAdded(const QString& name);
+    void groupRemoved(const QString& name);
+    void nameChanged(const QString& name);
+    void subscriptionStateChanged(Shared::SubscriptionState state);
     
 public:
     const QString jid;
@@ -50,8 +61,9 @@ public:
 private:
     QString name;
     QSet<QString> groups;
-    ArchiveState state;
+    ArchiveState archiveState;
     Archive* archive;
+    Shared::SubscriptionState subscriptionState;
 };
 
 }

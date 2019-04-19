@@ -23,8 +23,9 @@ Core::Contact::Contact(const QString& pJid, const QString& account, QObject* par
     jid(pJid),
     name(),
     groups(),
-    state(empty),
-    archive(new Archive(jid))
+    archiveState(empty),
+    archive(new Archive(jid)),
+    subscriptionState(Shared::unknown)
 {
     archive->open(account);
 }
@@ -36,7 +37,7 @@ Core::Contact::~Contact()
 
 Core::Contact::ArchiveState Core::Contact::getArchiveState() const
 {
-    return state;
+    return archiveState;
 }
 
 QSet<QString> Core::Contact::getGroups() const
@@ -53,5 +54,40 @@ void Core::Contact::setName(const QString& n)
 {
     if (name != n) {
         name = n;
+        emit nameChanged(name);
     }
+}
+
+Shared::SubscriptionState Core::Contact::getSubscriptionState() const
+{
+    return subscriptionState;
+}
+
+void Core::Contact::setGroups(const QSet<QString>& set)
+{
+    QSet<QString> toRemove = groups - set;
+    QSet<QString> toAdd = set - groups;
+    
+    groups = set;
+    
+    for (QSet<QString>::iterator itr = toRemove.begin(), end = toRemove.end(); itr != end; ++itr) {
+        emit groupRemoved(*itr);
+    }
+    
+    for (QSet<QString>::iterator itr = toAdd.begin(), end = toAdd.end(); itr != end; ++itr) {
+        emit groupAdded(*itr);
+    }
+}
+
+void Core::Contact::setSubscriptionState(Shared::SubscriptionState state)
+{
+    if (subscriptionState != state) {
+        subscriptionState = state;
+        emit subscriptionStateChanged(subscriptionState);
+    }
+}
+
+unsigned int Core::Contact::groupsCount() const
+{
+    return groups.size();
 }

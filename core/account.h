@@ -71,21 +71,33 @@ private:
 private slots:
     void onClientConnected();
     void onClientDisconnected();
+    
     void onRosterReceived();
     void onRosterItemAdded(const QString& bareJid);
     void onRosterItemChanged(const QString& bareJid);
     void onRosterItemRemoved(const QString& bareJid);
     void onRosterPresenceChanged(const QString& bareJid, const QString& resource);
+    
     void onPresenceReceived(const QXmppPresence& presence);
     void onMessageReceived(const QXmppMessage& message);
+    
     void onCarbonMessageReceived(const QXmppMessage& message);
     void onCarbonMessageSent(const QXmppMessage& message);
+    
     void onMamMessageReceived(const QString& bareJid, const QXmppMessage& message);
     void onMamResultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
+    
+    void onContactGroupAdded(const QString& group);
+    void onContactGroupRemoved(const QString& group);
+    void onContactNameChanged(const QString& name);
+    void onContactSubscriptionStateChanged(Shared::SubscriptionState state);
   
 private:
     void addedAccount(const QString &bareJid);
     bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
+    void addToGroup(const QString& jid, const QString& group);
+    void removeFromGroup(const QString& jid, const QString& group);
+    Shared::SubscriptionState castSubscriptionState(QXmppRosterIq::Item::SubscriptionType qs) const;
 };
 
 }
