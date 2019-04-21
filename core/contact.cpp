@@ -25,9 +25,22 @@ Core::Contact::Contact(const QString& pJid, const QString& account, QObject* par
     groups(),
     archiveState(empty),
     archive(new Archive(jid)),
-    subscriptionState(Shared::unknown)
+    subscriptionState(Shared::unknown),
+    syncronizing(false),
+    requestedCount(0),
+    receivedCount(0),
+    hisoryCache(),
+    appendCache(),
+    requestCache()
 {
     archive->open(account);
+    if (archive->isFromTheBeginning()) {
+        archiveState = beginning;
+    } else {
+        if (archive->size() != 0) {
+            archiveState = chunk;
+        }
+    }
 }
 
 Core::Contact::~Contact()
@@ -91,3 +104,42 @@ unsigned int Core::Contact::groupsCount() const
 {
     return groups.size();
 }
+
+void Core::Contact::addMessageToArchive(const Shared::Message& msg)
+{
+    
+}
+
+void Core::Contact::requestHistory(int count, const QString& before)
+{
+    if (syncronizing) {
+        requestCache.emplace_back(count, before);
+    } else {
+        switch (archiveState) {
+            case empty:
+                if (appendCache.size() != 0) {
+                    //from last
+                } else {
+                    //search
+                }
+                break;
+            case beginning:
+                //from last
+                break;
+            case end:
+                //try
+                break;
+            case chunk:
+                //from last
+                break;
+            case complete:
+                //just give
+                break;
+        }
+        syncronizing = true;
+        requestedCount = count;
+        receivedCount = 0;
+        hisoryCache.clear();
+    }
+}
+

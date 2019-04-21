@@ -427,8 +427,30 @@ void Core::Account::onMamMessageReceived(const QString& bareJid, const QXmppMess
     handleChatMessage(msg, false, true, true);
 }
 
-void Core::Account::requestAchive(const QString& jid)
+void Core::Account::requestArchive(const QString& jid, int count, const QString& before)
 {
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    if (itr == contacts.end()) {
+        qDebug() << "An attempt to request archive for" << jid << "in account" << name << ", but the contact with such id wasn't found, skipping";
+        return;
+    }
+    Contact* contact = itr->second;
+    
+    contact->requestHistory(count, before);
+    Contact::ArchiveState as = contact->getArchiveState();
+    switch (as) {
+        case Contact::empty:
+            break;
+        case Contact::beginning:
+            break;
+        case Contact::chunk:
+            break;
+        case Contact::complete:
+            break;
+        case Contact::end:
+            break;
+    }
+    
     QXmppResultSetQuery query;
     query.setMax(100);
     QDateTime from = QDateTime::currentDateTime().addDays(-7);

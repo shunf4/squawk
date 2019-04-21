@@ -23,6 +23,7 @@
 #include "../global.h"
 #include <lmdb.h>
 #include "../exception.h"
+#include <list>
 
 namespace Core {
 
@@ -36,7 +37,7 @@ public:
     void open(const QString& account);
     void close();
     
-    void addElement(const Shared::Message& message);
+    bool addElement(const Shared::Message& message);
     Shared::Message getElement(const QString& id);
     Shared::Message oldest();
     QString oldestId();
@@ -44,6 +45,9 @@ public:
     QString newestId();
     void clear();
     long unsigned int size() const;
+    std::list<Shared::Message> getBefore(int count, const QString& id);
+    bool isFromTheBeginning();
+    bool setFromTheBeginning(bool is);
     
 public:
     const QString jid;
@@ -97,9 +101,13 @@ public:
     
 private:
     bool opened;
+    bool fromTheBeginning;
     MDB_env* environment;
     MDB_dbi main;
     MDB_dbi order;
+    MDB_dbi stats;
+    
+    bool _isFromTheBeginning();
 };
 
 }

@@ -41,7 +41,7 @@ public:
     void setAvailability(Shared::Availability avail);
     QString getFullJid() const;
     void sendMessage(const Shared::Message& data);
-    void requestAchive(const QString& jid);
+    void requestArchive(const QString& jid, int count, const QString& before);
     
 signals:
     void connectionStateChanged(int);

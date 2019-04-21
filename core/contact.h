@@ -23,6 +23,7 @@
 #include <QSet>
 #include "archive.h"
 #include "../global.h"
+#include <list>
 
 namespace Core {
 
@@ -48,12 +49,18 @@ public:
     void setSubscriptionState(Shared::SubscriptionState state);
     Shared::SubscriptionState getSubscriptionState() const;
     unsigned int groupsCount() const;
+    void addMessageToArchive(const Shared::Message& msg);
+    void appendMessageToArchive(const Shared::Message& msg);
+    void flushMessagesToArchive();
+    void requestHistory(int count, const QString& before);
     
 signals:
     void groupAdded(const QString& name);
     void groupRemoved(const QString& name);
     void nameChanged(const QString& name);
     void subscriptionStateChanged(Shared::SubscriptionState state);
+    void historyResponse(const std::list<Shared::Message>& messages);
+    void needEarlierHistory(const QString& before, const QString& after, int count, const QDateTime& from, const QDateTime& to);
     
 public:
     const QString jid;
@@ -64,6 +71,13 @@ private:
     ArchiveState archiveState;
     Archive* archive;
     Shared::SubscriptionState subscriptionState;
+    
+    bool syncronizing;
+    int requestedCount;
+    int receivedCount;
+    std::list<Shared::Message> hisoryCache;
+    std::list<Shared::Message> appendCache;
+    std::list<std::pair<int, QString>> requestCache;
 };
 
 }
