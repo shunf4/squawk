@@ -60,7 +60,7 @@ signals:
     void nameChanged(const QString& name);
     void subscriptionStateChanged(Shared::SubscriptionState state);
     void historyResponse(const std::list<Shared::Message>& messages);
-    void needEarlierHistory(const QString& before, const QString& after, int count, const QDateTime& from, const QDateTime& to);
+    void needEarlierHistory(const QString& before, const QString& after, const QDateTime& from, const QDateTime& to);
     
 public:
     const QString jid;
@@ -77,7 +77,12 @@ private:
     int receivedCount;
     std::list<Shared::Message> hisoryCache;
     std::list<Shared::Message> appendCache;
+    std::list<Shared::Message> responseCache;
     std::list<std::pair<int, QString>> requestCache;
+    
+private:
+    void nextRequest();
+    void performRequest(int count, const QString& before);
 };
 
 }

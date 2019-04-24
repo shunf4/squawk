@@ -261,7 +261,7 @@ std::list<Shared::Message> Core::Archive::getBefore(int count, const QString& id
         rc = mdb_cursor_open(txn, order, &cursor);
         rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_LAST);
         if (rc) {
-            qDebug() << "Error geting before newest newest " << mdb_strerror(rc);
+            qDebug() << "Error geting before " << mdb_strerror(rc);
             mdb_cursor_close(cursor);
             mdb_txn_abort(txn);
             throw new Empty(jid.toStdString());
