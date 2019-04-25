@@ -83,6 +83,7 @@ private:
 private:
     void nextRequest();
     void performRequest(int count, const QString& before);
+    bool requiestFromArchive(const QString& before);
 };
 
 }

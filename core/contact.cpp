@@ -148,12 +148,8 @@ void Core::Contact::performRequest(int count, const QString& before)
             emit needEarlierHistory(before, "", QDateTime(), QDateTime());
             break;
         case beginning: {
-                QString lBefore;
                 bool found = false;
                 if (appendCache.size() != 0) {
-                    if (before.size() == 0) {
-                        lBefore = appendCache.back().getId();
-                    }
                     for (std::list<Shared::Message>::const_reverse_iterator itr = appendCache.rbegin(), end = appendCache.rend(); itr != end; ++itr) {
                         const Shared::Message& msg = *itr;
                         if (found) {
@@ -177,58 +173,35 @@ void Core::Contact::performRequest(int count, const QString& before)
                     }
                 }
                 if (found) {
-                    lBefore = responseCache.front().getId();
-                    emit needEarlierHistory(lBefore, "", QDateTime(), QDateTime());
+                    emit needEarlierHistory(responseCache.front().getId(), "", QDateTime(), QDateTime());
                 } else {
-                    std::list<Shared::Message> arc;
-                    if (responseCache.size() > 0) {
-                        lBefore = responseCache.front().getId();
-                    } else {
-                        lBefore = before;
-                    }
-                    if (count != -1) {
-                        try {
-                            arc = archive->getBefore(requestedCount - receivedCount, lBefore);
-                            responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
-                            emit historyResponse(responseCache);
-                            nextRequest();
-                        } catch (Archive::NotFound e) {
-                            requestCache.emplace_back(count, before);
-                            requestedCount = -1;
-                            emit needEarlierHistory("", archive->newestId(), QDateTime(), QDateTime());
-                        }
-                    } else {
-                        try {
-                            arc = archive->getBefore(1, lBefore);
-                            //just do nothing since response is not required
-                            nextRequest();      //may be even it's a signal that the history is now complete?
-                        } catch (Archive::NotFound e) {
-                            emit needEarlierHistory("", archive->newestId(), QDateTime(), QDateTime());
-                        }
+                    if (requiestFromArchive(before)) {
+                        nextRequest();
                     }
                 }
             }
             break;
-        case end:
-            std::list<Shared::Message> arc;
-            if (count != -1) {
-                try {
-                    arc = archive->getBefore(requestedCount - receivedCount, before);
-                    responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
-                    emit historyResponse(responseCache);
-                    nextRequest();
-                } catch (Archive::NotFound e) {
-                    requestCache.emplace_back(count, before);
-                    requestedCount = -1;
-                    emit needEarlierHistory("", archive->newestId(), QDateTime(), QDateTime());
-                }
-            } else {
-                try {
-                    arc = archive->getBefore(1, before);
-                    //just do nothing since response is not required
-                    nextRequest();      //may be even it's a signal that the history is now complete?
-                } catch (Archive::NotFound e) {
-                    emit needEarlierHistory("", archive->newestId(), QDateTime(), QDateTime());
+        case end: {
+                std::list<Shared::Message> arc;
+                if (count != -1) {
+                    try {
+                        arc = archive->getBefore(requestedCount - receivedCount, before);
+                        responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
+                        emit historyResponse(responseCache);
+                        nextRequest();
+                    } catch (Archive::NotFound e) {
+                        requestCache.emplace_back(count, before);
+                        requestedCount = -1;
+                        emit needEarlierHistory(archive->oldestId(), "", QDateTime(), QDateTime());
+                    }
+                } else {
+                    try {
+                        arc = archive->getBefore(1, before);
+                        //just do nothing since response is not required
+                        nextRequest();      //may be even it's a signal that the history is now complete?
+                    } catch (Archive::NotFound e) {
+                        emit needEarlierHistory(archive->oldestId(), "", QDateTime(), QDateTime());
+                    }
                 }
             }
             break;
@@ -238,6 +211,47 @@ void Core::Contact::performRequest(int count, const QString& before)
         case complete:
             //just give
             break;
+    }
+}
+
+bool Core::Contact::requiestFromArchive(const QString& before)
+{
+    std::list<Shared::Message> arc;
+    QString lBefore;
+    if (responseCache.size() > 0) {
+        lBefore = responseCache.front().getId();
+    } else {
+        lBefore = before;
+    }
+    if (requestedCount != -1) {
+        try {
+            arc = archive->getBefore(requestedCount - receivedCount, lBefore);
+            responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
+            emit historyResponse(responseCache);
+            return true;
+        } catch (Archive::NotFound e) {
+            requestCache.emplace_back(requestedCount, before);
+            requestedCount = -1;
+            switch (archiveState) {
+                case empty:
+                case beginning:
+                case end:
+                case chunk:
+                case complete:
+            }
+            emit needEarlierHistory("", archive->newestId(), QDateTime(), QDateTime());
+            return false;
+        }
+    } else {
+        try {
+            arc = archive->getBefore(1, lBefore);
+            //just do nothing since response is not required
+            //may be even it's a signal that the history is now complete?
+            return true;
+        } catch (Archive::NotFound e) {
+            emit needEarlierHistory("", archive->newestId(), QDateTime(), QDateTime());
+            return false;
+        }
     }
 }
 
