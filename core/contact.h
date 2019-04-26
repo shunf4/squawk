@@ -21,6 +21,7 @@
 
 #include <QObject>
 #include <QSet>
+#include <QString>
 #include "archive.h"
 #include "../global.h"
 #include <list>
@@ -51,7 +52,7 @@ public:
     unsigned int groupsCount() const;
     void addMessageToArchive(const Shared::Message& msg);
     void appendMessageToArchive(const Shared::Message& msg);
-    void flushMessagesToArchive();
+    void flushMessagesToArchive(bool finished, const QString& lastId);
     void requestHistory(int count, const QString& before);
     
 signals:
@@ -74,7 +75,7 @@ private:
     
     bool syncronizing;
     int requestedCount;
-    int receivedCount;
+    QString requestedBefore;
     std::list<Shared::Message> hisoryCache;
     std::list<Shared::Message> appendCache;
     std::list<Shared::Message> responseCache;
@@ -83,7 +84,8 @@ private:
 private:
     void nextRequest();
     void performRequest(int count, const QString& before);
-    bool requiestFromArchive(const QString& before);
+    bool requestFromArchive(const QString& before);
+    void requestEarlierToSync();
 };
 
 }

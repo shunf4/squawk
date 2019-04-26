@@ -38,6 +38,7 @@ public:
     void close();
     
     bool addElement(const Shared::Message& message);
+    unsigned int addElements(const std::list<Shared::Message>& messages);
     Shared::Message getElement(const QString& id);
     Shared::Message oldest();
     QString oldestId();
