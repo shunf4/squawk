@@ -206,6 +206,62 @@ Shared::Message Core::Archive::oldest()
     return getElement(oldestId());
 }
 
+unsigned int Core::Archive::addElements(const std::list<Shared::Message>& messages)
+{
+    if (!opened) {
+        throw Closed("addElements", jid.toStdString());
+    }
+    
+    int success = 0;
+    int rc = 0;
+    MDB_val lmdbKey, lmdbData;
+    MDB_txn *txn;
+    mdb_txn_begin(environment, NULL, 0, &txn);
+    std::list<Shared::Message>::const_iterator itr = messages.begin();
+    while (rc == 0 && itr != messages.end()) {
+        const Shared::Message& message = *itr;
+        QByteArray ba;
+        QDataStream ds(&ba, QIODevice::WriteOnly);
+        message.serialize(ds);
+        quint64 stamp = message.getTime().toMSecsSinceEpoch();
+        const std::string& id = message.getId().toStdString();
+        
+        lmdbKey.mv_size = id.size();
+        lmdbKey.mv_data = (char*)id.c_str();
+        lmdbData.mv_size = ba.size();
+        lmdbData.mv_data = (uint8_t*)ba.data();
+        rc = mdb_put(txn, main, &lmdbKey, &lmdbData, MDB_NOOVERWRITE);
+        if (rc == 0) {
+            MDB_val orderKey;
+            orderKey.mv_size = 8;
+            orderKey.mv_data = (uint8_t*) &stamp;
+            
+            rc = mdb_put(txn, order, &orderKey, &lmdbKey, 0);
+            if (rc) {
+                qDebug() << "An element couldn't be inserted into the index, aborting the transaction" << mdb_strerror(rc);
+            } else {
+                success++;
+            }
+        } else {
+            if (rc == MDB_KEYEXIST) {
+                rc = 0;
+            } else {
+                qDebug() << "An element couldn't been added to the archive, aborting the transaction" << mdb_strerror(rc);
+            }
+        }
+    }
+    
+    if (rc != 0) {
+        mdb_txn_abort(txn);
+        success = 0;
+    } else {
+        mdb_txn_commit(txn);
+    }
+    
+    return success;
+}
+
+
 QString Core::Archive::oldestId()
 {
     if (!opened) {

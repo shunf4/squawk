@@ -41,7 +41,7 @@ public:
     };
     Contact(const QString& pJid, const QString& account, QObject* parent = 0);
     ~Contact();
-    
+
     ArchiveState getArchiveState() const;
     QString getName() const;
     void setName(const QString& n);
@@ -52,17 +52,17 @@ public:
     unsigned int groupsCount() const;
     void addMessageToArchive(const Shared::Message& msg);
     void appendMessageToArchive(const Shared::Message& msg);
-    void flushMessagesToArchive(bool finished, const QString& lastId);
+    void flushMessagesToArchive(bool finished, const QString& firstId, const QString& lastId);
     void requestHistory(int count, const QString& before);
-    
+
 signals:
     void groupAdded(const QString& name);
     void groupRemoved(const QString& name);
     void nameChanged(const QString& name);
     void subscriptionStateChanged(Shared::SubscriptionState state);
     void historyResponse(const std::list<Shared::Message>& messages);
-    void needEarlierHistory(const QString& before, const QString& after, const QDateTime& from, const QDateTime& to);
-    
+    void needHistory(const QString& before, const QString& after, const QDateTime& from, const QDateTime& to);
+
 public:
     const QString jid;
 
@@ -72,7 +72,7 @@ private:
     ArchiveState archiveState;
     Archive* archive;
     Shared::SubscriptionState subscriptionState;
-    
+
     bool syncronizing;
     int requestedCount;
     QString requestedBefore;
@@ -80,12 +80,11 @@ private:
     std::list<Shared::Message> appendCache;
     std::list<Shared::Message> responseCache;
     std::list<std::pair<int, QString>> requestCache;
-    
+
 private:
     void nextRequest();
     void performRequest(int count, const QString& before);
     bool requestFromArchive(const QString& before);
-    void requestEarlierToSync();
 };
 
 }
