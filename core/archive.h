@@ -48,7 +48,7 @@ public:
     long unsigned int size() const;
     std::list<Shared::Message> getBefore(int count, const QString& id);
     bool isFromTheBeginning();
-    bool setFromTheBeginning(bool is);
+    void setFromTheBeginning(bool is);
     
 public:
     const QString jid;
@@ -109,6 +109,8 @@ private:
     MDB_dbi stats;
     
     bool _isFromTheBeginning();
+    void printOrder();
+    void printKeys();
 };
 
 }

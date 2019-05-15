@@ -9,6 +9,7 @@
 int main(int argc, char *argv[])
 {
     qRegisterMetaType<Shared::Message>("Shared::Message");
+    qRegisterMetaType<std::list<Shared::Message>>("std::list<Shared::Message>");
     
     QApplication app(argc, argv);
     SignalCatcher sc(&app);
@@ -35,7 +36,7 @@ int main(int argc, char *argv[])
     QObject::connect(&w, SIGNAL(disconnectAccount(const QString&)), squawk, SLOT(disconnectAccount(const QString&)));
     QObject::connect(&w, SIGNAL(changeState(int)), squawk, SLOT(changeState(int)));
     QObject::connect(&w, SIGNAL(sendMessage(const QString&, const Shared::Message&)), squawk, SLOT(sendMessage(const QString&, const Shared::Message&)));
-    QObject::connect(&w, SIGNAL(requestArchive(const QString&, const QString&)), squawk, SLOT(requestArchive(const QString&, const QString&)));
+    QObject::connect(&w, SIGNAL(requestArchive(const QString&, const QString&, int, const QString&)), squawk, SLOT(requestArchive(const QString&, const QString&, int, const QString&)));
     
     QObject::connect(squawk, SIGNAL(newAccount(const QMap<QString, QVariant>&)), &w, SLOT(newAccount(const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(accountAvailabilityChanged(const QString&, int)), &w, SLOT(accountAvailabilityChanged(const QString&, int)));
@@ -53,6 +54,8 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, SIGNAL(removePresence(const QString&, const QString&, const QString&)), &w, SLOT(removePresence(const QString&, const QString&, const QString&)));
     QObject::connect(squawk, SIGNAL(stateChanged(int)), &w, SLOT(stateChanged(int)));
     QObject::connect(squawk, SIGNAL(accountMessage(const QString&, const Shared::Message&)), &w, SLOT(accountMessage(const QString&, const Shared::Message&)));
+    QObject::connect(squawk, SIGNAL(responseArchive(const QString&, const QString&, const std::list<Shared::Message>&)), 
+                     &w, SLOT(responseArchive(const QString&, const QString&, const std::list<Shared::Message>&)));
     
     //qDebug() << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
     

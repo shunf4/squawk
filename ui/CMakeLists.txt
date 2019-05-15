@@ -8,6 +8,10 @@ set(CMAKE_AUTOUIC ON)
 
 # Find the QtWidgets library
 find_package(Qt5Widgets CONFIG REQUIRED)
+find_package(Qt5Qml CONFIG REQUIRED)
+find_package(Qt5QuickCompiler)
+find_package(Qt5Quick CONFIG REQUIRED)
+find_package(Qt5QuickWidgets CONFIG REQUIRED)
 
 set(squawkUI_SRC
   squawk.cpp
@@ -28,6 +32,9 @@ add_library(squawkUI ${squawkUI_SRC})
 
 # Use the Widgets module from Qt 5.
 target_link_libraries(squawkUI Qt5::Widgets)
+target_link_libraries(squawkUI Qt5::Quick)
+target_link_libraries(squawkUI Qt5::Qml)
+target_link_libraries(squawkUI Qt5::QuickWidgets)
 
 # Install the executable
 install(TARGETS squawkUI DESTINATION lib)

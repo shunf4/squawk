@@ -106,6 +106,13 @@
           </spacer>
          </item>
          <item>
+          <widget class="QLabel" name="historyStatus">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QLabel" name="avatar">
            <property name="text">
             <string/>
@@ -134,7 +141,7 @@
             <x>0</x>
             <y>0</y>
             <width>572</width>
-            <height>162</height>
+            <height>95</height>
            </rect>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_2">

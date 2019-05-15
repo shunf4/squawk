@@ -36,6 +36,7 @@ signals:
     void removePresence(const QString& account, const QString& jid, const QString& name);
     void stateChanged(int state);
     void accountMessage(const QString& account, const Shared::Message& data);
+    void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list);
     
 public slots:
     void start();
@@ -45,7 +46,7 @@ public slots:
     void disconnectAccount(const QString& account);
     void changeState(int state);
     void sendMessage(const QString& account, const Shared::Message& data);
-    void requestArchive(const QString& account, const QString& jid);
+    void requestArchive(const QString& account, const QString& jid, int count, const QString& before);
     
 private:
     typedef std::deque<Account*> Accounts;
@@ -70,6 +71,7 @@ private slots:
     void onAccountAddPresence(const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void onAccountRemovePresence(const QString& jid, const QString& name);
     void onAccountMessage(const Shared::Message& data);
+    void onAccountResponseArchive(const QString& jid, const std::list<Shared::Message>& list);
 };
 
 }

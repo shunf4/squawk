@@ -54,6 +54,7 @@ public:
     void appendMessageToArchive(const Shared::Message& msg);
     void flushMessagesToArchive(bool finished, const QString& firstId, const QString& lastId);
     void requestHistory(int count, const QString& before);
+    void requestFromEmpty(int count, const QString& before);
 
 signals:
     void groupAdded(const QString& name);
@@ -61,7 +62,7 @@ signals:
     void nameChanged(const QString& name);
     void subscriptionStateChanged(Shared::SubscriptionState state);
     void historyResponse(const std::list<Shared::Message>& messages);
-    void needHistory(const QString& before, const QString& after, const QDateTime& from, const QDateTime& to);
+    void needHistory(const QString& before, const QString& after);
 
 public:
     const QString jid;
@@ -84,7 +85,6 @@ private:
 private:
     void nextRequest();
     void performRequest(int count, const QString& before);
-    bool requestFromArchive(const QString& before);
 };
 
 }

@@ -55,6 +55,7 @@ signals:
     void addPresence(const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& jid, const QString& name);
     void message(const Shared::Message& data);
+    void responseArchive(const QString& jid, const std::list<Shared::Message>& list);
     
 private:
     QString name;
@@ -71,6 +72,7 @@ private:
 private slots:
     void onClientConnected();
     void onClientDisconnected();
+    void onClientError(QXmppClient::Error err);
     
     void onRosterReceived();
     void onRosterItemAdded(const QString& bareJid);
@@ -91,12 +93,15 @@ private slots:
     void onContactGroupRemoved(const QString& group);
     void onContactNameChanged(const QString& name);
     void onContactSubscriptionStateChanged(Shared::SubscriptionState state);
+    void onContactHistoryResponse(const std::list<Shared::Message>& list);
+    void onContactNeedHistory(const QString& before, const QString& after);
   
 private:
     void addedAccount(const QString &bareJid);
     bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
     void addToGroup(const QString& jid, const QString& group);
     void removeFromGroup(const QString& jid, const QString& group);
+    void initializeMessage(Shared::Message& target, const QXmppMessage& source, bool outgoing = false, bool forwarded = false, bool guessing = false) const;
     Shared::SubscriptionState castSubscriptionState(QXmppRosterIq::Item::SubscriptionType qs) const;
 };
 

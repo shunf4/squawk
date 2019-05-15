@@ -25,6 +25,7 @@
 #include <QLabel>
 #include <QResizeEvent>
 #include "../global.h"
+#include <QtQuickWidgets/QQuickWidget>
 
 class MessageLine : public QWidget
 {
@@ -42,6 +43,9 @@ public:
     Position message(const Shared::Message& msg);
     void setMyName(const QString& name);
     void setPalName(const QString& jid, const QString& name);
+    QString firstMessageId() const;
+    void showBusyIndicator();
+    void hideBusyIndicator();
     
 signals:
     void resize(int amount);
@@ -67,6 +71,7 @@ private:
     QString myName;
     std::map<QString, QString> palNames;
     std::deque<QHBoxLayout*> views;
+    QQuickWidget busy;
 };
 
 #endif // MESSAGELINE_H

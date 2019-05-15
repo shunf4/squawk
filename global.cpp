@@ -176,12 +176,7 @@ bool Shared::Message::getForwarded() const
 
 void Shared::Message::generateRandomId()
 {
-    uuid_t uuid;
-    uuid_generate(uuid);
-    
-    char uuid_str[36];
-    uuid_unparse_lower(uuid, uuid_str);
-    id = uuid_str;
+    id = generateUUID();
 }
 
 QString Shared::Message::getThread() const
@@ -241,3 +236,19 @@ void Shared::Message::deserialize(QDataStream& data)
     data >> outgoing;
     data >> forwarded;
 }
+
+QString Shared::generateUUID()
+{
+    uuid_t uuid;
+    uuid_generate(uuid);
+    
+    char uuid_str[36];
+    uuid_unparse_lower(uuid, uuid_str);
+    return uuid_str;
+}
+
+void Shared::Message::setCurrentTime()
+{
+    time = QDateTime::currentDateTime();
+}
+

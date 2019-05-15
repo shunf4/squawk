@@ -20,6 +20,7 @@
 #include "ui_conversation.h"
 #include <QDebug>
 #include <QScrollBar>
+#include <QTimer>
 
 Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     QWidget(parent),
@@ -30,7 +31,9 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     activePalResource(),
     thread(),
     scroll(down),
-    manualSliderChange(false)
+    manualSliderChange(false),
+    requestingHistory(false),
+    everShown(false)
 {
     m_ui->setupUi(this);
     m_ui->splitter->setSizes({300, 0});
@@ -116,6 +119,7 @@ void Conversation::addMessage(const Shared::Message& data)
 {
     int pos = m_ui->scrollArea->verticalScrollBar()->sliderPosition();
     int max = m_ui->scrollArea->verticalScrollBar()->maximum();
+    
     MessageLine::Position place = line->message(data);
     if (place == MessageLine::invalid) {
         return;
@@ -183,6 +187,7 @@ void Conversation::onEnterPressed()
         msg.setBody(body);
         msg.setOutgoing(true);
         msg.generateRandomId();
+        msg.setCurrentTime();
         addMessage(msg);
         emit sendMessage(msg);
     }
@@ -194,6 +199,18 @@ void Conversation::onMessagesResize(int amount)
     switch (scroll) {
         case down:
             m_ui->scrollArea->verticalScrollBar()->setValue(m_ui->scrollArea->verticalScrollBar()->maximum());
+            break;
+        case keep: {
+            int max = m_ui->scrollArea->verticalScrollBar()->maximum();
+            int value = m_ui->scrollArea->verticalScrollBar()->value() + amount;
+            m_ui->scrollArea->verticalScrollBar()->setValue(value);
+            
+            if (value == max) {
+                scroll = down;
+            } else {
+                scroll = nothing;
+            }
+        }
             break;
         default:
             break;
@@ -207,7 +224,35 @@ void Conversation::onSliderValueChanged(int value)
         if (value == m_ui->scrollArea->verticalScrollBar()->maximum()) {
             scroll = down;
         } else {
+            if (!requestingHistory && value == 0) {
+                m_ui->historyStatus->setPixmap(QIcon::fromTheme("view-refresh").pixmap(25));
+                requestingHistory = true;
+                emit requestArchive(line->firstMessageId());
+            }
             scroll = nothing;
         }
     }
+}
+
+void Conversation::responseArchive(const std::list<Shared::Message> list)
+{
+    requestingHistory = false;
+    scroll = keep;
+    
+    m_ui->historyStatus->clear();
+    for (std::list<Shared::Message>::const_iterator itr = list.begin(), end = list.end(); itr != end; ++itr) {
+        addMessage(*itr);
+    }
+}
+
+void Conversation::showEvent(QShowEvent* event)
+{
+    if (!everShown) {
+        everShown = true;
+        m_ui->historyStatus->setPixmap(QIcon::fromTheme("view-refresh").pixmap(25));
+        requestingHistory = true;
+        emit requestArchive(line->firstMessageId());
+    }
+    
+    QWidget::showEvent(event);
 }
