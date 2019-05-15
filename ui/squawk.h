@@ -6,6 +6,7 @@
 #include <QCloseEvent>
 #include <deque>
 #include <map>
+#include <list>
 
 #include "accounts.h"
 #include "conversation.h"
@@ -31,7 +32,7 @@ signals:
     void disconnectAccount(const QString&);
     void changeState(int state);
     void sendMessage(const QString& account, const Shared::Message& data);
-    void requestArchive(const QString& account, const QString& jid);
+    void requestArchive(const QString& account, const QString& jid, int count, const QString& before);
     
 public slots:
     void newAccount(const QMap<QString, QVariant>& account);
@@ -47,6 +48,7 @@ public slots:
     void removePresence(const QString& account, const QString& jid, const QString& name);
     void stateChanged(int state);
     void accountMessage(const QString& account, const Shared::Message& data);
+    void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list);
     
 private:
     typedef std::map<Models::Roster::ElId, Conversation*> Conversations;
@@ -66,6 +68,7 @@ private slots:
     void onComboboxActivated(int index);
     void onRosterItemDoubleClicked(const QModelIndex& item);
     void onConversationMessage(const Shared::Message& msg);
+    void onConversationRequestArchive(const QString& before);
     
 };
 

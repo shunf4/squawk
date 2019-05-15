@@ -56,9 +56,12 @@ public:
     void addMessage(const Shared::Message& data);
     
     void setPalResource(const QString& res);
+    void responseArchive(const std::list<Shared::Message> list);
+    void showEvent(QShowEvent * event) override;
     
 signals:
     void sendMessage(const Shared::Message& message);
+    void requestArchive(const QString& before);
     
 protected:
     void setState(Shared::Availability state);
@@ -85,6 +88,8 @@ private:
     QString thread;
     Scroll scroll;
     bool manualSliderChange;
+    bool requestingHistory;
+    bool everShown;
 };
 
 #endif // CONVERSATION_H

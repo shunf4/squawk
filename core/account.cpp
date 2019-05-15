@@ -1,6 +1,7 @@
 #include "account.h"
 #include <qxmpp/QXmppMessage.h>
 #include <QDateTime>
+#include <QTimer>
 
 using namespace Core;
 
@@ -25,6 +26,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     QObject::connect(&client, SIGNAL(disconnected()), this, SLOT(onClientDisconnected()));
     QObject::connect(&client, SIGNAL(presenceReceived(const QXmppPresence&)), this, SLOT(onPresenceReceived(const QXmppPresence&)));
     QObject::connect(&client, SIGNAL(messageReceived(const QXmppMessage&)), this, SLOT(onMessageReceived(const QXmppMessage&)));
+    QObject::connect(&client, SIGNAL(error(QXmppClient::Error)), this, SLOT(onClientError(QXmppClient::Error)));
     
     QXmppRosterManager& rm = client.rosterManager();
     
@@ -212,6 +214,8 @@ void Core::Account::addedAccount(const QString& jid)
         QObject::connect(contact, SIGNAL(nameChanged(const QString&)), this, SLOT(onContactNameChanged(const QString&)));
         QObject::connect(contact, SIGNAL(subscriptionStateChanged(Shared::SubscriptionState)), 
                          this, SLOT(onContactSubscriptionStateChanged(Shared::SubscriptionState)));
+        QObject::connect(contact, SIGNAL(needHistory(const QString&, const QString&)), this, SLOT(onContactNeedHistory(const QString&, const QString&)));
+        QObject::connect(contact, SIGNAL(historyResponse(const std::list<Shared::Message>&)), this, SLOT(onContactHistoryResponse(const std::list<Shared::Message>&)));
     }
 }
 
@@ -368,6 +372,10 @@ void Core::Account::sendMessage(const Shared::Message& data)
         QXmppMessage msg(data.getFrom(), data.getTo(), data.getBody(), data.getThread());
         msg.setId(data.getId());
         msg.setType(static_cast<QXmppMessage::Type>(data.getType()));       //it is safe here, my type is compatible
+        
+        std::map<QString, Contact*>::const_iterator itr = contacts.find(data.getPenPalJid());
+        itr->second->appendMessageToArchive(data);
+        
         client.sendPacket(msg);
     } else {
         qDebug() << "An attempt to send message with not connected account " << name << ", skipping";
@@ -386,27 +394,14 @@ void Core::Account::onCarbonMessageSent(const QXmppMessage& msg)
 
 bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bool forwarded, bool guessing)
 {
-    QString body(msg.body());
+    const QString& body(msg.body());
     if (body.size() != 0) {
-        QString id(msg.id());
-        QDateTime time(msg.stamp());
+        const QString& id(msg.id());
         Shared::Message sMsg(Shared::Message::chat);
-        sMsg.setId(id);
-        sMsg.setFrom(msg.from());
-        sMsg.setTo(msg.to());
-        sMsg.setBody(body);
-        sMsg.setForwarded(forwarded);
-        if (guessing) {
-            if (sMsg.getFromJid() == getLogin() + "@" + getServer()) {
-                outgoing = true;
-            } else {
-                outgoing = false;
-            }
-        }
-        sMsg.setOutgoing(outgoing);
-        if (time.isValid()) {
-            sMsg.setTime(time);
-        }
+        initializeMessage(sMsg, msg, outgoing, forwarded, guessing);
+        std::map<QString, Contact*>::const_iterator itr = contacts.find(sMsg.getPenPalJid());
+        itr->second->appendMessageToArchive(sMsg);
+        
         emit message(sMsg);
         
         if (!forwarded && !outgoing) {
@@ -422,32 +417,108 @@ bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bo
     return false;
 }
 
-void Core::Account::onMamMessageReceived(const QString& bareJid, const QXmppMessage& msg)
+void Core::Account::initializeMessage(Shared::Message& target, const QXmppMessage& source, bool outgoing, bool forwarded, bool guessing) const
 {
-    handleChatMessage(msg, false, true, true);
+    const QDateTime& time(source.stamp());
+    target.setId(source.id());
+    target.setFrom(source.from());
+    target.setTo(source.to());
+    target.setBody(source.body());
+    target.setForwarded(forwarded);
+    if (guessing) {
+        if (target.getFromJid() == getLogin() + "@" + getServer()) {
+            outgoing = true;
+        } else {
+            outgoing = false;
+        }
+    }
+    target.setOutgoing(outgoing);
+    if (time.isValid()) {
+        target.setTime(time);
+    } else {
+        target.setCurrentTime();
+    }
 }
 
-void Core::Account::requestAchive(const QString& jid)
+void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMessage& msg)
 {
+    std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
+    QString jid = itr->second;
+    std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
+    
+    if (citr != contacts.end()) {
+        Contact* cnt = citr->second;
+        if (msg.id().size() > 0 && msg.body().size() > 0) {
+            Shared::Message sMsg(Shared::Message::chat);
+            initializeMessage(sMsg, msg, false, true, true);
+            
+            cnt->addMessageToArchive(sMsg);
+        }
+        
+    }
+    //handleChatMessage(msg, false, true, true);
+}
+
+void Core::Account::requestArchive(const QString& jid, int count, const QString& before)
+{
+    qDebug() << "An archive request for " << jid << ", before " << before;
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    if (itr == contacts.end()) {
+        qDebug() << "An attempt to request archive for" << jid << "in account" << name << ", but the contact with such id wasn't found, skipping";
+        return;
+    }
+    Contact* contact = itr->second;
+    
+    if (contact->getArchiveState() == Contact::empty && before.size() == 0) {
+        QXmppMessage msg(getFullJid(), jid, "", "");
+        QString last = Shared::generateUUID();
+        msg.setId(last);
+        msg.setType(QXmppMessage::Chat);
+        msg.setState(QXmppMessage::Active);
+        client.sendPacket(msg);
+        QTimer* timer = new QTimer;
+        QObject::connect(timer, &QTimer::timeout, [timer, contact, count, last](){
+            contact->requestFromEmpty(count, last);
+            timer->deleteLater();
+        });
+        
+        timer->setSingleShot(true);
+        timer->start(1000);
+    } else {
+        contact->requestHistory(count, before);
+    }
+}
+
+void Core::Account::onContactNeedHistory(const QString& before, const QString& after)
+{
+    Contact* contact = static_cast<Contact*>(sender());
     QXmppResultSetQuery query;
     query.setMax(100);
-    QDateTime from = QDateTime::currentDateTime().addDays(-7);
-
-    QString q = am->retrieveArchivedMessages("", "", jid, from, QDateTime(), query);
-    achiveQueries.insert(std::make_pair(q, jid));
+    if (before.size() > 0) {
+        query.setBefore(before);
+    }
+    if (after.size() > 0) {
+        query.setAfter(after);
+    }
+    
+    qDebug() << "Remote query from\"" << after << "\", to" << before;
+    
+    QString q = am->retrieveArchivedMessages("", "", contact->jid, QDateTime(), QDateTime(), query);
+    achiveQueries.insert(std::make_pair(q, contact->jid));
 }
+
 
 void Core::Account::onMamResultsReceived(const QString& queryId, const QXmppResultSetReply& resultSetReply, bool complete)
 {
     std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
     QString jid = itr->second;
     achiveQueries.erase(itr);
-    if (!complete) {
-        QXmppResultSetQuery q;
-        q.setAfter(resultSetReply.last());
-        q.setMax(100);
-        QString nQ = am->retrieveArchivedMessages("", "", jid, QDateTime::currentDateTime().addDays(-7), QDateTime(), q);
-        achiveQueries.insert(std::make_pair(nQ, jid));
+    std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
+    if (citr != contacts.end()) {
+        Contact* cnt = citr->second;
+        
+        qDebug() << "Flushing messages for" << jid;
+        cnt->flushMessagesToArchive(complete, resultSetReply.first(), resultSetReply.last());
     }
 }
 
@@ -534,3 +605,29 @@ Shared::SubscriptionState Core::Account::castSubscriptionState(QXmppRosterIq::It
     }
     return state;
 }
+
+void Core::Account::onContactHistoryResponse(const std::list<Shared::Message>& list)
+{
+    Contact* contact = static_cast<Contact*>(sender());
+    
+    qDebug() << "Collected history for contact " << contact->jid << list.size() << "elements";
+    emit responseArchive(contact->jid, list);
+}
+
+void Core::Account::onClientError(QXmppClient::Error err)
+{
+    switch (err) {
+        case QXmppClient::SocketError:
+            qDebug() << "Client socket error" << client.socketErrorString();
+            break;
+        case QXmppClient::XmppStreamError:
+            qDebug() << "Client stream error" << client.socketErrorString();
+            break;
+        case QXmppClient::KeepAliveError:
+            qDebug() << "Client keep alive error";
+            break;
+    }
+    
+    //onClientDisconnected();
+}
+

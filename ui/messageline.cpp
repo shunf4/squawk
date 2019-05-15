@@ -76,6 +76,12 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
     
     QLabel* body = new QLabel(msg.getBody());
     QLabel* sender = new QLabel();
+    QLabel* time = new QLabel(msg.getTime().toLocalTime().toString());
+    QFont dFont = time->font();
+    dFont.setItalic(true);
+    dFont.setPointSize(dFont.pointSize() - 2);
+    time->setFont(dFont);
+    time->setForegroundRole(QPalette::ToolTipText);
     QFont f;
     f.setBold(true);
     sender->setFont(f);
@@ -84,10 +90,12 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
     
     vBox->addWidget(sender);
     vBox->addWidget(body);
+    vBox->addWidget(time);
     
     if (msg.getOutgoing()) {
-        body->setAlignment(Qt::AlignRight);
+        //body->setAlignment(Qt::AlignRight);
         sender->setAlignment(Qt::AlignRight);
+        time->setAlignment(Qt::AlignRight);
         sender->setText(myName);
         hBox->addStretch();
         hBox->addWidget(message);
@@ -131,4 +139,14 @@ void MessageLine::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
     emit resize(event->size().height() - event->oldSize().height());
+}
+
+
+QString MessageLine::firstMessageId() const
+{
+    if (messageOrder.size() == 0) {
+        return "";
+    } else {
+        return messageOrder.begin()->second->getId();
+    }
 }

@@ -53,6 +53,8 @@ static const std::deque<QString> availabilityNames = {"Online", "Away", "Absent"
 
 static const std::deque<QString> subscriptionStateThemeIcons = {"edit-none", "arrow-down-double", "arrow-up-double", "dialog-ok", "question"};
 
+QString generateUUID();
+
 class Message {
 public:
     enum Type {
@@ -78,6 +80,7 @@ public:
     void setOutgoing(bool og);
     void setForwarded(bool fwd);
     void setType(Type t);
+    void setCurrentTime();
     
     QString getFrom() const;
     QString getFromJid() const;

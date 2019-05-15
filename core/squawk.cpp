@@ -96,6 +96,8 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
             this, SLOT(onAccountAddPresence(const QString&, const QString&, const QMap<QString, QVariant>&)));
     connect(acc, SIGNAL(removePresence(const QString&, const QString&)), this, SLOT(onAccountRemovePresence(const QString&, const QString&)));
     connect(acc, SIGNAL(message(const Shared::Message&)), this, SLOT(onAccountMessage(const Shared::Message&)));
+    connect(acc, SIGNAL(responseArchive(const QString&, const std::list<Shared::Message>&)), 
+            this, SLOT(onAccountResponseArchive(const QString&, const std::list<Shared::Message>&)));
     
     QMap<QString, QVariant> map = {
         {"login", login},
@@ -221,12 +223,19 @@ void Core::Squawk::sendMessage(const QString& account, const Shared::Message& da
     itr->second->sendMessage(data);
 }
 
-void Core::Squawk::requestArchive(const QString& account, const QString& jid)
+void Core::Squawk::requestArchive(const QString& account, const QString& jid, int count, const QString& before)
 {
     AccountsMap::const_iterator itr = amap.find(account);
     if (itr == amap.end()) {
         qDebug("An attempt to request an archive of non existing account, skipping");
         return;
     }
-    itr->second->requestAchive(jid);
+    itr->second->requestArchive(jid, count, before);
 }
+
+void Core::Squawk::onAccountResponseArchive(const QString& jid, const std::list<Shared::Message>& list)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit responseArchive(acc->getName(), jid, list);
+}
+

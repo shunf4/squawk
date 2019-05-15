@@ -189,6 +189,7 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 conv->setAttribute(Qt::WA_DeleteOnClose);
                 connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
                 connect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
+                connect(conv, SIGNAL(requestArchive(const QString&)), this, SLOT(onConversationRequestArchive(const QString&)));
                 
                 conversations.insert(std::make_pair(id, conv));
                 rosterModel.dropMessages(account, jid);
@@ -198,7 +199,6 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 if (res.size() > 0) {
                     itr->second->setPalResource(res);
                 }
-                requestArchive(account, jid);
             }
         }
     }
@@ -233,4 +233,20 @@ void Squawk::onConversationMessage(const Shared::Message& msg)
     Conversation* conv = static_cast<Conversation*>(sender());
     
     emit sendMessage(conv->getAccount(), msg);
+}
+
+void Squawk::onConversationRequestArchive(const QString& before)
+{
+    Conversation* conv = static_cast<Conversation*>(sender());
+    requestArchive(conv->getAccount(), conv->getJid(), 20, before); //TODO amount as a settings value
+}
+
+void Squawk::responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list)
+{
+    Models::Roster::ElId id(account, jid);
+    
+    Conversations::const_iterator itr = conversations.find(id);
+    if (itr != conversations.end()) {
+        itr->second->responseArchive(list);
+    }
 }

@@ -17,6 +17,7 @@
  */
 
 #include "contact.h"
+#include <QDebug>
 
 Core::Contact::Contact(const QString& pJid, const QString& account, QObject* parent):
     QObject(parent),
@@ -25,9 +26,23 @@ Core::Contact::Contact(const QString& pJid, const QString& account, QObject* par
     groups(),
     archiveState(empty),
     archive(new Archive(jid)),
-    subscriptionState(Shared::unknown)
+    subscriptionState(Shared::unknown),
+    syncronizing(false),
+    requestedCount(0),
+    requestedBefore(),
+    hisoryCache(),
+    appendCache(),
+    responseCache(),
+    requestCache()
 {
     archive->open(account);
+    if (archive->isFromTheBeginning()) {
+        archiveState = beginning;
+    } else {
+        if (archive->size() != 0) {
+            archiveState = chunk;
+        }
+    }
 }
 
 Core::Contact::~Contact()
@@ -91,3 +106,236 @@ unsigned int Core::Contact::groupsCount() const
 {
     return groups.size();
 }
+
+void Core::Contact::addMessageToArchive(const Shared::Message& msg)
+{
+    if (msg.getId().size() > 0 && msg.getBody().size() > 0) {
+        hisoryCache.emplace_back(msg);
+    }
+}
+
+void Core::Contact::requestHistory(int count, const QString& before)
+{
+    if (syncronizing) {
+        requestCache.emplace_back(count, before);
+    } else {
+        performRequest(count, before);
+    }
+}
+
+void Core::Contact::nextRequest()
+{
+    if (syncronizing) {
+        if (requestedCount != -1) {
+            emit historyResponse(responseCache);
+        }
+    }
+    if (requestCache.size() > 0) {
+        std::pair<int, QString> request = requestCache.front();
+        requestCache.pop_front();
+        performRequest(request.first, request.second);
+    } else {
+        syncronizing = false;
+        requestedCount = 0;
+        requestedBefore = "";
+        hisoryCache.clear();
+        responseCache.clear();
+    }
+}
+
+void Core::Contact::performRequest(int count, const QString& before)
+{
+    syncronizing = true;
+    requestedCount = count;
+    requestedBefore = before;
+    hisoryCache.clear();
+    responseCache.clear();
+    
+    switch (archiveState) {
+        case empty:
+            emit needHistory(before, "");
+            break;
+        case chunk:
+        case beginning:
+            if (count != -1) {
+                requestCache.emplace_back(requestedCount, before);
+                requestedCount = -1;
+            }
+            emit needHistory("", archive->newestId());
+            break;
+        case end: 
+            if (count != -1) {
+                QString lBefore;
+                if (responseCache.size() > 0) {
+                    lBefore = responseCache.front().getId();
+                } else {
+                    lBefore = before;
+                }
+                bool found = false;
+                try {
+                    std::list<Shared::Message> arc = archive->getBefore(requestedCount - responseCache.size(), lBefore);
+                    responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
+                    found = true;
+                } catch (Archive::NotFound e) {
+                    requestCache.emplace_back(requestedCount, before);
+                    requestedCount = -1;
+                    emit needHistory(archive->oldestId(), "");
+                }
+                
+                if (found) {
+                    int rSize = responseCache.size();
+                    if (rSize < count) {
+                        if (rSize != 0) {
+                            emit needHistory(responseCache.front().getId(), "");
+                        } else {
+                            emit needHistory(before, "");
+                        }
+                    } else {
+                        nextRequest();
+                    }
+                }
+            } else {
+                emit needHistory(archive->oldestId(), "");
+            }
+            break;
+        case complete:
+            try {
+                std::list<Shared::Message> arc = archive->getBefore(requestedCount - responseCache.size(), before);
+                responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
+            } catch (Archive::NotFound e) {
+                qDebug("requesting id hasn't been found in archive, skipping");
+            }
+            nextRequest();
+            break;
+    }
+}
+
+void Core::Contact::appendMessageToArchive(const Shared::Message& msg)
+{
+    const QString& id = msg.getId(); 
+    if (id.size() > 0) {
+        if (msg.getBody().size() > 0) {
+            switch (archiveState) {
+                case empty:
+                    if (archive->addElement(msg)) {
+                        archiveState = end;
+                    };
+                    if (!syncronizing) {
+                        requestHistory(-1, id);
+                    }
+                    break;
+                case beginning:
+                    appendCache.emplace_back(msg);
+                    if (!syncronizing) {
+                        requestHistory(-1, id);
+                    }
+                    break;
+                case end:
+                    archive->addElement(msg);
+                    break;
+                case chunk:
+                    appendCache.emplace_back(msg);
+                    if (!syncronizing) {
+                        requestHistory(-1, id);
+                    }
+                    break;
+                case complete:
+                    archive->addElement(msg);
+                    break;
+            }
+        } else if (!syncronizing && archiveState == empty) {
+            requestHistory(-1, id);
+        }
+    }
+}
+
+void Core::Contact::flushMessagesToArchive(bool finished, const QString& firstId, const QString& lastId)
+{
+    unsigned int added(0);
+    if (hisoryCache.size() > 0) {
+        added = archive->addElements(hisoryCache);
+        qDebug() << "Added" << added << "messages to the archive";
+        hisoryCache.clear();
+    }
+    
+    switch (archiveState) {
+            break;
+        case beginning:
+            if (finished) {
+                archiveState = complete;
+                nextRequest();
+            } else {
+                emit needHistory("", lastId);
+            }
+        case chunk:
+            if (finished) {
+                archiveState = end;
+                nextRequest();
+            } else {
+                emit needHistory("", lastId);
+            }
+            break;
+        case empty:
+            archiveState = end;
+        case end:
+            if (finished) {
+                archiveState = complete;
+                archive->setFromTheBeginning(true);
+            }
+            if (requestedCount != -1) {
+                QString before;
+                if (responseCache.size() > 0) {
+                    before = responseCache.front().getId();
+                } else {
+                    before = requestedBefore;
+                }
+                
+                bool found = false;
+                try {
+                    std::list<Shared::Message> arc = archive->getBefore(requestedCount - responseCache.size(), before);
+                    responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
+                    found = true;
+                } catch (Archive::NotFound e) {}
+                if (!found || requestedCount < responseCache.size()) {
+                    if (archiveState == complete) {
+                        nextRequest();
+                    } else {
+                        emit needHistory(firstId, "");
+                    }
+                } else {
+                    nextRequest();
+                }
+            } else {
+                if (added != 0) {
+                    nextRequest();
+                } else {
+                    emit needHistory(firstId, "");
+                }
+            }
+            break;
+        case complete:
+            nextRequest();
+            break;
+    }
+}
+
+void Core::Contact::requestFromEmpty(int count, const QString& before)
+{
+    if (syncronizing) {
+        qDebug("perform from empty didn't work, another request queued");
+    } else {
+        if (archiveState != empty) {
+            qDebug("perform from empty didn't work, the state is not empty");
+            requestHistory(count, before);
+        } else {
+            syncronizing = true;
+            requestedCount = count;
+            requestedBefore = "";
+            hisoryCache.clear();
+            responseCache.clear();
+            
+            emit needHistory(before, "");
+        }
+    }
+}
+
