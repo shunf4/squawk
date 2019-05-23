@@ -22,3 +22,17 @@ QMap<QString, QVariant> Account::value() const
     
     return map;
 }
+
+void Account::lockId()
+{
+    m_ui->name->setReadOnly(true);;
+}
+
+void Account::setData(const QMap<QString, QVariant>& data)
+{
+    m_ui->login->setText(data.value("login").toString());
+    m_ui->password->setText(data.value("password").toString());
+    m_ui->server->setText(data.value("server").toString());
+    m_ui->name->setText(data.value("name").toString());
+    m_ui->resource->setText(data.value("resource").toString());
+}

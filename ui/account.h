@@ -21,6 +21,8 @@ public:
     ~Account();
     
     QMap<QString, QVariant> value() const;
+    void setData(const QMap<QString, QVariant>& data);
+    void lockId();
 
 private:
     QScopedPointer<Ui::Account> m_ui;

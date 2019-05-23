@@ -150,6 +150,19 @@ void Core::Squawk::onAccountConnectionStateChanged(int state)
 {
     Account* acc = static_cast<Account*>(sender());
     emit accountConnectionStateChanged(acc->getName(), state);
+    
+    if (state == Shared::disconnected) {
+        bool equals = true;
+        for (Accounts::const_iterator itr = accounts.begin(), end = accounts.end(); itr != end; itr++) {
+            if ((*itr)->getState() != Shared::disconnected) {
+                equals = false;
+            }
+        }
+        if (equals) {
+            state = Shared::offline;
+            emit stateChanged(state);
+        }
+    }
 }
 
 void Core::Squawk::onAccountAddContact(const QString& jid, const QString& group, const QMap<QString, QVariant>& data)

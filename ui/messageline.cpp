@@ -75,6 +75,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
     message->setAutoFillBackground(true);;
     
     QLabel* body = new QLabel(msg.getBody());
+    body->setTextInteractionFlags(body->textInteractionFlags() | Qt::TextSelectableByMouse);
     QLabel* sender = new QLabel();
     QLabel* time = new QLabel(msg.getTime().toLocalTime().toString());
     QFont dFont = time->font();

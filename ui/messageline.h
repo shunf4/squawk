@@ -25,7 +25,6 @@
 #include <QLabel>
 #include <QResizeEvent>
 #include "../global.h"
-#include <QtQuickWidgets/QQuickWidget>
 
 class MessageLine : public QWidget
 {
@@ -71,7 +70,6 @@ private:
     QString myName;
     std::map<QString, QString> palNames;
     std::deque<QHBoxLayout*> views;
-    QQuickWidget busy;
 };
 
 #endif // MESSAGELINE_H

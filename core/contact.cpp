@@ -259,17 +259,21 @@ void Core::Contact::flushMessagesToArchive(bool finished, const QString& firstId
     }
     
     switch (archiveState) {
-            break;
         case beginning:
             if (finished) {
                 archiveState = complete;
+                archive->addElements(appendCache);
+                appendCache.clear();
                 nextRequest();
             } else {
                 emit needHistory("", lastId);
             }
+            break;
         case chunk:
             if (finished) {
                 archiveState = end;
+                archive->addElements(appendCache);
+                appendCache.clear();
                 nextRequest();
             } else {
                 emit needHistory("", lastId);
