@@ -24,6 +24,7 @@ public:
     
     void connect();
     void disconnect();
+    void reconnect();
     
     Shared::ConnectionState getState() const;
     QString getName() const;
@@ -42,6 +43,7 @@ public:
     QString getFullJid() const;
     void sendMessage(const Shared::Message& data);
     void requestArchive(const QString& jid, int count, const QString& before);
+    void setReconnectTimes(unsigned int times);
     
 signals:
     void connectionStateChanged(int);
@@ -56,6 +58,7 @@ signals:
     void removePresence(const QString& jid, const QString& name);
     void message(const Shared::Message& data);
     void responseArchive(const QString& jid, const std::list<Shared::Message>& list);
+    void error(const QString& text);
     
 private:
     QString name;
@@ -67,7 +70,9 @@ private:
     std::map<QString, std::set<QString>> groups;
     QXmppCarbonManager* cm;
     QXmppMamManager* am;
-    std::map<QString, Contact*> contacts; 
+    std::map<QString, Contact*> contacts;
+    unsigned int maxReconnectTimes;
+    unsigned int reconnectTimes;
     
 private slots:
     void onClientConnected();

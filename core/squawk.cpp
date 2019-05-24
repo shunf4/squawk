@@ -83,6 +83,7 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     amap.insert(std::make_pair(name, acc));
     
     connect(acc, SIGNAL(connectionStateChanged(int)), this, SLOT(onAccountConnectionStateChanged(int)));
+    connect(acc, SIGNAL(error(const QString&)), this, SLOT(onAccountError(const QString&)));
     connect(acc, SIGNAL(availabilityChanged(int)), this, SLOT(onAccountAvailabilityChanged(int)));
     connect(acc, SIGNAL(addContact(const QString&, const QString&, const QMap<QString, QVariant>&)), 
             this, SLOT(onAccountAddContact(const QString&, const QString&, const QMap<QString, QVariant>&)));
@@ -106,7 +107,8 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
         {"password", password},
         {"resource", resource},
         {"state", Shared::disconnected},
-        {"offline", Shared::offline}
+        {"offline", Shared::offline},
+        {"error", ""}
     };
     emit newAccount(map);
 }
@@ -149,7 +151,7 @@ void Core::Squawk::disconnectAccount(const QString& account)
 void Core::Squawk::onAccountConnectionStateChanged(int state)
 {
     Account* acc = static_cast<Account*>(sender());
-    emit accountConnectionStateChanged(acc->getName(), state);
+    emit changeAccount(acc->getName(), {{"state", state}});
     
     if (state == Shared::disconnected) {
         bool equals = true;
@@ -216,7 +218,7 @@ void Core::Squawk::onAccountRemovePresence(const QString& jid, const QString& na
 void Core::Squawk::onAccountAvailabilityChanged(int state)
 {
     Account* acc = static_cast<Account*>(sender());
-    emit accountAvailabilityChanged(acc->getName(), state);
+    emit changeAccount(acc->getName(), {{"availability", state}});
 }
 
 void Core::Squawk::onAccountMessage(const Shared::Message& data)
@@ -252,3 +254,47 @@ void Core::Squawk::onAccountResponseArchive(const QString& jid, const std::list<
     emit responseArchive(acc->getName(), jid, list);
 }
 
+void Core::Squawk::modifyAccountRequest(const QString& name, const QMap<QString, QVariant>& map)
+{
+    AccountsMap::const_iterator itr = amap.find(name);
+    if (itr == amap.end()) {
+        qDebug("An attempt to modify non existing account, skipping");
+        return;
+    }
+    
+    Core::Account* acc = itr->second;
+    Shared::ConnectionState st = acc->getState();
+    
+    if (st != Shared::disconnected) {
+        acc->reconnect();
+    }
+    
+    QMap<QString, QVariant>::const_iterator mItr;
+    mItr = map.find("login");
+    if (mItr != map.end()) {
+        acc->setLogin(mItr->toString());
+    }
+    
+    mItr = map.find("password");
+    if (mItr != map.end()) {
+        acc->setPassword(mItr->toString());
+    }
+    
+    mItr = map.find("resource");
+    if (mItr != map.end()) {
+        acc->setResource(mItr->toString());
+    }
+    
+    mItr = map.find("server");
+    if (mItr != map.end()) {
+        acc->setServer(mItr->toString());
+    }
+    
+    emit changeAccount(name, map);
+}
+
+void Core::Squawk::onAccountError(const QString& text)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit changeAccount(acc->getName(), {{"error", text}});
+}

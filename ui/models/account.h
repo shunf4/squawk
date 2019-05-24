@@ -28,6 +28,9 @@ namespace Models {
         void setResource(const QString& p_resource);
         QString getResource() const;
         
+        void setError(const QString& p_resource);
+        QString getError() const;
+        
         void setAvailability(Shared::Availability p_avail);
         void setAvailability(unsigned int p_avail);
         Shared::Availability getAvailability() const;
@@ -44,6 +47,7 @@ namespace Models {
         QString password;
         QString server;
         QString resource;
+        QString error;
         Shared::ConnectionState state;
         Shared::Availability availability;
     };

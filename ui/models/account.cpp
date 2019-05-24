@@ -7,6 +7,7 @@ Models::Account::Account(const QMap<QString, QVariant>& data, Models::Item* pare
     password(data.value("password").toString()),
     server(data.value("server").toString()),
     resource(data.value("resource").toString()),
+    error(data.value("error").toString()),
     state(Shared::disconnected),
     availability(Shared::offline)
 {
@@ -61,7 +62,7 @@ void Models::Account::setAvailability(Shared::Availability p_avail)
 {
     if (availability != p_avail) {
         availability = p_avail;
-        changed(5);
+        changed(6);
     }
 }
 
@@ -101,7 +102,7 @@ void Models::Account::setLogin(const QString& p_login)
 {
     if (login != p_login) {
         login = p_login;
-        changed(3);
+        changed(4);
     }
 }
 
@@ -109,7 +110,7 @@ void Models::Account::setPassword(const QString& p_password)
 {
     if (password != p_password) {
         password = p_password;
-        changed(4);
+        changed(5);
     }
 }
 
@@ -131,12 +132,14 @@ QVariant Models::Account::data(int column) const
         case 2:
             return Shared::connectionStateNames[state];
         case 3:
-            return login;
+            return error;
         case 4:
-            return password;
+            return login;
         case 5:
-            return Shared::availabilityNames[availability];
+            return password;
         case 6:
+            return Shared::availabilityNames[availability];
+        case 7:
             return resource;
         default:
             return QVariant();
@@ -145,7 +148,7 @@ QVariant Models::Account::data(int column) const
 
 int Models::Account::columnCount() const
 {
-    return 7;
+    return 8;
 }
 
 void Models::Account::update(const QString& field, const QVariant& value)
@@ -164,6 +167,8 @@ void Models::Account::update(const QString& field, const QVariant& value)
         setAvailability(value.toUInt());
     } else if (field == "resource") {
         setResource(value.toString());
+    } else if (field == "error") {
+        setError(value.toString());
     }
 }
 
@@ -176,7 +181,20 @@ void Models::Account::setResource(const QString& p_resource)
 {
     if (resource != p_resource) {
         resource = p_resource;
-        changed(6);
+        changed(7);
+    }
+}
+
+QString Models::Account::getError() const
+{
+    return error;
+}
+
+void Models::Account::setError(const QString& p_resource)
+{
+    if (error != p_resource) {
+        error = p_resource;
+        changed(3);
     }
 }
 

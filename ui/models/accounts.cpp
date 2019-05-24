@@ -6,7 +6,8 @@
 std::deque<QString> Models::Accounts::columns = {
     "name",
     "server",
-    "state"
+    "state",
+    "error"
 };
 
 Models::Accounts::Accounts(QObject* parent):

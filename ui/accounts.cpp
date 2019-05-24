@@ -31,8 +31,9 @@ void Accounts::onAccountAccepted()
 {
     Account* acc = static_cast<Account*>(sender());
     QMap<QString, QVariant> map = acc->value();
+    const Models::Account* mAcc = model->getAccount(m_ui->tableView->selectionModel()->selectedRows().at(0).row());
     if (editing) {
-        emit changeAccount(map);
+        emit changeAccount(mAcc->getName(), map);
     } else {
         emit newAccount(map);
     }

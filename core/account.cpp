@@ -16,7 +16,9 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     groups(),
     cm(new QXmppCarbonManager()),
     am(new QXmppMamManager()),
-    contacts()
+    contacts(),
+    maxReconnectTimes(0),
+    reconnectTimes(0)
 {
     config.setUser(p_login);
     config.setDomain(p_server);
@@ -63,8 +65,9 @@ Shared::ConnectionState Core::Account::getState() const
 void Core::Account::connect()
 {
     if (state == Shared::disconnected) {
-        client.connectToServer(config, presence);
+        reconnectTimes = maxReconnectTimes;
         state = Shared::connecting;
+        client.connectToServer(config, presence);
         emit connectionStateChanged(state);
     } else {
         qDebug("An attempt to connect an account which is already connected, skipping");
@@ -73,6 +76,7 @@ void Core::Account::connect()
 
 void Core::Account::disconnect()
 {
+    reconnectTimes = 0;
     if (state != Shared::disconnected) {
         client.disconnectFromServer();
         state = Shared::disconnected;
@@ -83,21 +87,40 @@ void Core::Account::disconnect()
 void Core::Account::onClientConnected()
 {
     if (state == Shared::connecting) {
+        reconnectTimes = maxReconnectTimes;
         state = Shared::connected;
         cm->setCarbonsEnabled(true);
         emit connectionStateChanged(state);
     } else {
-        qDebug("Something weird had happened - xmpp client reported about successful connection but account wasn't in connecting state");
+        qDebug() << "Something weird had happened - xmpp client reported about successful connection but account wasn't in" << state << "state";
     }
 }
 
 void Core::Account::onClientDisconnected()
 {
     if (state != Shared::disconnected) {
-        state = Shared::disconnected;
-        emit connectionStateChanged(state);
+        if (reconnectTimes > 0) {
+            --reconnectTimes;
+            qDebug() << "Reconnecting...";
+            state = Shared::connecting;
+            client.connectToServer(config, presence);
+            emit connectionStateChanged(state);
+        } else {
+            state = Shared::disconnected;
+            emit connectionStateChanged(state);
+        }
     } else {
         //qDebug("Something weird had happened - xmpp client reported about being disconnection but account was already in disconnected state");
+    }
+}
+
+void Core::Account::reconnect()
+{
+    if (state == Shared::connected) {
+        ++reconnectTimes;
+        client.disconnectFromServer();
+    } else {
+        qDebug() << "An attempt to reconnect account" << getName() << "which was not connected";
     }
 }
 
@@ -128,6 +151,14 @@ void Core::Account::onRosterReceived()
     for (int i = 0; i < bj.size(); ++i) {
         const QString& jid = bj[i];
         addedAccount(jid);
+    }
+}
+
+void Core::Account::setReconnectTimes(unsigned int times)
+{
+    maxReconnectTimes = times;
+    if (state == Shared::connected) {
+        reconnectTimes = times;
     }
 }
 
@@ -616,18 +647,95 @@ void Core::Account::onContactHistoryResponse(const std::list<Shared::Message>& l
 
 void Core::Account::onClientError(QXmppClient::Error err)
 {
+    QString errorText;
+    QString errorType;
     switch (err) {
         case QXmppClient::SocketError:
-            qDebug() << "Client socket error" << client.socketErrorString();
+            errorText = client.socketErrorString();
+            errorType = "Client socket error";
             break;
-        case QXmppClient::XmppStreamError:
-            qDebug() << "Client stream error" << client.socketErrorString();
+        case QXmppClient::XmppStreamError: {
+            QXmppStanza::Error::Condition cnd = client.xmppStreamError();
+            
+            switch (cnd) {
+                case QXmppStanza::Error::BadRequest:
+                    errorText = "Bad request";
+                    break;
+                case QXmppStanza::Error::Conflict:
+                    errorText = "Conflict";
+                    break;
+                case QXmppStanza::Error::FeatureNotImplemented:
+                    errorText = "Feature is not implemented";
+                    break;
+                case QXmppStanza::Error::Forbidden:
+                    errorText = "Forbidden";
+                    break;
+                case QXmppStanza::Error::Gone:
+                    errorText = "Gone";
+                    break;
+                case QXmppStanza::Error::InternalServerError:
+                    errorText = "Internal server error";
+                    break;
+                case QXmppStanza::Error::ItemNotFound:
+                    errorText = "Item was not found";
+                    break;
+                case QXmppStanza::Error::JidMalformed:
+                    errorText = "Malformed JID";
+                    break;
+                case QXmppStanza::Error::NotAcceptable:
+                    errorText = "Not acceptable";
+                    break;
+                case QXmppStanza::Error::NotAllowed:
+                    errorText = "Not allowed";
+                    break;
+                case QXmppStanza::Error::NotAuthorized:
+                    errorText = "Authentication error";
+                    break;
+                case QXmppStanza::Error::PaymentRequired:
+                    errorText = "Payment is required";
+                    break;
+                case QXmppStanza::Error::RecipientUnavailable:
+                    errorText = "Recipient is unavailable";
+                    break;
+                case QXmppStanza::Error::Redirect:
+                    errorText = "Redirected";
+                    break;
+                case QXmppStanza::Error::RegistrationRequired:
+                    errorText = "Registration is required";
+                    break;
+                case QXmppStanza::Error::RemoteServerNotFound:
+                    errorText = "Remote server was not found";
+                    break;
+                case QXmppStanza::Error::RemoteServerTimeout:
+                    errorText = "Remote server timeout";
+                    break;
+                case QXmppStanza::Error::ResourceConstraint:
+                    errorText = "Resource constraint";
+                    break;
+                case QXmppStanza::Error::ServiceUnavailable:
+                    errorText = "Redirected";
+                    break;
+                case QXmppStanza::Error::SubscriptionRequired:
+                    errorText = "Subscription is required";
+                    break;
+                case QXmppStanza::Error::UndefinedCondition:
+                    errorText = "Undefined condition";
+                    break;
+                case QXmppStanza::Error::UnexpectedRequest:
+                    errorText = "Unexpected request";
+                    break;
+            }
+         
+            errorType = "Client stream error";
+        }
+            
             break;
         case QXmppClient::KeepAliveError:
-            qDebug() << "Client keep alive error";
+            errorText = "Client keep alive error";
             break;
     }
     
-    //onClientDisconnected();
+    qDebug() << errorType << errorText;
+    emit error(errorText);
 }
 

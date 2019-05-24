@@ -28,6 +28,7 @@ public:
     
 signals:
     void newAccountRequest(const QMap<QString, QVariant>&);
+    void modifyAccountRequest(const QString&, const QMap<QString, QVariant>&);
     void connectAccount(const QString&);
     void disconnectAccount(const QString&);
     void changeState(int state);
@@ -36,8 +37,7 @@ signals:
     
 public slots:
     void newAccount(const QMap<QString, QVariant>& account);
-    void accountConnectionStateChanged(const QString& account, int state);
-    void accountAvailabilityChanged(const QString& account, int state);
+    void changeAccount(const QString& account, const QMap<QString, QVariant>& data);
     void addGroup(const QString& account, const QString& name);
     void removeGroup(const QString& account, const QString& name);
     void addContact(const QString& account, const QString& jid, const QString& group, const QMap<QString, QVariant>& data);

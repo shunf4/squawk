@@ -22,7 +22,7 @@ public:
     
 signals:
     void newAccount(const QMap<QString, QVariant>&);
-    void changeAccount(const QMap<QString, QVariant>&);
+    void changeAccount(const QString&, const QMap<QString, QVariant>&);
     
 private slots:
     void onAddButton(bool clicked = 0);

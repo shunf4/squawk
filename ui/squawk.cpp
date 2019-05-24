@@ -35,6 +35,7 @@ void Squawk::onAccounts()
         accounts->setAttribute(Qt::WA_DeleteOnClose);
         connect(accounts, SIGNAL(destroyed(QObject*)), this, SLOT(onAccountsClosed(QObject*)));
         connect(accounts, SIGNAL(newAccount(const QMap<QString, QVariant>&)), this, SIGNAL(newAccountRequest(const QMap<QString, QVariant>&)));
+        connect(accounts, SIGNAL(changeAccount(const QString&, const QMap<QString, QVariant>&)), this, SIGNAL(modifyAccountRequest(const QString&, const QMap<QString, QVariant>&)));
         
         accounts->show();
     } else {
@@ -96,14 +97,12 @@ void Squawk::onComboboxActivated(int index)
     }
 }
 
-void Squawk::accountConnectionStateChanged(const QString& account, int state)
+void Squawk::changeAccount(const QString& account, const QMap<QString, QVariant>& data)
 {
-    rosterModel.updateAccount(account, "state", state);
-}
-
-void Squawk::accountAvailabilityChanged(const QString& account, int state)
-{
-    rosterModel.updateAccount(account, "availability", state);
+    for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
+        QString attr = itr.key();
+        rosterModel.updateAccount(account, attr, *itr);
+    }
 }
 
 void Squawk::addContact(const QString& account, const QString& jid, const QString& group, const QMap<QString, QVariant>& data)
