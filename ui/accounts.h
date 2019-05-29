@@ -23,18 +23,25 @@ public:
 signals:
     void newAccount(const QMap<QString, QVariant>&);
     void changeAccount(const QString&, const QMap<QString, QVariant>&);
+    void connectAccount(const QString&);
+    void disconnectAccount(const QString&);
+    void removeAccount(const QString&);
     
 private slots:
     void onAddButton(bool clicked = 0);
     void onEditButton(bool clicked = 0);
+    void onConnectButton(bool clicked = 0);
+    void onDeleteButton(bool clicked = 0);
     void onAccountAccepted();
     void onAccountRejected();
     void onSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
+    void updateConnectButton();
     
 private:
     QScopedPointer<Ui::Accounts> m_ui;
     Models::Accounts* model;
     bool editing;
+    bool toDisconnect;
 };
 
 #endif // ACCOUNTS_H

@@ -78,9 +78,19 @@ void Models::Accounts::onAccountChanged(Item* item, int row, int col)
     if (col < columnCount(QModelIndex())) {
         emit dataChanged(createIndex(row, col, this), createIndex(row, col, this));
     }
+    emit changed();
 }
 
 Models::Account * Models::Accounts::getAccount(int index)
 {
     return accs[index];
+}
+
+void Models::Accounts::removeAccount(int index)
+{
+    Account* account = accs[index];
+    beginRemoveRows(QModelIndex(), index, index);
+    disconnect(account, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onAccountChanged(Models::Item*, int, int)));
+    accs.erase(accs.begin() + index);
+    endRemoveRows();
 }

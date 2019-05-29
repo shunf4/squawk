@@ -34,6 +34,7 @@ int main(int argc, char *argv[])
     QObject::connect(&w, SIGNAL(newAccountRequest(const QMap<QString, QVariant>&)), squawk, SLOT(newAccountRequest(const QMap<QString, QVariant>&)));
     QObject::connect(&w, SIGNAL(modifyAccountRequest(const QString&, const QMap<QString, QVariant>&)), 
                      squawk, SLOT(modifyAccountRequest(const QString&, const QMap<QString, QVariant>&)));
+    QObject::connect(&w, SIGNAL(removeAccountRequest(const QString&)), squawk, SLOT(removeAccountRequest(const QString&)));
     QObject::connect(&w, SIGNAL(connectAccount(const QString&)), squawk, SLOT(connectAccount(const QString&)));
     QObject::connect(&w, SIGNAL(disconnectAccount(const QString&)), squawk, SLOT(disconnectAccount(const QString&)));
     QObject::connect(&w, SIGNAL(changeState(int)), squawk, SLOT(changeState(int)));
@@ -46,6 +47,7 @@ int main(int argc, char *argv[])
                      &w, SLOT(addContact(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(changeAccount(const QString&, const QMap<QString, QVariant>&)), 
                      &w, SLOT(changeAccount(const QString&, const QMap<QString, QVariant>&)));
+    QObject::connect(squawk, SIGNAL(removeAccount(const QString&)), &w, SLOT(removeAccount(const QString&)));
     QObject::connect(squawk, SIGNAL(addGroup(const QString&, const QString&)), &w, SLOT(addGroup(const QString&, const QString&)));
     QObject::connect(squawk, SIGNAL(removeGroup(const QString&, const QString&)), &w, SLOT(removeGroup(const QString&, const QString&)));
     QObject::connect(squawk, SIGNAL(removeContact(const QString&, const QString&)), &w, SLOT(removeContact(const QString&, const QString&)));

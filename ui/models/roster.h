@@ -24,6 +24,7 @@ public:
 
     void addAccount(const QMap<QString, QVariant> &data);
     void updateAccount(const QString& account, const QString& field, const QVariant& value);
+    void removeAccount(const QString& account);
     void addGroup(const QString& account, const QString& name);
     void removeGroup(const QString& account, const QString& name);
     void addContact(const QString& account, const QString& jid, const QString& group, const QMap<QString, QVariant>& data);

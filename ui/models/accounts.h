@@ -16,6 +16,7 @@ public:
     ~Accounts();
     
     void addAccount(Account* account);
+    void removeAccount(int index);
     
     QVariant data ( const QModelIndex& index, int role ) const override;
     int columnCount ( const QModelIndex& parent ) const override;
@@ -23,6 +24,9 @@ public:
     QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
 
     Account* getAccount(int index);
+    
+signals:
+    void changed();
     
 private:
     std::deque<Account*> accs;

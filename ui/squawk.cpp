@@ -36,6 +36,9 @@ void Squawk::onAccounts()
         connect(accounts, SIGNAL(destroyed(QObject*)), this, SLOT(onAccountsClosed(QObject*)));
         connect(accounts, SIGNAL(newAccount(const QMap<QString, QVariant>&)), this, SIGNAL(newAccountRequest(const QMap<QString, QVariant>&)));
         connect(accounts, SIGNAL(changeAccount(const QString&, const QMap<QString, QVariant>&)), this, SIGNAL(modifyAccountRequest(const QString&, const QMap<QString, QVariant>&)));
+        connect(accounts, SIGNAL(connectAccount(const QString&)), this, SIGNAL(connectAccount(const QString&)));
+        connect(accounts, SIGNAL(disconnectAccount(const QString&)), this, SIGNAL(disconnectAccount(const QString&)));
+        connect(accounts, SIGNAL(removeAccount(const QString&)), this, SIGNAL(removeAccountRequest(const QString&)));
         
         accounts->show();
     } else {
@@ -248,4 +251,24 @@ void Squawk::responseArchive(const QString& account, const QString& jid, const s
     if (itr != conversations.end()) {
         itr->second->responseArchive(list);
     }
+}
+
+void Squawk::removeAccount(const QString& account)
+{
+    Conversations::const_iterator itr = conversations.begin();
+    while (itr != conversations.end()) {
+        if (itr->first.account == account) {
+            Conversations::const_iterator lItr = itr;
+            ++itr;
+            Conversation* conv = lItr->second;
+            disconnect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
+            disconnect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
+            disconnect(conv, SIGNAL(requestArchive(const QString&)), this, SLOT(onConversationRequestArchive(const QString&)));
+            conv->close();
+            conversations.erase(lItr);
+        } else {
+            ++itr;
+        }
+    }
+    rosterModel.removeAccount(account);
 }

@@ -1,6 +1,8 @@
 #include "squawk.h"
 #include <QDebug>
 #include <QSettings>
+#include <QDir>
+#include <QStandardPaths>
 
 Core::Squawk::Squawk(QObject* parent):
     QObject(parent),
@@ -297,4 +299,32 @@ void Core::Squawk::onAccountError(const QString& text)
 {
     Account* acc = static_cast<Account*>(sender());
     emit changeAccount(acc->getName(), {{"error", text}});
+}
+
+void Core::Squawk::removeAccountRequest(const QString& name)
+{
+    AccountsMap::const_iterator itr = amap.find(name);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to remove non existing account " << name << " from core, skipping";
+        return;
+    }
+    
+    Account* acc = itr->second;
+    
+    for (Accounts::const_iterator aItr = accounts.begin(); aItr != accounts.end(); ++aItr) {
+        if (*aItr == acc) {
+            accounts.erase(aItr);
+            break;
+        }
+    }
+    
+    amap.erase(itr);
+    delete acc;
+    
+    QString path(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
+    path += "/" + name;
+    QDir dir(path);
+    dir.removeRecursively();
+    
+    emit removeAccount(name);
 }

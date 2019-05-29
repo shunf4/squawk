@@ -738,4 +738,3 @@ void Core::Account::onClientError(QXmppClient::Error err)
     qDebug() << errorType << errorText;
     emit error(errorText);
 }
-

@@ -512,3 +512,41 @@ void Models::Roster::dropMessages(const QString& account, const QString& jid)
         cBeg->second->dropMessages();
     }
 }
+
+void Models::Roster::removeAccount(const QString& account)
+{
+    std::map<QString, Account*>::const_iterator itr = accounts.find(account);
+    if (itr == accounts.end()) {
+        qDebug() << "An attempt to remove non existing account " << account << ", skipping";
+        return;
+    }
+    
+    Account* acc = itr->second;
+    int index = acc->row();
+    root->removeChild(index);
+    accountsModel->removeAccount(index);
+    
+    std::multimap<ElId, Contact*>::const_iterator cItr = contacts.begin();
+    while (cItr != contacts.end()) {
+        if (cItr->first.account == account) {
+            std::multimap<ElId, Contact*>::const_iterator lItr = cItr;
+            ++cItr;
+            contacts.erase(lItr);
+        } else {
+            ++cItr;
+        }
+    }
+    
+    std::map<ElId, Item*>::const_iterator gItr = groups.begin();
+    while (gItr != groups.end()) {
+        if (gItr->first.account == account) {
+            std::map<ElId, Item*>::const_iterator lItr = gItr;
+            ++gItr;
+            groups.erase(lItr);
+        } else {
+            ++gItr;
+        }
+    }
+    
+    delete acc;
+}
