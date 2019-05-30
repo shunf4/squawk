@@ -67,7 +67,6 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
 
 Conversation::~Conversation()
 {
-    disconnect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
 }
 
 void Conversation::setName(const QString& name)

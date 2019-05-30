@@ -164,7 +164,7 @@ QModelIndex Models::Roster::parent (const QModelIndex& child) const
     Item *parentItem = childItem->parentItem();
     
     if (parentItem == root) {
-        return QModelIndex();
+        return createIndex(0, 0, parentItem);
     }
     
     return createIndex(parentItem->row(), 0, parentItem);
@@ -455,6 +455,7 @@ void Models::Roster::onChildIsAboutToBeRemoved(Models::Item* parent, int first, 
     if (parent != root) {
         row = parent->row();
     }
+    qDebug() << "Removing row" << parent->child(first)->getName() << "from" << parent->getName() << "index is" << first;
     beginRemoveRows(createIndex(row, 0, parent), first, last);
 }
 
@@ -525,6 +526,7 @@ void Models::Roster::removeAccount(const QString& account)
     int index = acc->row();
     root->removeChild(index);
     accountsModel->removeAccount(index);
+    accounts.erase(itr);
     
     std::multimap<ElId, Contact*>::const_iterator cItr = contacts.begin();
     while (cItr != contacts.end()) {
@@ -548,5 +550,5 @@ void Models::Roster::removeAccount(const QString& account)
         }
     }
     
-    delete acc;
+    acc->deleteLater();
 }

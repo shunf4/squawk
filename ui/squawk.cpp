@@ -199,7 +199,7 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 conv->show();
                 
                 if (res.size() > 0) {
-                    itr->second->setPalResource(res);
+                    conv->setPalResource(res);
                 }
             }
         }

@@ -310,6 +310,9 @@ void Core::Squawk::removeAccountRequest(const QString& name)
     }
     
     Account* acc = itr->second;
+    if (acc->getState() != Shared::disconnected) {
+        acc->disconnect();
+    }
     
     for (Accounts::const_iterator aItr = accounts.begin(); aItr != accounts.end(); ++aItr) {
         if (*aItr == acc) {
@@ -319,7 +322,6 @@ void Core::Squawk::removeAccountRequest(const QString& name)
     }
     
     amap.erase(itr);
-    delete acc;
     
     QString path(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
     path += "/" + name;
@@ -327,4 +329,5 @@ void Core::Squawk::removeAccountRequest(const QString& name)
     dir.removeRecursively();
     
     emit removeAccount(name);
+    acc->deleteLater();
 }
