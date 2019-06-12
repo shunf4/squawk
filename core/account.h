@@ -44,6 +44,8 @@ public:
     void sendMessage(const Shared::Message& data);
     void requestArchive(const QString& jid, int count, const QString& before);
     void setReconnectTimes(unsigned int times);
+    void subscribeToContact(const QString& jid, const QString& reason);
+    void unsubscribeFromContact(const QString& jid, const QString& reason);
     
 signals:
     void connectionStateChanged(int);

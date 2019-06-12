@@ -455,7 +455,6 @@ void Models::Roster::onChildIsAboutToBeRemoved(Models::Item* parent, int first, 
     if (parent != root) {
         row = parent->row();
     }
-    qDebug() << "Removing row" << parent->child(first)->getName() << "from" << parent->getName() << "index is" << first;
     beginRemoveRows(createIndex(row, 0, parent), first, last);
 }
 

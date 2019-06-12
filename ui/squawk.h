@@ -35,6 +35,8 @@ signals:
     void changeState(int state);
     void sendMessage(const QString& account, const Shared::Message& data);
     void requestArchive(const QString& account, const QString& jid, int count, const QString& before);
+    void subscribeContact(const QString& account, const QString& jid, const QString& reason);
+    void unsubscribeContact(const QString& account, const QString& jid, const QString& reason);
     
 public slots:
     void newAccount(const QMap<QString, QVariant>& account);
@@ -59,6 +61,7 @@ private:
     Accounts* accounts;
     Models::Roster rosterModel;
     Conversations conversations;
+    QMenu* contextMenu;
     
 protected:
     void closeEvent(QCloseEvent * event) override;
@@ -71,6 +74,7 @@ private slots:
     void onRosterItemDoubleClicked(const QModelIndex& item);
     void onConversationMessage(const Shared::Message& msg);
     void onConversationRequestArchive(const QString& before);
+    void onRosterContextMenu(const QPoint& point);
     
 };
 

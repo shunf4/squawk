@@ -8,10 +8,12 @@ Squawk::Squawk(QWidget *parent) :
     m_ui(new Ui::Squawk),
     accounts(0),
     rosterModel(),
-    conversations()
+    conversations(),
+    contextMenu(new QMenu())
 {
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
+    m_ui->roster->setContextMenuPolicy(Qt::CustomContextMenu);
     
     for (int i = 0; i < Shared::availabilityNames.size(); ++i) {
         m_ui->comboBox->addItem(QIcon::fromTheme(Shared::availabilityThemeIcons[i]), Shared::availabilityNames[i]);
@@ -21,11 +23,12 @@ Squawk::Squawk(QWidget *parent) :
     connect(m_ui->actionAccounts, SIGNAL(triggered()), this, SLOT(onAccounts()));
     connect(m_ui->comboBox, SIGNAL(activated(int)), this, SLOT(onComboboxActivated(int)));
     connect(m_ui->roster, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(onRosterItemDoubleClicked(const QModelIndex&)));
+    connect(m_ui->roster, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(onRosterContextMenu(const QPoint&)));
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
 }
 
 Squawk::~Squawk() {
-    
+    delete contextMenu;
 }
 
 void Squawk::onAccounts()
@@ -271,4 +274,77 @@ void Squawk::removeAccount(const QString& account)
         }
     }
     rosterModel.removeAccount(account);
+}
+
+void Squawk::onRosterContextMenu(const QPoint& point)
+{
+    QModelIndex index = m_ui->roster->indexAt(point);
+    if (index.isValid()) {
+        Models::Item* item = static_cast<Models::Item*>(index.internalPointer());
+    
+        contextMenu->clear();
+        bool hasMenu = false;
+        switch (item->type) {
+            case Models::Item::account: {
+                Models::Account* acc = static_cast<Models::Account*>(item);
+                hasMenu = true;
+                QString name = acc->getName();
+                
+                if (acc->getState() != Shared::disconnected) {
+                    QAction* con = contextMenu->addAction(QIcon::fromTheme("network-disconnect"), "Disconnect");
+                    connect(con, &QAction::triggered, [this, name]() {
+                        emit disconnectAccount(name);
+                    });
+                } else {
+                    QAction* con = contextMenu->addAction(QIcon::fromTheme("network-connect"), "Connect");
+                    connect(con, &QAction::triggered, [this, name]() {
+                        emit connectAccount(name);
+                    });
+                }
+                
+                QAction* remove = contextMenu->addAction(QIcon::fromTheme("edit-delete"), "Remove");
+                connect(remove, &QAction::triggered, [this, name]() {
+                    emit removeAccount(name);
+                });
+                
+            }
+                break;
+            case Models::Item::contact: {
+                Models::Contact* cnt = static_cast<Models::Contact*>(item);
+                hasMenu = true;
+                
+                QAction* remove = contextMenu->addAction(QIcon::fromTheme("mail-message"), "Open dialog");
+                connect(remove, &QAction::triggered, [this, index]() {
+                    onRosterItemDoubleClicked(index);
+                });
+                
+                Shared::SubscriptionState state = cnt->getState();
+                switch (state) {
+                    case Shared::both:
+                    case Shared::to: {
+                        QAction* remove = contextMenu->addAction(QIcon::fromTheme("news-unsubscribe"), "Unsubscribe");
+                        connect(remove, &QAction::triggered, [this, cnt]() {
+                            emit unsubscribeContact(cnt->getAccountName(), cnt->getJid(), "");
+                        });
+                    }
+                    break;
+                    case Shared::from:
+                    case Shared::unknown:
+                    case Shared::none: {
+                        QAction* remove = contextMenu->addAction(QIcon::fromTheme("news-subscribe"), "Subscribe");
+                        connect(remove, &QAction::triggered, [this, cnt]() {
+                            emit subscribeContact(cnt->getAccountName(), cnt->getJid(), "");
+                        });
+                    }    
+                }
+                
+            }
+                break;
+            default:
+                break;
+        }
+        if (hasMenu) {
+            contextMenu->popup(m_ui->roster->viewport()->mapToGlobal(point));
+        }
+    }    
 }

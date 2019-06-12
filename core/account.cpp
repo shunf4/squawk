@@ -23,6 +23,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     config.setUser(p_login);
     config.setDomain(p_server);
     config.setPassword(p_password);
+    config.setAutoAcceptSubscriptions(true);
     
     QObject::connect(&client, SIGNAL(connected()), this, SLOT(onClientConnected()));
     QObject::connect(&client, SIGNAL(disconnected()), this, SLOT(onClientDisconnected()));
@@ -183,7 +184,7 @@ void Core::Account::onRosterItemChanged(const QString& bareJid)
 
     contact->setGroups(re.groups());
     contact->setSubscriptionState(state);
-    contact->setName(name);
+    contact->setName(re.name());
 }
 
 void Core::Account::onRosterItemRemoved(const QString& bareJid)
@@ -738,3 +739,25 @@ void Core::Account::onClientError(QXmppClient::Error err)
     qDebug() << errorType << errorText;
     emit error(errorText);
 }
+
+
+void Core::Account::subscribeToContact(const QString& jid, const QString& reason)
+{
+    if (state == Shared::connected) {
+        QXmppRosterManager& rm = client.rosterManager();
+        rm.subscribe(jid, reason);
+    } else {
+        qDebug() << "An attempt to subscribe an account " << name << " to jid " << jid << " but the account is not in the connected state, skipping";
+    }
+}
+
+void Core::Account::unsubscribeFromContact(const QString& jid, const QString& reason)
+{
+    if (state == Shared::connected) {
+        QXmppRosterManager& rm = client.rosterManager();
+        rm.unsubscribe(jid, reason);
+    } else {
+        qDebug() << "An attempt to unsubscribe an account " << name << " from jid " << jid << " but the account is not in the connected state, skipping";
+    }
+}
+

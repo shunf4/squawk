@@ -331,3 +331,26 @@ void Core::Squawk::removeAccountRequest(const QString& name)
     emit removeAccount(name);
     acc->deleteLater();
 }
+
+
+void Core::Squawk::subscribeContact(const QString& account, const QString& jid, const QString& reason)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug("An attempt to subscribe to the contact with non existing account, skipping");
+        return;
+    }
+    
+    itr->second->subscribeToContact(jid, reason);
+}
+
+void Core::Squawk::unsubscribeContact(const QString& account, const QString& jid, const QString& reason)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug("An attempt to subscribe to the contact with non existing account, skipping");
+        return;
+    }
+    
+    itr->second->unsubscribeFromContact(jid, reason);
+}
