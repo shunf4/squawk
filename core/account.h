@@ -46,6 +46,8 @@ public:
     void setReconnectTimes(unsigned int times);
     void subscribeToContact(const QString& jid, const QString& reason);
     void unsubscribeFromContact(const QString& jid, const QString& reason);
+    void removeContactRequest(const QString& jid);
+    void addContactRequest(const QString& jid, const QString& name, const QSet<QString>& groups);
     
 signals:
     void connectionStateChanged(int);

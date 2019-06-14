@@ -354,3 +354,14 @@ void Core::Squawk::unsubscribeContact(const QString& account, const QString& jid
     
     itr->second->unsubscribeFromContact(jid, reason);
 }
+
+void Core::Squawk::removeContactRequest(const QString& account, const QString& jid)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug("An attempt to remove contact from non existing account, skipping");
+        return;
+    }
+    
+    itr->second->removeContactRequest(jid);
+}

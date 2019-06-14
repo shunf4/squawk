@@ -313,8 +313,8 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 Models::Contact* cnt = static_cast<Models::Contact*>(item);
                 hasMenu = true;
                 
-                QAction* remove = contextMenu->addAction(QIcon::fromTheme("mail-message"), "Open dialog");
-                connect(remove, &QAction::triggered, [this, index]() {
+                QAction* dialog = contextMenu->addAction(QIcon::fromTheme("mail-message"), "Open dialog");
+                connect(dialog, &QAction::triggered, [this, index]() {
                     onRosterItemDoubleClicked(index);
                 });
                 
@@ -322,8 +322,8 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 switch (state) {
                     case Shared::both:
                     case Shared::to: {
-                        QAction* remove = contextMenu->addAction(QIcon::fromTheme("news-unsubscribe"), "Unsubscribe");
-                        connect(remove, &QAction::triggered, [this, cnt]() {
+                        QAction* unsub = contextMenu->addAction(QIcon::fromTheme("news-unsubscribe"), "Unsubscribe");
+                        connect(unsub, &QAction::triggered, [this, cnt]() {
                             emit unsubscribeContact(cnt->getAccountName(), cnt->getJid(), "");
                         });
                     }
@@ -331,12 +331,17 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                     case Shared::from:
                     case Shared::unknown:
                     case Shared::none: {
-                        QAction* remove = contextMenu->addAction(QIcon::fromTheme("news-subscribe"), "Subscribe");
-                        connect(remove, &QAction::triggered, [this, cnt]() {
+                        QAction* sub = contextMenu->addAction(QIcon::fromTheme("news-subscribe"), "Subscribe");
+                        connect(sub, &QAction::triggered, [this, cnt]() {
                             emit subscribeContact(cnt->getAccountName(), cnt->getJid(), "");
                         });
                     }    
                 }
+                
+                QAction* remove = contextMenu->addAction(QIcon::fromTheme("edit-delete"), "Remove");
+                connect(remove, &QAction::triggered, [this, cnt]() {
+                    emit removeContactRequest(cnt->getAccountName(), cnt->getJid());
+                });
                 
             }
                 break;

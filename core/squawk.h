@@ -51,6 +51,7 @@ public slots:
     void requestArchive(const QString& account, const QString& jid, int count, const QString& before);
     void subscribeContact(const QString& account, const QString& jid, const QString& reason);
     void unsubscribeContact(const QString& account, const QString& jid, const QString& reason);
+    void removeContactRequest(const QString& account, const QString& jid);
     
 private:
     typedef std::deque<Account*> Accounts;

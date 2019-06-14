@@ -747,7 +747,7 @@ void Core::Account::subscribeToContact(const QString& jid, const QString& reason
         QXmppRosterManager& rm = client.rosterManager();
         rm.subscribe(jid, reason);
     } else {
-        qDebug() << "An attempt to subscribe an account " << name << " to jid " << jid << " but the account is not in the connected state, skipping";
+        qDebug() << "An attempt to subscribe account " << name << " to contact " << jid << " but the account is not in the connected state, skipping";
     }
 }
 
@@ -757,7 +757,27 @@ void Core::Account::unsubscribeFromContact(const QString& jid, const QString& re
         QXmppRosterManager& rm = client.rosterManager();
         rm.unsubscribe(jid, reason);
     } else {
-        qDebug() << "An attempt to unsubscribe an account " << name << " from jid " << jid << " but the account is not in the connected state, skipping";
+        qDebug() << "An attempt to unsubscribe account " << name << " from contact " << jid << " but the account is not in the connected state, skipping";
     }
 }
 
+void Core::Account::removeContactRequest(const QString& jid)
+{
+    if (state == Shared::connected) {
+        QXmppRosterManager& rm = client.rosterManager();
+        rm.removeItem(jid);
+    } else {
+        qDebug() << "An attempt to remove contact " << jid << " from account " << name << " but the account is not in the connected state, skipping";
+    }
+}
+
+
+void Core::Account::addContactRequest(const QString& jid, const QString& name, const QSet<QString>& groups)
+{
+    if (state == Shared::connected) {
+        QXmppRosterManager& rm = client.rosterManager();
+        rm.addItem(jid, name, groups);
+    } else {
+        qDebug() << "An attempt to add contact " << jid << " to account " << name << " but the account is not in the connected state, skipping";
+    }
+}
