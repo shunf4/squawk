@@ -11,6 +11,7 @@
 #include "accounts.h"
 #include "conversation.h"
 #include "models/roster.h"
+#include "newcontact.h"
 
 #include "../global.h"
 
@@ -38,6 +39,7 @@ signals:
     void subscribeContact(const QString& account, const QString& jid, const QString& reason);
     void unsubscribeContact(const QString& account, const QString& jid, const QString& reason);
     void removeContactRequest(const QString& account, const QString& jid);
+    void addContactRequest(const QString& account, const QString& jid, const QString& name, const QSet<QString>& groups);
     
 public slots:
     void newAccount(const QMap<QString, QVariant>& account);
@@ -69,6 +71,9 @@ protected:
     
 private slots:
     void onAccounts();
+    void onNewContact();
+    void onNewContactAccepted();
+    void onAccountsSizeChanged(unsigned int size);
     void onAccountsClosed(QObject* parent = 0);
     void onConversationClosed(QObject* parent = 0);
     void onComboboxActivated(int index);

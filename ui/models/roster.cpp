@@ -260,6 +260,7 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
                 qDebug() << "An attempt to add a contact " << jid << " ungrouped to non the account " << account << " for the second time, skipping";
                 return;
             }
+            itr++;
         }
         parent = acc;
     } else {
@@ -345,7 +346,8 @@ void Models::Roster::removeGroup(const QString& account, const QString& name)
         }
     }
     
-    delete item;
+    item->deleteLater();
+    groups.erase(gItr);
 }
 
 void Models::Roster::changeContact(const QString& account, const QString& jid, const QMap<QString, QVariant>& data)
@@ -366,6 +368,7 @@ void Models::Roster::removeContact(const QString& account, const QString& jid)
     ElId id(account, jid);
     std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(id);
     std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(id);
+    std::multimap<ElId, Contact*>::iterator cpBeg = cBeg;
     
     QSet<QString> toRemove;
     for (; cBeg != cEnd; ++cBeg) {
@@ -376,8 +379,9 @@ void Models::Roster::removeContact(const QString& account, const QString& jid)
         }
         
         parent->removeChild(contact->row());
-        delete contact;
+        contact->deleteLater();
     }
+    contacts.erase(cpBeg, cEnd);
     
     for (QSet<QString>::const_iterator itr = toRemove.begin(), end = toRemove.end(); itr != end; ++itr) {
         removeGroup(account, *itr);
@@ -402,6 +406,7 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
     for (;cBeg != cEnd; ++cBeg) {
         if (cBeg->second->parentItem() == gr) {
             cont = cBeg->second;
+            contacts.erase(cBeg);
             break;
         }
     }
@@ -412,7 +417,7 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
     }
     
     gr->removeChild(cont->row());
-    delete cont;
+    cont->deleteLater();
     
     if (gr->childCount() == 0) {
         removeGroup(account, group);

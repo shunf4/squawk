@@ -10,6 +10,7 @@ int main(int argc, char *argv[])
 {
     qRegisterMetaType<Shared::Message>("Shared::Message");
     qRegisterMetaType<std::list<Shared::Message>>("std::list<Shared::Message>");
+    qRegisterMetaType<QSet<QString>>("QSet<QString>");
     
     QApplication app(argc, argv);
     SignalCatcher sc(&app);
@@ -45,6 +46,10 @@ int main(int argc, char *argv[])
                      squawk, SLOT(subscribeContact(const QString&, const QString&, const QString&)));
     QObject::connect(&w, SIGNAL(unsubscribeContact(const QString&, const QString&, const QString&)), 
                      squawk, SLOT(unsubscribeContact(const QString&, const QString&, const QString&)));
+    QObject::connect(&w, SIGNAL(addContactRequest(const QString&, const QString&, const QString&, const QSet<QString>&)), 
+                     squawk, SLOT(addContactRequest(const QString&, const QString&, const QString&, const QSet<QString>&)));
+    QObject::connect(&w, SIGNAL(removeContactRequest(const QString&, const QString&)), 
+                     squawk, SLOT(removeContactRequest(const QString&, const QString&)));
     
     QObject::connect(squawk, SIGNAL(newAccount(const QMap<QString, QVariant>&)), &w, SLOT(newAccount(const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(addContact(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)), 

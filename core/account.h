@@ -107,6 +107,7 @@ private slots:
   
 private:
     void addedAccount(const QString &bareJid);
+    void handleNewContact(Contact* contact);
     bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
     void addToGroup(const QString& jid, const QString& group);
     void removeFromGroup(const QString& jid, const QString& group);

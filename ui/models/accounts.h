@@ -25,8 +25,11 @@ public:
 
     Account* getAccount(int index);
     
+    std::deque<QString> getNames() const;
+    
 signals:
     void changed();
+    void sizeChanged(unsigned int size);
     
 private:
     std::deque<Account*> accs;

@@ -365,3 +365,14 @@ void Core::Squawk::removeContactRequest(const QString& account, const QString& j
     
     itr->second->removeContactRequest(jid);
 }
+
+void Core::Squawk::addContactRequest(const QString& account, const QString& jid, const QString& name, const QSet<QString>& groups)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug("An attempt to add contact to a non existing account, skipping");
+        return;
+    }
+    
+    itr->second->addContactRequest(jid, name, groups);
+}

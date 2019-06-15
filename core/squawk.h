@@ -52,6 +52,7 @@ public slots:
     void subscribeContact(const QString& account, const QString& jid, const QString& reason);
     void unsubscribeContact(const QString& account, const QString& jid, const QString& reason);
     void removeContactRequest(const QString& account, const QString& jid);
+    void addContactRequest(const QString& account, const QString& jid, const QString& name, const QSet<QString>& groups);
     
 private:
     typedef std::deque<Account*> Accounts;

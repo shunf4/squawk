@@ -21,9 +21,12 @@ Squawk::Squawk(QWidget *parent) :
     m_ui->comboBox->setCurrentIndex(Shared::offline);
     
     connect(m_ui->actionAccounts, SIGNAL(triggered()), this, SLOT(onAccounts()));
+    connect(m_ui->actionAddContact, SIGNAL(triggered()), this, SLOT(onNewContact()));
     connect(m_ui->comboBox, SIGNAL(activated(int)), this, SLOT(onComboboxActivated(int)));
     connect(m_ui->roster, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(onRosterItemDoubleClicked(const QModelIndex&)));
     connect(m_ui->roster, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(onRosterContextMenu(const QPoint&)));
+    
+    connect(rosterModel.accountsModel, SIGNAL(sizeChanged(unsigned int)), this, SLOT(onAccountsSizeChanged(unsigned int)));
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
 }
 
@@ -49,6 +52,35 @@ void Squawk::onAccounts()
         accounts->raise();
         accounts->activateWindow();
     }
+}
+
+void Squawk::onAccountsSizeChanged(unsigned int size)
+{
+    if (size > 0) {
+        m_ui->actionAddContact->setEnabled(true);
+    } else {
+        m_ui->actionAddContact->setEnabled(false);
+    }
+}
+
+void Squawk::onNewContact()
+{
+    NewContact* nc = new NewContact(rosterModel.accountsModel, this);
+    
+    connect(nc, SIGNAL(accepted()), this, SLOT(onNewContactAccepted()));
+    connect(nc, SIGNAL(rejected()), nc, SLOT(deleteLater()));
+    
+    nc->exec();
+}
+
+void Squawk::onNewContactAccepted()
+{
+    NewContact* nc = static_cast<NewContact*>(sender());
+    NewContact::Data value = nc->value();
+    
+    emit addContactRequest(value.account, value.jid, value.name, value.groups);
+    
+    nc->deleteLater();
 }
 
 void Squawk::closeEvent(QCloseEvent* event)

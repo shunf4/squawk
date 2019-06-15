@@ -21,6 +21,7 @@ set(squawkUI_SRC
   models/presence.cpp
   conversation.cpp
   messageline.cpp
+  newcontact.cpp
 )
 
 # Tell CMake to create the helloworld executable

@@ -195,11 +195,14 @@ void Core::Account::onRosterItemRemoved(const QString& bareJid)
         return;
     }
     Contact* contact = itr->second;
+    contacts.erase(itr);
     QSet<QString> cGroups = contact->getGroups();
     for (QSet<QString>::const_iterator itr = cGroups.begin(), end = cGroups.end(); itr != end; ++itr) {
         removeFromGroup(bareJid, *itr);
     }
     emit removeContact(bareJid);
+    
+    contact->deleteLater();
 }
 
 void Core::Account::addedAccount(const QString& jid)
@@ -240,16 +243,21 @@ void Core::Account::addedAccount(const QString& jid)
         if (grCount == 0) {
             emit addContact(jid, "", cData);
         }
-        
-        QObject::connect(contact, SIGNAL(groupAdded(const QString&)), this, SLOT(onContactGroupAdded(const QString&)));
-        QObject::connect(contact, SIGNAL(groupRemoved(const QString&)), this, SLOT(onContactGroupRemoved(const QString&)));
-        QObject::connect(contact, SIGNAL(nameChanged(const QString&)), this, SLOT(onContactNameChanged(const QString&)));
-        QObject::connect(contact, SIGNAL(subscriptionStateChanged(Shared::SubscriptionState)), 
-                         this, SLOT(onContactSubscriptionStateChanged(Shared::SubscriptionState)));
-        QObject::connect(contact, SIGNAL(needHistory(const QString&, const QString&)), this, SLOT(onContactNeedHistory(const QString&, const QString&)));
-        QObject::connect(contact, SIGNAL(historyResponse(const std::list<Shared::Message>&)), this, SLOT(onContactHistoryResponse(const std::list<Shared::Message>&)));
+        handleNewContact(contact);
     }
 }
+
+void Core::Account::handleNewContact(Core::Contact* contact)
+{
+    QObject::connect(contact, SIGNAL(groupAdded(const QString&)), this, SLOT(onContactGroupAdded(const QString&)));
+    QObject::connect(contact, SIGNAL(groupRemoved(const QString&)), this, SLOT(onContactGroupRemoved(const QString&)));
+    QObject::connect(contact, SIGNAL(nameChanged(const QString&)), this, SLOT(onContactNameChanged(const QString&)));
+    QObject::connect(contact, SIGNAL(subscriptionStateChanged(Shared::SubscriptionState)), 
+                     this, SLOT(onContactSubscriptionStateChanged(Shared::SubscriptionState)));
+    QObject::connect(contact, SIGNAL(needHistory(const QString&, const QString&)), this, SLOT(onContactNeedHistory(const QString&, const QString&)));
+    QObject::connect(contact, SIGNAL(historyResponse(const std::list<Shared::Message>&)), this, SLOT(onContactHistoryResponse(const std::list<Shared::Message>&)));
+}
+
 
 void Core::Account::onPresenceReceived(const QXmppPresence& presence)
 {
@@ -431,8 +439,21 @@ bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bo
         const QString& id(msg.id());
         Shared::Message sMsg(Shared::Message::chat);
         initializeMessage(sMsg, msg, outgoing, forwarded, guessing);
-        std::map<QString, Contact*>::const_iterator itr = contacts.find(sMsg.getPenPalJid());
-        itr->second->appendMessageToArchive(sMsg);
+        QString jid = sMsg.getPenPalJid();
+        std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+        Contact* cnt;
+        if (itr != contacts.end()) {
+            cnt = itr->second;
+        } else {
+            cnt = new Contact(jid, name);
+            contacts.insert(std::make_pair(jid, cnt));
+            cnt->setSubscriptionState(Shared::unknown);
+            emit addContact(jid, "", QMap<QString, QVariant>({
+                {"state", Shared::unknown}
+            }));
+            handleNewContact(cnt);
+        }
+        cnt->appendMessageToArchive(sMsg);
         
         emit message(sMsg);
         

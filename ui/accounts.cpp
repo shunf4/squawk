@@ -42,6 +42,7 @@ void Accounts::onAccountAccepted()
         emit newAccount(map);
     }
     
+    acc->deleteLater();
     editing = false;
 }
 

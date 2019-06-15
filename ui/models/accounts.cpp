@@ -66,6 +66,8 @@ void Models::Accounts::addAccount(Account* account)
     accs.push_back(account);
     connect(account, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onAccountChanged(Models::Item*, int, int)));
     endInsertRows();
+    
+    emit sizeChanged(accs.size());
 }
 
 void Models::Accounts::onAccountChanged(Item* item, int row, int col)
@@ -93,4 +95,17 @@ void Models::Accounts::removeAccount(int index)
     disconnect(account, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onAccountChanged(Models::Item*, int, int)));
     accs.erase(accs.begin() + index);
     endRemoveRows();
+    
+    emit sizeChanged(accs.size());
+}
+
+std::deque<QString> Models::Accounts::getNames() const
+{
+    std::deque<QString> res;
+    
+    for (std::deque<Models::Account*>::const_iterator i = accs.begin(), end = accs.end(); i != end; ++i) {
+        res.push_back((*i)->getName());
+    }
+    
+    return res;
 }

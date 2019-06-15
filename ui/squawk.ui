@@ -80,6 +80,7 @@
     <property name="title">
      <string>File</string>
     </property>
+    <addaction name="actionAddContact"/>
     <addaction name="actionQuit"/>
    </widget>
    <addaction name="menuFile"/>
@@ -96,10 +97,22 @@
   </action>
   <action name="actionQuit">
    <property name="icon">
-    <iconset theme="application-exit"/>
+    <iconset theme="application-exit">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Quit</string>
+   </property>
+  </action>
+  <action name="actionAddContact">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="list-add-user"/>
+   </property>
+   <property name="text">
+    <string>Add contact</string>
    </property>
   </action>
  </widget>
