@@ -35,6 +35,7 @@ public:
     void removePresence(const QString& account, const QString& jid, const QString& name);
     void addMessage(const QString& account, const Shared::Message& data);
     void dropMessages(const QString& account, const QString& jid);
+    QString getContactName(const QString& account, const QString& jid);
     
     QVariant data ( const QModelIndex& index, int role ) const override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;

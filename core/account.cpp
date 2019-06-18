@@ -18,7 +18,9 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     am(new QXmppMamManager()),
     contacts(),
     maxReconnectTimes(0),
-    reconnectTimes(0)
+    reconnectTimes(0),
+    queuedContacts(),
+    outOfRosterContacts()
 {
     config.setUser(p_login);
     config.setDomain(p_server);
@@ -166,6 +168,12 @@ void Core::Account::setReconnectTimes(unsigned int times)
 void Core::Account::onRosterItemAdded(const QString& bareJid)
 {
     addedAccount(bareJid);
+    std::map<QString, QString>::const_iterator itr = queuedContacts.find(bareJid);
+    if (itr != queuedContacts.end()) {
+        QXmppRosterManager& rm = client.rosterManager();
+        rm.subscribe(bareJid, itr->second);
+        queuedContacts.erase(itr);
+    }
 }
 
 void Core::Account::onRosterItemChanged(const QString& bareJid)
@@ -447,6 +455,7 @@ bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bo
         } else {
             cnt = new Contact(jid, name);
             contacts.insert(std::make_pair(jid, cnt));
+            outOfRosterContacts.insert(jid);
             cnt->setSubscriptionState(Shared::unknown);
             emit addContact(jid, "", QMap<QString, QVariant>({
                 {"state", Shared::unknown}
@@ -785,8 +794,14 @@ void Core::Account::unsubscribeFromContact(const QString& jid, const QString& re
 void Core::Account::removeContactRequest(const QString& jid)
 {
     if (state == Shared::connected) {
-        QXmppRosterManager& rm = client.rosterManager();
-        rm.removeItem(jid);
+        std::set<QString>::const_iterator itr = outOfRosterContacts.find(jid);
+        if (itr != outOfRosterContacts.end()) {
+            outOfRosterContacts.erase(itr);
+            onRosterItemRemoved(jid);
+        } else {
+            QXmppRosterManager& rm = client.rosterManager();
+            rm.removeItem(jid);
+        }
     } else {
         qDebug() << "An attempt to remove contact " << jid << " from account " << name << " but the account is not in the connected state, skipping";
     }
@@ -796,8 +811,14 @@ void Core::Account::removeContactRequest(const QString& jid)
 void Core::Account::addContactRequest(const QString& jid, const QString& name, const QSet<QString>& groups)
 {
     if (state == Shared::connected) {
-        QXmppRosterManager& rm = client.rosterManager();
-        rm.addItem(jid, name, groups);
+        std::map<QString, QString>::const_iterator itr = queuedContacts.find(jid);
+        if (itr != queuedContacts.end()) {
+            qDebug() << "An attempt to add contact " << jid << " to account " << name << " but the account is already queued for adding, skipping";
+        } else {
+            queuedContacts.insert(std::make_pair(jid, ""));     //TODO need to add reason here;
+            QXmppRosterManager& rm = client.rosterManager();
+            rm.addItem(jid, name, groups);
+        }
     } else {
         qDebug() << "An attempt to add contact " << jid << " to account " << name << " but the account is not in the connected state, skipping";
     }

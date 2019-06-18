@@ -62,6 +62,7 @@ public:
 signals:
     void sendMessage(const Shared::Message& message);
     void requestArchive(const QString& before);
+    void shown();
     
 protected:
     void setState(Shared::Availability state);

@@ -78,6 +78,9 @@ private:
     unsigned int maxReconnectTimes;
     unsigned int reconnectTimes;
     
+    std::map<QString, QString> queuedContacts;
+    std::set<QString> outOfRosterContacts;
+    
 private slots:
     void onClientConnected();
     void onClientDisconnected();

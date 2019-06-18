@@ -76,11 +76,7 @@ QVariant Models::Contact::data(int column) const
 {
     switch (column) {
         case 0:
-            if (name == "") {
-                return jid;
-            } else {
-                return Item::data(column);
-            }
+            return getContactName();
         case 1:
             return jid;
         case 2:
@@ -91,6 +87,15 @@ QVariant Models::Contact::data(int column) const
             return getMessagesCount();
         default:
             return QVariant();
+    }
+}
+
+QString Models::Contact::getContactName() const
+{
+    if (name == "") {
+        return jid;
+    } else {
+        return name;
     }
 }
 

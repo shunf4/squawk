@@ -556,3 +556,13 @@ void Models::Roster::removeAccount(const QString& account)
     
     acc->deleteLater();
 }
+
+QString Models::Roster::getContactName(const QString& account, const QString& jid)
+{
+    std::multimap<ElId, Contact*>::const_iterator cItr = contacts.find({account, jid});
+    if (cItr == contacts.end()) {
+        qDebug() << "An attempt to get a name of non existing contact " << account << ":" << jid << ", skipping";
+        return "";
+    }
+    return cItr->second->getContactName();
+}

@@ -36,6 +36,7 @@ public:
     QString getAccountName() const;
     QString getAccountJid() const;
     QString getAccountResource() const;
+    QString getContactName() const;
     
     void addMessage(const Shared::Message& data);
     unsigned int getMessagesCount() const;

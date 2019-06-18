@@ -39,7 +39,7 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     m_ui->splitter->setSizes({300, 0});
     m_ui->splitter->setStretchFactor(1, 0);
     
-    setName(p_contact->getName());
+    setName(p_contact->getContactName());
     setState(p_contact->getAvailability());
     
     connect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
@@ -71,12 +71,8 @@ Conversation::~Conversation()
 
 void Conversation::setName(const QString& name)
 {
-    if (name == "") {
-        m_ui->nameLabel->setText(getJid());
-    } else {
-        m_ui->nameLabel->setText(name);
-        line->setPalName(getJid(), name);
-    }
+    m_ui->nameLabel->setText(name);
+    line->setPalName(getJid(), name);
 }
 
 void Conversation::setState(Shared::Availability state)
@@ -105,7 +101,7 @@ void Conversation::onContactChanged(Models::Item* item, int row, int col)
     if (item == contact) {
         switch (col) {
             case 0:
-                setName(contact->getName());
+                setName(contact->getContactName());
                 break;
             case 3:
                 setState(contact->getAvailability());
@@ -252,6 +248,7 @@ void Conversation::showEvent(QShowEvent* event)
         requestingHistory = true;
         emit requestArchive(line->firstMessageId());
     }
+    emit shown();
     
     QWidget::showEvent(event);
 }

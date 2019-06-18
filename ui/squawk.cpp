@@ -9,7 +9,8 @@ Squawk::Squawk(QWidget *parent) :
     accounts(0),
     rosterModel(),
     conversations(),
-    contextMenu(new QMenu())
+    contextMenu(new QMenu()),
+    dbus("org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", QDBusConnection::sessionBus())
 {
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
@@ -227,9 +228,9 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
                 connect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
                 connect(conv, SIGNAL(requestArchive(const QString&)), this, SLOT(onConversationRequestArchive(const QString&)));
+                connect(conv, SIGNAL(shown()), this, SLOT(onConversationShown()));
                 
                 conversations.insert(std::make_pair(id, conv));
-                rosterModel.dropMessages(account, jid);
                 
                 conv->show();
                 
@@ -239,6 +240,12 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
             }
         }
     }
+}
+
+void Squawk::onConversationShown()
+{
+    Conversation* conv = static_cast<Conversation*>(sender());
+    rosterModel.dropMessages(conv->getAccount(), conv->getJid());
 }
 
 void Squawk::onConversationClosed(QObject* parent)
@@ -257,12 +264,36 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
     const QString& from = data.getPenPalJid();
     Conversations::iterator itr = conversations.find({account, from});
     if (itr != conversations.end()) {
-        itr->second->addMessage(data);
-    } else {
-        if (!data.getForwarded()) {
+        Conversation* conv = itr->second;
+        conv->addMessage(data);
+        QApplication::alert(conv);
+        if (conv->isMinimized()) {
             rosterModel.addMessage(account, data);
+            if (!data.getForwarded()) {
+                notify(account, data);
+            }
+        }
+    } else {
+        rosterModel.addMessage(account, data);
+        if (!data.getForwarded()) {
+            QApplication::alert(this);
+            notify(account, data);
         }
     }
+}
+
+void Squawk::notify(const QString& account, const Shared::Message& msg)
+{
+    QVariantList args;
+    args << QString(QCoreApplication::applicationName());
+    args << QVariant(QVariant::UInt);   //TODO some normal id
+    args << QString("mail-message");    //TODO icon
+    args << QString(rosterModel.getContactName(account, msg.getPenPalJid()));
+    args << QString(msg.getBody());
+    args << QStringList();
+    args << QVariantMap();
+    args << 3000;
+    dbus.callWithArgumentList(QDBus::AutoDetect, "Notify", args);
 }
 
 void Squawk::onConversationMessage(const Shared::Message& msg)
@@ -299,6 +330,7 @@ void Squawk::removeAccount(const QString& account)
             disconnect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
             disconnect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
             disconnect(conv, SIGNAL(requestArchive(const QString&)), this, SLOT(onConversationRequestArchive(const QString&)));
+            disconnect(conv, SIGNAL(shown()), this, SLOT(onConversationShown()));
             conv->close();
             conversations.erase(lItr);
         } else {

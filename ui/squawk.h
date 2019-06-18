@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QScopedPointer>
 #include <QCloseEvent>
+#include <QtDBus/QDBusInterface>
 #include <deque>
 #include <map>
 #include <list>
@@ -65,9 +66,11 @@ private:
     Models::Roster rosterModel;
     Conversations conversations;
     QMenu* contextMenu;
+    QDBusInterface dbus;
     
 protected:
     void closeEvent(QCloseEvent * event) override;
+    void notify(const QString& account, const Shared::Message& msg);
     
 private slots:
     void onAccounts();
@@ -81,6 +84,7 @@ private slots:
     void onConversationMessage(const Shared::Message& msg);
     void onConversationRequestArchive(const QString& before);
     void onRosterContextMenu(const QPoint& point);
+    void onConversationShown();
     
 };
 
