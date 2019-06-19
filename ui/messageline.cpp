@@ -18,6 +18,7 @@
 
 #include "messageline.h"
 #include <QDebug>
+#include <QGraphicsDropShadowEffect>
 
 MessageLine::MessageLine(QWidget* parent):
     QWidget(parent),
@@ -72,7 +73,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
     QWidget* message = new QWidget();
     message->setLayout(vBox);
     message->setBackgroundRole(QPalette::AlternateBase);
-    message->setAutoFillBackground(true);;
+    message->setAutoFillBackground(true);
     
     QLabel* body = new QLabel(msg.getBody());
     body->setTextInteractionFlags(body->textInteractionFlags() | Qt::TextSelectableByMouse);
@@ -92,6 +93,14 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
     vBox->addWidget(sender);
     vBox->addWidget(body);
     vBox->addWidget(time);
+    
+    QGraphicsDropShadowEffect *effect = new QGraphicsDropShadowEffect;
+    effect->setBlurRadius(10);
+    effect->setXOffset(1);
+    effect->setYOffset(1);
+    effect->setColor(Qt::black);
+
+    message->setGraphicsEffect(effect);
     
     if (msg.getOutgoing()) {
         //body->setAlignment(Qt::AlignRight);

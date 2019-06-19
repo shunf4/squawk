@@ -68,6 +68,7 @@ protected:
     void setState(Shared::Availability state);
     void setStatus(const QString& status);
     void setName(const QString& name);
+    void applyVisualEffects();
     
 protected slots:
     void onContactChanged(Models::Item* item, int row, int col);

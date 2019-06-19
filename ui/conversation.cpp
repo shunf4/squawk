@@ -21,6 +21,7 @@
 #include <QDebug>
 #include <QScrollBar>
 #include <QTimer>
+#include <QGraphicsDropShadowEffect>
 
 Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     QWidget(parent),
@@ -63,10 +64,36 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     vs->setBackgroundRole(QPalette::Base);
     vs->setAutoFillBackground(true);
     connect(vs, SIGNAL(valueChanged(int)), this, SLOT(onSliderValueChanged(int)));
+    
+    applyVisualEffects();
 }
 
 Conversation::~Conversation()
 {
+}
+
+void Conversation::applyVisualEffects()
+{
+    QGraphicsDropShadowEffect *e1 = new QGraphicsDropShadowEffect;
+    e1->setBlurRadius(10);
+    e1->setXOffset(0);
+    e1->setYOffset(-2);
+    e1->setColor(Qt::black);
+    m_ui->bl->setGraphicsEffect(e1);
+    
+    QGraphicsDropShadowEffect *e2 = new QGraphicsDropShadowEffect;
+    e2->setBlurRadius(7);
+    e2->setXOffset(0);
+    e2->setYOffset(2);
+    e2->setColor(Qt::black);
+    m_ui->ul->setGraphicsEffect(e2);
+    
+    QGraphicsDropShadowEffect *e3 = new QGraphicsDropShadowEffect;
+    e3->setBlurRadius(10);
+    e3->setXOffset(0);
+    e3->setYOffset(2);
+    e3->setColor(Qt::black);
+    m_ui->ut->setGraphicsEffect(e3);
 }
 
 void Conversation::setName(const QString& name)
