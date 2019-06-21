@@ -93,6 +93,61 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                 default:
                     break;
             }
+            break;
+        case Qt::ToolTipRole:
+            switch (item->type) {
+                case Item::account: {
+                    Account* acc = static_cast<Account*>(item);
+                    result = QString(Shared::connectionStateNames[acc->getAvailability()]);
+                }
+                    break;
+                case Item::contact: {
+                    Contact* contact = static_cast<Contact*>(item);
+                    QString str = QString("");
+                    int mc = contact->getMessagesCount();
+                    if (mc > 0) {
+                        str += QString("New messages: ") + std::to_string(mc).c_str() + "\n";
+                    }
+                    Shared::SubscriptionState ss = contact->getState();
+                    if (ss == Shared::both) {
+                        Shared::Availability av = contact->getAvailability();
+                        str += "Availability: " + Shared::availabilityNames[av];
+                        if (av != Shared::offline) {
+                            QString s = contact->getStatus();
+                            if (s.size() > 0) {
+                                str += "\nStatus: " + s;
+                            }
+                        }
+                        str += "\nSubscription: " + Shared::subscriptionStateNames[ss];
+                    } else {
+                        str += "Subscription: " + Shared::subscriptionStateNames[ss];
+                    }
+                    
+                    result = str;
+                }
+                    break;
+                case Item::presence: {
+                    Presence* contact = static_cast<Presence*>(item);
+                    QString str = QString("");
+                    int mc = contact->getMessagesCount();
+                    if (mc > 0) {
+                        str += QString("New messages: ") + std::to_string(mc).c_str() + "\n";
+                    }
+                    Shared::Availability av = contact->getAvailability();
+                    str += "Availability: " + Shared::availabilityNames[av];
+                    QString s = contact->getStatus();
+                    if (s.size() > 0) {
+                        str += "\nStatus: " + s;
+                    }
+                    
+                    result = str;
+                }
+                    break;
+                default:
+                    result = "";
+                    break;
+            }
+            break;
         default:
             break;
     }

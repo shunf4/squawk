@@ -22,6 +22,7 @@
 #include <QScrollBar>
 #include <QTimer>
 #include <QGraphicsDropShadowEffect>
+#include <QFileDialog>
 
 Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     QWidget(parent),
@@ -42,10 +43,12 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     
     setName(p_contact->getContactName());
     setState(p_contact->getAvailability());
+    setStatus(p_contact->getStatus());
     
     connect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
     connect(&ker, SIGNAL(enterPressed()), this, SLOT(onEnterPressed()));
     connect(m_ui->sendButton, SIGNAL(clicked(bool)), this, SLOT(onEnterPressed()));
+    //connect(m_ui->attachButton, SIGNAL(clicked(bool)), this, SLOT(onAttach()));
     
     m_ui->messageEditor->installEventFilter(&ker);
     
@@ -99,6 +102,7 @@ void Conversation::applyVisualEffects()
 void Conversation::setName(const QString& name)
 {
     m_ui->nameLabel->setText(name);
+    setWindowTitle(name);
     line->setPalName(getJid(), name);
 }
 
@@ -132,6 +136,9 @@ void Conversation::onContactChanged(Models::Item* item, int row, int col)
                 break;
             case 3:
                 setState(contact->getAvailability());
+                break;
+            case 5:
+                setStatus(contact->getStatus());
                 break;
         }
     }
@@ -278,4 +285,24 @@ void Conversation::showEvent(QShowEvent* event)
     emit shown();
     
     QWidget::showEvent(event);
+}
+
+void Conversation::onAttach()
+{
+    QFileDialog* d = new QFileDialog(this, "Chose a file to send");
+    d->setFileMode(QFileDialog::ExistingFile);
+    
+    connect(d, SIGNAL(accepted()), this, SLOT(onFileSelected()));
+    connect(d, SIGNAL(rejected()), d, SLOT(deleteLater()));
+    
+    d->show();
+}
+
+void Conversation::onFileSelected()
+{
+    QFileDialog* d = static_cast<QFileDialog*>(sender());
+    
+    qDebug() << d->selectedFiles();
+    
+    d->deleteLater();
 }

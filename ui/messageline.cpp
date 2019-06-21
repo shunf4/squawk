@@ -20,6 +20,9 @@
 #include <QDebug>
 #include <QGraphicsDropShadowEffect>
 
+const QRegExp urlReg("^(?!<img\\ssrc=\")((?:https?|ftp)://\\S+)");
+const QRegExp imgReg("((?:https?|ftp)://\\S+\\.(?:jpg|jpeg|png|svg|gif))");
+
 MessageLine::MessageLine(QWidget* parent):
     QWidget(parent),
     messageIndex(),
@@ -75,7 +78,11 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
     message->setBackgroundRole(QPalette::AlternateBase);
     message->setAutoFillBackground(true);
     
-    QLabel* body = new QLabel(msg.getBody());
+    
+    QString bd = msg.getBody();
+    //bd.replace(imgReg, "<img src=\"\\1\"/>");
+    bd.replace(urlReg, "<a href=\"\\1\">\\1</a>");
+    QLabel* body = new QLabel(bd);
     body->setTextInteractionFlags(body->textInteractionFlags() | Qt::TextSelectableByMouse);
     QLabel* sender = new QLabel();
     QLabel* time = new QLabel(msg.getTime().toLocalTime().toString());
@@ -89,6 +96,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
     sender->setFont(f);
     
     body->setWordWrap(true);
+    body->setOpenExternalLinks(true);
     
     vBox->addWidget(sender);
     vBox->addWidget(body);

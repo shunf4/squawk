@@ -75,6 +75,8 @@ protected slots:
     void onEnterPressed();
     void onMessagesResize(int amount);
     void onSliderValueChanged(int value);
+    void onAttach();
+    void onFileSelected();
     
 private:
     enum Scroll {

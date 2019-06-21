@@ -12,6 +12,8 @@ Squawk::Squawk(QWidget *parent) :
     contextMenu(new QMenu()),
     dbus("org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", QDBusConnection::sessionBus())
 {
+    setWindowIcon(QIcon(":images/logo.svg")); 
+    
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
     m_ui->roster->setContextMenuPolicy(Qt::CustomContextMenu);

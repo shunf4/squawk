@@ -67,9 +67,22 @@ void Models::Contact::setAvailability(Shared::Availability p_state)
     }
 }
 
+QString Models::Contact::getStatus() const
+{
+    return status;
+}
+
+void Models::Contact::setStatus(const QString& p_state)
+{
+    if (status != p_state) {
+        status = p_state;
+        changed(5);
+    }
+}
+
 int Models::Contact::columnCount() const
 {
-    return 5;
+    return 6;
 }
 
 QVariant Models::Contact::data(int column) const
@@ -85,6 +98,8 @@ QVariant Models::Contact::data(int column) const
             return availability;
         case 4:
             return getMessagesCount();
+        case 5:
+            return getStatus();
         default:
             return QVariant();
     }
@@ -161,8 +176,10 @@ void Models::Contact::refresh()
     
     if (presence != 0) {
         setAvailability(presence->getAvailability());
+        setStatus(presence->getStatus());
     } else {
         setAvailability(Shared::offline);
+        setStatus("");
     }
     
     if (childMessages != count) {

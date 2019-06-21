@@ -52,6 +52,7 @@ static const std::deque<QString> availabilityThemeIcons = {
 static const std::deque<QString> availabilityNames = {"Online", "Away", "Absent", "Busy", "Chatty", "Offline"};
 
 static const std::deque<QString> subscriptionStateThemeIcons = {"edit-none", "arrow-down-double", "arrow-up-double", "dialog-ok", "question"};
+static const std::deque<QString> subscriptionStateNames = {"None", "From", "To", "Both", "Unknown"};
 
 QString generateUUID();
 

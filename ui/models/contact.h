@@ -37,6 +37,7 @@ public:
     QString getAccountJid() const;
     QString getAccountResource() const;
     QString getContactName() const;
+    QString getStatus() const;
     
     void addMessage(const Shared::Message& data);
     unsigned int getMessagesCount() const;
@@ -56,6 +57,7 @@ protected:
     void setState(Shared::SubscriptionState p_state);
     void setState(unsigned int p_state);
     void setJid(const QString p_jid);
+    void setStatus(const QString& p_state);
     
 private:
     QString jid;
@@ -64,6 +66,7 @@ private:
     QMap<QString, Presence*> presences;
     Messages messages;
     unsigned int childMessages;
+    QString status;
 };
 
 }
