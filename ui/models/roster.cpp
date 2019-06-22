@@ -52,7 +52,24 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
     switch (role) {
         case Qt::DisplayRole:
         {
-            result = item->data(index.column());
+            switch (item->type) {
+                case Item::group: {
+                    Group* gr = static_cast<Group*>(item);
+                    QString str("");
+                    
+                    str += gr->getName();
+                    unsigned int amount = gr->getUnreadMessages();
+                    if (amount > 0) {
+                        str += QString(" (") +  "New messages" + ")";
+                    }
+                    
+                    result = str;
+                }
+                    break;
+                default:
+                    result = item->data(index.column());
+                    break;
+            }
         }
             break;
         case Qt::DecorationRole:
@@ -98,12 +115,12 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
             switch (item->type) {
                 case Item::account: {
                     Account* acc = static_cast<Account*>(item);
-                    result = QString(Shared::connectionStateNames[acc->getAvailability()]);
+                    result = QString(Shared::availabilityNames[acc->getAvailability()]);
                 }
                     break;
                 case Item::contact: {
                     Contact* contact = static_cast<Contact*>(item);
-                    QString str = QString("");
+                    QString str("");
                     int mc = contact->getMessagesCount();
                     if (mc > 0) {
                         str += QString("New messages: ") + std::to_string(mc).c_str() + "\n";
@@ -128,7 +145,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     break;
                 case Item::presence: {
                     Presence* contact = static_cast<Presence*>(item);
-                    QString str = QString("");
+                    QString str("");
                     int mc = contact->getMessagesCount();
                     if (mc > 0) {
                         str += QString("New messages: ") + std::to_string(mc).c_str() + "\n";
@@ -140,6 +157,18 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                         str += "\nStatus: " + s;
                     }
                     
+                    result = str;
+                }
+                    break;
+                case Item::group: {
+                    Group* gr = static_cast<Group*>(item);
+                    unsigned int count = gr->getUnreadMessages();
+                    QString str("");
+                    if (count > 0) {
+                        str += QString("New messages: ") + std::to_string(count).c_str() + "\n";
+                    }
+                    str += QString("Online contacts: ") + std::to_string(gr->getOnlineContacts()).c_str() + "\n";
+                    str += QString("Total contacts: ") + std::to_string(gr->childCount()).c_str();
                     result = str;
                 }
                     break;
@@ -275,7 +304,7 @@ void Models::Roster::onAccountDataChanged(const QModelIndex& tl, const QModelInd
 void Models::Roster::addGroup(const QString& account, const QString& name)
 {
     ElId id(account, name);
-    std::map<ElId, Item*>::const_iterator gItr = groups.find(id);
+    std::map<ElId, Group*>::const_iterator gItr = groups.find(id);
     if (gItr != groups.end()) {
         qDebug() << "An attempt to add group " << name << " to account " << account <<" which already exists there, skipping";
         return;
@@ -283,7 +312,7 @@ void Models::Roster::addGroup(const QString& account, const QString& name)
     std::map<QString, Account*>::iterator itr = accounts.find(account);
     if (itr != accounts.end()) {
         Account* acc = itr->second;
-        Item* group = new Item(Item::group, {{"name", name}});
+        Group* group = new Group({{"name", name}});
         acc->appendChild(group);
         groups.insert(std::make_pair(id, group));
     } else {
@@ -319,7 +348,7 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
         }
         parent = acc;
     } else {
-        std::map<ElId, Item*>::iterator itr = groups.find({account, group});
+        std::map<ElId, Group*>::iterator itr = groups.find({account, group});
         if (itr == groups.end()) {
             qDebug() << "An attempt to add a contact " << jid << " to non existing group " << group << ", skipping";
             return;
@@ -360,12 +389,12 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
 void Models::Roster::removeGroup(const QString& account, const QString& name)
 {
     ElId id(account, name);
-    std::map<ElId, Item*>::const_iterator gItr = groups.find(id);
+    std::map<ElId, Group*>::const_iterator gItr = groups.find(id);
     if (gItr == groups.end()) {
         qDebug() << "An attempt to remove group " << name << " from account " << account <<" which doesn't exist there, skipping";
         return;
     }
-    Item* item = gItr->second;
+    Group* item = gItr->second;
     Item* parent = item->parentItem();
     int row = item->row();
     
@@ -448,12 +477,12 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
     ElId contactId(account, jid);
     ElId groupId(account, group);
     
-    std::map<ElId, Item*>::iterator gItr = groups.find(groupId);
+    std::map<ElId, Group*>::iterator gItr = groups.find(groupId);
     if (gItr == groups.end()) {
         qDebug() << "An attempt to remove contact " << jid << " from non existing group " << group << " of account " << account <<", skipping";
         return;
     }
-    Item* gr = gItr->second;
+    Group* gr = gItr->second;
     Contact* cont = 0;
     
     std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId);
@@ -598,10 +627,10 @@ void Models::Roster::removeAccount(const QString& account)
         }
     }
     
-    std::map<ElId, Item*>::const_iterator gItr = groups.begin();
+    std::map<ElId, Group*>::const_iterator gItr = groups.begin();
     while (gItr != groups.end()) {
         if (gItr->first.account == account) {
-            std::map<ElId, Item*>::const_iterator lItr = gItr;
+            std::map<ElId, Group*>::const_iterator lItr = gItr;
             ++gItr;
             groups.erase(lItr);
         } else {

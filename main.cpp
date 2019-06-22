@@ -20,6 +20,18 @@ int main(int argc, char *argv[])
     QCoreApplication::setApplicationName("Squawk");
     QCoreApplication::setApplicationVersion("0.0.1");
     
+    QIcon icon;
+    icon.addFile(":images/logo.svg", QSize(16, 16));
+    icon.addFile(":images/logo.svg", QSize(24, 24));
+    icon.addFile(":images/logo.svg", QSize(32, 32));
+    icon.addFile(":images/logo.svg", QSize(48, 48));
+    icon.addFile(":images/logo.svg", QSize(64, 64));
+    icon.addFile(":images/logo.svg", QSize(96, 96));
+    icon.addFile(":images/logo.svg", QSize(128, 128));
+    icon.addFile(":images/logo.svg", QSize(256, 256));
+    icon.addFile(":images/logo.svg", QSize(512, 512));
+    QApplication::setWindowIcon(icon);
+    
     Squawk w;
     w.show();
     

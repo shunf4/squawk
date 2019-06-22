@@ -1,5 +1,37 @@
 <!DOCTYPE RCC><RCC version="1.0">
 <qresource>
     <file>images/logo.svg</file>
+    
+    <file>images/fallback/dark/big/absent.svg</file>
+    <file>images/fallback/dark/big/away.svg</file>
+    <file>images/fallback/dark/big/busy.svg</file>
+    <file>images/fallback/dark/big/invisible.svg</file>
+    <file>images/fallback/dark/big/offline.svg</file>
+    <file>images/fallback/dark/big/online.svg</file>
+    <file>images/fallback/dark/big/user.svg</file>
+    
+    <file>images/fallback/dark/small/absent.svg</file>
+    <file>images/fallback/dark/small/away.svg</file>
+    <file>images/fallback/dark/small/busy.svg</file>
+    <file>images/fallback/dark/small/invisible.svg</file>
+    <file>images/fallback/dark/small/offline.svg</file>
+    <file>images/fallback/dark/small/online.svg</file>
+    <file>images/fallback/dark/small/user.svg</file>
+    
+    <file>images/fallback/light/big/absent.svg</file>
+    <file>images/fallback/light/big/away.svg</file>
+    <file>images/fallback/light/big/busy.svg</file>
+    <file>images/fallback/light/big/invisible.svg</file>
+    <file>images/fallback/light/big/offline.svg</file>
+    <file>images/fallback/light/big/online.svg</file>
+    <file>images/fallback/light/big/user.svg</file>
+    
+    <file>images/fallback/light/small/absent.svg</file>
+    <file>images/fallback/light/small/away.svg</file>
+    <file>images/fallback/light/small/busy.svg</file>
+    <file>images/fallback/light/small/invisible.svg</file>
+    <file>images/fallback/light/small/offline.svg</file>
+    <file>images/fallback/light/small/online.svg</file>
+    <file>images/fallback/light/small/user.svg</file>
 </qresource>
 </RCC>

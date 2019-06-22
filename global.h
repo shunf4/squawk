@@ -21,6 +21,7 @@ enum Availability {
     extendedAway,
     busy,
     chatty,
+    invisible,
     offline
 };
 
@@ -42,14 +43,15 @@ static const std::deque<QString> connectionStateNames = {"Disconnected", "Connec
 static const std::deque<QString> connectionStateThemeIcons = {"network-disconnect", "view-refresh", "network-connect", "state-error"};
 
 static const std::deque<QString> availabilityThemeIcons = {
-    "im-user-online",
-    "im-user-away",
-    "im-user-away",
-    "im-user-busy",
-    "im-user-online",
-    "im-user-offline"
+    "user-online",
+    "user-away",
+    "user-away-extended",
+    "user-busy",
+    "user-online",
+    "user-invisible",
+    "user-offline"
 };
-static const std::deque<QString> availabilityNames = {"Online", "Away", "Absent", "Busy", "Chatty", "Offline"};
+static const std::deque<QString> availabilityNames = {"Online", "Away", "Absent", "Busy", "Chatty", "Invisible", "Offline"};
 
 static const std::deque<QString> subscriptionStateThemeIcons = {"edit-none", "arrow-down-double", "arrow-up-double", "dialog-ok", "question"};
 static const std::deque<QString> subscriptionStateNames = {"None", "From", "To", "Both", "Unknown"};

@@ -346,8 +346,12 @@ void Core::Account::setServer(const QString& p_server)
 
 Shared::Availability Core::Account::getAvailability() const
 {
-    QXmppPresence::AvailableStatusType pres = presence.availableStatusType();
-    return static_cast<Shared::Availability>(pres);         //TODO that's a shame! gotta do something about it
+    if (state == Shared::connected) {
+        QXmppPresence::AvailableStatusType pres = presence.availableStatusType();
+        return static_cast<Shared::Availability>(pres);         //they are compatible;
+    } else {
+        return Shared::offline;
+    }
 }
 
 void Core::Account::setAvailability(Shared::Availability avail)

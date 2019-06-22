@@ -10,6 +10,7 @@
 #include "item.h"
 #include "account.h"
 #include "contact.h"
+#include "group.h"
 
 namespace Models
 {
@@ -50,7 +51,7 @@ public:
 private:
     Item* root;
     std::map<QString, Account*> accounts;
-    std::map<ElId, Item*> groups;
+    std::map<ElId, Group*> groups;
     std::multimap<ElId, Contact*> contacts;
     
 private slots:

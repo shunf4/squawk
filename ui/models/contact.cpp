@@ -243,7 +243,16 @@ void Models::Contact::addMessage(const Shared::Message& data)
     if (res.size() > 0) {
         QMap<QString, Presence*>::iterator itr = presences.find(res);
         if (itr == presences.end()) {
-            qDebug() << "An attempt to add message to the roster to the unknown resource " << res << " of contact " << jid << " in account " << getAccountName() << ", skipping";
+            // this is actually the place when I can spot someone's invisible presence, and there is nothing criminal in it, cuz the sender sent us a message
+            // therefore he have revealed himself
+            // the only issue is to find out when the sender is gone offline
+            Presence* pr = new Presence({});
+            pr->setName(res);
+            pr->setAvailability(Shared::invisible);
+            pr->setLastActivity(QDateTime::currentDateTime());
+            presences.insert(res, pr);
+            appendChild(pr);
+            pr->addMessage(data);
             return;
         }
         itr.value()->addMessage(data);
