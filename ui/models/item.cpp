@@ -140,3 +140,11 @@ void Models::Item::changed(int col)
         emit childChanged(this, row(), col);
     }
 }
+
+void Models::Item::toOfflineState()
+{
+    for (std::deque<Item*>::iterator itr = childItems.begin(), end = childItems.end(); itr != end; ++itr) {
+        Item* it = *itr;
+        it->toOfflineState();
+    }
+}

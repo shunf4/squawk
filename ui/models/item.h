@@ -59,6 +59,8 @@ class Item : public QObject{
         Item* parent;
         
     protected slots:
+        virtual void toOfflineState();
+        
     };
 
 }

@@ -8,6 +8,7 @@
 
 namespace Models {
     class Account : public Item {
+        Q_OBJECT
     public:
         explicit Account(const QMap<QString, QVariant> &data, Item *parentItem = 0);
         ~Account();
@@ -50,6 +51,9 @@ namespace Models {
         QString error;
         Shared::ConnectionState state;
         Shared::Availability availability;
+        
+    protected slots:
+        void toOfflineState() override;
     };
 
 }

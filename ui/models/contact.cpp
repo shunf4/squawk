@@ -320,3 +320,18 @@ const Models::Account * Models::Contact::getParentAccount() const
     
     return static_cast<const Account*>(p);
 }
+
+void Models::Contact::toOfflineState()
+{
+    emit childIsAboutToBeRemoved(this, 0, childItems.size());
+    for (int i = 0; i < childItems.size(); ++i) {
+        Item* item = childItems[i];
+        disconnect(item, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
+        Item::_removeChild(i);
+        item->deleteLater();
+    }
+    childItems.clear();
+    presences.clear();
+    emit childRemoved();
+    refresh();
+}

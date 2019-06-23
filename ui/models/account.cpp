@@ -30,6 +30,9 @@ void Models::Account::setState(Shared::ConnectionState p_state)
     if (state != p_state) {
         state = p_state;
         changed(2);
+        if (state == Shared::disconnected) {
+            toOfflineState();
+        }
     }
 }
 
@@ -198,3 +201,8 @@ void Models::Account::setError(const QString& p_resource)
     }
 }
 
+void Models::Account::toOfflineState()
+{
+    setAvailability(Shared::offline);
+    Item::toOfflineState();
+}

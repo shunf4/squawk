@@ -50,6 +50,7 @@ protected:
     
 protected slots:
     void refresh();
+    void toOfflineState() override;
     
 protected:
     void setAvailability(Shared::Availability p_state);
