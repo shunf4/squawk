@@ -16,8 +16,9 @@ Squawk::Squawk(QWidget *parent) :
     m_ui->roster->setModel(&rosterModel);
     m_ui->roster->setContextMenuPolicy(Qt::CustomContextMenu);
     
+    const std::deque<QString>& fallback = palette().window().color().lightnessF() > 0.5 ? Shared::fallbackAvailabilityThemeIconsDarkSmall : Shared::fallbackAvailabilityThemeIconsLightSmall;
     for (int i = 0; i < Shared::availabilityNames.size(); ++i) {
-        m_ui->comboBox->addItem(QIcon::fromTheme(Shared::availabilityThemeIcons[i]), Shared::availabilityNames[i]);
+        m_ui->comboBox->addItem(QIcon::fromTheme(Shared::availabilityThemeIcons[i], QIcon(fallback[i])), Shared::availabilityNames[i]);
     }
     m_ui->comboBox->setCurrentIndex(Shared::offline);
     

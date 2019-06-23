@@ -36,7 +36,7 @@ namespace Models {
         void setAvailability(unsigned int p_avail);
         Shared::Availability getAvailability() const;
         
-        QIcon getStatusIcon() const;
+        QIcon getStatusIcon(bool big = false) const;
         
         QVariant data(int column) const override;
         int columnCount() const override;

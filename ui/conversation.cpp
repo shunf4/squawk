@@ -42,7 +42,7 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     m_ui->splitter->setStretchFactor(1, 0);
     
     setName(p_contact->getContactName());
-    setState(p_contact->getAvailability());
+    updateState();
     setStatus(p_contact->getStatus());
     
     connect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
@@ -106,10 +106,10 @@ void Conversation::setName(const QString& name)
     line->setPalName(getJid(), name);
 }
 
-void Conversation::setState(Shared::Availability state)
+void Conversation::updateState()
 {
-    m_ui->statusIcon->setPixmap(QIcon::fromTheme(Shared::availabilityThemeIcons[state]).pixmap(50));
-    m_ui->statusIcon->setToolTip(Shared::availabilityNames[state]);
+    m_ui->statusIcon->setPixmap(contact->getStatusIcon(true).pixmap(40));
+    m_ui->statusIcon->setToolTip(Shared::availabilityNames[contact->getAvailability()]);
 }
 
 void Conversation::setStatus(const QString& status)
@@ -135,7 +135,7 @@ void Conversation::onContactChanged(Models::Item* item, int row, int col)
                 setName(contact->getContactName());
                 break;
             case 3:
-                setState(contact->getAvailability());
+                updateState();
                 break;
             case 5:
                 setStatus(contact->getStatus());

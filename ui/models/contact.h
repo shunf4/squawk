@@ -22,7 +22,7 @@ public:
     QString getJid() const;
     Shared::Availability getAvailability() const;
     Shared::SubscriptionState getState() const;
-    QIcon getStatusIcon() const;
+    QIcon getStatusIcon(bool big = false) const;
     
     int columnCount() const override;
     QVariant data(int column) const override;

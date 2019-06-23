@@ -46,7 +46,7 @@ public:
     
     QString getStatus() const;
     void setStatus(const QString& p_state);
-    QIcon getStatusIcon() const;
+    QIcon getStatusIcon(bool big = false) const;
     
     void update(const QString& key, const QVariant& value);
     unsigned int getMessagesCount() const;

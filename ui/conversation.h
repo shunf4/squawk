@@ -65,7 +65,7 @@ signals:
     void shown();
     
 protected:
-    void setState(Shared::Availability state);
+    void updateState();
     void setStatus(const QString& status);
     void setName(const QString& name);
     void applyVisualEffects();

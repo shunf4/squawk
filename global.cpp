@@ -1,5 +1,8 @@
 #include "global.h"
 #include <uuid/uuid.h>
+#include <QApplication>
+#include <QPalette>
+#include <QIcon>
 
 Shared::Message::Message(Shared::Message::Type p_type):
     jFrom(),
@@ -252,3 +255,15 @@ void Shared::Message::setCurrentTime()
     time = QDateTime::currentDateTime();
 }
 
+QIcon Shared::availabilityIcon(Shared::Availability av, bool big)
+{
+    const std::deque<QString>& fallback = QApplication::palette().window().color().lightnessF() > 0.5 ? 
+    big ? 
+    Shared::fallbackAvailabilityThemeIconsDarkBig:
+    Shared::fallbackAvailabilityThemeIconsDarkSmall:
+    big ? 
+    Shared::fallbackAvailabilityThemeIconsLightBig:
+    Shared::fallbackAvailabilityThemeIconsLightSmall;
+    
+    return QIcon::fromTheme(availabilityThemeIcons[av], QIcon(fallback[av]));
+}

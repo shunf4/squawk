@@ -47,7 +47,7 @@ static const std::deque<QString> availabilityThemeIcons = {
     "user-away",
     "user-away-extended",
     "user-busy",
-    "user-online",
+    "chatty",
     "user-invisible",
     "user-offline"
 };
@@ -119,6 +119,48 @@ private:
     bool outgoing;
     bool forwarded;
 };
+
+static const std::deque<QString> fallbackAvailabilityThemeIconsLightBig = {
+    ":images/fallback/light/big/online.svg",
+    ":images/fallback/light/big/away.svg",
+    ":images/fallback/light/big/absent.svg",
+    ":images/fallback/light/big/busy.svg",
+    ":images/fallback/light/big/chatty.svg",
+    ":images/fallback/light/big/invisible.svg",
+    ":images/fallback/light/big/offline.svg"
+};
+
+static const std::deque<QString> fallbackAvailabilityThemeIconsLightSmall = {
+    ":images/fallback/light/small/online.svg",
+    ":images/fallback/light/small/away.svg",
+    ":images/fallback/light/small/absent.svg",
+    ":images/fallback/light/small/busy.svg",
+    ":images/fallback/light/small/chatty.svg",
+    ":images/fallback/light/small/invisible.svg",
+    ":images/fallback/light/small/offline.svg"
+};
+
+static const std::deque<QString> fallbackAvailabilityThemeIconsDarkBig = {
+    ":images/fallback/dark/big/online.svg",
+    ":images/fallback/dark/big/away.svg",
+    ":images/fallback/dark/big/absent.svg",
+    ":images/fallback/dark/big/busy.svg",
+    ":images/fallback/dark/big/chatty.svg",
+    ":images/fallback/dark/big/invisible.svg",
+    ":images/fallback/dark/big/offline.svg"
+};
+
+static const std::deque<QString> fallbackAvailabilityThemeIconsDarkSmall = {
+    ":images/fallback/dark/small/online.svg",
+    ":images/fallback/dark/small/away.svg",
+    ":images/fallback/dark/small/absent.svg",
+    ":images/fallback/dark/small/busy.svg",
+    ":images/fallback/dark/small/chatty.svg",
+    ":images/fallback/dark/small/invisible.svg",
+    ":images/fallback/dark/small/offline.svg"
+};
+
+QIcon availabilityIcon(Availability av, bool big = false);
 
 };
 

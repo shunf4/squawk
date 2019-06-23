@@ -140,12 +140,12 @@ void Models::Presence::dropMessages()
     }
 }
 
-QIcon Models::Presence::getStatusIcon() const
+QIcon Models::Presence::getStatusIcon(bool big) const
 {
     if (getMessagesCount() > 0) {
         return QIcon::fromTheme("mail-message");
     } else {
-        return QIcon::fromTheme(Shared::availabilityThemeIcons[availability]);
+        return Shared::availabilityIcon(availability, big);
     }
 }
 

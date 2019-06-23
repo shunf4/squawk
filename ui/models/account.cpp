@@ -69,12 +69,12 @@ void Models::Account::setAvailability(Shared::Availability p_avail)
     }
 }
 
-QIcon Models::Account::getStatusIcon() const
+QIcon Models::Account::getStatusIcon(bool big) const
 {
     if (state == Shared::connected) {
-        return QIcon::fromTheme(Shared::availabilityThemeIcons[availability]);
+        return Shared::availabilityIcon(availability, big);
     } else if (state == Shared::disconnected) {
-        return QIcon::fromTheme(Shared::availabilityThemeIcons[Shared::offline]);
+        return Shared::availabilityIcon(Shared::offline, big);
     } else {
         return QIcon::fromTheme(Shared::connectionStateThemeIcons[state]);
     }

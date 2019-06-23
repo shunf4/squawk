@@ -76,17 +76,17 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
             switch (item->type) {
                 case Item::account:{
                     Account* acc = static_cast<Account*>(item);
-                    result = acc->getStatusIcon();
+                    result = acc->getStatusIcon(false);
                 }
                     break;
                 case Item::contact:{
                     Contact* contact = static_cast<Contact*>(item);
-                    result = contact->getStatusIcon();
+                    result = contact->getStatusIcon(false);
                 }
                     break;
                 case Item::presence:{
                     Presence* presence = static_cast<Presence*>(item);
-                    result = presence->getStatusIcon();
+                    result = presence->getStatusIcon(false);
                 }
                     break;
                 default:
