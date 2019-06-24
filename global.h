@@ -130,6 +130,14 @@ static const std::deque<QString> fallbackAvailabilityThemeIconsLightBig = {
     ":images/fallback/light/big/offline.svg"
 };
 
+static const std::deque<QString> fallbackSubscriptionStateThemeIconsLightBig = {
+    ":images/fallback/light/big/edit-none.svg",
+    ":images/fallback/light/big/arrow-down-double.svg",
+    ":images/fallback/light/big/arrow-up-double.svg",
+    ":images/fallback/light/big/dialog-ok.svg",
+    ":images/fallback/light/big/question.svg"
+};
+
 static const std::deque<QString> fallbackAvailabilityThemeIconsLightSmall = {
     ":images/fallback/light/small/online.svg",
     ":images/fallback/light/small/away.svg",
@@ -138,6 +146,14 @@ static const std::deque<QString> fallbackAvailabilityThemeIconsLightSmall = {
     ":images/fallback/light/small/chatty.svg",
     ":images/fallback/light/small/invisible.svg",
     ":images/fallback/light/small/offline.svg"
+};
+
+static const std::deque<QString> fallbackSubscriptionStateThemeIconsLightSmall = {
+    ":images/fallback/light/small/edit-none.svg",
+    ":images/fallback/light/small/arrow-down-double.svg",
+    ":images/fallback/light/small/arrow-up-double.svg",
+    ":images/fallback/light/small/dialog-ok.svg",
+    ":images/fallback/light/small/question.svg"
 };
 
 static const std::deque<QString> fallbackAvailabilityThemeIconsDarkBig = {
@@ -150,6 +166,14 @@ static const std::deque<QString> fallbackAvailabilityThemeIconsDarkBig = {
     ":images/fallback/dark/big/offline.svg"
 };
 
+static const std::deque<QString> fallbackSubscriptionStateThemeIconsDarkBig = {
+    ":images/fallback/dark/big/edit-none.svg",
+    ":images/fallback/dark/big/arrow-down-double.svg",
+    ":images/fallback/dark/big/arrow-up-double.svg",
+    ":images/fallback/dark/big/dialog-ok.svg",
+    ":images/fallback/dark/big/question.svg"
+};
+
 static const std::deque<QString> fallbackAvailabilityThemeIconsDarkSmall = {
     ":images/fallback/dark/small/online.svg",
     ":images/fallback/dark/small/away.svg",
@@ -160,7 +184,16 @@ static const std::deque<QString> fallbackAvailabilityThemeIconsDarkSmall = {
     ":images/fallback/dark/small/offline.svg"
 };
 
+static const std::deque<QString> fallbackSubscriptionStateThemeIconsDarkSmall = {
+    ":images/fallback/dark/small/edit-none.svg",
+    ":images/fallback/dark/small/arrow-down-double.svg",
+    ":images/fallback/dark/small/arrow-up-double.svg",
+    ":images/fallback/dark/small/dialog-ok.svg",
+    ":images/fallback/dark/small/question.svg"
+};
+
 QIcon availabilityIcon(Availability av, bool big = false);
+QIcon subscriptionStateIcon(SubscriptionState ss, bool big = false);
 
 };
 

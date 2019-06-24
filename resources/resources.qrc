@@ -11,6 +11,13 @@
     <file>images/fallback/dark/big/user.svg</file>
     <file>images/fallback/dark/big/chatty.svg</file>
     
+    <file>images/fallback/dark/big/arrow-down-double.svg</file>
+    <file>images/fallback/dark/big/arrow-up-double.svg</file>
+    <file>images/fallback/dark/big/dialog-ok.svg</file>
+    <file>images/fallback/dark/big/edit-none.svg</file>
+    <file>images/fallback/dark/big/question.svg</file>
+    
+    
     <file>images/fallback/dark/small/absent.svg</file>
     <file>images/fallback/dark/small/away.svg</file>
     <file>images/fallback/dark/small/busy.svg</file>
@@ -19,6 +26,13 @@
     <file>images/fallback/dark/small/online.svg</file>
     <file>images/fallback/dark/small/user.svg</file>
     <file>images/fallback/dark/small/chatty.svg</file>
+    
+    <file>images/fallback/dark/small/arrow-down-double.svg</file>
+    <file>images/fallback/dark/small/arrow-up-double.svg</file>
+    <file>images/fallback/dark/small/dialog-ok.svg</file>
+    <file>images/fallback/dark/small/edit-none.svg</file>
+    <file>images/fallback/dark/small/question.svg</file>
+    
     
     <file>images/fallback/light/big/absent.svg</file>
     <file>images/fallback/light/big/away.svg</file>
@@ -29,6 +43,13 @@
     <file>images/fallback/light/big/user.svg</file>
     <file>images/fallback/light/big/chatty.svg</file>
     
+    <file>images/fallback/light/big/arrow-down-double.svg</file>
+    <file>images/fallback/light/big/arrow-up-double.svg</file>
+    <file>images/fallback/light/big/dialog-ok.svg</file>
+    <file>images/fallback/light/big/edit-none.svg</file>
+    <file>images/fallback/light/big/question.svg</file>
+    
+    
     <file>images/fallback/light/small/absent.svg</file>
     <file>images/fallback/light/small/away.svg</file>
     <file>images/fallback/light/small/busy.svg</file>
@@ -37,5 +58,11 @@
     <file>images/fallback/light/small/online.svg</file>
     <file>images/fallback/light/small/user.svg</file>
     <file>images/fallback/light/small/chatty.svg</file>
+    
+    <file>images/fallback/light/small/arrow-down-double.svg</file>
+    <file>images/fallback/light/small/arrow-up-double.svg</file>
+    <file>images/fallback/light/small/dialog-ok.svg</file>
+    <file>images/fallback/light/small/edit-none.svg</file>
+    <file>images/fallback/light/small/question.svg</file>
 </qresource>
 </RCC>

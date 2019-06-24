@@ -267,3 +267,17 @@ QIcon Shared::availabilityIcon(Shared::Availability av, bool big)
     
     return QIcon::fromTheme(availabilityThemeIcons[av], QIcon(fallback[av]));
 }
+
+QIcon Shared::subscriptionStateIcon(Shared::SubscriptionState ss, bool big)
+{
+    const std::deque<QString>& fallback = QApplication::palette().window().color().lightnessF() > 0.5 ? 
+    big ? 
+    Shared::fallbackSubscriptionStateThemeIconsDarkBig:
+    Shared::fallbackSubscriptionStateThemeIconsDarkSmall:
+    big ? 
+    Shared::fallbackSubscriptionStateThemeIconsLightBig:
+    Shared::fallbackSubscriptionStateThemeIconsLightSmall;
+    
+    return QIcon::fromTheme(subscriptionStateThemeIcons[ss], QIcon(fallback[ss]));
+}
+
