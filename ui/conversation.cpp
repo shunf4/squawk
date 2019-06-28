@@ -108,8 +108,9 @@ void Conversation::setName(const QString& name)
 
 void Conversation::updateState()
 {
-    m_ui->statusIcon->setPixmap(contact->getStatusIcon(true).pixmap(40));
-    m_ui->statusIcon->setToolTip(Shared::availabilityNames[contact->getAvailability()]);
+    Shared::Availability av = contact->getAvailability();
+    m_ui->statusIcon->setPixmap(Shared::availabilityIcon(av, true).pixmap(40));
+    m_ui->statusIcon->setToolTip(Shared::availabilityNames[av]);
 }
 
 void Conversation::setStatus(const QString& status)

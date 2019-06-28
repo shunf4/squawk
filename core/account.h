@@ -5,10 +5,10 @@
 #include <map>
 #include <set>
 
-#include <qxmpp/QXmppRosterManager.h>
-#include <qxmpp/QXmppCarbonManager.h>
-#include <qxmpp/QXmppMamManager.h>
-#include <qxmpp/QXmppClient.h>
+#include <QXmppRosterManager.h>
+#include <QXmppCarbonManager.h>
+#include <QXmppMamManager.h>
+#include <QXmppClient.h>
 #include "../global.h"
 #include "contact.h"
 
@@ -107,6 +107,8 @@ private slots:
     void onContactSubscriptionStateChanged(Shared::SubscriptionState state);
     void onContactHistoryResponse(const std::list<Shared::Message>& list);
     void onContactNeedHistory(const QString& before, const QString& after);
+    
+    void onMamLog(QXmppLogger::MessageType type, const QString &msg);
   
 private:
     void addedAccount(const QString &bareJid);
@@ -116,6 +118,7 @@ private:
     void removeFromGroup(const QString& jid, const QString& group);
     void initializeMessage(Shared::Message& target, const QXmppMessage& source, bool outgoing = false, bool forwarded = false, bool guessing = false) const;
     Shared::SubscriptionState castSubscriptionState(QXmppRosterIq::Item::SubscriptionType qs) const;
+    void logMessage(const QXmppMessage& msg, const QString& reason = "Message wasn't handled: ");
 };
 
 }

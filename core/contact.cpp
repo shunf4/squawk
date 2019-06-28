@@ -110,7 +110,7 @@ unsigned int Core::Contact::groupsCount() const
 void Core::Contact::addMessageToArchive(const Shared::Message& msg)
 {
     if (msg.getId().size() > 0 && msg.getBody().size() > 0) {
-        hisoryCache.emplace_back(msg);
+        hisoryCache.push_back(msg);
     }
 }
 
@@ -219,13 +219,13 @@ void Core::Contact::appendMessageToArchive(const Shared::Message& msg)
                 case empty:
                     if (archive->addElement(msg)) {
                         archiveState = end;
-                    };
+                    }
                     if (!syncronizing) {
                         requestHistory(-1, id);
                     }
                     break;
                 case beginning:
-                    appendCache.emplace_back(msg);
+                    appendCache.push_back(msg);
                     if (!syncronizing) {
                         requestHistory(-1, id);
                     }
@@ -234,7 +234,7 @@ void Core::Contact::appendMessageToArchive(const Shared::Message& msg)
                     archive->addElement(msg);
                     break;
                 case chunk:
-                    appendCache.emplace_back(msg);
+                    appendCache.push_back(msg);
                     if (!syncronizing) {
                         requestHistory(-1, id);
                     }
@@ -299,8 +299,10 @@ void Core::Contact::flushMessagesToArchive(bool finished, const QString& firstId
                     std::list<Shared::Message> arc = archive->getBefore(requestedCount - responseCache.size(), before);
                     responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
                     found = true;
-                } catch (Archive::NotFound e) {}
-                if (!found || requestedCount < responseCache.size()) {
+                } catch (Archive::NotFound e) {
+                    
+                }
+                if (!found || requestedCount > responseCache.size()) {
                     if (archiveState == complete) {
                         nextRequest();
                     } else {

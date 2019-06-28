@@ -223,7 +223,7 @@ QIcon Models::Contact::getStatusIcon(bool big) const
     } else if (state == Shared::both) {
         return Shared::availabilityIcon(availability, big);;
     } else {
-        return QIcon::fromTheme(Shared::subscriptionStateThemeIcons[state]);
+        return Shared::subscriptionStateIcon(state);
     }
 }
 

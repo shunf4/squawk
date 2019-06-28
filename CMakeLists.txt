@@ -23,6 +23,7 @@ target_link_libraries(squawk Qt5::Widgets)
 
 add_subdirectory(ui)
 add_subdirectory(core)
+add_subdirectory(external/qxmpp)
 
 target_link_libraries(squawk squawkUI)
 target_link_libraries(squawk squawkCORE)

@@ -1,5 +1,5 @@
 #include "account.h"
-#include <qxmpp/QXmppMessage.h>
+#include <QXmppMessage.h>
 #include <QDateTime>
 #include <QTimer>
 
@@ -48,6 +48,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     
     client.addExtension(am);
     
+    QObject::connect(am, SIGNAL(logMessage(QXmppLogger::MessageType, const QString&)), this, SLOT(onMamLog(QXmppLogger::MessageType, const QString)));
     QObject::connect(am, SIGNAL(archivedMessageReceived(const QString&, const QXmppMessage&)), this, SLOT(onMamMessageReceived(const QString&, const QXmppMessage&)));
     QObject::connect(am, SIGNAL(resultsRecieved(const QString&, const QXmppResultSetReply&, bool)), 
                      this, SLOT(onMamResultsReceived(const QString&, const QXmppResultSetReply&, bool)));
@@ -395,7 +396,13 @@ void Core::Account::onMessageReceived(const QXmppMessage& msg)
             break;
     }
     if (!handled) {
-        qDebug() << "Message wasn't handled: ";
+        logMessage(msg);
+    }
+}
+
+void Core::Account::logMessage(const QXmppMessage& msg, const QString& reason)
+{
+    qDebug() << reason;
         qDebug() << "- from: " << msg.from();
         qDebug() << "- to: " << msg.to();
         qDebug() << "- body: " << msg.body();
@@ -410,8 +417,8 @@ void Core::Account::onMessageReceived(const QXmppMessage& msg)
         qDebug() << "- thread: " << msg.thread();
         qDebug() << "- isMarkable: " << msg.isMarkable();
         qDebug() << "==============================";
-    }
 }
+
 
 QString Core::Account::getFullJid() const
 {
@@ -512,6 +519,8 @@ void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMess
     QString jid = itr->second;
     std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
     
+    logMessage(msg, "MAM MESSAGE:");
+    
     if (citr != contacts.end()) {
         Contact* cnt = citr->second;
         if (msg.id().size() > 0 && msg.body().size() > 0) {
@@ -567,7 +576,7 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
         query.setAfter(after);
     }
     
-    qDebug() << "Remote query from\"" << after << "\", to" << before;
+    qDebug() << "Remote query from" << after << ", to" << before;
     
     QString q = am->retrieveArchivedMessages("", "", contact->jid, QDateTime(), QDateTime(), query);
     achiveQueries.insert(std::make_pair(q, contact->jid));
@@ -578,6 +587,16 @@ void Core::Account::onMamResultsReceived(const QString& queryId, const QXmppResu
 {
     std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
     QString jid = itr->second;
+    
+    
+    qDebug() << "MAM RESULTS:";
+    qDebug() << "complete:" << complete;
+    qDebug() << "count:" << resultSetReply.count();
+    qDebug() << "first:" << resultSetReply.first();
+    qDebug() << "last:" << resultSetReply.last();
+    qDebug() << "index:" << resultSetReply.index();
+    qDebug() << "isNull:" << resultSetReply.isNull();
+    
     achiveQueries.erase(itr);
     std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
     if (citr != contacts.end()) {
@@ -586,6 +605,12 @@ void Core::Account::onMamResultsReceived(const QString& queryId, const QXmppResu
         qDebug() << "Flushing messages for" << jid;
         cnt->flushMessagesToArchive(complete, resultSetReply.first(), resultSetReply.last());
     }
+}
+
+void Core::Account::onMamLog(QXmppLogger::MessageType type, const QString& msg)
+{
+    qDebug() << "MAM MESSAGE LOG::";
+    qDebug() << msg;
 }
 
 void Core::Account::onContactGroupAdded(const QString& group)
