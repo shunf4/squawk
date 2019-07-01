@@ -156,12 +156,14 @@ void Core::Contact::performRequest(int count, const QString& before)
             emit needHistory(before, "");
             break;
         case chunk:
-        case beginning:
+        case beginning: {
             if (count != -1) {
                 requestCache.emplace_back(requestedCount, before);
                 requestedCount = -1;
             }
-            emit needHistory("", archive->newestId());
+            Shared::Message msg = archive->newest();
+            emit needHistory("", msg.getId(), msg.getTime());
+        }
             break;
         case end: 
             if (count != -1) {
@@ -177,6 +179,10 @@ void Core::Contact::performRequest(int count, const QString& before)
                     responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
                     found = true;
                 } catch (Archive::NotFound e) {
+                    requestCache.emplace_back(requestedCount, before);
+                    requestedCount = -1;
+                    emit needHistory(archive->oldestId(), "");
+                } catch (Archive::Empty e) {
                     requestCache.emplace_back(requestedCount, before);
                     requestedCount = -1;
                     emit needHistory(archive->oldestId(), "");
@@ -203,6 +209,8 @@ void Core::Contact::performRequest(int count, const QString& before)
                 std::list<Shared::Message> arc = archive->getBefore(requestedCount - responseCache.size(), before);
                 responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
             } catch (Archive::NotFound e) {
+                qDebug("requesting id hasn't been found in archive, skipping");
+            } catch (Archive::Empty e) {
                 qDebug("requesting id hasn't been found in archive, skipping");
             }
             nextRequest();
@@ -300,6 +308,8 @@ void Core::Contact::flushMessagesToArchive(bool finished, const QString& firstId
                     responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
                     found = true;
                 } catch (Archive::NotFound e) {
+                    
+                } catch (Archive::Empty e) {
                     
                 }
                 if (!found || requestedCount > responseCache.size()) {

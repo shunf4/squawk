@@ -62,7 +62,7 @@ signals:
     void nameChanged(const QString& name);
     void subscriptionStateChanged(Shared::SubscriptionState state);
     void historyResponse(const std::list<Shared::Message>& messages);
-    void needHistory(const QString& before, const QString& after);
+    void needHistory(const QString& before, const QString& after, const QDateTime& afterTime = QDateTime());
 
 public:
     const QString jid;

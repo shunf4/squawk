@@ -263,7 +263,7 @@ void Core::Account::handleNewContact(Core::Contact* contact)
     QObject::connect(contact, SIGNAL(nameChanged(const QString&)), this, SLOT(onContactNameChanged(const QString&)));
     QObject::connect(contact, SIGNAL(subscriptionStateChanged(Shared::SubscriptionState)), 
                      this, SLOT(onContactSubscriptionStateChanged(Shared::SubscriptionState)));
-    QObject::connect(contact, SIGNAL(needHistory(const QString&, const QString&)), this, SLOT(onContactNeedHistory(const QString&, const QString&)));
+    QObject::connect(contact, SIGNAL(needHistory(const QString&, const QString&, const QDateTime&)), this, SLOT(onContactNeedHistory(const QString&, const QString&, const QDateTime&)));
     QObject::connect(contact, SIGNAL(historyResponse(const std::list<Shared::Message>&)), this, SLOT(onContactHistoryResponse(const std::list<Shared::Message>&)));
 }
 
@@ -519,8 +519,6 @@ void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMess
     QString jid = itr->second;
     std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
     
-    logMessage(msg, "MAM MESSAGE:");
-    
     if (citr != contacts.end()) {
         Contact* cnt = citr->second;
         if (msg.id().size() > 0 && msg.body().size() > 0) {
@@ -564,7 +562,7 @@ void Core::Account::requestArchive(const QString& jid, int count, const QString&
     }
 }
 
-void Core::Account::onContactNeedHistory(const QString& before, const QString& after)
+void Core::Account::onContactNeedHistory(const QString& before, const QString& after, const QDateTime& at)
 {
     Contact* contact = static_cast<Contact*>(sender());
     QXmppResultSetQuery query;
@@ -572,13 +570,18 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
     if (before.size() > 0) {
         query.setBefore(before);
     }
-    if (after.size() > 0) {
-        query.setAfter(after);
+    QDateTime start;
+    if (after.size() > 0) {     //there is some strange behavior of ejabberd server returning empty result set
+        if (at.isValid()) {     //there can be some useful information about it here https://github.com/processone/ejabberd/issues/2924
+            start = at;
+        } else {
+            query.setAfter(after);
+        }
     }
     
     qDebug() << "Remote query from" << after << ", to" << before;
     
-    QString q = am->retrieveArchivedMessages("", "", contact->jid, QDateTime(), QDateTime(), query);
+    QString q = am->retrieveArchivedMessages("", "", contact->jid, start, QDateTime(), query);
     achiveQueries.insert(std::make_pair(q, contact->jid));
 }
 
@@ -587,15 +590,6 @@ void Core::Account::onMamResultsReceived(const QString& queryId, const QXmppResu
 {
     std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
     QString jid = itr->second;
-    
-    
-    qDebug() << "MAM RESULTS:";
-    qDebug() << "complete:" << complete;
-    qDebug() << "count:" << resultSetReply.count();
-    qDebug() << "first:" << resultSetReply.first();
-    qDebug() << "last:" << resultSetReply.last();
-    qDebug() << "index:" << resultSetReply.index();
-    qDebug() << "isNull:" << resultSetReply.isNull();
     
     achiveQueries.erase(itr);
     std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);

@@ -106,7 +106,7 @@ private slots:
     void onContactNameChanged(const QString& name);
     void onContactSubscriptionStateChanged(Shared::SubscriptionState state);
     void onContactHistoryResponse(const std::list<Shared::Message>& list);
-    void onContactNeedHistory(const QString& before, const QString& after);
+    void onContactNeedHistory(const QString& before, const QString& after, const QDateTime& at);
     
     void onMamLog(QXmppLogger::MessageType type, const QString &msg);
   
