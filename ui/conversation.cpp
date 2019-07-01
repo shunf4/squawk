@@ -255,7 +255,7 @@ void Conversation::onSliderValueChanged(int value)
             scroll = down;
         } else {
             if (!requestingHistory && value == 0) {
-                m_ui->historyStatus->setPixmap(QIcon::fromTheme("view-refresh").pixmap(25));
+                m_ui->historyStatus->setPixmap(Shared::icon("view-refresh", true).pixmap(25));
                 requestingHistory = true;
                 emit requestArchive(line->firstMessageId());
             }
@@ -279,7 +279,7 @@ void Conversation::showEvent(QShowEvent* event)
 {
     if (!everShown) {
         everShown = true;
-        m_ui->historyStatus->setPixmap(QIcon::fromTheme("view-refresh").pixmap(25));
+        m_ui->historyStatus->setPixmap(Shared::icon("view-refresh", true).pixmap(25));
         requestingHistory = true;
         emit requestArchive(line->firstMessageId());
     }

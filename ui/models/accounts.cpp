@@ -31,7 +31,7 @@ QVariant Models::Accounts::data (const QModelIndex& index, int role) const
             break;
         case Qt::DecorationRole:
             if (index.column() == 2) {
-                answer = QIcon::fromTheme(Shared::connectionStateThemeIcons[accs[index.row()]->getState()]);
+                answer = Shared::connectionStateIcon(accs[index.row()]->getState());
             }
             break;
         default:

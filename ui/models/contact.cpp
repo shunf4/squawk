@@ -219,7 +219,7 @@ void Models::Contact::setState(Shared::SubscriptionState p_state)
 QIcon Models::Contact::getStatusIcon(bool big) const
 {
     if (getMessagesCount() > 0) {
-        return QIcon::fromTheme("mail-message");
+        return Shared::icon("mail-message");
     } else if (state == Shared::both) {
         return Shared::availabilityIcon(availability, big);;
     } else {

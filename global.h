@@ -40,7 +40,7 @@ static const SubscriptionState subscriptionStateHighest = unknown;
 static const SubscriptionState subscriptionStateLowest = none;
 
 static const std::deque<QString> connectionStateNames = {"Disconnected", "Connecting", "Connected", "Error"};
-static const std::deque<QString> connectionStateThemeIcons = {"network-disconnect", "view-refresh", "network-connect", "state-error"};
+static const std::deque<QString> connectionStateThemeIcons = {"state-offline", "state-sync", "state-ok", "state-error"};
 
 static const std::deque<QString> availabilityThemeIcons = {
     "user-online",
@@ -138,6 +138,13 @@ static const std::deque<QString> fallbackSubscriptionStateThemeIconsLightBig = {
     ":images/fallback/light/big/question.svg"
 };
 
+static const std::deque<QString> fallbackConnectionStateThemeIconsLightBig = {
+    ":images/fallback/light/big/state-offline.svg",
+    ":images/fallback/light/big/state-sync.svg",
+    ":images/fallback/light/big/state-ok.svg",
+    ":images/fallback/light/big/state-error.svg"
+};
+
 static const std::deque<QString> fallbackAvailabilityThemeIconsLightSmall = {
     ":images/fallback/light/small/online.svg",
     ":images/fallback/light/small/away.svg",
@@ -154,6 +161,13 @@ static const std::deque<QString> fallbackSubscriptionStateThemeIconsLightSmall =
     ":images/fallback/light/small/arrow-up-double.svg",
     ":images/fallback/light/small/dialog-ok.svg",
     ":images/fallback/light/small/question.svg"
+};
+
+static const std::deque<QString> fallbackConnectionStateThemeIconsLightSmall = {
+    ":images/fallback/light/small/state-offline.svg",
+    ":images/fallback/light/small/state-sync.svg",
+    ":images/fallback/light/small/state-ok.svg",
+    ":images/fallback/light/small/state-error.svg"
 };
 
 static const std::deque<QString> fallbackAvailabilityThemeIconsDarkBig = {
@@ -174,6 +188,13 @@ static const std::deque<QString> fallbackSubscriptionStateThemeIconsDarkBig = {
     ":images/fallback/dark/big/question.svg"
 };
 
+static const std::deque<QString> fallbackConnectionStateThemeIconsDarkBig = {
+    ":images/fallback/dark/big/state-offline.svg",
+    ":images/fallback/dark/big/state-sync.svg",
+    ":images/fallback/dark/big/state-ok.svg",
+    ":images/fallback/dark/big/state-error.svg"
+};
+
 static const std::deque<QString> fallbackAvailabilityThemeIconsDarkSmall = {
     ":images/fallback/dark/small/online.svg",
     ":images/fallback/dark/small/away.svg",
@@ -192,8 +213,46 @@ static const std::deque<QString> fallbackSubscriptionStateThemeIconsDarkSmall = 
     ":images/fallback/dark/small/question.svg"
 };
 
+static const std::deque<QString> fallbackConnectionStateThemeIconsDarkSmall = {
+    ":images/fallback/dark/small/state-offline.svg",
+    ":images/fallback/dark/small/state-sync.svg",
+    ":images/fallback/dark/small/state-ok.svg",
+    ":images/fallback/dark/small/state-error.svg"
+};
+
 QIcon availabilityIcon(Availability av, bool big = false);
 QIcon subscriptionStateIcon(SubscriptionState ss, bool big = false);
+QIcon connectionStateIcon(ConnectionState cs, bool big = false);
+QIcon icon(const QString& name, bool big = false);
+
+static const std::map<QString, std::pair<QString, QString>> icons = {
+    {"user-online", {"user-online", "online"}},
+    {"user-away", {"user-away", "away"}},
+    {"user-away-extended", {"user-away-extended", "absent"}},
+    {"user-busy", {"user-busy", "busy"}},
+    {"user-chatty", {"chatty", "chatty"}},
+    {"user-invisible", {"user-invisible", "invisible"}},
+    {"user-offline", {"offline", "offline"}},
+    {"edit-none", {"edit-none", "edit-none"}}, 
+    {"arrow-down-double", {"arrow-down-double", "arrow-down-double"}}, 
+    {"arrow-up-double", {"arrow-up-double", "arrow-up-double"}}, 
+    {"dialog-ok", {"dialog-ok", "dialog-ok"}}, 
+    {"question", {"question", "question"}},
+    {"state-offline", {"state-offline", "state-offline"}}, 
+    {"state-sync", {"state-sync", "state-sync"}}, 
+    {"state-ok", {"state-ok", "state-ok"}}, 
+    {"state-error", {"state-error", "state-error"}},
+    
+    {"edit-delete", {"edit-delete", "edit-delete"}},
+    {"mail-message", {"mail-message", "mail-message"}},
+    {"network-connect", {"network-connect", "network-connect"}},
+    {"network-disconnect", {"network-disconnect", "network-disconnect"}},
+    {"news-subscribe", {"news-subscribe", "news-subscribe"}},
+    {"news-unsubscribe", {"news-unsubscribe", "news-unsubscribe"}},
+    {"view-refresh", {"view-refresh", "view-refresh"}},
+    {"send", {"document-send", "send"}},
+    {"clean", {"edit-clear-all", "clean"}},
+};
 
 };
 

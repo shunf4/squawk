@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QPalette>
 #include <QIcon>
+#include <QDebug>
 
 Shared::Message::Message(Shared::Message::Type p_type):
     jFrom(),
@@ -281,3 +282,34 @@ QIcon Shared::subscriptionStateIcon(Shared::SubscriptionState ss, bool big)
     return QIcon::fromTheme(subscriptionStateThemeIcons[ss], QIcon(fallback[ss]));
 }
 
+QIcon Shared::connectionStateIcon(Shared::ConnectionState cs, bool big)
+{
+    const std::deque<QString>& fallback = QApplication::palette().window().color().lightnessF() > 0.5 ? 
+    big ? 
+    Shared::fallbackConnectionStateThemeIconsDarkBig:
+    Shared::fallbackConnectionStateThemeIconsDarkSmall:
+    big ? 
+    Shared::fallbackConnectionStateThemeIconsLightBig:
+    Shared::fallbackConnectionStateThemeIconsLightSmall;
+    
+    return QIcon::fromTheme(connectionStateThemeIcons[cs], QIcon(fallback[cs]));
+}
+
+static const QString ds = ":images/fallback/dark/small/";
+static const QString db = ":images/fallback/dark/big/";
+static const QString ls = ":images/fallback/light/small/";
+static const QString lb = ":images/fallback/light/big/";
+
+QIcon Shared::icon(const QString& name, bool big)
+{
+    std::map<QString, std::pair<QString, QString>>::const_iterator itr = icons.find(name);
+    if (itr != icons.end()) {
+        const QString& prefix = QApplication::palette().window().color().lightnessF() > 0.5 ? 
+            big ? db : ds:
+            big ? lb : ls;
+        return QIcon::fromTheme(itr->second.first, QIcon(prefix + itr->second.second));
+    } else {
+        qDebug() << "Icon" << name << "not found";
+        throw 1;
+    }
+}

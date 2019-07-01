@@ -76,7 +76,7 @@ QIcon Models::Account::getStatusIcon(bool big) const
     } else if (state == Shared::disconnected) {
         return Shared::availabilityIcon(Shared::offline, big);
     } else {
-        return QIcon::fromTheme(Shared::connectionStateThemeIcons[state]);
+        return Shared::connectionStateIcon(state);
     }
 }
 

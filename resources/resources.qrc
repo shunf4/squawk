@@ -17,6 +17,21 @@
     <file>images/fallback/dark/big/edit-none.svg</file>
     <file>images/fallback/dark/big/question.svg</file>
     
+    <file>images/fallback/dark/big/state-ok.svg</file>
+    <file>images/fallback/dark/big/state-sync.svg</file>
+    <file>images/fallback/dark/big/state-offline.svg</file>
+    <file>images/fallback/dark/big/state-error.svg</file>
+    
+    <file>images/fallback/dark/big/edit-delete.svg</file>
+    <file>images/fallback/dark/big/mail-message.svg</file>
+    <file>images/fallback/dark/big/network-connect.svg</file>
+    <file>images/fallback/dark/big/network-disconnect.svg</file>
+    <file>images/fallback/dark/big/news-subscribe.svg</file>
+    <file>images/fallback/dark/big/news-unsubscribe.svg</file>
+    <file>images/fallback/dark/big/view-refresh.svg</file>
+    <file>images/fallback/dark/big/clean.svg</file>
+    <file>images/fallback/dark/big/send.svg</file>
+    
     
     <file>images/fallback/dark/small/absent.svg</file>
     <file>images/fallback/dark/small/away.svg</file>
@@ -32,6 +47,21 @@
     <file>images/fallback/dark/small/dialog-ok.svg</file>
     <file>images/fallback/dark/small/edit-none.svg</file>
     <file>images/fallback/dark/small/question.svg</file>
+    
+    <file>images/fallback/dark/small/state-ok.svg</file>
+    <file>images/fallback/dark/small/state-sync.svg</file>
+    <file>images/fallback/dark/small/state-offline.svg</file>
+    <file>images/fallback/dark/small/state-error.svg</file>
+    
+    <file>images/fallback/dark/small/edit-delete.svg</file>
+    <file>images/fallback/dark/small/mail-message.svg</file>
+    <file>images/fallback/dark/small/network-connect.svg</file>
+    <file>images/fallback/dark/small/network-disconnect.svg</file>
+    <file>images/fallback/dark/small/news-subscribe.svg</file>
+    <file>images/fallback/dark/small/news-unsubscribe.svg</file>
+    <file>images/fallback/dark/small/view-refresh.svg</file>
+    <file>images/fallback/dark/small/clean.svg</file>
+    <file>images/fallback/dark/small/send.svg</file>
     
     
     <file>images/fallback/light/big/absent.svg</file>
@@ -49,6 +79,21 @@
     <file>images/fallback/light/big/edit-none.svg</file>
     <file>images/fallback/light/big/question.svg</file>
     
+    <file>images/fallback/light/big/state-ok.svg</file>
+    <file>images/fallback/light/big/state-sync.svg</file>
+    <file>images/fallback/light/big/state-offline.svg</file>
+    <file>images/fallback/light/big/state-error.svg</file>
+    
+    <file>images/fallback/light/big/edit-delete.svg</file>
+    <file>images/fallback/light/big/mail-message.svg</file>
+    <file>images/fallback/light/big/network-connect.svg</file>
+    <file>images/fallback/light/big/network-disconnect.svg</file>
+    <file>images/fallback/light/big/news-subscribe.svg</file>
+    <file>images/fallback/light/big/news-unsubscribe.svg</file>
+    <file>images/fallback/light/big/view-refresh.svg</file>
+    <file>images/fallback/light/big/clean.svg</file>
+    <file>images/fallback/light/big/send.svg</file>
+    
     
     <file>images/fallback/light/small/absent.svg</file>
     <file>images/fallback/light/small/away.svg</file>
@@ -64,5 +109,20 @@
     <file>images/fallback/light/small/dialog-ok.svg</file>
     <file>images/fallback/light/small/edit-none.svg</file>
     <file>images/fallback/light/small/question.svg</file>
+    
+    <file>images/fallback/light/small/state-ok.svg</file>
+    <file>images/fallback/light/small/state-sync.svg</file>
+    <file>images/fallback/light/small/state-offline.svg</file>
+    <file>images/fallback/light/small/state-error.svg</file>
+    
+    <file>images/fallback/light/small/edit-delete.svg</file>
+    <file>images/fallback/light/small/mail-message.svg</file>
+    <file>images/fallback/light/small/network-connect.svg</file>
+    <file>images/fallback/light/small/network-disconnect.svg</file>
+    <file>images/fallback/light/small/news-subscribe.svg</file>
+    <file>images/fallback/light/small/news-unsubscribe.svg</file>
+    <file>images/fallback/light/small/view-refresh.svg</file>
+    <file>images/fallback/light/small/clean.svg</file>
+    <file>images/fallback/light/small/send.svg</file>
 </qresource>
 </RCC>

@@ -143,7 +143,7 @@ void Models::Presence::dropMessages()
 QIcon Models::Presence::getStatusIcon(bool big) const
 {
     if (getMessagesCount() > 0) {
-        return QIcon::fromTheme("mail-message");
+        return Shared::icon("mail-message");
     } else {
         return Shared::availabilityIcon(availability, big);
     }
