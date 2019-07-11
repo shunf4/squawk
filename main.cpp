@@ -83,6 +83,12 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, SIGNAL(responseArchive(const QString&, const QString&, const std::list<Shared::Message>&)), 
                      &w, SLOT(responseArchive(const QString&, const QString&, const std::list<Shared::Message>&)));
     
+    QObject::connect(squawk, SIGNAL(addRoom(const QString&, const QString&, const QMap<QString, QVariant>&)), 
+                     &w, SLOT(addRoom(const QString&, const QString&, const QMap<QString, QVariant>&)));
+    QObject::connect(squawk, SIGNAL(changeRoom(const QString&, const QString&, const QMap<QString, QVariant>&)), 
+                     &w, SLOT(changeRoom(const QString&, const QString&, const QMap<QString, QVariant>&)));
+    QObject::connect(squawk, SIGNAL(removeRoom(const QString&, const QString&)), &w, SLOT(removeRoom(const QString&, const QString&)));
+    
     //qDebug() << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
     
     coreThread->start();

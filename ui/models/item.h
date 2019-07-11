@@ -16,7 +16,7 @@ class Item : public QObject{
             account,
             group,
             contact,
-            conversation,
+            room,
             presence,
             root
         };

@@ -16,7 +16,7 @@ class Contact : public Item
     Q_OBJECT
 public:
     typedef std::deque<Shared::Message> Messages;
-    Contact(const QString& p_jid ,const QMap<QString, QVariant> &data, Item *parentItem = 0);
+    Contact(const QString& p_jid, const QMap<QString, QVariant> &data, Item *parentItem = 0);
     ~Contact();
     
     QString getJid() const;

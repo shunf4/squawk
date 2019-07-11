@@ -3,10 +3,15 @@
 Models::Item::Item(Type p_type, const QMap<QString, QVariant> &p_data, Item *p_parent):
     QObject(),
     type(p_type),
-    name(p_data.value("name").toString()),
+    name(""),
     childItems(),
     parent(p_parent)
-{}
+{
+    QMap<QString, QVariant>::const_iterator itr = p_data.find("name");
+    if (itr != p_data.end()) {
+        setName(itr.value().toString());
+    }
+}
 
 Models::Item::~Item()
 {

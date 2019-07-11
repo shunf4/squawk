@@ -37,6 +37,9 @@ signals:
     void stateChanged(int state);
     void accountMessage(const QString& account, const Shared::Message& data);
     void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list);
+    void addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
+    void changeRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
+    void removeRoom(const QString& account, const QString jid);
     
 public slots:
     void start();
@@ -79,6 +82,9 @@ private slots:
     void onAccountRemovePresence(const QString& jid, const QString& name);
     void onAccountMessage(const Shared::Message& data);
     void onAccountResponseArchive(const QString& jid, const std::list<Shared::Message>& list);
+    void onAccountAddRoom(const QString jid, const QMap<QString, QVariant>& data);
+    void onAccountChangeRoom(const QString jid, const QMap<QString, QVariant>& data);
+    void onAccountRemoveRoom(const QString jid);
 };
 
 }

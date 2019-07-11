@@ -31,7 +31,8 @@ Core::Archive::Archive(const QString& p_jid, QObject* parent):
     fromTheBeginning(false),
     environment(),
     main(),
-    order()
+    order(),
+    stats()
 {
 }
 
@@ -55,14 +56,14 @@ void Core::Archive::open(const QString& account)
             }
         }
         
-        mdb_env_set_maxdbs(environment, 3);
+        mdb_env_set_maxdbs(environment, 4);
         mdb_env_open(environment, path.toStdString().c_str(), 0, 0664);
         
         MDB_txn *txn;
         mdb_txn_begin(environment, NULL, 0, &txn);
         mdb_dbi_open(txn, "main", MDB_CREATE, &main);
         mdb_dbi_open(txn, "order", MDB_CREATE | MDB_INTEGERKEY, &order);
-        mdb_dbi_open(txn, "order", MDB_CREATE, &stats);
+        mdb_dbi_open(txn, "stats", MDB_CREATE, &stats);
         mdb_txn_commit(txn);
         fromTheBeginning = _isFromTheBeginning();
         opened = true;
@@ -135,6 +136,7 @@ void Core::Archive::clear()
     mdb_txn_begin(environment, NULL, 0, &txn);
     mdb_drop(txn, main, 0);
     mdb_drop(txn, order, 0);
+    mdb_drop(txn, stats, 0);
     mdb_txn_commit(txn);
 }
 
@@ -190,6 +192,32 @@ QString Core::Archive::newestId()
     rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_LAST);
     if (rc) {
         qDebug() << "Error geting newestId " << mdb_strerror(rc);
+        mdb_cursor_close(cursor);
+        mdb_txn_abort(txn);
+        throw Empty(jid.toStdString());
+    } else {
+        std::string sId((char*)lmdbData.mv_data, lmdbData.mv_size);
+        mdb_cursor_close(cursor);
+        mdb_txn_abort(txn);
+        return sId.c_str();
+    }
+}
+
+QString Core::Archive::oldestId()
+{
+    if (!opened) {
+        throw Closed("oldestId", jid.toStdString());
+    }
+    MDB_txn *txn;
+    int rc;
+    rc = mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
+    MDB_cursor* cursor;
+    rc = mdb_cursor_open(txn, order, &cursor);
+    MDB_val lmdbKey, lmdbData;
+    
+    rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_FIRST);
+    if (rc) {
+        qDebug() << "Error geting oldestId " << mdb_strerror(rc);
         mdb_cursor_close(cursor);
         mdb_txn_abort(txn);
         throw Empty(jid.toStdString());
@@ -262,33 +290,6 @@ unsigned int Core::Archive::addElements(const std::list<Shared::Message>& messag
     }
     
     return success;
-}
-
-
-QString Core::Archive::oldestId()
-{
-    if (!opened) {
-        throw Closed("oldestId", jid.toStdString());
-    }
-    MDB_txn *txn;
-    int rc;
-    rc = mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
-    MDB_cursor* cursor;
-    rc = mdb_cursor_open(txn, order, &cursor);
-    MDB_val lmdbKey, lmdbData;
-    
-    rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_FIRST);
-    if (rc) {
-        qDebug() << "Error geting oldestId " << mdb_strerror(rc);
-        mdb_cursor_close(cursor);
-        mdb_txn_abort(txn);
-        throw Empty(jid.toStdString());
-    } else {
-        std::string sId((char*)lmdbData.mv_data, lmdbData.mv_size);
-        mdb_cursor_close(cursor);
-        mdb_txn_abort(txn);
-        return sId.c_str();
-    }
 }
 
 long unsigned int Core::Archive::size() const
@@ -422,6 +423,7 @@ bool Core::Archive::_isFromTheBeginning()
         } else {
             qDebug() <<"isFromTheBeginning error: stored value doesn't match any magic number, the answer is most probably wrong";
         }
+        mdb_txn_abort(txn);
         return is;
     }
 }
@@ -460,6 +462,7 @@ void Core::Archive::setFromTheBeginning(bool is)
             qDebug() << "Couldn't store beginning key into stat database:" << mdb_strerror(rc);
             mdb_txn_abort(txn);
         }
+        mdb_txn_commit(txn);
     }
 }
 

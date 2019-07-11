@@ -102,6 +102,13 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     connect(acc, SIGNAL(responseArchive(const QString&, const std::list<Shared::Message>&)), 
             this, SLOT(onAccountResponseArchive(const QString&, const std::list<Shared::Message>&)));
     
+    connect(acc, SIGNAL(addRoom(const QString&, const QMap<QString, QVariant>&)), 
+            this, SLOT(onAccountAddRoom(const QString&, const QMap<QString, QVariant>&)));
+    connect(acc, SIGNAL(changeRoom(const QString&, const QMap<QString, QVariant>&)), 
+            this, SLOT(onAccountChangeRoom(const QString&, const QMap<QString, QVariant>&)));
+    connect(acc, SIGNAL(removeRoom(const QString&)), this, SLOT(onAccountRemoveRoom(const QString&)));
+    
+    
     QMap<QString, QVariant> map = {
         {"login", login},
         {"server", server},
@@ -375,4 +382,22 @@ void Core::Squawk::addContactRequest(const QString& account, const QString& jid,
     }
     
     itr->second->addContactRequest(jid, name, groups);
+}
+
+void Core::Squawk::onAccountAddRoom(const QString jid, const QMap<QString, QVariant>& data)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit addRoom(acc->getName(), jid, data);
+}
+
+void Core::Squawk::onAccountChangeRoom(const QString jid, const QMap<QString, QVariant>& data)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit changeRoom(acc->getName(), jid, data);
+}
+
+void Core::Squawk::onAccountRemoveRoom(const QString jid)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit removeRoom(acc->getName(), jid);
 }

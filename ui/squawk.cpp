@@ -418,3 +418,18 @@ void Squawk::onRosterContextMenu(const QPoint& point)
         }
     }    
 }
+
+void Squawk::addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data)
+{
+    rosterModel.addRoom(account, jid, data);
+}
+
+void Squawk::changeRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data)
+{
+    rosterModel.changeRoom(account, jid, data);
+}
+
+void Squawk::removeRoom(const QString& account, const QString jid)
+{
+    rosterModel.removeRoom(account, jid);
+}

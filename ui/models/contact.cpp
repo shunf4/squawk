@@ -152,8 +152,8 @@ void Models::Contact::removePresence(const QString& name)
         qDebug() << "an attempt to remove non existing presence " << name << " from the contact " << jid << " of account " << getAccountName() << ", skipping";
     } else {
         Presence* pr = itr.value();
-        removeChild(pr->row());
         presences.erase(itr);
+        removeChild(pr->row());
         pr->deleteLater();
     }
 }

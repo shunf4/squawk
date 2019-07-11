@@ -11,6 +11,7 @@
 #include "account.h"
 #include "contact.h"
 #include "group.h"
+#include "room.h"
 
 namespace Models
 {
@@ -36,6 +37,9 @@ public:
     void removePresence(const QString& account, const QString& jid, const QString& name);
     void addMessage(const QString& account, const Shared::Message& data);
     void dropMessages(const QString& account, const QString& jid);
+    void addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
+    void changeRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
+    void removeRoom(const QString& account, const QString jid);
     QString getContactName(const QString& account, const QString& jid);
     
     QVariant data ( const QModelIndex& index, int role ) const override;
@@ -53,6 +57,7 @@ private:
     std::map<QString, Account*> accounts;
     std::map<ElId, Group*> groups;
     std::multimap<ElId, Contact*> contacts;
+    std::map<ElId, Room*> rooms;
     
 private slots:
     void onAccountDataChanged(const QModelIndex& tl, const QModelIndex& br, const QVector<int>& roles);

@@ -51,6 +51,7 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     //connect(m_ui->attachButton, SIGNAL(clicked(bool)), this, SLOT(onAttach()));
     
     m_ui->messageEditor->installEventFilter(&ker);
+    line->setMyName(p_contact->getAccountName());
     
     Models::Contact::Messages deque;
     contact->getMessages(deque);
@@ -59,7 +60,6 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
         addMessage(*itr);
     }
     
-    line->setMyName(p_contact->getAccountName());
     connect(line, SIGNAL(resize(int)), this, SLOT(onMessagesResize(int)));
     
     QScrollBar* vs = m_ui->scrollArea->verticalScrollBar();

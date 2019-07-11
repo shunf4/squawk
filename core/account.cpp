@@ -16,11 +16,14 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     groups(),
     cm(new QXmppCarbonManager()),
     am(new QXmppMamManager()),
+    mm(new QXmppMucManager()),
+    bm(new QXmppBookmarkManager()),
     contacts(),
     maxReconnectTimes(0),
     reconnectTimes(0),
     queuedContacts(),
-    outOfRosterContacts()
+    outOfRosterContacts(),
+    mucInfo()
 {
     config.setUser(p_login);
     config.setDomain(p_server);
@@ -52,6 +55,12 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     QObject::connect(am, SIGNAL(archivedMessageReceived(const QString&, const QXmppMessage&)), this, SLOT(onMamMessageReceived(const QString&, const QXmppMessage&)));
     QObject::connect(am, SIGNAL(resultsRecieved(const QString&, const QXmppResultSetReply&, bool)), 
                      this, SLOT(onMamResultsReceived(const QString&, const QXmppResultSetReply&, bool)));
+    
+    client.addExtension(mm);
+    QObject::connect(mm, SIGNAL(roomAdded(QXmppMucRoom*)), this, SLOT(onMucRoomAdded(QXmppMucRoom*)));
+    
+    client.addExtension(bm);
+    QObject::connect(bm, SIGNAL(bookmarksReceived(const QXmppBookmarkSet&)), this, SLOT(bookmarksReceived(const QXmppBookmarkSet&)));
 }
 
 Account::~Account()
@@ -59,6 +68,11 @@ Account::~Account()
     for (std::map<QString, Contact*>::const_iterator itr = contacts.begin(), end = contacts.end(); itr != end; ++itr) {
         delete itr->second;
     }
+    
+    delete bm;
+    delete mm;
+    delete am;
+    delete cm;
 }
 
 Shared::ConnectionState Core::Account::getState() const
@@ -433,6 +447,7 @@ void Core::Account::sendMessage(const Shared::Message& data)
         msg.setType(static_cast<QXmppMessage::Type>(data.getType()));       //it is safe here, my type is compatible
         
         std::map<QString, Contact*>::const_iterator itr = contacts.find(data.getPenPalJid());
+        
         itr->second->appendMessageToArchive(data);
         
         client.sendPacket(msg);
@@ -845,4 +860,115 @@ void Core::Account::addContactRequest(const QString& jid, const QString& name, c
     } else {
         qDebug() << "An attempt to add contact " << jid << " to account " << name << " but the account is not in the connected state, skipping";
     }
+}
+
+void Core::Account::onMucRoomAdded(QXmppMucRoom* room)
+{
+    qDebug() << "room" << room->jid() << "added with name" << room->name() << ", account" << getName() << "joined:" << room->isJoined(); 
+}
+
+void Core::Account::bookmarksReceived(const QXmppBookmarkSet& bookmarks)
+{
+    QList<QXmppBookmarkConference> conferences = bookmarks.conferences();
+    for (QList<QXmppBookmarkConference>::const_iterator itr = conferences.begin(), end = conferences.end(); itr != end; ++itr) {
+        const QXmppBookmarkConference& c = *itr;
+        
+        QString jid = c.jid();
+        std::pair<std::map<QString, MucInfo>::iterator, bool> mi = mucInfo.insert(std::make_pair(jid, MucInfo(c.autoJoin(), false, jid, c.name(), c.nickName())));
+        if (mi.second) {
+            const MucInfo& info = mi.first->second; 
+            QXmppMucRoom* room = mm->addRoom(jid);
+            
+            QObject::connect(room, SIGNAL(joined()), this, SLOT(onMucJoined()));
+            QObject::connect(room, SIGNAL(left()), this, SLOT(onMucLeft()));
+            QObject::connect(room, SIGNAL(nameChanged(const QString&)), this, SLOT(onMucNameChanged(const QString&)));
+            QObject::connect(room, SIGNAL(nickNameChanged(const QString&)), this, SLOT(onMucNickNameChanged(const QString&)));
+            QObject::connect(room, SIGNAL(error(const QXmppStanza::Error&)), this, SLOT(onMucError(const QXmppStanza::Error&)));
+            QObject::connect(room, SIGNAL(messageReceived(const QXmppMessage&)), this, SLOT(onMucMessage(const QXmppMessage&)));
+            
+            emit addRoom(jid, {
+                {"autoJoin", info.autoJoin},
+                {"joined", false},
+                {"nick", info.nick},
+                {"name", info.name}
+            });
+            
+            room->setNickName(info.nick == "" ? getName() : info.nick);
+            if (info.autoJoin) {
+                room->join();
+            }
+        } else {
+            qDebug() << "Received a bookmark to a MUC " << jid << " which is already booked by another bookmark, skipping";
+        }
+    }
+}
+
+void Core::Account::onMucJoined()
+{
+    QXmppMucRoom* room = static_cast<QXmppMucRoom*>(sender());
+    QString jid = room->jid();
+    std::map<QString, MucInfo>::iterator itr = mucInfo.find(jid);
+    if (itr != mucInfo.end()) {
+        itr->second.joined = true;
+        emit changeRoom(jid, {
+            {"joined", true}
+        });
+    } else {
+        qDebug() << "Seems like account" << getName() << "joined room" << jid << ", but the info about that room wasn't found, skipping";
+    }
+}
+
+void Core::Account::onMucLeft()
+{
+    QXmppMucRoom* room = static_cast<QXmppMucRoom*>(sender());
+    QString jid = room->jid();
+    std::map<QString, MucInfo>::iterator itr = mucInfo.find(jid);
+    if (itr != mucInfo.end()) {
+        itr->second.joined = false;
+        emit changeRoom(jid, {
+            {"joined", false}
+        });
+    } else {
+        qDebug() << "Seems like account" << getName() << "left room" << jid << ", but the info about that room wasn't found, skipping";
+    }
+}
+
+void Core::Account::onMucNameChanged(const QString& roomName)
+{
+    QXmppMucRoom* room = static_cast<QXmppMucRoom*>(sender());
+    QString jid = room->jid();
+    std::map<QString, MucInfo>::iterator itr = mucInfo.find(jid);
+    if (itr != mucInfo.end()) {
+        itr->second.name = roomName;
+        emit changeRoom(jid, {
+            {"name", roomName}
+        });
+    } else {
+        qDebug() << "Account" << getName() << "received an event about room" << jid << "name change, but the info about that room wasn't found, skipping";
+    }
+}
+
+void Core::Account::onMucNickNameChanged(const QString& nickName)
+{
+    QXmppMucRoom* room = static_cast<QXmppMucRoom*>(sender());
+    QString jid = room->jid();
+    std::map<QString, MucInfo>::iterator itr = mucInfo.find(jid);
+    if (itr != mucInfo.end()) {
+        itr->second.nick = nickName;
+        emit changeRoom(jid, {
+            {"nick", nickName}
+        });
+    } else {
+        qDebug() << "Account" << getName() << "received an event about his nick name change in room" << jid << ", but the info about that room wasn't found, skipping";
+    }
+}
+
+void Core::Account::onMucError(const QXmppStanza::Error& error)
+{
+    qDebug() << "MUC error";
+}
+
+void Core::Account::onMucMessage(const QXmppMessage& message)
+{
+    qDebug() << "Muc message";
 }

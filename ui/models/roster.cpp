@@ -74,19 +74,24 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
             break;
         case Qt::DecorationRole:
             switch (item->type) {
-                case Item::account:{
+                case Item::account: {
                     Account* acc = static_cast<Account*>(item);
                     result = acc->getStatusIcon(false);
                 }
                     break;
-                case Item::contact:{
+                case Item::contact: {
                     Contact* contact = static_cast<Contact*>(item);
                     result = contact->getStatusIcon(false);
                 }
                     break;
-                case Item::presence:{
+                case Item::presence: {
                     Presence* presence = static_cast<Presence*>(item);
                     result = presence->getStatusIcon(false);
+                }
+                    break;
+                case Item::room: {
+                    Room* room = static_cast<Room*>(item);
+                    result = room->getStatusIcon(false);
                 }
                     break;
                 default:
@@ -169,6 +174,17 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     }
                     str += QString("Online contacts: ") + std::to_string(gr->getOnlineContacts()).c_str() + "\n";
                     str += QString("Total contacts: ") + std::to_string(gr->childCount()).c_str();
+                    result = str;
+                }
+                    break;
+                case Item::room: {
+                    Room* rm = static_cast<Room*>(item);
+                    unsigned int count = rm->getUnreadMessagesCount();
+                    QString str("");
+                    if (count > 0) {
+                        str += QString("New messages: ") + std::to_string(count).c_str() + "\n";
+                    }
+                    str += QString("Subscription: ") + rm->getStatusText() + "\n";
                     result = str;
                 }
                     break;
@@ -313,8 +329,8 @@ void Models::Roster::addGroup(const QString& account, const QString& name)
     if (itr != accounts.end()) {
         Account* acc = itr->second;
         Group* group = new Group({{"name", name}});
-        acc->appendChild(group);
         groups.insert(std::make_pair(id, group));
+        acc->appendChild(group);
     } else {
         qDebug() << "An attempt to add group " << name << " to non existing account " << account << ", skipping";
     }
@@ -382,8 +398,8 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
         
     }
     contact = new Contact(jid, data);
-    parent->appendChild(contact);
     contacts.insert(std::make_pair(id, contact));
+    parent->appendChild(contact);
 }
 
 void Models::Roster::removeGroup(const QString& account, const QString& name)
@@ -638,6 +654,17 @@ void Models::Roster::removeAccount(const QString& account)
         }
     }
     
+    std::map<ElId, Room*>::const_iterator rItr = rooms.begin();
+    while (rItr != rooms.end()) {
+        if (rItr->first.account == account) {
+            std::map<ElId, Room*>::const_iterator lItr = rItr;
+            ++rItr;
+            rooms.erase(lItr);
+        } else {
+            ++rItr;
+        }
+    }
+    
     acc->deleteLater();
 }
 
@@ -649,4 +676,67 @@ QString Models::Roster::getContactName(const QString& account, const QString& ji
         return "";
     }
     return cItr->second->getContactName();
+}
+
+void Models::Roster::addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data)
+{
+    Account* acc;
+    {
+        std::map<QString, Account*>::iterator itr = accounts.find(account);
+        if (itr == accounts.end()) {
+            qDebug() << "An attempt to add a room " << jid << " to non existing account " << account << ", skipping";
+            return;
+        }
+        acc = itr->second;
+    }
+    
+    ElId id = {account, jid};
+    std::map<ElId, Room*>::const_iterator itr = rooms.find(id);
+    if (itr != rooms.end()) {
+        qDebug() << "An attempt to add already existing room" << jid << ", skipping";
+        return;
+    }
+    
+    Room* room = new Room(jid, data);
+    rooms.insert(std::make_pair(id, room));
+    acc->appendChild(room);
+}
+
+void Models::Roster::changeRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data)
+{
+    ElId id = {account, jid};
+    std::map<ElId, Room*>::const_iterator itr = rooms.find(id);
+    if (itr == rooms.end()) {
+        qDebug() << "An attempt to change non existing room" << jid << ", skipping";
+        return;
+    }
+    Room* room = itr->second;
+    for (QMap<QString, QVariant>::const_iterator dItr = data.begin(), dEnd = data.end(); dItr != dEnd; ++dItr) {
+        room->update(dItr.key(), dItr.value());
+    }
+}
+
+void Models::Roster::removeRoom(const QString& account, const QString jid)
+{
+    Account* acc;
+    {
+        std::map<QString, Account*>::iterator itr = accounts.find(account);
+        if (itr == accounts.end()) {
+            qDebug() << "An attempt to remove a room " << jid << " from non existing account " << account << ", skipping";
+            return;
+        }
+        acc = itr->second;
+    }
+    
+    ElId id = {account, jid};
+    std::map<ElId, Room*>::const_iterator itr = rooms.find(id);
+    if (itr == rooms.end()) {
+        qDebug() << "An attempt to remove non existing room" << jid << ", skipping";
+        return;
+    }
+    
+    Room* room = itr->second;
+    acc->removeChild(room->row());
+    room->deleteLater();
+    rooms.erase(itr);
 }

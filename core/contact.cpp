@@ -266,6 +266,7 @@ void Core::Contact::flushMessagesToArchive(bool finished, const QString& firstId
         hisoryCache.clear();
     }
     
+    bool wasEmpty = false;
     switch (archiveState) {
         case beginning:
             if (finished) {
@@ -288,9 +289,10 @@ void Core::Contact::flushMessagesToArchive(bool finished, const QString& firstId
             }
             break;
         case empty:
+            wasEmpty = true;
             archiveState = end;
         case end:
-            if (finished) {
+            if (finished && (added > 0 || !wasEmpty)) {
                 archiveState = complete;
                 archive->setFromTheBeginning(true);
             }
