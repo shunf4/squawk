@@ -5,7 +5,7 @@ A compact XMPP desktop messenger
 ### Prerequisites
 
 - QT 5.12 *(lower versions might work but it wasn't tested)*
-- uuid *(usually included in some other package, for example it's ***libutil-linux*** in archlinux)*
+- uuid _(usually included in some other package, for example it's ***libutil-linux*** in archlinux)_
 - lmdb
 - CMake 3.0 or higher
 
