@@ -202,7 +202,7 @@
             <x>0</x>
             <y>0</y>
             <width>572</width>
-            <height>128</height>
+            <height>116</height>
            </rect>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -339,8 +339,7 @@
              <string/>
             </property>
             <property name="icon">
-             <iconset theme="document-send-symbolic">
-              <normaloff>.</normaloff>.</iconset>
+             <iconset theme="mail-attachment-symbolic"/>
             </property>
             <property name="flat">
              <bool>true</bool>

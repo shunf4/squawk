@@ -1,5 +1,5 @@
 /*
- * <one line to give the program's name and a brief idea of what it does.>
+ * Squawk messenger. 
  * Copyright (C) 2019  Yury Gubich <blue@macaw.me>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -21,72 +21,28 @@
 
 #include <QObject>
 #include <QSet>
-#include <QString>
-#include "archive.h"
-#include "../global.h"
-#include <list>
+#include "rosteritem.h"
 
 namespace Core {
 
-class Contact : public QObject
+class Contact : public RosterItem
 {
     Q_OBJECT
 public:
-    enum ArchiveState {
-        empty,              //have no messages stored for this contact
-        chunk,              //have some chunk of history, don't have the beginning nor have the end
-        beginning,          //have the history from the very beginning, don't have the end
-        end,                //have the history to the end, but don't have the beginning
-        complete            //have full history locally stored
-    };
     Contact(const QString& pJid, const QString& account, QObject* parent = 0);
     ~Contact();
 
-    ArchiveState getArchiveState() const;
-    QString getName() const;
-    void setName(const QString& n);
     QSet<QString> getGroups() const;
     void setGroups(const QSet<QString>& set);
-    void setSubscriptionState(Shared::SubscriptionState state);
-    Shared::SubscriptionState getSubscriptionState() const;
     unsigned int groupsCount() const;
-    void addMessageToArchive(const Shared::Message& msg);
-    void appendMessageToArchive(const Shared::Message& msg);
-    void flushMessagesToArchive(bool finished, const QString& firstId, const QString& lastId);
-    void requestHistory(int count, const QString& before);
-    void requestFromEmpty(int count, const QString& before);
 
 signals:
     void groupAdded(const QString& name);
     void groupRemoved(const QString& name);
-    void nameChanged(const QString& name);
-    void subscriptionStateChanged(Shared::SubscriptionState state);
-    void historyResponse(const std::list<Shared::Message>& messages);
-    void needHistory(const QString& before, const QString& after, const QDateTime& afterTime = QDateTime());
-
-public:
-    const QString jid;
 
 private:
-    QString name;
     QSet<QString> groups;
-    ArchiveState archiveState;
-    Archive* archive;
-    Shared::SubscriptionState subscriptionState;
-
-    bool syncronizing;
-    int requestedCount;
-    QString requestedBefore;
-    std::list<Shared::Message> hisoryCache;
-    std::list<Shared::Message> appendCache;
-    std::list<Shared::Message> responseCache;
-    std::list<std::pair<int, QString>> requestCache;
-
-private:
-    void nextRequest();
-    void performRequest(int count, const QString& before);
 };
-
 }
 
 #endif // CORE_CONTACT_H

@@ -31,6 +31,7 @@
     <file>images/fallback/dark/big/view-refresh.svg</file>
     <file>images/fallback/dark/big/clean.svg</file>
     <file>images/fallback/dark/big/send.svg</file>
+    <file>images/fallback/dark/big/mail-attachment.svg</file>
     
     
     <file>images/fallback/dark/small/absent.svg</file>
@@ -62,6 +63,7 @@
     <file>images/fallback/dark/small/view-refresh.svg</file>
     <file>images/fallback/dark/small/clean.svg</file>
     <file>images/fallback/dark/small/send.svg</file>
+    <file>images/fallback/dark/small/mail-attachment.svg</file>
     
     
     <file>images/fallback/light/big/absent.svg</file>
@@ -93,6 +95,7 @@
     <file>images/fallback/light/big/view-refresh.svg</file>
     <file>images/fallback/light/big/clean.svg</file>
     <file>images/fallback/light/big/send.svg</file>
+    <file>images/fallback/light/big/mail-attachment.svg</file>
     
     
     <file>images/fallback/light/small/absent.svg</file>
@@ -124,5 +127,6 @@
     <file>images/fallback/light/small/view-refresh.svg</file>
     <file>images/fallback/light/small/clean.svg</file>
     <file>images/fallback/light/small/send.svg</file>
+    <file>images/fallback/light/small/mail-attachment.svg</file>
 </qresource>
 </RCC>

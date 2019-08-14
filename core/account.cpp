@@ -1,3 +1,21 @@
+/*
+ * Squawk messenger. 
+ * Copyright (C) 2019  Yury Gubich <blue@macaw.me>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 #include "account.h"
 #include <QXmppMessage.h>
 #include <QDateTime>
@@ -555,9 +573,9 @@ void Core::Account::requestArchive(const QString& jid, int count, const QString&
         qDebug() << "An attempt to request archive for" << jid << "in account" << name << ", but the contact with such id wasn't found, skipping";
         return;
     }
-    Contact* contact = itr->second;
+    RosterItem* contact = itr->second;
     
-    if (contact->getArchiveState() == Contact::empty && before.size() == 0) {
+    if (contact->getArchiveState() == RosterItem::empty && before.size() == 0) {
         QXmppMessage msg(getFullJid(), jid, "", "");
         QString last = Shared::generateUUID();
         msg.setId(last);
@@ -579,7 +597,7 @@ void Core::Account::requestArchive(const QString& jid, int count, const QString&
 
 void Core::Account::onContactNeedHistory(const QString& before, const QString& after, const QDateTime& at)
 {
-    Contact* contact = static_cast<Contact*>(sender());
+    RosterItem* contact = static_cast<RosterItem*>(sender());
     QXmppResultSetQuery query;
     query.setMax(100);
     if (before.size() > 0) {
@@ -708,7 +726,7 @@ Shared::SubscriptionState Core::Account::castSubscriptionState(QXmppRosterIq::It
 
 void Core::Account::onContactHistoryResponse(const std::list<Shared::Message>& list)
 {
-    Contact* contact = static_cast<Contact*>(sender());
+    RosterItem* contact = static_cast<RosterItem*>(sender());
     
     qDebug() << "Collected history for contact " << contact->jid << list.size() << "elements";
     emit responseArchive(contact->jid, list);

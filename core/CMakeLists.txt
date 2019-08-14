@@ -12,6 +12,7 @@ set(squawkCORE_SRC
     squawk.cpp
     account.cpp
     archive.cpp
+    rosteritem.cpp
     contact.cpp
 )
 
