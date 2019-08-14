@@ -14,9 +14,9 @@ A compact XMPP desktop messenger
 Squawk requires Qt with SSL enabled. It uses CMake as build system.
 
 Squawk uses upstream version of QXmpp library so first we need to pull it
- ```
- git submodule update --init --recursive
- ```
+```
+git submodule update --init --recursive
+```
 Then create a folder for the build, go there and build the project using CMake
  
 ```
