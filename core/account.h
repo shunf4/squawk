@@ -32,6 +32,7 @@
 #include <QXmppBookmarkSet.h>
 #include "../global.h"
 #include "contact.h"
+#include "conference.h"
 
 namespace Core
 {
@@ -39,7 +40,6 @@ namespace Core
 class Account : public QObject
 {
     Q_OBJECT
-    class MucInfo;
 public:
     Account(const QString& p_login, const QString& p_server, const QString& p_password, const QString& p_name, QObject* parent = 0);
     ~Account();
@@ -102,12 +102,12 @@ private:
     QXmppMucManager* mm;
     QXmppBookmarkManager* bm;
     std::map<QString, Contact*> contacts;
+    std::map<QString, Conference*> conferences;
     unsigned int maxReconnectTimes;
     unsigned int reconnectTimes;
     
     std::map<QString, QString> queuedContacts;
     std::set<QString> outOfRosterContacts;
-    std::map<QString, MucInfo> mucInfo;
     
 private slots:
     void onClientConnected();
@@ -130,12 +130,9 @@ private slots:
     void onMamResultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
     
     void onMucRoomAdded(QXmppMucRoom* room);
-    void onMucJoined();
-    void onMucLeft();
-    void onMucNameChanged(const QString& roomName);
+    void onMucJoinedChanged(bool joined);
+    void onMucAutoJoinChanged(bool autoJoin);
     void onMucNickNameChanged(const QString& nickName);
-    void onMucError(const QXmppStanza::Error& error);
-    void onMucMessage(const QXmppMessage& message);
     
     void bookmarksReceived(const QXmppBookmarkSet& bookmarks);
     
@@ -151,6 +148,8 @@ private slots:
 private:
     void addedAccount(const QString &bareJid);
     void handleNewContact(Contact* contact);
+    void handleNewRosterItem(RosterItem* contact);
+    void handleNewConference(Conference* contact);
     bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
     void addToGroup(const QString& jid, const QString& group);
     void removeFromGroup(const QString& jid, const QString& group);
@@ -158,24 +157,6 @@ private:
     Shared::SubscriptionState castSubscriptionState(QXmppRosterIq::Item::SubscriptionType qs) const;
     void logMessage(const QXmppMessage& msg, const QString& reason = "Message wasn't handled: ");
     
-    
-class MucInfo {
-public:
-    MucInfo(bool p_al, bool p_jo, const QString& p_jid, const QString& p_name, const QString& p_nick):
-        autoJoin(p_al),
-        joined(p_jo),
-        jid(p_jid),
-        name(p_name),
-        nick(p_nick),
-        removed(false) {}
-        
-    bool autoJoin;
-    bool joined;
-    QString jid;
-    QString name;
-    QString nick;
-    bool removed;
-};
 };
 
 }

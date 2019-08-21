@@ -26,7 +26,6 @@ Core::RosterItem::RosterItem(const QString& pJid, const QString& account, QObjec
     name(),
     archiveState(empty),
     archive(new Archive(jid)),
-    subscriptionState(Shared::unknown),
     syncronizing(false),
     requestedCount(0),
     requestedBefore(),
@@ -55,22 +54,9 @@ Core::RosterItem::ArchiveState Core::RosterItem::getArchiveState() const
     return archiveState;
 }
 
-Shared::SubscriptionState Core::RosterItem::getSubscriptionState() const
-{
-    return subscriptionState;
-}
-
 QString Core::RosterItem::getName() const
 {
     return name;
-}
-
-void Core::RosterItem::setSubscriptionState(Shared::SubscriptionState state)
-{
-    if (subscriptionState != state) {
-        subscriptionState = state;
-        emit subscriptionStateChanged(subscriptionState);
-    }
 }
 
 void Core::RosterItem::setName(const QString& n)

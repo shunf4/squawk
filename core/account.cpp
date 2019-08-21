@@ -1,6 +1,6 @@
 /*
  * Squawk messenger. 
- * Copyright (C) 2019  Yury Gubich <blue@macaw.me>
+ * Copyright (C) 2019 Yury Gubich <blue@macaw.me>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,11 +37,11 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     mm(new QXmppMucManager()),
     bm(new QXmppBookmarkManager()),
     contacts(),
+    conferences(),
     maxReconnectTimes(0),
     reconnectTimes(0),
     queuedContacts(),
-    outOfRosterContacts(),
-    mucInfo()
+    outOfRosterContacts()
 {
     config.setUser(p_login);
     config.setDomain(p_server);
@@ -84,6 +84,10 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
 Account::~Account()
 {
     for (std::map<QString, Contact*>::const_iterator itr = contacts.begin(), end = contacts.end(); itr != end; ++itr) {
+        delete itr->second;
+    }
+    
+    for (std::map<QString, Conference*>::const_iterator itr = conferences.begin(), end = conferences.end(); itr != end; ++itr) {
         delete itr->second;
     }
     
@@ -288,15 +292,29 @@ void Core::Account::addedAccount(const QString& jid)
     }
 }
 
-void Core::Account::handleNewContact(Core::Contact* contact)
+void Core::Account::handleNewRosterItem(Core::RosterItem* contact)
 {
-    QObject::connect(contact, SIGNAL(groupAdded(const QString&)), this, SLOT(onContactGroupAdded(const QString&)));
-    QObject::connect(contact, SIGNAL(groupRemoved(const QString&)), this, SLOT(onContactGroupRemoved(const QString&)));
-    QObject::connect(contact, SIGNAL(nameChanged(const QString&)), this, SLOT(onContactNameChanged(const QString&)));
-    QObject::connect(contact, SIGNAL(subscriptionStateChanged(Shared::SubscriptionState)), 
-                     this, SLOT(onContactSubscriptionStateChanged(Shared::SubscriptionState)));
+    
     QObject::connect(contact, SIGNAL(needHistory(const QString&, const QString&, const QDateTime&)), this, SLOT(onContactNeedHistory(const QString&, const QString&, const QDateTime&)));
     QObject::connect(contact, SIGNAL(historyResponse(const std::list<Shared::Message>&)), this, SLOT(onContactHistoryResponse(const std::list<Shared::Message>&)));
+    QObject::connect(contact, SIGNAL(nameChanged(const QString&)), this, SLOT(onContactNameChanged(const QString&)));
+}
+
+void Core::Account::handleNewContact(Core::Contact* contact)
+{
+    handleNewRosterItem(contact);
+    QObject::connect(contact, SIGNAL(groupAdded(const QString&)), this, SLOT(onContactGroupAdded(const QString&)));
+    QObject::connect(contact, SIGNAL(groupRemoved(const QString&)), this, SLOT(onContactGroupRemoved(const QString&)));
+    QObject::connect(contact, SIGNAL(subscriptionStateChanged(Shared::SubscriptionState)), 
+                     this, SLOT(onContactSubscriptionStateChanged(Shared::SubscriptionState)));
+}
+
+void Core::Account::handleNewConference(Core::Conference* contact)
+{
+    handleNewRosterItem(contact);
+    QObject::connect(contact, SIGNAL(nickChanged(const QString&)), this, SLOT(onMucNickNameChanged(const QString&)));
+    QObject::connect(contact, SIGNAL(joinedChanged(bool)), this, SLOT(onMucJoinedChanged(bool)));
+    QObject::connect(contact, SIGNAL(autoJoinChanged(bool)), this, SLOT(onMucAutoJoinChanged(bool)));
 }
 
 
@@ -548,32 +566,48 @@ void Core::Account::initializeMessage(Shared::Message& target, const QXmppMessag
 
 void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMessage& msg)
 {
-    std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
-    QString jid = itr->second;
-    std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
-    
-    if (citr != contacts.end()) {
-        Contact* cnt = citr->second;
-        if (msg.id().size() > 0 && msg.body().size() > 0) {
-            Shared::Message sMsg(Shared::Message::chat);
-            initializeMessage(sMsg, msg, false, true, true);
-            
-            cnt->addMessageToArchive(sMsg);
+    if (msg.id().size() > 0 && msg.body().size() > 0) {
+        std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
+        QString jid = itr->second;
+        RosterItem* item = 0;
+        std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
+
+        if (citr != contacts.end()) {
+            item = citr->second;
+        } else {
+            std::map<QString, Conference*>::const_iterator coitr = conferences.find(jid);
+            if (coitr != conferences.end()) {
+                item = coitr->second;
+            }
         }
         
-    }
+        Shared::Message sMsg(Shared::Message::chat);
+        initializeMessage(sMsg, msg, false, true, true);
+        
+        item->addMessageToArchive(sMsg);
+    } 
+    
     //handleChatMessage(msg, false, true, true);
 }
 
 void Core::Account::requestArchive(const QString& jid, int count, const QString& before)
 {
     qDebug() << "An archive request for " << jid << ", before " << before;
+    RosterItem* contact = 0;
     std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
-    if (itr == contacts.end()) {
+    if (itr != contacts.end()) {
+        contact = itr->second;
+    } else {
+        std::map<QString, Conference*>::const_iterator citr = conferences.find(jid);
+        if (citr != conferences.end()) {
+            contact = citr->second;
+        }
+    }
+    
+    if (contact == 0) {
         qDebug() << "An attempt to request archive for" << jid << "in account" << name << ", but the contact with such id wasn't found, skipping";
         return;
     }
-    RosterItem* contact = itr->second;
     
     if (contact->getArchiveState() == RosterItem::empty && before.size() == 0) {
         QXmppMessage msg(getFullJid(), jid, "", "");
@@ -623,14 +657,22 @@ void Core::Account::onMamResultsReceived(const QString& queryId, const QXmppResu
 {
     std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
     QString jid = itr->second;
+    RosterItem* ri = 0;
     
     achiveQueries.erase(itr);
     std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
     if (citr != contacts.end()) {
-        Contact* cnt = citr->second;
-        
+        ri = citr->second;
+    } else {
+        std::map<QString, Conference*>::const_iterator coitr = conferences.find(jid);
+        if (coitr != conferences.end()) {
+            ri = coitr->second;
+        }
+    }
+    
+    if (ri != 0) {
         qDebug() << "Flushing messages for" << jid;
-        cnt->flushMessagesToArchive(complete, resultSetReply.first(), resultSetReply.last());
+        ri->flushMessagesToArchive(complete, resultSetReply.first(), resultSetReply.last());
     }
 }
 
@@ -887,106 +929,51 @@ void Core::Account::onMucRoomAdded(QXmppMucRoom* room)
 
 void Core::Account::bookmarksReceived(const QXmppBookmarkSet& bookmarks)
 {
-    QList<QXmppBookmarkConference> conferences = bookmarks.conferences();
-    for (QList<QXmppBookmarkConference>::const_iterator itr = conferences.begin(), end = conferences.end(); itr != end; ++itr) {
+    QList<QXmppBookmarkConference> confs = bookmarks.conferences();
+    for (QList<QXmppBookmarkConference>::const_iterator itr = confs.begin(), end = confs.end(); itr != end; ++itr) {
         const QXmppBookmarkConference& c = *itr;
         
         QString jid = c.jid();
-        std::pair<std::map<QString, MucInfo>::iterator, bool> mi = mucInfo.insert(std::make_pair(jid, MucInfo(c.autoJoin(), false, jid, c.name(), c.nickName())));
-        if (mi.second) {
-            const MucInfo& info = mi.first->second; 
+        std::map<QString, Conference*>::const_iterator cItr = conferences.find(jid);
+        if (cItr == conferences.end()) {
             QXmppMucRoom* room = mm->addRoom(jid);
+            QString nick = c.nickName();
+            Conference* conf = new Conference(jid, getName(), c.autoJoin(), c.name(), nick == "" ? getName() : nick, room);
             
-            QObject::connect(room, SIGNAL(joined()), this, SLOT(onMucJoined()));
-            QObject::connect(room, SIGNAL(left()), this, SLOT(onMucLeft()));
-            QObject::connect(room, SIGNAL(nameChanged(const QString&)), this, SLOT(onMucNameChanged(const QString&)));
-            QObject::connect(room, SIGNAL(nickNameChanged(const QString&)), this, SLOT(onMucNickNameChanged(const QString&)));
-            QObject::connect(room, SIGNAL(error(const QXmppStanza::Error&)), this, SLOT(onMucError(const QXmppStanza::Error&)));
-            QObject::connect(room, SIGNAL(messageReceived(const QXmppMessage&)), this, SLOT(onMucMessage(const QXmppMessage&)));
+            handleNewConference(conf);
             
             emit addRoom(jid, {
-                {"autoJoin", info.autoJoin},
-                {"joined", false},
-                {"nick", info.nick},
-                {"name", info.name}
+                {"autoJoin", conf->getAutoJoin()},
+                {"joined", conf->getJoined()},
+                {"nick", conf->getNick()},
+                {"name", conf->getName()}
             });
-            
-            room->setNickName(info.nick == "" ? getName() : info.nick);
-            if (info.autoJoin) {
-                room->join();
-            }
         } else {
             qDebug() << "Received a bookmark to a MUC " << jid << " which is already booked by another bookmark, skipping";
         }
     }
 }
 
-void Core::Account::onMucJoined()
+void Core::Account::onMucJoinedChanged(bool joined)
 {
-    QXmppMucRoom* room = static_cast<QXmppMucRoom*>(sender());
-    QString jid = room->jid();
-    std::map<QString, MucInfo>::iterator itr = mucInfo.find(jid);
-    if (itr != mucInfo.end()) {
-        itr->second.joined = true;
-        emit changeRoom(jid, {
-            {"joined", true}
+    Conference* room = static_cast<Conference*>(sender());
+    emit changeRoom(room->jid, {
+            {"joined", joined}
         });
-    } else {
-        qDebug() << "Seems like account" << getName() << "joined room" << jid << ", but the info about that room wasn't found, skipping";
-    }
 }
 
-void Core::Account::onMucLeft()
+void Core::Account::onMucAutoJoinChanged(bool autoJoin)
 {
-    QXmppMucRoom* room = static_cast<QXmppMucRoom*>(sender());
-    QString jid = room->jid();
-    std::map<QString, MucInfo>::iterator itr = mucInfo.find(jid);
-    if (itr != mucInfo.end()) {
-        itr->second.joined = false;
-        emit changeRoom(jid, {
-            {"joined", false}
+    Conference* room = static_cast<Conference*>(sender());
+    emit changeRoom(room->jid, {
+            {"autoJoin", autoJoin}
         });
-    } else {
-        qDebug() << "Seems like account" << getName() << "left room" << jid << ", but the info about that room wasn't found, skipping";
-    }
-}
-
-void Core::Account::onMucNameChanged(const QString& roomName)
-{
-    QXmppMucRoom* room = static_cast<QXmppMucRoom*>(sender());
-    QString jid = room->jid();
-    std::map<QString, MucInfo>::iterator itr = mucInfo.find(jid);
-    if (itr != mucInfo.end()) {
-        itr->second.name = roomName;
-        emit changeRoom(jid, {
-            {"name", roomName}
-        });
-    } else {
-        qDebug() << "Account" << getName() << "received an event about room" << jid << "name change, but the info about that room wasn't found, skipping";
-    }
 }
 
 void Core::Account::onMucNickNameChanged(const QString& nickName)
 {
-    QXmppMucRoom* room = static_cast<QXmppMucRoom*>(sender());
-    QString jid = room->jid();
-    std::map<QString, MucInfo>::iterator itr = mucInfo.find(jid);
-    if (itr != mucInfo.end()) {
-        itr->second.nick = nickName;
-        emit changeRoom(jid, {
+    Conference* room = static_cast<Conference*>(sender());
+    emit changeRoom(room->jid, {
             {"nick", nickName}
         });
-    } else {
-        qDebug() << "Account" << getName() << "received an event about his nick name change in room" << jid << ", but the info about that room wasn't found, skipping";
-    }
-}
-
-void Core::Account::onMucError(const QXmppStanza::Error& error)
-{
-    qDebug() << "MUC error";
-}
-
-void Core::Account::onMucMessage(const QXmppMessage& message)
-{
-    qDebug() << "Muc message";
 }

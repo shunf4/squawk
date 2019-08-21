@@ -21,7 +21,8 @@
 
 Core::Contact::Contact(const QString& pJid, const QString& account, QObject* parent):
     RosterItem(pJid, account, parent),
-    groups()
+    groups(),
+    subscriptionState(Shared::unknown)
 {
 }
 
@@ -52,5 +53,18 @@ void Core::Contact::setGroups(const QSet<QString>& set)
     
     for (QSet<QString>::iterator itr = toAdd.begin(), end = toAdd.end(); itr != end; ++itr) {
         emit groupAdded(*itr);
+    }
+}
+
+Shared::SubscriptionState Core::Contact::getSubscriptionState() const
+{
+    return subscriptionState;
+}
+
+void Core::Contact::setSubscriptionState(Shared::SubscriptionState state)
+{
+    if (subscriptionState != state) {
+        subscriptionState = state;
+        emit subscriptionStateChanged(subscriptionState);
     }
 }

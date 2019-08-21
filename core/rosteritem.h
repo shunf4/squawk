@@ -50,8 +50,6 @@ public:
     ArchiveState getArchiveState() const;
     QString getName() const;
     void setName(const QString& n);
-    void setSubscriptionState(Shared::SubscriptionState state);
-    Shared::SubscriptionState getSubscriptionState() const;
     
     void addMessageToArchive(const Shared::Message& msg);
     void appendMessageToArchive(const Shared::Message& msg);
@@ -72,7 +70,6 @@ protected:
     QString name;
     ArchiveState archiveState;
     Archive* archive;
-    Shared::SubscriptionState subscriptionState;
 
     bool syncronizing;
     int requestedCount;

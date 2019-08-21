@@ -35,13 +35,18 @@ public:
     QSet<QString> getGroups() const;
     void setGroups(const QSet<QString>& set);
     unsigned int groupsCount() const;
+    
+    void setSubscriptionState(Shared::SubscriptionState state);
+    Shared::SubscriptionState getSubscriptionState() const;
 
 signals:
     void groupAdded(const QString& name);
     void groupRemoved(const QString& name);
+    void subscriptionStateChanged(Shared::SubscriptionState state);
 
 private:
     QSet<QString> groups;
+    Shared::SubscriptionState subscriptionState;
 };
 }
 

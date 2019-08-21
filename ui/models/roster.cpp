@@ -461,6 +461,13 @@ void Models::Roster::changeContact(const QString& account, const QString& jid, c
             cBeg->second->update(itr.key(), itr.value());;
         }
     }
+    
+    std::map<ElId, Room*>::iterator rItr = rooms.find(id);
+    if (rItr != rooms.end()) {
+        for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
+            rItr->second->update(itr.key(), itr.value());;
+        }
+    }
 }
 
 void Models::Roster::removeContact(const QString& account, const QString& jid)
