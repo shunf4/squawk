@@ -21,8 +21,7 @@
 
 #include <QWidget>
 #include <QScopedPointer>
-#include "../global.h"
-#include "models/contact.h"
+#include "../../global.h"
 #include "messageline.h"
 
 namespace Ui
@@ -47,7 +46,7 @@ class Conversation : public QWidget
 {
     Q_OBJECT
 public:
-    Conversation(Models::Contact* p_contact, QWidget* parent = 0);
+    Conversation(const QString& mJid, const QString mRes, const QString pJid, const QString pRes, const QString& acc, QWidget* parent = 0);
     ~Conversation();
     
     QString getJid() const;
@@ -65,31 +64,33 @@ signals:
     void shown();
     
 protected:
-    void updateState();
-    void setStatus(const QString& status);
     void setName(const QString& name);
     void applyVisualEffects();
     
 protected slots:
-    void onContactChanged(Models::Item* item, int row, int col);
     void onEnterPressed();
     void onMessagesResize(int amount);
     void onSliderValueChanged(int value);
     void onAttach();
     void onFileSelected();
     
-private:
+protected:
     enum Scroll {
         nothing,
         keep,
         down
     };
-    Models::Contact* contact;
+    QString myJid;
+    QString myResource;
+    QString palJid;
+    QString activePalResource;
+    QString account;
     MessageLine* line;
     QScopedPointer<Ui::Conversation> m_ui;
     KeyEnterReceiver ker;
-    QString activePalResource;
     QString thread;
+    QLabel* statusIcon;
+    QLabel* statusLabel;
     Scroll scroll;
     bool manualSliderChange;
     bool requestingHistory;

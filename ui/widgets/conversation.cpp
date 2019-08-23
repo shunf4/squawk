@@ -24,14 +24,19 @@
 #include <QGraphicsDropShadowEffect>
 #include <QFileDialog>
 
-Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
+Conversation::Conversation(const QString& mJid, const QString mRes, const QString pJid, const QString pRes, const QString& acc, QWidget* parent):
     QWidget(parent),
-    contact(p_contact),
+    myJid(mJid),
+    myResource(mRes),
+    palJid(pJid),
+    activePalResource(pRes),
+    account(acc),
     line(new MessageLine()),
     m_ui(new Ui::Conversation()),
     ker(),
-    activePalResource(),
     thread(),
+    statusIcon(0),
+    statusLabel(0),
     scroll(down),
     manualSliderChange(false),
     requestingHistory(false),
@@ -41,26 +46,15 @@ Conversation::Conversation(Models::Contact* p_contact, QWidget* parent):
     m_ui->splitter->setSizes({300, 0});
     m_ui->splitter->setStretchFactor(1, 0);
     
-    setName(p_contact->getContactName());
-    updateState();
-    setStatus(p_contact->getStatus());
+    statusIcon = m_ui->statusIcon;
+    statusLabel = m_ui->statusLabel;
     
-    connect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
     connect(&ker, SIGNAL(enterPressed()), this, SLOT(onEnterPressed()));
     connect(m_ui->sendButton, SIGNAL(clicked(bool)), this, SLOT(onEnterPressed()));
+    connect(line, SIGNAL(resize(int)), this, SLOT(onMessagesResize(int)));
     //connect(m_ui->attachButton, SIGNAL(clicked(bool)), this, SLOT(onAttach()));
     
     m_ui->messageEditor->installEventFilter(&ker);
-    line->setMyName(p_contact->getAccountName());
-    
-    Models::Contact::Messages deque;
-    contact->getMessages(deque);
-    
-    for (Models::Contact::Messages::const_iterator itr = deque.begin(), end = deque.end(); itr != end; ++itr) {
-        addMessage(*itr);
-    }
-    
-    connect(line, SIGNAL(resize(int)), this, SLOT(onMessagesResize(int)));
     
     QScrollBar* vs = m_ui->scrollArea->verticalScrollBar();
     m_ui->scrollArea->setWidget(line);
@@ -106,43 +100,14 @@ void Conversation::setName(const QString& name)
     line->setPalName(getJid(), name);
 }
 
-void Conversation::updateState()
-{
-    Shared::Availability av = contact->getAvailability();
-    m_ui->statusIcon->setPixmap(Shared::availabilityIcon(av, true).pixmap(40));
-    m_ui->statusIcon->setToolTip(Shared::availabilityNames[av]);
-}
-
-void Conversation::setStatus(const QString& status)
-{
-    m_ui->statusLabel->setText(status);
-}
-
 QString Conversation::getAccount() const
 {
-    return contact->getAccountName();
+    return account;
 }
 
 QString Conversation::getJid() const
 {
-    return contact->getJid();
-}
-
-void Conversation::onContactChanged(Models::Item* item, int row, int col)
-{
-    if (item == contact) {
-        switch (col) {
-            case 0:
-                setName(contact->getContactName());
-                break;
-            case 3:
-                updateState();
-                break;
-            case 5:
-                setStatus(contact->getStatus());
-                break;
-        }
-    }
+    return palJid;
 }
 
 void Conversation::addMessage(const Shared::Message& data)
@@ -207,12 +172,11 @@ void Conversation::onEnterPressed()
     QString body(m_ui->messageEditor->toPlainText());
     
     if (body.size() > 0) {
-        const QString& aJid = contact->getAccountJid();
         m_ui->messageEditor->clear();
         Shared::Message msg(Shared::Message::chat);
-        msg.setFromJid(aJid);
-        msg.setFromResource(contact->getAccountResource());
-        msg.setToJid(contact->getJid());
+        msg.setFromJid(myJid);
+        msg.setFromResource(myResource);
+        msg.setToJid(palJid);
         msg.setToResource(activePalResource);
         msg.setBody(body);
         msg.setOutgoing(true);

@@ -241,7 +241,7 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                     itr->second->setPalResource(res);
                 }
             } else {
-                Conversation* conv = new Conversation(contact);
+                Chat* conv = new Chat(contact);
                 
                 conv->setAttribute(Qt::WA_DeleteOnClose);
                 connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));

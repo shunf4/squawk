@@ -28,7 +28,7 @@
 #include <list>
 
 #include "accounts.h"
-#include "conversation.h"
+#include "widgets/chat.h"
 #include "models/roster.h"
 #include "newcontact.h"
 

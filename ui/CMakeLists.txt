@@ -22,8 +22,9 @@ set(squawkUI_SRC
   models/presence.cpp
   models/group.cpp
   models/room.cpp
-  conversation.cpp
-  messageline.cpp
+  widgets/conversation.cpp
+  widgets/chat.cpp
+  widgets/messageline.cpp
   newcontact.cpp
 )
 
