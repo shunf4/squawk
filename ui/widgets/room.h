@@ -16,38 +16,28 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CHAT_H
-#define CHAT_H
+#ifndef ROOM_H
+#define ROOM_H
 
 #include "conversation.h"
-#include "../models/contact.h"
+#include "../models/room.h"
 
-namespace Ui
-{
-class Chat;
-}
-class Chat : public Conversation
+/**
+ * @todo write docs
+ */
+class Room : public Conversation
 {
     Q_OBJECT
 public:
-    Chat(Models::Contact* p_contact, QWidget* parent = 0);
-    ~Chat();
-    
-    void addMessage(const Shared::Message & data) override;
-
-protected slots:
-    void onContactChanged(Models::Item* item, int row, int col);
-    void handleSendMessage(const QString & text) override;
+    Room(Models::Room* p_room, QWidget* parent = 0);
+    ~Room();
     
 protected:
-    void setName(const QString & name) override;
+    void handleSendMessage(const QString & text) override;
     
 private:
-    void updateState();
-    void setStatus(const QString& status);
+    Models::Room* room;
     
-private:
-    Models::Contact* contact;
 };
 
-#endif // CHAT_H
+#endif // ROOM_H

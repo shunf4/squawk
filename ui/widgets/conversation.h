@@ -52,7 +52,7 @@ public:
     QString getJid() const;
     QString getAccount() const;
     QString getPalResource() const;
-    void addMessage(const Shared::Message& data);
+    virtual void addMessage(const Shared::Message& data);
     
     void setPalResource(const QString& res);
     void responseArchive(const std::list<Shared::Message> list);
@@ -64,8 +64,9 @@ signals:
     void shown();
     
 protected:
-    void setName(const QString& name);
+    virtual void setName(const QString& name);
     void applyVisualEffects();
+    virtual void handleSendMessage(const QString& text) = 0;
     
 protected slots:
     void onEnterPressed();

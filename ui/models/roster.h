@@ -72,7 +72,7 @@ private slots:
 public:
     class ElId {
     public:
-        ElId (const QString& p_account, const QString& p_name);
+        ElId (const QString& p_account = "", const QString& p_name = "");
         
         const QString account;
         const QString name;

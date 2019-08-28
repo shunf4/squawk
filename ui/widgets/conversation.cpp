@@ -97,7 +97,6 @@ void Conversation::setName(const QString& name)
 {
     m_ui->nameLabel->setText(name);
     setWindowTitle(name);
-    line->setPalName(getJid(), name);
 }
 
 QString Conversation::getAccount() const
@@ -118,13 +117,6 @@ void Conversation::addMessage(const Shared::Message& data)
     MessageLine::Position place = line->message(data);
     if (place == MessageLine::invalid) {
         return;
-    }
-    
-    if (!data.getOutgoing()) {
-        const QString& res = data.getPenPalResource();
-        if (res.size() > 0) {
-            setPalResource(res);
-        }
     }
 }
 
@@ -173,17 +165,7 @@ void Conversation::onEnterPressed()
     
     if (body.size() > 0) {
         m_ui->messageEditor->clear();
-        Shared::Message msg(Shared::Message::chat);
-        msg.setFromJid(myJid);
-        msg.setFromResource(myResource);
-        msg.setToJid(palJid);
-        msg.setToResource(activePalResource);
-        msg.setBody(body);
-        msg.setOutgoing(true);
-        msg.generateRandomId();
-        msg.setCurrentTime();
-        addMessage(msg);
-        emit sendMessage(msg);
+        handleSendMessage(body);
     }
 }
 

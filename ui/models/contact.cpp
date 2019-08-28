@@ -1,6 +1,6 @@
 #include "contact.h"
+
 #include <QDebug>
-#include "account.h"
 
 Models::Contact::Contact(const QString& p_jid ,const QMap<QString, QVariant> &data, Item *parentItem):
     Item(Item::contact, data, parentItem),
@@ -227,16 +227,6 @@ QIcon Models::Contact::getStatusIcon(bool big) const
     }
 }
 
-QString Models::Contact::getAccountName() const
-{
-    const Account* acc = getParentAccount();
-    if (acc == 0) {
-        qDebug() << "An attempt to request account name of the contact " << jid << " but the parent account wasn't found, returning empty string";
-        return "";
-    }
-    return acc->getName();
-}
-
 void Models::Contact::addMessage(const Shared::Message& data)
 {
     const QString& res = data.getPenPalResource();
@@ -289,36 +279,6 @@ void Models::Contact::getMessages(Models::Contact::Messages& container) const
     for (QMap<QString, Presence*>::const_iterator itr = presences.begin(), end = presences.end(); itr != end; ++itr) {
         itr.value()->getMessages(container);
     }
-}
-
-QString Models::Contact::getAccountJid() const
-{
-    const Account* acc = getParentAccount();
-    if (acc == 0) {
-        qDebug() << "An attempt to request account jid of the contact " << jid << " but the parent account wasn't found, returning empty string";
-        return "";
-    }
-    return acc->getLogin() + "@" + acc->getServer();
-}
-
-QString Models::Contact::getAccountResource() const
-{
-    const Account* acc = getParentAccount();
-    if (acc == 0) {
-        qDebug() << "An attempt to request account resource of the contact " << jid << " but the parent account wasn't found, returning empty string";
-        return "";
-    }
-    return acc->getResource();
-}
-
-const Models::Account * Models::Contact::getParentAccount() const
-{
-    const Item* p = this;
-    do {
-        p = p->parentItemConst();
-    } while (p != 0 && p->type != Item::account);
-    
-    return static_cast<const Account*>(p);
 }
 
 void Models::Contact::toOfflineState()

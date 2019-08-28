@@ -27,6 +27,7 @@ Core::Conference::Conference(const QString& p_jid, const QString& p_account, boo
     joined(false),
     autoJoin(p_autoJoin)
 {
+    muc = true;
     name = p_name;
     
     connect(room, SIGNAL(joined()), this, SLOT(onRoomJoined()));

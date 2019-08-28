@@ -29,6 +29,7 @@
 
 #include "accounts.h"
 #include "widgets/chat.h"
+#include "widgets/room.h"
 #include "models/roster.h"
 #include "newcontact.h"
 

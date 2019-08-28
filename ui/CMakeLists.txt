@@ -24,6 +24,7 @@ set(squawkUI_SRC
   models/room.cpp
   widgets/conversation.cpp
   widgets/chat.cpp
+  widgets/room.cpp
   widgets/messageline.cpp
   newcontact.cpp
 )

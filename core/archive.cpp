@@ -270,6 +270,7 @@ unsigned int Core::Archive::addElements(const std::list<Shared::Message>& messag
             if (rc) {
                 qDebug() << "An element couldn't be inserted into the index, aborting the transaction" << mdb_strerror(rc);
             } else {
+                //qDebug() << "element added with id" << message.getId() << "stamp" << message.getTime();
                 success++;
             }
         } else {
@@ -321,9 +322,10 @@ std::list<Shared::Message> Core::Archive::getBefore(int count, const QString& id
         rc = mdb_cursor_open(txn, order, &cursor);
         rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_LAST);
         if (rc) {
-            qDebug() << "Error getting before " << mdb_strerror(rc) << ", id:" << id;
+            qDebug() << "Error getting before" << mdb_strerror(rc) << ", id:" << id;
             mdb_cursor_close(cursor);
             mdb_txn_abort(txn);
+            
             throw Empty(jid.toStdString());
         }
     } else {
@@ -334,7 +336,6 @@ std::list<Shared::Message> Core::Archive::getBefore(int count, const QString& id
         if (rc) {
             qDebug() <<"Error getting before: no reference message" << mdb_strerror(rc) << ", id:" << id;
             mdb_txn_abort(txn);
-            printKeys();
             throw NotFound(stdId, jid.toStdString());
         } else {
             QByteArray ba((char*)lmdbData.mv_data, lmdbData.mv_size);

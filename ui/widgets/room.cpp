@@ -16,38 +16,31 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef CHAT_H
-#define CHAT_H
+#include "room.h"
 
-#include "conversation.h"
-#include "../models/contact.h"
-
-namespace Ui
+Room::Room(Models::Room* p_room, QWidget* parent):
+    Conversation(p_room->getAccountJid(), p_room->getAccountResource(), p_room->getJid(), "", p_room->getAccountName(), parent),
+    room(p_room)
 {
-class Chat;
+    setName(p_room->getName());
+    line->setMyName(room->getNick());
+    line->setRoom(true);
 }
-class Chat : public Conversation
+
+Room::~Room()
 {
-    Q_OBJECT
-public:
-    Chat(Models::Contact* p_contact, QWidget* parent = 0);
-    ~Chat();
-    
-    void addMessage(const Shared::Message & data) override;
+}
 
-protected slots:
-    void onContactChanged(Models::Item* item, int row, int col);
-    void handleSendMessage(const QString & text) override;
-    
-protected:
-    void setName(const QString & name) override;
-    
-private:
-    void updateState();
-    void setStatus(const QString& status);
-    
-private:
-    Models::Contact* contact;
-};
-
-#endif // CHAT_H
+void Room::handleSendMessage(const QString& text)
+{
+    Shared::Message msg(Shared::Message::groupChat);
+    msg.setFromJid(myJid);
+    msg.setFromResource(myResource);
+    msg.setToJid(palJid);
+    //msg.setToResource(activePalResource);
+    msg.setBody(text);
+    msg.setOutgoing(true);
+    msg.generateRandomId();
+    msg.setCurrentTime();
+    emit sendMessage(msg);
+}

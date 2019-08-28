@@ -45,6 +45,7 @@ public:
     QString firstMessageId() const;
     void showBusyIndicator();
     void hideBusyIndicator();
+    void setRoom(bool p_room);
     
 signals:
     void resize(int amount);
@@ -70,6 +71,7 @@ private:
     QString myName;
     std::map<QString, QString> palNames;
     std::deque<QHBoxLayout*> views;
+    bool room;
 };
 
 #endif // MESSAGELINE_H

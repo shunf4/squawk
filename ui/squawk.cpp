@@ -213,50 +213,63 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
     if (item.isValid()) {
         Models::Item* node = static_cast<Models::Item*>(item.internalPointer());
         Models::Contact* contact = 0;
+        Models::Room* room = 0;
         QString res;
+        Models::Roster::ElId* id = 0;
         switch (node->type) {
             case Models::Item::contact:
                 contact = static_cast<Models::Contact*>(node);
+                id = new Models::Roster::ElId(contact->getAccountName(), contact->getJid());
                 break;
             case Models::Item::presence:
                 contact = static_cast<Models::Contact*>(node->parentItem());
+                id = new Models::Roster::ElId(contact->getAccountName(), contact->getJid());
                 res = node->getName();
+                break;
+            case Models::Item::room:
+                room = static_cast<Models::Room*>(node);
+                id = new Models::Roster::ElId(room->getAccountName(), room->getJid());
                 break;
             default:
                 m_ui->roster->expand(item);
                 break;
         }
         
-        if (contact != 0) {
-            QString jid = contact->getJid();
-            QString account = contact->getAccountName();
-            Models::Roster::ElId id(account, jid);
-            Conversations::const_iterator itr = conversations.find(id);
+        if (id != 0) {
+            Conversations::const_iterator itr = conversations.find(*id);
+            Conversation* conv = 0;
+            bool created = false;
             if (itr != conversations.end()) {
-                itr->second->show();
-                itr->second->raise();
-                itr->second->activateWindow();
+                conv = itr->second;
+            } else if (contact != 0) {
+                created = true;
+                conv = new Chat(contact);
+            } else if (room != 0) {
+                created = true;
+                conv = new Room(room);
+            }
             
-                if (res.size() > 0) {
-                    itr->second->setPalResource(res);
+            if (conv != 0) {
+                if (created) {
+                    conv->setAttribute(Qt::WA_DeleteOnClose);
+                    
+                    connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
+                    connect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
+                    connect(conv, SIGNAL(requestArchive(const QString&)), this, SLOT(onConversationRequestArchive(const QString&)));
+                    connect(conv, SIGNAL(shown()), this, SLOT(onConversationShown()));
+                    
+                    conversations.insert(std::make_pair(*id, conv));
                 }
-            } else {
-                Chat* conv = new Chat(contact);
-                
-                conv->setAttribute(Qt::WA_DeleteOnClose);
-                connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
-                connect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
-                connect(conv, SIGNAL(requestArchive(const QString&)), this, SLOT(onConversationRequestArchive(const QString&)));
-                connect(conv, SIGNAL(shown()), this, SLOT(onConversationShown()));
-                
-                conversations.insert(std::make_pair(id, conv));
                 
                 conv->show();
+                conv->raise();
+                conv->activateWindow();
                 
                 if (res.size() > 0) {
                     conv->setPalResource(res);
                 }
             }
+            
         }
     }
 }

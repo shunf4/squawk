@@ -47,11 +47,17 @@ class Item : public QObject{
         Item *parentItem();
         const Item *parentItemConst() const;
         
+        
+        QString getAccountName() const;
+        QString getAccountJid() const;
+        QString getAccountResource() const;
+        
         const Type type;
         
     protected:
         virtual void changed(int col);
         virtual void _removeChild(int index);
+        const Item* getParentAccount() const;
         
     protected:
         QString name;

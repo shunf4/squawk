@@ -10,7 +10,6 @@
 
 namespace Models {
     
-class Account;
 class Contact : public Item
 {
     Q_OBJECT
@@ -33,9 +32,6 @@ public:
     void removePresence(const QString& name);
     
     void appendChild(Models::Item * child) override;
-    QString getAccountName() const;
-    QString getAccountJid() const;
-    QString getAccountResource() const;
     QString getContactName() const;
     QString getStatus() const;
     
@@ -46,7 +42,6 @@ public:
     
 protected:
     void _removeChild(int index) override;
-    const Account* getParentAccount() const;
     
 protected slots:
     void refresh();

@@ -1,4 +1,7 @@
 #include "item.h"
+#include "account.h"
+
+#include <QDebug>
 
 Models::Item::Item(Type p_type, const QMap<QString, QVariant> &p_data, Item *p_parent):
     QObject(),
@@ -152,4 +155,42 @@ void Models::Item::toOfflineState()
         Item* it = *itr;
         it->toOfflineState();
     }
+}
+
+const Models::Item * Models::Item::getParentAccount() const
+{
+    const Item* p = this;
+    
+    while (p != 0 && p->type != Item::account) {
+        p = p->parentItemConst();
+    }
+    
+    return p;
+}
+
+QString Models::Item::getAccountJid() const
+{
+    const Account* acc = static_cast<const Account*>(getParentAccount());
+    if (acc == 0) {
+        return "";
+    }
+    return acc->getLogin() + "@" + acc->getServer();
+}
+
+QString Models::Item::getAccountResource() const
+{
+    const Account* acc = static_cast<const Account*>(getParentAccount());
+    if (acc == 0) {
+        return "";
+    }
+    return acc->getResource();
+}
+
+QString Models::Item::getAccountName() const
+{
+    const Account* acc = static_cast<const Account*>(getParentAccount());
+    if (acc == 0) {
+        return "";
+    }
+    return acc->getName();
 }

@@ -436,7 +436,7 @@ void Core::Account::onMessageReceived(const QXmppMessage& msg)
             handled = handleChatMessage(msg);
             break;
         case QXmppMessage::GroupChat:
-            qDebug() << "received a message with type \"GroupChat\", not sure what to do with it now, skipping";
+            handled = handleGroupMessage(msg);
             break;
         case QXmppMessage::Error:
             qDebug() << "received a message with type \"Error\", not sure what to do with it now, skipping";
@@ -482,11 +482,25 @@ void Core::Account::sendMessage(const Shared::Message& data)
         msg.setId(data.getId());
         msg.setType(static_cast<QXmppMessage::Type>(data.getType()));       //it is safe here, my type is compatible
         
+        RosterItem* ri = 0;
         std::map<QString, Contact*>::const_iterator itr = contacts.find(data.getPenPalJid());
+        if (itr != contacts.end()) {
+            ri = itr->second;
+        } else {
+            std::map<QString, Conference*>::const_iterator ritr = conferences.find(data.getPenPalJid());
+            if (ritr != conferences.end()) {
+                ri = ritr->second;
+            }
+        }
         
-        itr->second->appendMessageToArchive(data);
+        if (ri != 0) {
+            if (!ri->isMuc()) {
+                ri->appendMessageToArchive(data);
+            }
+        }
         
         client.sendPacket(msg);
+        
     } else {
         qDebug() << "An attempt to send message with not connected account " << name << ", skipping";
     }
@@ -540,6 +554,39 @@ bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bo
     }
     return false;
 }
+
+bool Core::Account::handleGroupMessage(const QXmppMessage& msg, bool outgoing, bool forwarded, bool guessing)
+{
+    const QString& body(msg.body());
+    if (body.size() != 0) {
+        const QString& id(msg.id());
+        Shared::Message sMsg(Shared::Message::groupChat);
+        initializeMessage(sMsg, msg, outgoing, forwarded, guessing);
+        QString jid = sMsg.getPenPalJid();
+        std::map<QString, Conference*>::const_iterator itr = conferences.find(jid);
+        Conference* cnt;
+        if (itr != conferences.end()) {
+            cnt = itr->second;
+        } else {
+            return false;
+        }
+        cnt->appendMessageToArchive(sMsg);
+        
+        emit message(sMsg);
+        
+        if (!forwarded && !outgoing) {
+            if (msg.isReceiptRequested() && id.size() > 0) {
+                QXmppMessage receipt(getFullJid(), msg.from(), "");
+                receipt.setReceiptId(id);
+                client.sendPacket(receipt);
+            }
+        }
+        
+        return true;
+    }
+    return false;
+}
+
 
 void Core::Account::initializeMessage(Shared::Message& target, const QXmppMessage& source, bool outgoing, bool forwarded, bool guessing) const
 {
@@ -595,17 +642,20 @@ void Core::Account::requestArchive(const QString& jid, int count, const QString&
     qDebug() << "An archive request for " << jid << ", before " << before;
     RosterItem* contact = 0;
     std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    bool gr = false;
     if (itr != contacts.end()) {
         contact = itr->second;
     } else {
         std::map<QString, Conference*>::const_iterator citr = conferences.find(jid);
         if (citr != conferences.end()) {
             contact = citr->second;
+            gr = true;
         }
     }
     
     if (contact == 0) {
         qDebug() << "An attempt to request archive for" << jid << "in account" << name << ", but the contact with such id wasn't found, skipping";
+        emit responseArchive(contact->jid, std::list<Shared::Message>());
         return;
     }
     
@@ -613,7 +663,11 @@ void Core::Account::requestArchive(const QString& jid, int count, const QString&
         QXmppMessage msg(getFullJid(), jid, "", "");
         QString last = Shared::generateUUID();
         msg.setId(last);
-        msg.setType(QXmppMessage::Chat);
+        if (gr) {
+            msg.setType(QXmppMessage::GroupChat);
+        } else {
+            msg.setType(QXmppMessage::Chat);
+        }
         msg.setState(QXmppMessage::Active);
         client.sendPacket(msg);
         QTimer* timer = new QTimer;
@@ -632,6 +686,7 @@ void Core::Account::requestArchive(const QString& jid, int count, const QString&
 void Core::Account::onContactNeedHistory(const QString& before, const QString& after, const QDateTime& at)
 {
     RosterItem* contact = static_cast<RosterItem*>(sender());
+    QString to = "";
     QXmppResultSetQuery query;
     query.setMax(100);
     if (before.size() > 0) {
@@ -648,7 +703,7 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
     
     qDebug() << "Remote query from" << after << ", to" << before;
     
-    QString q = am->retrieveArchivedMessages("", "", contact->jid, start, QDateTime(), query);
+    QString q = am->retrieveArchivedMessages(to, "", contact->jid, start, QDateTime(), query);
     achiveQueries.insert(std::make_pair(q, contact->jid));
 }
 
@@ -939,6 +994,7 @@ void Core::Account::bookmarksReceived(const QXmppBookmarkSet& bookmarks)
             QXmppMucRoom* room = mm->addRoom(jid);
             QString nick = c.nickName();
             Conference* conf = new Conference(jid, getName(), c.autoJoin(), c.name(), nick == "" ? getName() : nick, room);
+            conferences.insert(std::make_pair(jid, conf));
             
             handleNewConference(conf);
             

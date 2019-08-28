@@ -70,3 +70,37 @@ void Chat::setStatus(const QString& status)
 {
     statusLabel->setText(status);
 }
+
+void Chat::handleSendMessage(const QString& text)
+{
+    Shared::Message msg(Shared::Message::chat);
+    msg.setFromJid(myJid);
+    msg.setFromResource(myResource);
+    msg.setToJid(palJid);
+    msg.setToResource(activePalResource);
+    msg.setBody(text);
+    msg.setOutgoing(true);
+    msg.generateRandomId();
+    msg.setCurrentTime();
+    addMessage(msg);
+    emit sendMessage(msg);
+}
+
+void Chat::addMessage(const Shared::Message& data)
+{
+    Conversation::addMessage(data);
+    
+    if (!data.getOutgoing()) {                          //TODO need to check if that was the last message
+        const QString& res = data.getPenPalResource();
+        if (res.size() > 0) {
+            setPalResource(res);
+        }
+    }
+}
+
+void Chat::setName(const QString& name)
+{
+    Conversation::setName(name);
+    line->setPalName(getJid(), name);
+}
+

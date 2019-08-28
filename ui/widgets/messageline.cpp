@@ -30,7 +30,8 @@ MessageLine::MessageLine(QWidget* parent):
     layout(new QVBoxLayout()),
     myName(),
     palNames(),
-    views()
+    views(),
+    room(false)
 {
     setLayout(layout);
     setBackgroundRole(QPalette::Base);
@@ -42,6 +43,11 @@ MessageLine::~MessageLine()
     for (Index::const_iterator itr = messageIndex.begin(), end = messageIndex.end(); itr != end; ++itr) {
         delete itr->second;
     }
+}
+
+void MessageLine::setRoom(bool p_room)
+{
+    room = p_room;
 }
 
 MessageLine::Position MessageLine::message(const Shared::Message& msg)
@@ -110,25 +116,40 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
 
     message->setGraphicsEffect(effect);
     
-    if (msg.getOutgoing()) {
-        //body->setAlignment(Qt::AlignRight);
-        sender->setAlignment(Qt::AlignRight);
-        time->setAlignment(Qt::AlignRight);
-        sender->setText(myName);
-        hBox->addStretch();
-        hBox->addWidget(message);
-    } else {
-        QString jid = msg.getFromJid();
-        std::map<QString, QString>::iterator itr = palNames.find(jid);
-        if (itr != palNames.end()) {
-            sender->setText(itr->second);
+    if (room) {
+        if (msg.getFromResource() == myName) {
+            //body->setAlignment(Qt::AlignRight);
+            sender->setAlignment(Qt::AlignRight);
+            time->setAlignment(Qt::AlignRight);
+            sender->setText(myName);
+            hBox->addStretch();
+            hBox->addWidget(message);
         } else {
-            sender->setText(jid);
+            sender->setText(msg.getFromResource());
+            hBox->addWidget(message);
+            hBox->addStretch();
         }
-        hBox->addWidget(message);
-        hBox->addStretch();
+    } else {
+        if (msg.getOutgoing()) {
+            //body->setAlignment(Qt::AlignRight);
+            sender->setAlignment(Qt::AlignRight);
+            time->setAlignment(Qt::AlignRight);
+            sender->setText(myName);
+            hBox->addStretch();
+            hBox->addWidget(message);
+        } else {
+            QString jid = msg.getFromJid();
+            std::map<QString, QString>::iterator itr = palNames.find(jid);
+            if (itr != palNames.end()) {
+                sender->setText(itr->second);
+            } else {
+                sender->setText(jid);
+            }
+            hBox->addWidget(message);
+            hBox->addStretch();
+        }
     }
-    
+        
     if (res == end) {
         layout->addLayout(hBox);
     } else {

@@ -184,7 +184,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     if (count > 0) {
                         str += QString("New messages: ") + std::to_string(count).c_str() + "\n";
                     }
-                    str += QString("Subscription: ") + rm->getStatusText() + "\n";
+                    str += QString("Subscription: ") + rm->getStatusText();
                     result = str;
                 }
                     break;

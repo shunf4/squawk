@@ -151,6 +151,7 @@ private:
     void handleNewRosterItem(RosterItem* contact);
     void handleNewConference(Conference* contact);
     bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
+    bool handleGroupMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
     void addToGroup(const QString& jid, const QString& group);
     void removeFromGroup(const QString& jid, const QString& group);
     void initializeMessage(Shared::Message& target, const QXmppMessage& source, bool outgoing = false, bool forwarded = false, bool guessing = false) const;

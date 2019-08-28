@@ -32,13 +32,15 @@ Core::RosterItem::RosterItem(const QString& pJid, const QString& account, QObjec
     hisoryCache(),
     appendCache(),
     responseCache(),
-    requestCache()
+    requestCache(),
+    muc(false)
 {
     archive->open(account);
-    if (archive->isFromTheBeginning()) {
-        archiveState = beginning;
-    } else {
-        if (archive->size() != 0) {
+    
+    if (archive->size() != 0) {
+        if (archive->isFromTheBeginning()) {
+            archiveState = beginning;
+        } else {
             archiveState = chunk;
         }
     }
@@ -231,7 +233,7 @@ void Core::RosterItem::flushMessagesToArchive(bool finished, const QString& firs
         case beginning:
             if (finished) {
                 archiveState = complete;
-                archive->addElements(appendCache);
+                added += archive->addElements(appendCache);
                 appendCache.clear();
                 nextRequest();
             } else {
@@ -241,7 +243,7 @@ void Core::RosterItem::flushMessagesToArchive(bool finished, const QString& firs
         case chunk:
             if (finished) {
                 archiveState = end;
-                archive->addElements(appendCache);
+                added += archive->addElements(appendCache);
                 appendCache.clear();
                 nextRequest();
             } else {
@@ -252,6 +254,8 @@ void Core::RosterItem::flushMessagesToArchive(bool finished, const QString& firs
             wasEmpty = true;
             archiveState = end;
         case end:
+            added += archive->addElements(appendCache);
+            appendCache.clear();
             if (finished && (added > 0 || !wasEmpty)) {
                 archiveState = complete;
                 archive->setFromTheBeginning(true);
@@ -317,3 +321,13 @@ void Core::RosterItem::requestFromEmpty(int count, const QString& before)
     }
 }
 
+QString Core::RosterItem::getServer() const
+{
+    QStringList lst = jid.split("@");
+    return lst.back();
+}
+
+bool Core::RosterItem::isMuc() const
+{
+    return muc;
+}

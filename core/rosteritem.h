@@ -50,6 +50,8 @@ public:
     ArchiveState getArchiveState() const;
     QString getName() const;
     void setName(const QString& n);
+    QString getServer() const;
+    bool isMuc() const;
     
     void addMessageToArchive(const Shared::Message& msg);
     void appendMessageToArchive(const Shared::Message& msg);
@@ -78,6 +80,7 @@ protected:
     std::list<Shared::Message> appendCache;
     std::list<Shared::Message> responseCache;
     std::list<std::pair<int, QString>> requestCache;
+    bool muc;
 
 private:
     void nextRequest();
