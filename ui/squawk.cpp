@@ -247,6 +247,10 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
             } else if (room != 0) {
                 created = true;
                 conv = new Room(room);
+                
+                if (!room->getJoined()) {
+                    emit setRoomJoined(id->account, id->name, true);
+                }
             }
             
             if (conv != 0) {
@@ -283,10 +287,17 @@ void Squawk::onConversationShown()
 void Squawk::onConversationClosed(QObject* parent)
 {
     Conversation* conv = static_cast<Conversation*>(sender());
-    Conversations::const_iterator itr = conversations.find({conv->getAccount(), conv->getJid()});
+    Models::Roster::ElId id(conv->getAccount(), conv->getJid());
+    Conversations::const_iterator itr = conversations.find(id);
     if (itr == conversations.end()) {
         qDebug() << "Conversation has been closed but can not be found among other opened conversations, application is most probably going to crash";
         return;
+    }
+    if (conv->isMuc) {
+        Room* room = static_cast<Room*>(conv);
+        if (room->autoJoined()) {
+            emit setRoomJoined(id.account, id.name, false);
+        }
     }
     conversations.erase(itr);
 }

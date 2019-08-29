@@ -36,7 +36,7 @@ public:
         end,
         invalid
     };
-    MessageLine(QWidget* parent = 0);
+    MessageLine(bool p_room, QWidget* parent = 0);
     ~MessageLine();
     
     Position message(const Shared::Message& msg);
@@ -45,7 +45,6 @@ public:
     QString firstMessageId() const;
     void showBusyIndicator();
     void hideBusyIndicator();
-    void setRoom(bool p_room);
     
 signals:
     void resize(int amount);

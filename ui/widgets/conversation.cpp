@@ -24,14 +24,15 @@
 #include <QGraphicsDropShadowEffect>
 #include <QFileDialog>
 
-Conversation::Conversation(const QString& mJid, const QString mRes, const QString pJid, const QString pRes, const QString& acc, QWidget* parent):
+Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, const QString pJid, const QString pRes, const QString& acc, QWidget* parent):
     QWidget(parent),
+    isMuc(muc),
     myJid(mJid),
     myResource(mRes),
     palJid(pJid),
     activePalResource(pRes),
     account(acc),
-    line(new MessageLine()),
+    line(new MessageLine(muc)),
     m_ui(new Ui::Conversation()),
     ker(),
     thread(),

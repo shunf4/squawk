@@ -32,6 +32,8 @@ public:
     Room(Models::Room* p_room, QWidget* parent = 0);
     ~Room();
     
+    bool autoJoined() const;
+    
 protected:
     void handleSendMessage(const QString & text) override;
     

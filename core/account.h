@@ -71,6 +71,9 @@ public:
     void removeContactRequest(const QString& jid);
     void addContactRequest(const QString& jid, const QString& name, const QSet<QString>& groups);
     
+    void setRoomJoined(const QString& jid, bool joined);
+    void setRoomAutoJoin(const QString& jid, bool joined);
+    
 signals:
     void connectionStateChanged(int);
     void availabilityChanged(int);

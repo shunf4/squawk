@@ -23,7 +23,7 @@
 const QRegExp urlReg("^(?!<img\\ssrc=\")((?:https?|ftp)://\\S+)");
 const QRegExp imgReg("((?:https?|ftp)://\\S+\\.(?:jpg|jpeg|png|svg|gif))");
 
-MessageLine::MessageLine(QWidget* parent):
+MessageLine::MessageLine(bool p_room, QWidget* parent):
     QWidget(parent),
     messageIndex(),
     messageOrder(),
@@ -31,7 +31,7 @@ MessageLine::MessageLine(QWidget* parent):
     myName(),
     palNames(),
     views(),
-    room(false)
+    room(p_room)
 {
     setLayout(layout);
     setBackgroundRole(QPalette::Base);
@@ -43,11 +43,6 @@ MessageLine::~MessageLine()
     for (Index::const_iterator itr = messageIndex.begin(), end = messageIndex.end(); itr != end; ++itr) {
         delete itr->second;
     }
-}
-
-void MessageLine::setRoom(bool p_room)
-{
-    room = p_room;
 }
 
 MessageLine::Position MessageLine::message(const Shared::Message& msg)

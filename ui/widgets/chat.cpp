@@ -19,7 +19,7 @@
 #include "chat.h"
 
 Chat::Chat(Models::Contact* p_contact, QWidget* parent):
-    Conversation(p_contact->getAccountJid(), p_contact->getAccountResource(), p_contact->getJid(), "", p_contact->getAccountName(), parent),
+    Conversation(false, p_contact->getAccountJid(), p_contact->getAccountResource(), p_contact->getJid(), "", p_contact->getAccountName(), parent),
     contact(p_contact)
 {
     setName(p_contact->getContactName());

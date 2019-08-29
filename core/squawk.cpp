@@ -419,3 +419,24 @@ void Core::Squawk::onAccountRemoveRoom(const QString jid)
     Account* acc = static_cast<Account*>(sender());
     emit removeRoom(acc->getName(), jid);
 }
+
+void Core::Squawk::setRoomJoined(const QString& account, const QString& jid, bool joined)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to set autoJoin to the room" << jid << "of non existing account" << account << ", skipping";
+        return;
+    }
+    itr->second->setRoomJoined(jid, joined);
+}
+
+void Core::Squawk::setRoomAutoJoin(const QString& account, const QString& jid, bool joined)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to set autoJoin to the room" << jid << "of non existing account" << account << ", skipping";
+        return;
+    }
+    itr->second->setRoomAutoJoin(jid, joined);
+}
+

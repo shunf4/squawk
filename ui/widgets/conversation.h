@@ -46,7 +46,7 @@ class Conversation : public QWidget
 {
     Q_OBJECT
 public:
-    Conversation(const QString& mJid, const QString mRes, const QString pJid, const QString pRes, const QString& acc, QWidget* parent = 0);
+    Conversation(bool muc, const QString& mJid, const QString mRes, const QString pJid, const QString pRes, const QString& acc, QWidget* parent = 0);
     ~Conversation();
     
     QString getJid() const;
@@ -74,6 +74,9 @@ protected slots:
     void onSliderValueChanged(int value);
     void onAttach();
     void onFileSelected();
+    
+public:
+    const bool isMuc;
     
 protected:
     enum Scroll {

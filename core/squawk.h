@@ -74,6 +74,8 @@ public slots:
     void unsubscribeContact(const QString& account, const QString& jid, const QString& reason);
     void removeContactRequest(const QString& account, const QString& jid);
     void addContactRequest(const QString& account, const QString& jid, const QString& name, const QSet<QString>& groups);
+    void setRoomJoined(const QString& account, const QString& jid, bool joined);
+    void setRoomAutoJoin(const QString& account, const QString& jid, bool joined);
     
 private:
     typedef std::deque<Account*> Accounts;

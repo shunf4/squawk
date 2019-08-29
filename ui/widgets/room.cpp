@@ -19,12 +19,11 @@
 #include "room.h"
 
 Room::Room(Models::Room* p_room, QWidget* parent):
-    Conversation(p_room->getAccountJid(), p_room->getAccountResource(), p_room->getJid(), "", p_room->getAccountName(), parent),
+    Conversation(true, p_room->getAccountJid(), p_room->getAccountResource(), p_room->getJid(), "", p_room->getAccountName(), parent),
     room(p_room)
 {
     setName(p_room->getName());
     line->setMyName(room->getNick());
-    line->setRoom(true);
 }
 
 Room::~Room()
@@ -43,4 +42,9 @@ void Room::handleSendMessage(const QString& text)
     msg.generateRandomId();
     msg.setCurrentTime();
     emit sendMessage(msg);
+}
+
+bool Room::autoJoined() const
+{
+    return room->getAutoJoin();
 }

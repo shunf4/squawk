@@ -1033,3 +1033,25 @@ void Core::Account::onMucNickNameChanged(const QString& nickName)
             {"nick", nickName}
         });
 }
+
+void Core::Account::setRoomAutoJoin(const QString& jid, bool joined)
+{
+    std::map<QString, Conference*>::const_iterator cItr = conferences.find(jid);
+    if (cItr == conferences.end()) {
+        qDebug() << "An attempt to set auto join to the non existing room" << jid << "of the account" << getName() << ", skipping";
+        return;
+    }
+    
+    cItr->second->setAutoJoin(joined);
+}
+
+void Core::Account::setRoomJoined(const QString& jid, bool joined)
+{
+    std::map<QString, Conference*>::const_iterator cItr = conferences.find(jid);
+    if (cItr == conferences.end()) {
+        qDebug() << "An attempt to set joined to the non existing room" << jid << "of the account" << getName() << ", skipping";
+        return;
+    }
+    
+    cItr->second->setJoined(joined);
+}
