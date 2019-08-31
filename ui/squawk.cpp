@@ -295,7 +295,7 @@ void Squawk::onConversationClosed(QObject* parent)
     }
     if (conv->isMuc) {
         Room* room = static_cast<Room*>(conv);
-        if (room->autoJoined()) {
+        if (!room->autoJoined()) {
             emit setRoomJoined(id.account, id.name, false);
         }
     }
@@ -327,11 +327,16 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
 
 void Squawk::notify(const QString& account, const Shared::Message& msg)
 {
+    QString name = QString(rosterModel.getContactName(account, msg.getPenPalJid()));;
     QVariantList args;
     args << QString(QCoreApplication::applicationName());
     args << QVariant(QVariant::UInt);   //TODO some normal id
     args << QString("mail-message");    //TODO icon
-    args << QString(rosterModel.getContactName(account, msg.getPenPalJid()));
+    if (msg.getType() == Shared::Message::groupChat) {
+        args << msg.getFromResource() + " from " + name;
+    } else {
+        args << name;
+    }
     args << QString(msg.getBody());
     args << QStringList();
     args << QVariantMap();

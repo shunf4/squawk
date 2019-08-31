@@ -615,6 +615,11 @@ void Models::Roster::addMessage(const QString& account, const Shared::Message& d
     for (;cBeg != cEnd; ++cBeg) {
         cBeg->second->addMessage(data);
     }
+    
+    std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
+    if (rItr != rooms.end()) {
+        rItr->second->addMessage(data);
+    }
 }
 
 void Models::Roster::dropMessages(const QString& account, const QString& jid)
@@ -622,6 +627,11 @@ void Models::Roster::dropMessages(const QString& account, const QString& jid)
     ElId id(account, jid);
     for (std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(id), cEnd = contacts.upper_bound(id) ;cBeg != cEnd; ++cBeg) {
         cBeg->second->dropMessages();
+    }
+    
+    std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
+    if (rItr != rooms.end()) {
+        rItr->second->dropMessages();
     }
 }
 
@@ -677,12 +687,20 @@ void Models::Roster::removeAccount(const QString& account)
 
 QString Models::Roster::getContactName(const QString& account, const QString& jid)
 {
-    std::multimap<ElId, Contact*>::const_iterator cItr = contacts.find({account, jid});
+    ElId id(account, jid);
+    std::multimap<ElId, Contact*>::const_iterator cItr = contacts.find(id);
+    QString name = "";
     if (cItr == contacts.end()) {
-        qDebug() << "An attempt to get a name of non existing contact " << account << ":" << jid << ", skipping";
-        return "";
+        std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
+        if (rItr == rooms.end()) {
+            qDebug() << "An attempt to get a name of non existing contact/room " << account << ":" << jid << ", skipping";
+        } else {
+            name = rItr->second->getName();
+        }
+    } else {
+        name = cItr->second->getContactName();
     }
-    return cItr->second->getContactName();
+    return name;
 }
 
 void Models::Roster::addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data)

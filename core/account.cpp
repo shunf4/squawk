@@ -572,7 +572,10 @@ bool Core::Account::handleGroupMessage(const QXmppMessage& msg, bool outgoing, b
         }
         cnt->appendMessageToArchive(sMsg);
         
-        emit message(sMsg);
+        QDateTime fiveMinsAgo = QDateTime::currentDateTime().addSecs(-300);
+        if (sMsg.getTime() > fiveMinsAgo) {     //otherwise it's considered a delayed delivery, most probably MUC history receipt
+            emit message(sMsg);
+        }
         
         if (!forwarded && !outgoing) {
             if (msg.isReceiptRequested() && id.size() > 0) {

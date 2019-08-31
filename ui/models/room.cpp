@@ -54,7 +54,7 @@ unsigned int Models::Room::getUnreadMessagesCount() const
 
 int Models::Room::columnCount() const
 {
-    return 5;
+    return 6;
 }
 
 QString Models::Room::getJid() const
@@ -99,6 +99,8 @@ QVariant Models::Room::data(int column) const
             return getAutoJoin();
         case 4:
             return getNick();
+        case 5:
+            return getMessagesCount();
         default:
             return QVariant();
     }
@@ -153,17 +155,21 @@ void Models::Room::update(const QString& field, const QVariant& value)
 
 QIcon Models::Room::getStatusIcon(bool big) const
 {
-    if (autoJoin) {
-        if (joined) {
-            return Shared::connectionStateIcon(Shared::connected, big);
-        } else {
-            return Shared::connectionStateIcon(Shared::disconnected, big);
-        }
+    if (messages.size() > 0) {
+        return Shared::icon("mail-message", big);
     } else {
-        if (joined) {
-            return Shared::connectionStateIcon(Shared::connecting, big);
+        if (autoJoin) {
+            if (joined) {
+                return Shared::connectionStateIcon(Shared::connected, big);
+            } else {
+                return Shared::connectionStateIcon(Shared::disconnected, big);
+            }
         } else {
-            return Shared::connectionStateIcon(Shared::error, big);
+            if (joined) {
+                return Shared::connectionStateIcon(Shared::connecting, big);
+            } else {
+                return Shared::connectionStateIcon(Shared::error, big);
+            }
         }
     }
 }
@@ -182,5 +188,32 @@ QString Models::Room::getStatusText() const
         } else {
             return "Unsubscribed";
         }
+    }
+}
+
+unsigned int Models::Room::getMessagesCount() const
+{
+    return messages.size();
+}
+
+void Models::Room::addMessage(const Shared::Message& data)
+{
+    messages.emplace_back(data);
+    changed(5);
+}
+
+void Models::Room::dropMessages()
+{
+    if (messages.size() > 0) {
+        messages.clear();
+        changed(5);
+    }
+}
+
+void Models::Room::getMessages(Models::Room::Messages& container) const
+{
+    for (Messages::const_iterator itr = messages.begin(), end = messages.end(); itr != end; ++itr) {
+        const Shared::Message& msg = *itr;
+        container.push_back(msg);
     }
 }

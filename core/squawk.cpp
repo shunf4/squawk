@@ -424,7 +424,7 @@ void Core::Squawk::setRoomJoined(const QString& account, const QString& jid, boo
 {
     AccountsMap::const_iterator itr = amap.find(account);
     if (itr == amap.end()) {
-        qDebug() << "An attempt to set autoJoin to the room" << jid << "of non existing account" << account << ", skipping";
+        qDebug() << "An attempt to set jouned to the room" << jid << "of non existing account" << account << ", skipping";
         return;
     }
     itr->second->setRoomJoined(jid, joined);

@@ -31,6 +31,7 @@ class Room : public Models::Item
 {
     Q_OBJECT
 public:
+    typedef std::deque<Shared::Message> Messages;
     Room(const QString& p_jid, const QMap<QString, QVariant> &data, Item *parentItem = 0);
     ~Room();
     
@@ -53,6 +54,11 @@ public:
     void setNick(const QString& p_nick);
     
     void update(const QString& field, const QVariant& value);
+    
+    void addMessage(const Shared::Message& data);
+    unsigned int getMessagesCount() const;
+    void dropMessages();
+    void getMessages(Messages& container) const;
 
 protected:
     
@@ -61,7 +67,7 @@ private:
     bool joined;
     QString jid;
     QString nick;
-    std::deque<Shared::Message> messages;
+    Messages messages;
 
 };
 

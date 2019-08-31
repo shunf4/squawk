@@ -64,7 +64,7 @@ bool Core::Conference::getJoined() const
 void Core::Conference::setJoined(bool p_joined)
 {
     if (joined != p_joined) {
-        if (joined) {
+        if (p_joined) {
             room->join();
         } else {
             room->leave();
