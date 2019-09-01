@@ -58,6 +58,9 @@ signals:
     void addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void changeRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void removeRoom(const QString& account, const QString jid);
+    void addRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
+    void changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
+    void removeRoomParticipant(const QString& account, const QString& jid, const QString& name);
     
 public slots:
     void start();
@@ -105,6 +108,9 @@ private slots:
     void onAccountAddRoom(const QString jid, const QMap<QString, QVariant>& data);
     void onAccountChangeRoom(const QString jid, const QMap<QString, QVariant>& data);
     void onAccountRemoveRoom(const QString jid);
+    void onAccountAddRoomPresence(const QString& jid, const QString& nick, const QMap<QString, QVariant>& data);
+    void onAccountChangeRoomPresence(const QString& jid, const QString& nick, const QMap<QString, QVariant>& data);
+    void onAccountRemoveRoomPresence(const QString& jid, const QString& nick);
 };
 
 }

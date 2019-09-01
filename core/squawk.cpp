@@ -440,3 +440,20 @@ void Core::Squawk::setRoomAutoJoin(const QString& account, const QString& jid, b
     itr->second->setRoomAutoJoin(jid, joined);
 }
 
+void Core::Squawk::onAccountAddRoomPresence(const QString& jid, const QString& nick, const QMap<QString, QVariant>& data)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit addRoomParticipant(acc->getName(), jid, nick, data);
+}
+
+void Core::Squawk::onAccountChangeRoomPresence(const QString& jid, const QString& nick, const QMap<QString, QVariant>& data)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit changeRoomParticipant(acc->getName(), jid, nick, data);
+}
+
+void Core::Squawk::onAccountRemoveRoomPresence(const QString& jid, const QString& nick)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit removeRoomParticipant(acc->getName(), jid, nick);
+}

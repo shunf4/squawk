@@ -1,5 +1,5 @@
 /*
- * <one line to give the program's name and a brief idea of what it does.>
+ * Squawk messenger. 
  * Copyright (C) 2019  Yury Gubich <blue@macaw.me>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,14 +19,14 @@
 #ifndef MODELS_PRESENCE_H
 #define MODELS_PRESENCE_H
 
-#include "item.h"
+#include "abstractparticipant.h"
 #include "../../global.h"
 #include <QDateTime>
 #include <QIcon>
 
 namespace Models {
 
-class Presence : public Models::Item
+class Presence : public Models::AbstractParticipant
 {
     Q_OBJECT
 public:
@@ -34,21 +34,10 @@ public:
     explicit Presence(const QMap<QString, QVariant> &data, Item *parentItem = 0);
     ~Presence();
 
-    virtual int columnCount() const override;
-    virtual QVariant data(int column) const override;
+    QVariant data(int column) const override;
     
-    Shared::Availability getAvailability() const;
-    void setAvailability(Shared::Availability p_avail);
-    void setAvailability(unsigned int avail);
+    QIcon getStatusIcon(bool big = false) const override;
     
-    QDateTime getLastActivity() const;
-    void setLastActivity(const QDateTime& p_time);
-    
-    QString getStatus() const;
-    void setStatus(const QString& p_state);
-    QIcon getStatusIcon(bool big = false) const;
-    
-    void update(const QString& key, const QVariant& value);
     unsigned int getMessagesCount() const;
     void dropMessages();
     void addMessage(const Shared::Message& data);
@@ -56,9 +45,6 @@ public:
     void getMessages(Messages& container) const;
 
 private:
-    Shared::Availability availability;
-    QDateTime lastActivity;
-    QString status;
     Messages messages;
 };
 

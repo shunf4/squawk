@@ -91,6 +91,9 @@ signals:
     void message(const Shared::Message& data);
     void responseArchive(const QString& jid, const std::list<Shared::Message>& list);
     void error(const QString& text);
+    void addRoomParticipant(const QString& jid, const QString& nickName, const QMap<QString, QVariant>& data);
+    void changeRoomParticipant(const QString& jid, const QString& nickName, const QMap<QString, QVariant>& data);
+    void removeRoomParticipant(const QString& jid, const QString& nickName);
     
 private:
     QString name;
@@ -136,6 +139,9 @@ private slots:
     void onMucJoinedChanged(bool joined);
     void onMucAutoJoinChanged(bool autoJoin);
     void onMucNickNameChanged(const QString& nickName);
+    void onMucAddParticipant(const QString& nickName, const QMap<QString, QVariant>& data);
+    void onMucChangeParticipant(const QString& nickName, const QMap<QString, QVariant>& data);
+    void onMucRemoveParticipant(const QString& nickName);
     
     void bookmarksReceived(const QXmppBookmarkSet& bookmarks);
     

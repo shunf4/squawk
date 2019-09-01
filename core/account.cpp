@@ -224,7 +224,6 @@ void Core::Account::onRosterItemChanged(const QString& bareJid)
     QXmppRosterManager& rm = client.rosterManager();
     QXmppRosterIq::Item re = rm.getRosterEntry(bareJid);
     
-    QStringList res = rm.getResources(bareJid);
     Shared::SubscriptionState state = castSubscriptionState(re.subscriptionType());
 
     contact->setGroups(re.groups());
@@ -315,6 +314,11 @@ void Core::Account::handleNewConference(Core::Conference* contact)
     QObject::connect(contact, SIGNAL(nickChanged(const QString&)), this, SLOT(onMucNickNameChanged(const QString&)));
     QObject::connect(contact, SIGNAL(joinedChanged(bool)), this, SLOT(onMucJoinedChanged(bool)));
     QObject::connect(contact, SIGNAL(autoJoinChanged(bool)), this, SLOT(onMucAutoJoinChanged(bool)));
+    QObject::connect(contact, SIGNAL(addParticipant(const QString&, const QMap<QString, QVariant>&)), 
+                     this, SLOT(onMucAddParticipant(const QString&, const QMap<QString, QVariant>&)));
+    QObject::connect(contact, SIGNAL(changeParticipant(const QString&, const QMap<QString, QVariant>&)), 
+                     this, SLOT(onMucChangeParticipant(const QString&, const QMap<QString, QVariant>&)));
+    QObject::connect(contact, SIGNAL(removeParticipant(const QString&)), this, SLOT(onMucRemoveParticipant(const QString&)));
 }
 
 
@@ -1057,4 +1061,22 @@ void Core::Account::setRoomJoined(const QString& jid, bool joined)
     }
     
     cItr->second->setJoined(joined);
+}
+
+void Core::Account::onMucAddParticipant(const QString& nickName, const QMap<QString, QVariant>& data)
+{
+    Conference* room = static_cast<Conference*>(sender());
+    emit addRoomParticipant(room->jid, nickName, data);
+}
+
+void Core::Account::onMucChangeParticipant(const QString& nickName, const QMap<QString, QVariant>& data)
+{
+    Conference* room = static_cast<Conference*>(sender());
+    emit changeRoomParticipant(room->jid, nickName, data);
+}
+
+void Core::Account::onMucRemoveParticipant(const QString& nickName)
+{
+    Conference* room = static_cast<Conference*>(sender());
+    emit removeRoomParticipant(room->jid, nickName);
 }
