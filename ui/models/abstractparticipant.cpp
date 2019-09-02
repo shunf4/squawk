@@ -38,7 +38,7 @@ Models::AbstractParticipant::~AbstractParticipant()
 
 int Models::AbstractParticipant::columnCount() const
 {
-    return 5;
+    return 4;
 }
 
 QVariant Models::AbstractParticipant::data(int column) const

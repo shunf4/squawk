@@ -23,6 +23,7 @@ set(squawkUI_SRC
   models/group.cpp
   models/room.cpp
   models/abstractparticipant.cpp
+  models/participant.cpp
   widgets/conversation.cpp
   widgets/chat.cpp
   widgets/room.cpp

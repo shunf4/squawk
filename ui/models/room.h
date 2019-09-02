@@ -20,6 +20,7 @@
 #define MODELS_ROOM_H
 
 #include "item.h"
+#include "participant.h"
 #include "../global.h"
 
 namespace Models {
@@ -59,8 +60,15 @@ public:
     unsigned int getMessagesCount() const;
     void dropMessages();
     void getMessages(Messages& container) const;
-
-protected:
+    
+    void addParticipant(const QString& name, const QMap<QString, QVariant>& data);
+    void changeParticipant(const QString& name, const QMap<QString, QVariant>& data);
+    void removeParticipant(const QString& name);
+    
+    void toOfflineState() override;
+    
+private:
+    void handleParticipantUpdate(std::map<QString, Participant*>::const_iterator itr, const QMap<QString, QVariant>& data);
     
 private:
     bool autoJoin;
@@ -68,6 +76,7 @@ private:
     QString jid;
     QString nick;
     Messages messages;
+    std::map<QString, Participant*> participants;
 
 };
 

@@ -80,7 +80,6 @@ int main(int argc, char *argv[])
                      squawk, SLOT(addContactRequest(const QString&, const QString&, const QString&, const QSet<QString>&)));
     QObject::connect(&w, SIGNAL(removeContactRequest(const QString&, const QString&)), 
                      squawk, SLOT(removeContactRequest(const QString&, const QString&)));
-    
     QObject::connect(&w, SIGNAL(setRoomJoined(const QString&, const QString&, bool)), squawk, SLOT(setRoomJoined(const QString&, const QString&, bool)));
     QObject::connect(&w, SIGNAL(setRoomAutoJoin(const QString&, const QString&, bool)), squawk, SLOT(setRoomAutoJoin(const QString&, const QString&, bool)));
     
@@ -109,6 +108,12 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, SIGNAL(changeRoom(const QString&, const QString&, const QMap<QString, QVariant>&)), 
                      &w, SLOT(changeRoom(const QString&, const QString&, const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(removeRoom(const QString&, const QString&)), &w, SLOT(removeRoom(const QString&, const QString&)));
+    QObject::connect(squawk, SIGNAL(addRoomParticipant(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)), 
+                     &w, SLOT(addRoomParticipant(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)));
+    QObject::connect(squawk, SIGNAL(changeRoomParticipant(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)), 
+                     &w, SLOT(changeRoomParticipant(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)));
+    QObject::connect(squawk, SIGNAL(removeRoomParticipant(const QString&, const QString&, const QString&)), 
+                     &w, SLOT(removeRoomParticipant(const QString&, const QString&, const QString&)));
     
     //qDebug() << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
     

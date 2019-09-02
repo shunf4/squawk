@@ -51,11 +51,34 @@ enum SubscriptionState {
     unknown
 };
 
+enum class Affiliation {
+    unspecified, 
+    outcast, 
+    nobody, 
+    member, 
+    admin, 
+    owner 
+};
+
+enum class Role { 
+    unspecified, 
+    nobody, 
+    visitor, 
+    participant, 
+    moderator 
+};
+
 static const Availability availabilityHighest = offline;
 static const Availability availabilityLowest = online;
 
 static const SubscriptionState subscriptionStateHighest = unknown;
 static const SubscriptionState subscriptionStateLowest = none;
+
+static const Affiliation affiliationHighest = Affiliation::owner;
+static const Affiliation affiliationLowest = Affiliation::unspecified;
+
+static const Role roleHighest = Role::moderator;
+static const Role roleLowest = Role::unspecified;
 
 static const std::deque<QString> connectionStateNames = {"Disconnected", "Connecting", "Connected", "Error"};
 static const std::deque<QString> connectionStateThemeIcons = {"state-offline", "state-sync", "state-ok", "state-error"};

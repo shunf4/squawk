@@ -132,7 +132,6 @@ void Core::Conference::onRoomParticipantAdded(const QString& p_name)
     if (resource == jid) {
         qDebug() << "Room" << jid << "is reporting of adding itself to the list participants. Not sure what to do with that yet, skipping";
     } else {
-        qDebug() << "Participant" << resource << "had entered room" << jid;
         QXmppPresence pres = room->participantPresence(jid);
         QDateTime lastInteraction = pres.lastUserInteraction();
         if (!lastInteraction.isValid()) {

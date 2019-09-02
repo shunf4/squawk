@@ -28,6 +28,11 @@ Models::Presence::~Presence()
 {
 }
 
+int Models::Presence::columnCount() const
+{
+    return 5;
+}
+
 QVariant Models::Presence::data(int column) const
 {
     switch (column) {

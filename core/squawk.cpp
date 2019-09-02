@@ -126,6 +126,13 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
             this, SLOT(onAccountChangeRoom(const QString&, const QMap<QString, QVariant>&)));
     connect(acc, SIGNAL(removeRoom(const QString&)), this, SLOT(onAccountRemoveRoom(const QString&)));
     
+    connect(acc, SIGNAL(addRoomParticipant(const QString&, const QString&, const QMap<QString, QVariant>&)), 
+            this, SLOT(onAccountAddRoomPresence(const QString&, const QString&, const QMap<QString, QVariant>&)));
+    connect(acc, SIGNAL(changeRoomParticipant(const QString&, const QString&, const QMap<QString, QVariant>&)), 
+            this, SLOT(onAccountChangeRoomPresence(const QString&, const QString&, const QMap<QString, QVariant>&)));
+    connect(acc, SIGNAL(removeRoomParticipant(const QString&, const QString&)), 
+            this, SLOT(onAccountRemoveRoomPresence(const QString&, const QString&)));
+    
     
     QMap<QString, QVariant> map = {
         {"login", login},

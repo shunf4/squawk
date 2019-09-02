@@ -18,6 +18,7 @@
 
 #include "room.h"
 #include <QIcon>
+#include <QDebug>
 
 Models::Room::Room(const QString& p_jid, const QMap<QString, QVariant>& data, Models::Item* parentItem):
     Item(room, data, parentItem),
@@ -25,7 +26,8 @@ Models::Room::Room(const QString& p_jid, const QMap<QString, QVariant>& data, Mo
     joined(false),
     jid(p_jid),
     nick(""),
-    messages()
+    messages(),
+    participants()
 {
     QMap<QString, QVariant>::const_iterator itr = data.find("autoJoin");
     if (itr != data.end()) {
@@ -127,6 +129,9 @@ void Models::Room::setJoined(bool p_joined)
     if (joined != p_joined) {
         joined = p_joined;
         changed(2);
+        if (!joined) {
+            toOfflineState();
+        }
     }
 }
 
@@ -215,5 +220,69 @@ void Models::Room::getMessages(Models::Room::Messages& container) const
     for (Messages::const_iterator itr = messages.begin(), end = messages.end(); itr != end; ++itr) {
         const Shared::Message& msg = *itr;
         container.push_back(msg);
+    }
+}
+
+void Models::Room::toOfflineState()
+{
+    emit childIsAboutToBeRemoved(this, 0, childItems.size());
+    for (int i = 0; i < childItems.size(); ++i) {
+        Item* item = childItems[i];
+        disconnect(item, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
+        Item::_removeChild(i);
+        item->deleteLater();
+    }
+    childItems.clear();
+    participants.clear();
+    emit childRemoved();
+}
+
+void Models::Room::addParticipant(const QString& p_name, const QMap<QString, QVariant>& data)
+{
+    std::map<QString, Participant*>::const_iterator itr = participants.find(p_name);
+    if (itr != participants.end()) {
+        qDebug() << "An attempt to add already existing participant" << p_name << "to the room" << name << ", updating instead";
+        handleParticipantUpdate(itr, data);
+    } else {
+        Participant* part = new Participant(data);
+        part->setName(p_name);
+        participants.insert(std::make_pair(p_name, part));
+        appendChild(part);
+    }
+}
+
+void Models::Room::changeParticipant(const QString& p_name, const QMap<QString, QVariant>& data)
+{
+    std::map<QString, Participant*>::const_iterator itr = participants.find(p_name);
+    if (itr == participants.end()) {
+        qDebug() << "An attempt to change non existing participant" << p_name << "from the room" << name << ", skipping";
+    } else {
+        handleParticipantUpdate(itr, data);
+    }
+}
+
+void Models::Room::removeParticipant(const QString& p_name)
+{
+    std::map<QString, Participant*>::const_iterator itr = participants.find(p_name);
+    if (itr == participants.end()) {
+        qDebug() << "An attempt to remove non existing participant" << p_name << "from the room" << name << ", skipping";
+    } else {
+        Participant* p = itr->second;
+        participants.erase(itr);
+        removeChild(p->row());
+        p->deleteLater();
+    }
+}
+
+void Models::Room::handleParticipantUpdate(std::map<QString, Participant*>::const_iterator itr, const QMap<QString, QVariant>& data)
+{
+    Participant* part = itr->second;
+    const QString& p_name = itr->first;
+    for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
+        part->update(itr.key(), itr.value());
+    }
+    if (p_name != part->getName()) {
+        participants.erase(itr);
+        participants.insert(std::make_pair(part->getName(), part));
     }
 }

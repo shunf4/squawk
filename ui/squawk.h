@@ -81,6 +81,9 @@ public slots:
     void addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void changeRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void removeRoom(const QString& account, const QString jid);
+    void addRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
+    void changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
+    void removeRoomParticipant(const QString& account, const QString& jid, const QString& name);
     
 private:
     typedef std::map<Models::Roster::ElId, Conversation*> Conversations;

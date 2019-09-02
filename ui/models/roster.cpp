@@ -783,3 +783,39 @@ void Models::Roster::removeRoom(const QString& account, const QString jid)
     room->deleteLater();
     rooms.erase(itr);
 }
+
+void Models::Roster::addRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data)
+{
+    ElId id = {account, jid};
+    std::map<ElId, Room*>::const_iterator itr = rooms.find(id);
+    if (itr == rooms.end()) {
+        qDebug() << "An attempt to add participant" << name << "non existing room" << jid << "of an account" << account << ", skipping";
+        return;
+    } else {
+        itr->second->addParticipant(name, data);
+    }
+}
+
+void Models::Roster::changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data)
+{
+    ElId id = {account, jid};
+    std::map<ElId, Room*>::const_iterator itr = rooms.find(id);
+    if (itr == rooms.end()) {
+        qDebug() << "An attempt change participant" << name << "of non existing room" << jid << "of an account" << account << ", skipping";
+        return;
+    } else {
+        itr->second->changeParticipant(name, data);
+    }
+}
+
+void Models::Roster::removeRoomParticipant(const QString& account, const QString& jid, const QString& name)
+{
+    ElId id = {account, jid};
+    std::map<ElId, Room*>::const_iterator itr = rooms.find(id);
+    if (itr == rooms.end()) {
+        qDebug() << "An attempt remove participant" << name << "from non existing room" << jid << "of an account" << account << ", skipping";
+        return;
+    } else {
+        itr->second->removeParticipant(name);
+    }
+}

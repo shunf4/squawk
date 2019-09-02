@@ -480,3 +480,18 @@ void Squawk::removeRoom(const QString& account, const QString jid)
 {
     rosterModel.removeRoom(account, jid);
 }
+
+void Squawk::addRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data)
+{
+    rosterModel.addRoomParticipant(account, jid, name, data);
+}
+
+void Squawk::changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data)
+{
+    rosterModel.changeRoomParticipant(account, jid, name, data);
+}
+
+void Squawk::removeRoomParticipant(const QString& account, const QString& jid, const QString& name)
+{
+    rosterModel.removeRoomParticipant(account, jid, name);
+}
