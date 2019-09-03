@@ -37,14 +37,13 @@ public:
 
 protected slots:
     void onContactChanged(Models::Item* item, int row, int col);
-    void handleSendMessage(const QString & text) override;
     
 protected:
     void setName(const QString & name) override;
+    void handleSendMessage(const QString & text) override;
     
 private:
     void updateState();
-    void setStatus(const QString& status);
     
 private:
     Models::Contact* contact;

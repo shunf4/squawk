@@ -83,6 +83,9 @@ int main(int argc, char *argv[])
     QObject::connect(&w, SIGNAL(setRoomJoined(const QString&, const QString&, bool)), squawk, SLOT(setRoomJoined(const QString&, const QString&, bool)));
     QObject::connect(&w, SIGNAL(setRoomAutoJoin(const QString&, const QString&, bool)), squawk, SLOT(setRoomAutoJoin(const QString&, const QString&, bool)));
     
+    QObject::connect(&w, SIGNAL(removeRoomRequest(const QString&, const QString&)), 
+                     squawk, SLOT(removeRoomRequest(const QString&, const QString&)));
+    
     QObject::connect(squawk, SIGNAL(newAccount(const QMap<QString, QVariant>&)), &w, SLOT(newAccount(const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(addContact(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)), 
                      &w, SLOT(addContact(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)));

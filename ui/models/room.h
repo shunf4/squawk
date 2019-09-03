@@ -45,6 +45,7 @@ public:
     QString getJid() const;
     QString getNick() const;
     QString getRoomName() const;
+    QString getSubject() const;
     
     QIcon getStatusIcon(bool big = false) const;
     QString getStatusText() const;
@@ -53,6 +54,7 @@ public:
     void setAutoJoin(bool p_autoJoin);
     void setJid(const QString& p_jid);
     void setNick(const QString& p_nick);
+    void setSubject(const QString& sub);
     
     void update(const QString& field, const QVariant& value);
     
@@ -75,6 +77,7 @@ private:
     bool joined;
     QString jid;
     QString nick;
+    QString subject;
     Messages messages;
     std::map<QString, Participant*> participants;
 

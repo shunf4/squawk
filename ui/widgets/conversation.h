@@ -67,6 +67,7 @@ protected:
     virtual void setName(const QString& name);
     void applyVisualEffects();
     virtual void handleSendMessage(const QString& text) = 0;
+    void setStatus(const QString& status);
     
 protected slots:
     void onEnterPressed();

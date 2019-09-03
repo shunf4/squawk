@@ -112,6 +112,11 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     result = room->getStatusIcon(false);
                 }
                     break;
+                case Item::participant: {
+                    Participant* p = static_cast<Participant*>(item);
+                    result = p->getStatusIcon(false);
+                }
+                    break;
                 default:
                     break;
             }
@@ -148,6 +153,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     if (mc > 0) {
                         str += QString("New messages: ") + std::to_string(mc).c_str() + "\n";
                     }
+                    str += "Jabber ID: " + contact->getJid();
                     Shared::SubscriptionState ss = contact->getState();
                     if (ss == Shared::both) {
                         Shared::Availability av = contact->getAvailability();
@@ -183,6 +189,22 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     result = str;
                 }
                     break;
+                case Item::participant: {
+                    Participant* p = static_cast<Participant*>(item);
+                    QString str("");
+                    Shared::Availability av = p->getAvailability();
+                    str += "Availability: " + Shared::availabilityNames[av] + "\n";
+                    QString s = p->getStatus();
+                    if (s.size() > 0) {
+                        str += "Status: " + s + "\n";
+                    }
+                    
+                    str += "Affiliation: " + Shared::affiliationNames[static_cast<unsigned int>(p->getAffiliation())] + "\n";
+                    str += "Role: " + Shared::roleNames[static_cast<unsigned int>(p->getRole())];
+                    
+                    result = str;
+                }
+                    break;
                 case Item::group: {
                     Group* gr = static_cast<Group*>(item);
                     unsigned int count = gr->getUnreadMessages();
@@ -203,6 +225,9 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                         str += QString("New messages: ") + std::to_string(count).c_str() + "\n";
                     }
                     str += QString("Subscription: ") + rm->getStatusText();
+                    if (rm->getJoined()) {
+                        str += QString("\nMembers: ") + std::to_string(rm->childCount()).c_str();
+                    }
                     result = str;
                 }
                     break;

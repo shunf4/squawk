@@ -118,6 +118,7 @@ void Core::Account::disconnect()
 {
     reconnectTimes = 0;
     if (state != Shared::disconnected) {
+        clearConferences();
         client.disconnectFromServer();
         state = Shared::disconnected;
         emit connectionStateChanged(state);
@@ -138,14 +139,16 @@ void Core::Account::onClientConnected()
 
 void Core::Account::onClientDisconnected()
 {
+    clearConferences();
     if (state != Shared::disconnected) {
         if (reconnectTimes > 0) {
+            qDebug() << "Account" << name << "is reconnecting for" << reconnectTimes << "more times";
             --reconnectTimes;
-            qDebug() << "Reconnecting...";
             state = Shared::connecting;
             client.connectToServer(config, presence);
             emit connectionStateChanged(state);
         } else {
+            qDebug() << "Account" << name << "has been disconnected";
             state = Shared::disconnected;
             emit connectionStateChanged(state);
         }
@@ -312,6 +315,7 @@ void Core::Account::handleNewConference(Core::Conference* contact)
 {
     handleNewRosterItem(contact);
     QObject::connect(contact, SIGNAL(nickChanged(const QString&)), this, SLOT(onMucNickNameChanged(const QString&)));
+    QObject::connect(contact, SIGNAL(subjectChanged(const QString&)), this, SLOT(onMucSubjectChanged(const QString&)));
     QObject::connect(contact, SIGNAL(joinedChanged(bool)), this, SLOT(onMucJoinedChanged(bool)));
     QObject::connect(contact, SIGNAL(autoJoinChanged(bool)), this, SLOT(onMucAutoJoinChanged(bool)));
     QObject::connect(contact, SIGNAL(addParticipant(const QString&, const QMap<QString, QVariant>&)), 
@@ -1027,6 +1031,7 @@ void Core::Account::onMucJoinedChanged(bool joined)
 
 void Core::Account::onMucAutoJoinChanged(bool autoJoin)
 {
+    storeConferences();
     Conference* room = static_cast<Conference*>(sender());
     emit changeRoom(room->jid, {
             {"autoJoin", autoJoin}
@@ -1035,6 +1040,7 @@ void Core::Account::onMucAutoJoinChanged(bool autoJoin)
 
 void Core::Account::onMucNickNameChanged(const QString& nickName)
 {
+    storeConferences();
     Conference* room = static_cast<Conference*>(sender());
     emit changeRoom(room->jid, {
             {"nick", nickName}
@@ -1079,4 +1085,54 @@ void Core::Account::onMucRemoveParticipant(const QString& nickName)
 {
     Conference* room = static_cast<Conference*>(sender());
     emit removeRoomParticipant(room->jid, nickName);
+}
+
+void Core::Account::onMucSubjectChanged(const QString& subject)
+{
+    Conference* room = static_cast<Conference*>(sender());
+    emit changeRoom(room->jid, {
+        {"subject", subject}
+    });
+}
+
+void Core::Account::storeConferences()
+{
+    QXmppBookmarkSet bms = bm->bookmarks();
+    QList<QXmppBookmarkConference> confs;
+    for (std::map<QString, Conference*>::const_iterator itr = conferences.begin(), end = conferences.end(); itr != end; ++itr) {
+        Conference* conference = itr->second;
+        QXmppBookmarkConference conf;
+        conf.setJid(conference->jid);
+        conf.setName(conference->getName());
+        conf.setNickName(conference->getNick());
+        conf.setAutoJoin(conference->getAutoJoin());
+        confs.push_back(conf);
+    }
+    bms.setConferences(confs);
+    bm->setBookmarks(bms);
+}
+
+void Core::Account::clearConferences()
+{
+    for (std::map<QString, Conference*>::const_iterator itr = conferences.begin(), end = conferences.end(); itr != end; itr++) {
+        itr->second->deleteLater();
+        emit removeRoom(itr->first);
+    }
+    conferences.clear();
+}
+
+void Core::Account::removeRoomRequest(const QString& jid)
+{
+    std::map<QString, Conference*>::const_iterator itr = conferences.find(jid);
+    if (itr == conferences.end()) {
+        qDebug() << "An attempt to remove non existing room" << jid << "from account" << name << ", skipping";
+    }
+    itr->second->deleteLater();
+    conferences.erase(itr);
+    emit removeRoom(jid);
+    storeConferences();
+}
+
+void Core::Account::addRoomRequest(const QString& jid, const QString& nick, bool autoJoin)
+{
 }

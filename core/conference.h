@@ -36,6 +36,7 @@ public:
     ~Conference();
     
     QString getNick() const;
+    QString getSubject() const;
     void setNick(const QString& p_nick);
     
     bool getJoined() const;
@@ -48,6 +49,7 @@ signals:
     void nickChanged(const QString& nick);
     void joinedChanged(bool joined);
     void autoJoinChanged(bool autoJoin);
+    void subjectChanged(const QString& subject);
     void addParticipant(const QString& name, const QMap<QString, QVariant>& data);
     void changeParticipant(const QString& name, const QMap<QString, QVariant>& data);
     void removeParticipant(const QString& name);
@@ -62,6 +64,7 @@ private slots:
     void onRoomJoined();
     void onRoomLeft();
     void onRoomNameChanged(const QString& p_name);
+    void onRoomSubjectChanged(const QString& p_name);
     void onRoomNickNameChanged(const QString& p_nick);
     void onRoomError(const QXmppStanza::Error& err);
     void onRoomParticipantAdded(const QString& p_name);

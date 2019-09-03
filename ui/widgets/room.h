@@ -34,6 +34,9 @@ public:
     
     bool autoJoined() const;
     
+protected slots:
+    void onRoomChanged(Models::Item* item, int row, int col);
+    
 protected:
     void handleSendMessage(const QString & text) override;
     

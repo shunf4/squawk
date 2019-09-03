@@ -66,11 +66,6 @@ void Chat::updateState()
     statusIcon->setToolTip(Shared::availabilityNames[av]);
 }
 
-void Chat::setStatus(const QString& status)
-{
-    statusLabel->setText(status);
-}
-
 void Chat::handleSendMessage(const QString& text)
 {
     Shared::Message msg(Shared::Message::chat);

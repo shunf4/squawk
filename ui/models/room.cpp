@@ -26,6 +26,7 @@ Models::Room::Room(const QString& p_jid, const QMap<QString, QVariant>& data, Mo
     joined(false),
     jid(p_jid),
     nick(""),
+    subject(""),
     messages(),
     participants()
 {
@@ -43,6 +44,11 @@ Models::Room::Room(const QString& p_jid, const QMap<QString, QVariant>& data, Mo
     if (itr != data.end()) {
         setNick(itr.value().toString());
     }
+    
+    itr = data.find("subject");
+    if (itr != data.end()) {
+        setSubject(itr.value().toString());
+    }
 }
 
 Models::Room::~Room()
@@ -56,7 +62,7 @@ unsigned int Models::Room::getUnreadMessagesCount() const
 
 int Models::Room::columnCount() const
 {
-    return 6;
+    return 7;
 }
 
 QString Models::Room::getJid() const
@@ -103,6 +109,8 @@ QVariant Models::Room::data(int column) const
             return getNick();
         case 5:
             return getMessagesCount();
+        case 6:
+            return getSubject();
         default:
             return QVariant();
     }
@@ -155,6 +163,8 @@ void Models::Room::update(const QString& field, const QVariant& value)
         setAutoJoin(value.toBool());
     } else if (field == "nick") {
         setNick(value.toString());
+    } else if (field == "subject") {
+        setSubject(value.toString());
     }
 }
 
@@ -284,5 +294,18 @@ void Models::Room::handleParticipantUpdate(std::map<QString, Participant*>::cons
     if (p_name != part->getName()) {
         participants.erase(itr);
         participants.insert(std::make_pair(part->getName(), part));
+    }
+}
+
+QString Models::Room::getSubject() const
+{
+    return subject;
+}
+
+void Models::Room::setSubject(const QString& sub)
+{
+    if (sub != subject) {
+        subject = sub;
+        changed(6);
     }
 }

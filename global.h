@@ -97,6 +97,9 @@ static const std::deque<QString> availabilityNames = {"Online", "Away", "Absent"
 static const std::deque<QString> subscriptionStateThemeIcons = {"edit-none", "arrow-down-double", "arrow-up-double", "dialog-ok", "question"};
 static const std::deque<QString> subscriptionStateNames = {"None", "From", "To", "Both", "Unknown"};
 
+static const std::deque<QString> affiliationNames = {"Unspecified", "Outcast", "Nobody", "Member", "Admin", "Owner"};
+static const std::deque<QString> roleNames = {"Unspecified", "Nobody", "Visitor", "Participant", "Moderator"};
+
 QString generateUUID();
 
 class Message {

@@ -24,6 +24,9 @@ Room::Room(Models::Room* p_room, QWidget* parent):
 {
     setName(p_room->getName());
     line->setMyName(room->getNick());
+    setStatus(room->getSubject());
+    
+    connect(room, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onRoomChanged(Models::Item*, int, int)));
 }
 
 Room::~Room()
@@ -47,4 +50,18 @@ void Room::handleSendMessage(const QString& text)
 bool Room::autoJoined() const
 {
     return room->getAutoJoin();
+}
+
+void Room::onRoomChanged(Models::Item* item, int row, int col)
+{
+    if (item == room) {
+        switch (col) {
+            case 0:
+                setName(room->getRoomName());
+                break;
+            case 6:
+                setStatus(room->getSubject());
+                break;
+        }
+    }
 }

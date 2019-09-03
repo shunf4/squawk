@@ -457,6 +457,41 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 
             }
                 break;
+            case Models::Item::room: {
+                Models::Room* room = static_cast<Models::Room*>(item);
+                hasMenu = true;
+                
+                QAction* dialog = contextMenu->addAction(Shared::icon("mail-message"), "Open conversation");
+                connect(dialog, &QAction::triggered, [this, index]() {
+                    onRosterItemDoubleClicked(index);
+                });
+                
+                
+                Models::Roster::ElId id(room->getAccountName(), room->getJid());
+                if (room->getAutoJoin()) {
+                    QAction* unsub = contextMenu->addAction(Shared::icon("news-unsubscribe"), "Unsubscribe");
+                    connect(unsub, &QAction::triggered, [this, id]() {
+                        emit setRoomAutoJoin(id.account, id.name, false);
+                        if (conversations.find(id) == conversations.end()) {    //to leave the room if it's not opened in a conversation window
+                            emit setRoomJoined(id.account, id.name, false);
+                        }
+                    });
+                } else {
+                    QAction* unsub = contextMenu->addAction(Shared::icon("news-subscribe"), "Subscribe");
+                    connect(unsub, &QAction::triggered, [this, id]() {
+                        emit setRoomAutoJoin(id.account, id.name, true);
+                        if (conversations.find(id) == conversations.end()) {    //to join the room if it's not already joined
+                            emit setRoomJoined(id.account, id.name, true);
+                        }
+                    });
+                }
+                
+                QAction* remove = contextMenu->addAction(Shared::icon("edit-delete"), "Remove");
+                connect(remove, &QAction::triggered, [this, id]() {
+                    emit removeRoomRequest(id.account, id.name);
+                });
+            }
+                break;
             default:
                 break;
         }

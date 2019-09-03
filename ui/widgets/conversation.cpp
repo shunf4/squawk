@@ -254,3 +254,8 @@ void Conversation::onFileSelected()
     
     d->deleteLater();
 }
+
+void Conversation::setStatus(const QString& status)
+{
+    statusLabel->setText(status);
+}

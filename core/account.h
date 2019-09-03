@@ -73,6 +73,8 @@ public:
     
     void setRoomJoined(const QString& jid, bool joined);
     void setRoomAutoJoin(const QString& jid, bool joined);
+    void removeRoomRequest(const QString& jid);
+    void addRoomRequest(const QString& jid, const QString& nick, bool autoJoin);
     
 signals:
     void connectionStateChanged(int);
@@ -139,6 +141,7 @@ private slots:
     void onMucJoinedChanged(bool joined);
     void onMucAutoJoinChanged(bool autoJoin);
     void onMucNickNameChanged(const QString& nickName);
+    void onMucSubjectChanged(const QString& subject);
     void onMucAddParticipant(const QString& nickName, const QMap<QString, QVariant>& data);
     void onMucChangeParticipant(const QString& nickName, const QMap<QString, QVariant>& data);
     void onMucRemoveParticipant(const QString& nickName);
@@ -166,6 +169,8 @@ private:
     void initializeMessage(Shared::Message& target, const QXmppMessage& source, bool outgoing = false, bool forwarded = false, bool guessing = false) const;
     Shared::SubscriptionState castSubscriptionState(QXmppRosterIq::Item::SubscriptionType qs) const;
     void logMessage(const QXmppMessage& msg, const QString& reason = "Message wasn't handled: ");
+    void storeConferences();
+    void clearConferences();
     
 };
 

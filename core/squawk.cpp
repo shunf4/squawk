@@ -464,3 +464,13 @@ void Core::Squawk::onAccountRemoveRoomPresence(const QString& jid, const QString
     Account* acc = static_cast<Account*>(sender());
     emit removeRoomParticipant(acc->getName(), jid, nick);
 }
+
+void Core::Squawk::removeRoomRequest(const QString& account, const QString& jid)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to remove the room" << jid << "of non existing account" << account << ", skipping";
+        return;
+    }
+    itr->second->removeRoomRequest(jid);
+}

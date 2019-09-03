@@ -33,6 +33,7 @@ Core::Conference::Conference(const QString& p_jid, const QString& p_account, boo
     connect(room, SIGNAL(joined()), this, SLOT(onRoomJoined()));
     connect(room, SIGNAL(left()), this, SLOT(onRoomLeft()));
     connect(room, SIGNAL(nameChanged(const QString&)), this, SLOT(onRoomNameChanged(const QString&)));
+    connect(room, SIGNAL(subjectChanged(const QString&)), this, SLOT(onRoomSubjectChanged(const QString&)));
     connect(room, SIGNAL(participantAdded(const QString&)), this, SLOT(onRoomParticipantAdded(const QString&)));
     connect(room, SIGNAL(participantChanged(const QString&)), this, SLOT(onRoomParticipantChanged(const QString&)));
     connect(room, SIGNAL(participantRemoved(const QString&)), this, SLOT(onRoomParticipantRemoved(const QString&)));
@@ -47,6 +48,10 @@ Core::Conference::Conference(const QString& p_jid, const QString& p_account, boo
 
 Core::Conference::~Conference()
 {
+    if (joined) {
+        room->leave();
+    }
+    room->deleteLater();
 }
 
 QString Core::Conference::getNick() const
@@ -182,4 +187,18 @@ void Core::Conference::onRoomParticipantRemoved(const QString& p_name)
     } else {
         emit removeParticipant(resource);
     }
+}
+
+QString Core::Conference::getSubject() const
+{
+    if (joined) {
+        return room->subject();
+    } else {
+        return "";
+    }
+}
+
+void Core::Conference::onRoomSubjectChanged(const QString& p_name)
+{
+    emit subjectChanged(p_name);
 }
