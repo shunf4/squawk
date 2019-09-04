@@ -12,8 +12,6 @@ find_package(Qt5DBus CONFIG REQUIRED)
 
 set(squawkUI_SRC
   squawk.cpp
-  accounts.cpp
-  account.cpp
   models/accounts.cpp
   models/roster.cpp
   models/item.cpp
@@ -28,7 +26,10 @@ set(squawkUI_SRC
   widgets/chat.cpp
   widgets/room.cpp
   widgets/messageline.cpp
-  newcontact.cpp
+  widgets/newcontact.cpp
+  widgets/accounts.cpp
+  widgets/account.cpp
+  widgets/joinconference.cpp
 )
 
 # Tell CMake to create the helloworld executable

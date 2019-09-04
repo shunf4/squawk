@@ -78,9 +78,10 @@
    </widget>
    <widget class="QMenu" name="menuFile">
     <property name="title">
-     <string>File</string>
+     <string>Squawk</string>
     </property>
     <addaction name="actionAddContact"/>
+    <addaction name="actionAddConference"/>
     <addaction name="actionQuit"/>
    </widget>
    <addaction name="menuFile"/>
@@ -109,10 +110,22 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset theme="list-add-user"/>
+    <iconset theme="list-add-user">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Add contact</string>
+   </property>
+  </action>
+  <action name="actionAddConference">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
+   <property name="icon">
+    <iconset theme="resource-group-new"/>
+   </property>
+   <property name="text">
+    <string>Add conference</string>
    </property>
   </action>
  </widget>

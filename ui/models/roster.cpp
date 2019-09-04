@@ -153,7 +153,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     if (mc > 0) {
                         str += QString("New messages: ") + std::to_string(mc).c_str() + "\n";
                     }
-                    str += "Jabber ID: " + contact->getJid();
+                    str += "Jabber ID: " + contact->getJid() + "\n";
                     Shared::SubscriptionState ss = contact->getState();
                     if (ss == Shared::both) {
                         Shared::Availability av = contact->getAvailability();

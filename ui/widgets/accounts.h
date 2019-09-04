@@ -24,7 +24,7 @@
 #include <QItemSelection>
 
 #include "account.h"
-#include "models/accounts.h"
+#include "../models/accounts.h"
 
 namespace Ui
 {

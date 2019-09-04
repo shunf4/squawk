@@ -74,7 +74,7 @@ public:
     void setRoomJoined(const QString& jid, bool joined);
     void setRoomAutoJoin(const QString& jid, bool joined);
     void removeRoomRequest(const QString& jid);
-    void addRoomRequest(const QString& jid, const QString& nick, bool autoJoin);
+    void addRoomRequest(const QString& jid, const QString& nick, const QString& password, bool autoJoin);
     
 signals:
     void connectionStateChanged(int);
@@ -164,6 +164,7 @@ private:
     void handleNewConference(Conference* contact);
     bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
     bool handleGroupMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
+    void addNewRoom(const QString& jid, const QString& nick, const QString& roomName, bool autoJoin);
     void addToGroup(const QString& jid, const QString& group);
     void removeFromGroup(const QString& jid, const QString& group);
     void initializeMessage(Shared::Message& target, const QXmppMessage& source, bool outgoing = false, bool forwarded = false, bool guessing = false) const;

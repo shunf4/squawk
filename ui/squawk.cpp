@@ -42,6 +42,7 @@ Squawk::Squawk(QWidget *parent) :
     
     connect(m_ui->actionAccounts, SIGNAL(triggered()), this, SLOT(onAccounts()));
     connect(m_ui->actionAddContact, SIGNAL(triggered()), this, SLOT(onNewContact()));
+    connect(m_ui->actionAddConference, SIGNAL(triggered()), this, SLOT(onNewConference()));
     connect(m_ui->comboBox, SIGNAL(activated(int)), this, SLOT(onComboboxActivated(int)));
     connect(m_ui->roster, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(onRosterItemDoubleClicked(const QModelIndex&)));
     connect(m_ui->roster, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(onRosterContextMenu(const QPoint&)));
@@ -78,8 +79,10 @@ void Squawk::onAccountsSizeChanged(unsigned int size)
 {
     if (size > 0) {
         m_ui->actionAddContact->setEnabled(true);
+        m_ui->actionAddConference->setEnabled(true);
     } else {
         m_ui->actionAddContact->setEnabled(false);
+        m_ui->actionAddConference->setEnabled(false);
     }
 }
 
@@ -93,6 +96,16 @@ void Squawk::onNewContact()
     nc->exec();
 }
 
+void Squawk::onNewConference()
+{
+    JoinConference* jc = new JoinConference(rosterModel.accountsModel, this);
+    
+    connect(jc, SIGNAL(accepted()), this, SLOT(onJoinConferenceAccepted()));
+    connect(jc, SIGNAL(rejected()), jc, SLOT(deleteLater()));
+    
+    jc->exec();
+}
+
 void Squawk::onNewContactAccepted()
 {
     NewContact* nc = static_cast<NewContact*>(sender());
@@ -101,6 +114,16 @@ void Squawk::onNewContactAccepted()
     emit addContactRequest(value.account, value.jid, value.name, value.groups);
     
     nc->deleteLater();
+}
+
+void Squawk::onJoinConferenceAccepted()
+{
+    JoinConference* jc = static_cast<JoinConference*>(sender());
+    JoinConference::Data value = jc->value();
+    
+    emit addRoomRequest(value.account, value.jid, value.nick, value.password, value.autoJoin);
+    
+    jc->deleteLater();
 }
 
 void Squawk::closeEvent(QCloseEvent* event)

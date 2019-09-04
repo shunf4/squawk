@@ -90,15 +90,17 @@ void Models::Accounts::addAccount(Account* account)
 
 void Models::Accounts::onAccountChanged(Item* item, int row, int col)
 {
-    Account* acc = getAccount(row);
-    if (item != acc) {
-        return;     //it means the signal is emitted by one of accounts' children, not exactly him, this model has no interest in that
+    if (row < accs.size()) {
+        Account* acc = getAccount(row);
+        if (item != acc) {
+            return;     //it means the signal is emitted by one of accounts' children, not exactly him, this model has no interest in that
+        }
+        
+        if (col < columnCount(QModelIndex())) {
+            emit dataChanged(createIndex(row, col, this), createIndex(row, col, this));
+        }
+        emit changed();
     }
-    
-    if (col < columnCount(QModelIndex())) {
-        emit dataChanged(createIndex(row, col, this), createIndex(row, col, this));
-    }
-    emit changed();
 }
 
 Models::Account * Models::Accounts::getAccount(int index)

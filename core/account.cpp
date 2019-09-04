@@ -1002,19 +1002,7 @@ void Core::Account::bookmarksReceived(const QXmppBookmarkSet& bookmarks)
         QString jid = c.jid();
         std::map<QString, Conference*>::const_iterator cItr = conferences.find(jid);
         if (cItr == conferences.end()) {
-            QXmppMucRoom* room = mm->addRoom(jid);
-            QString nick = c.nickName();
-            Conference* conf = new Conference(jid, getName(), c.autoJoin(), c.name(), nick == "" ? getName() : nick, room);
-            conferences.insert(std::make_pair(jid, conf));
-            
-            handleNewConference(conf);
-            
-            emit addRoom(jid, {
-                {"autoJoin", conf->getAutoJoin()},
-                {"joined", conf->getJoined()},
-                {"nick", conf->getNick()},
-                {"name", conf->getName()}
-            });
+            addNewRoom(jid, c.nickName(), c.name(), c.autoJoin());
         } else {
             qDebug() << "Received a bookmark to a MUC " << jid << " which is already booked by another bookmark, skipping";
         }
@@ -1133,6 +1121,33 @@ void Core::Account::removeRoomRequest(const QString& jid)
     storeConferences();
 }
 
-void Core::Account::addRoomRequest(const QString& jid, const QString& nick, bool autoJoin)
+void Core::Account::addRoomRequest(const QString& jid, const QString& nick, const QString& password, bool autoJoin)
 {
+    std::map<QString, Conference*>::const_iterator cItr = conferences.find(jid);
+    if (cItr == conferences.end()) {
+        addNewRoom(jid, nick, "", autoJoin);
+        storeConferences();
+    } else {
+        qDebug() << "An attempt to add a MUC " << jid << " which is already present in the rester, skipping";
+    }
+}
+
+void Core::Account::addNewRoom(const QString& jid, const QString& nick, const QString& roomName, bool autoJoin)
+{
+    QXmppMucRoom* room = mm->addRoom(jid);
+    QString lNick = nick;
+    if (lNick.size() == 0) {
+        lNick = getName();
+    }
+    Conference* conf = new Conference(jid, getName(), autoJoin, roomName, lNick, room);
+    conferences.insert(std::make_pair(jid, conf));
+    
+    handleNewConference(conf);
+    
+    emit addRoom(jid, {
+        {"autoJoin", conf->getAutoJoin()},
+        {"joined", conf->getJoined()},
+        {"nick", conf->getNick()},
+        {"name", conf->getName()}
+    });
 }

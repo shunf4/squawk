@@ -474,3 +474,14 @@ void Core::Squawk::removeRoomRequest(const QString& account, const QString& jid)
     }
     itr->second->removeRoomRequest(jid);
 }
+
+void Core::Squawk::addRoomRequest(const QString& account, const QString& jid, const QString& nick, const QString& password, bool autoJoin)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to add the room" << jid << "to non existing account" << account << ", skipping";
+        return;
+    }
+    itr->second->addRoomRequest(jid, nick, password, autoJoin);
+}
+

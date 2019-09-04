@@ -27,11 +27,12 @@
 #include <map>
 #include <list>
 
-#include "accounts.h"
+#include "widgets/accounts.h"
 #include "widgets/chat.h"
 #include "widgets/room.h"
+#include "widgets/newcontact.h"
+#include "widgets/joinconference.h"
 #include "models/roster.h"
-#include "newcontact.h"
 
 #include "../global.h"
 
@@ -62,6 +63,7 @@ signals:
     void addContactRequest(const QString& account, const QString& jid, const QString& name, const QSet<QString>& groups);
     void setRoomJoined(const QString& account, const QString& jid, bool joined);
     void setRoomAutoJoin(const QString& account, const QString& jid, bool joined);
+    void addRoomRequest(const QString& account, const QString& jid, const QString& nick, const QString& password, bool autoJoin);
     void removeRoomRequest(const QString& account, const QString& jid);
     
 public slots:
@@ -103,7 +105,9 @@ protected:
 private slots:
     void onAccounts();
     void onNewContact();
+    void onNewConference();
     void onNewContactAccepted();
+    void onJoinConferenceAccepted();
     void onAccountsSizeChanged(unsigned int size);
     void onAccountsClosed(QObject* parent = 0);
     void onConversationClosed(QObject* parent = 0);

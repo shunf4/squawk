@@ -23,7 +23,7 @@
 #include <QScopedPointer>
 #include <QSet>
 
-#include "models/accounts.h"
+#include "../models/accounts.h"
 
 namespace Ui
 {
