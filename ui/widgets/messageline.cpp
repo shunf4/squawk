@@ -19,6 +19,7 @@
 #include "messageline.h"
 #include <QDebug>
 #include <QGraphicsDropShadowEffect>
+#include <cmath>
 
 const QRegExp urlReg("^(?!<img\\ssrc=\")((?:https?|ftp)://\\S+)");
 const QRegExp imgReg("((?:https?|ftp)://\\S+\\.(?:jpg|jpeg|png|svg|gif))");
@@ -32,7 +33,9 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     palNames(),
     views(),
     room(p_room),
-    busyLabel(),
+    busyPixmap(new QGraphicsPixmapItem(Shared::icon("view-refresh", true).pixmap(70))),
+    busyScene(),
+    busyLabel(&busyScene),
     busyLayout(),
     busyShown(false),
     rotation()
@@ -41,12 +44,20 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     setBackgroundRole(QPalette::Base);
     layout->addStretch();
     
-    busyLabel.setPixmap(Shared::icon("view-refresh", true).pixmap(50));
+    busyScene.addItem(busyPixmap);
     busyLayout.addStretch();
     busyLayout.addWidget(&busyLabel);
     busyLayout.addStretch();
+    busyLabel.setMaximumSize(70, 70);
+    busyLabel.setMinimumSize(70, 70);
+    busyLabel.setSceneRect(0, 0, 70, 70);
+    busyLabel.setFrameStyle(0);
+    busyLabel.setContentsMargins(0, 0, 0, 0);
+    busyLabel.setInteractive(false);
+    busyPixmap->setTransformOriginPoint(35, 35);
+    busyPixmap->setTransformationMode(Qt::SmoothTransformation);
+    busyPixmap->setOffset(0, 0);;
     
-    busyLabel.hide();
     rotation.setDuration(500);
     rotation.setStartValue(0.0f);
     rotation.setEndValue(180.0f);
@@ -227,11 +238,5 @@ void MessageLine::hideBusyIndicator()
 
 void MessageLine::onAnimationValueChanged(const QVariant& value)
 {
-    QTransform r;
-    r.rotate(value.toReal());
-    QPixmap pxm = Shared::icon("view-refresh", true).pixmap(50).transformed(r, Qt::SmoothTransformation);
-    int dw = pxm.width() - 50;
-    int dh = pxm.height() - 50;
-    pxm = pxm.copy(dw/2, dh/2, 50, 50);
-    busyLabel.setPixmap(pxm);
+    busyPixmap->setRotation(value.toReal());
 }

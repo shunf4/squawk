@@ -25,6 +25,9 @@
 #include <QLabel>
 #include <QResizeEvent>
 #include <QIcon>
+#include <QGraphicsScene>
+#include <QGraphicsView>
+#include <QGraphicsPixmapItem>
 #include <QVariantAnimation>
 #include "../global.h"
 
@@ -73,7 +76,9 @@ private:
     std::map<QString, QString> palNames;
     std::deque<QHBoxLayout*> views;
     bool room;
-    QLabel busyLabel;
+    QGraphicsPixmapItem* busyPixmap;
+    QGraphicsScene busyScene;
+    QGraphicsView busyLabel;
     QHBoxLayout busyLayout;
     bool busyShown;
     QVariantAnimation rotation;
