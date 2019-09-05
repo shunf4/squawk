@@ -31,11 +31,27 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     myName(),
     palNames(),
     views(),
-    room(p_room)
+    room(p_room),
+    busyLabel(),
+    busyLayout(),
+    busyShown(false),
+    rotation()
 {
     setLayout(layout);
     setBackgroundRole(QPalette::Base);
     layout->addStretch();
+    
+    busyLabel.setPixmap(Shared::icon("view-refresh", true).pixmap(50));
+    busyLayout.addStretch();
+    busyLayout.addWidget(&busyLabel);
+    busyLayout.addStretch();
+    
+    busyLabel.hide();
+    rotation.setDuration(500);
+    rotation.setStartValue(0.0f);
+    rotation.setEndValue(180.0f);
+    rotation.setLoopCount(-1);
+    connect(&rotation, SIGNAL(valueChanged(const QVariant&)), this, SLOT(onAnimationValueChanged(const QVariant&)));
 }
 
 MessageLine::~MessageLine()
@@ -70,6 +86,10 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
         res = end;
     } else {
         res = middle;
+    }
+    
+    if (busyShown) {
+        index += 1;
     }
     
     QVBoxLayout* vBox = new QVBoxLayout();
@@ -183,4 +203,35 @@ QString MessageLine::firstMessageId() const
     } else {
         return messageOrder.begin()->second->getId();
     }
+}
+
+void MessageLine::showBusyIndicator()
+{
+    if (!busyShown)  {
+        layout->insertLayout(0, &busyLayout);
+        busyShown = true;
+        rotation.start();
+        busyLabel.show();
+    }
+}
+
+void MessageLine::hideBusyIndicator()
+{
+    if (busyShown) {
+        busyLabel.hide();
+        rotation.stop();
+        layout->removeItem(&busyLayout);
+        busyShown = false;
+    }
+}
+
+void MessageLine::onAnimationValueChanged(const QVariant& value)
+{
+    QTransform r;
+    r.rotate(value.toReal());
+    QPixmap pxm = Shared::icon("view-refresh", true).pixmap(50).transformed(r, Qt::SmoothTransformation);
+    int dw = pxm.width() - 50;
+    int dh = pxm.height() - 50;
+    pxm = pxm.copy(dw/2, dh/2, 50, 50);
+    busyLabel.setPixmap(pxm);
 }

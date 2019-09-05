@@ -24,6 +24,8 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QResizeEvent>
+#include <QIcon>
+#include <QVariantAnimation>
 #include "../global.h"
 
 class MessageLine : public QWidget
@@ -71,6 +73,13 @@ private:
     std::map<QString, QString> palNames;
     std::deque<QHBoxLayout*> views;
     bool room;
+    QLabel busyLabel;
+    QHBoxLayout busyLayout;
+    bool busyShown;
+    QVariantAnimation rotation;
+    
+private slots:
+    void onAnimationValueChanged(const QVariant& value);
 };
 
 #endif // MESSAGELINE_H

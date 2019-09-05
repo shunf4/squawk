@@ -202,11 +202,13 @@ void Conversation::onSliderValueChanged(int value)
             scroll = down;
         } else {
             if (!requestingHistory && value == 0) {
-                m_ui->historyStatus->setPixmap(Shared::icon("view-refresh", true).pixmap(25));
                 requestingHistory = true;
+                line->showBusyIndicator();
                 emit requestArchive(line->firstMessageId());
+                scroll = keep;
+            } else {
+                scroll = nothing;
             }
-            scroll = nothing;
         }
     }
 }
@@ -216,7 +218,7 @@ void Conversation::responseArchive(const std::list<Shared::Message> list)
     requestingHistory = false;
     scroll = keep;
     
-    m_ui->historyStatus->clear();
+    line->hideBusyIndicator();
     for (std::list<Shared::Message>::const_iterator itr = list.begin(), end = list.end(); itr != end; ++itr) {
         addMessage(*itr);
     }
@@ -226,8 +228,9 @@ void Conversation::showEvent(QShowEvent* event)
 {
     if (!everShown) {
         everShown = true;
-        m_ui->historyStatus->setPixmap(Shared::icon("view-refresh", true).pixmap(25));
+        line->showBusyIndicator();
         requestingHistory = true;
+        scroll = keep;
         emit requestArchive(line->firstMessageId());
     }
     emit shown();
