@@ -137,7 +137,7 @@ void Core::Conference::onRoomParticipantAdded(const QString& p_name)
     if (resource == jid) {
         qDebug() << "Room" << jid << "is reporting of adding itself to the list participants. Not sure what to do with that yet, skipping";
     } else {
-        QXmppPresence pres = room->participantPresence(jid);
+        QXmppPresence pres = room->participantPresence(p_name);
         QDateTime lastInteraction = pres.lastUserInteraction();
         if (!lastInteraction.isValid()) {
             lastInteraction = QDateTime::currentDateTime();
@@ -161,7 +161,7 @@ void Core::Conference::onRoomParticipantChanged(const QString& p_name)
     if (resource == jid) {
         qDebug() << "Room" << jid << "is reporting of changing his own presence. Not sure what to do with that yet, skipping";
     } else {
-        QXmppPresence pres = room->participantPresence(jid);
+        QXmppPresence pres = room->participantPresence(p_name);
         QDateTime lastInteraction = pres.lastUserInteraction();
         if (!lastInteraction.isValid()) {
             lastInteraction = QDateTime::currentDateTime();

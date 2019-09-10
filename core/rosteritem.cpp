@@ -71,7 +71,7 @@ void Core::RosterItem::setName(const QString& n)
 
 void Core::RosterItem::addMessageToArchive(const Shared::Message& msg)
 {
-    if (msg.getId().size() > 0 && msg.getBody().size() > 0) {
+    if (msg.storable()) {
         hisoryCache.push_back(msg);
     }
 }
@@ -184,7 +184,7 @@ void Core::RosterItem::appendMessageToArchive(const Shared::Message& msg)
 {
     const QString& id = msg.getId(); 
     if (id.size() > 0) {
-        if (msg.getBody().size() > 0) {
+        if (msg.storable()) {
             switch (archiveState) {
                 case empty:
                     if (archive->addElement(msg)) {

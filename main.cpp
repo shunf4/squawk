@@ -36,7 +36,7 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationName("Macaw");
     QCoreApplication::setOrganizationDomain("macaw.me");
     QCoreApplication::setApplicationName("Squawk");
-    QCoreApplication::setApplicationVersion("0.0.1");
+    QCoreApplication::setApplicationVersion("0.0.3");
     
     QIcon icon;
     icon.addFile(":images/logo.svg", QSize(16, 16));

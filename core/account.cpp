@@ -468,6 +468,7 @@ void Core::Account::logMessage(const QXmppMessage& msg, const QString& reason)
         qDebug() << "- state: " << msg.state();
         qDebug() << "- stamp: " << msg.stamp();
         qDebug() << "- id: " << msg.id();
+        qDebug() << "- outOfBandUrl: " << msg.outOfBandUrl();
         qDebug() << "- isAttentionRequested: " << msg.isAttentionRequested();
         qDebug() << "- isReceiptRequested: " << msg.isReceiptRequested();
         qDebug() << "- receiptId: " << msg.receiptId();
@@ -607,6 +608,7 @@ void Core::Account::initializeMessage(Shared::Message& target, const QXmppMessag
     target.setTo(source.to());
     target.setBody(source.body());
     target.setForwarded(forwarded);
+    target.setOutOfBandUrl(source.outOfBandUrl());
     if (guessing) {
         if (target.getFromJid() == getLogin() + "@" + getServer()) {
             outgoing = true;
@@ -624,7 +626,7 @@ void Core::Account::initializeMessage(Shared::Message& target, const QXmppMessag
 
 void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMessage& msg)
 {
-    if (msg.id().size() > 0 && msg.body().size() > 0) {
+    if (msg.id().size() > 0 && (msg.body().size() > 0 || msg.outOfBandUrl().size() > 0)) {
         std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
         QString jid = itr->second;
         RosterItem* item = 0;

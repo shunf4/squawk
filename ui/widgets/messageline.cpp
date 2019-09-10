@@ -18,17 +18,15 @@
 
 #include "messageline.h"
 #include <QDebug>
-#include <QGraphicsDropShadowEffect>
 #include <cmath>
-
-const QRegExp urlReg("^(?!<img\\ssrc=\")((?:https?|ftp)://\\S+)");
-const QRegExp imgReg("((?:https?|ftp)://\\S+\\.(?:jpg|jpeg|png|svg|gif))");
 
 MessageLine::MessageLine(bool p_room, QWidget* parent):
     QWidget(parent),
     messageIndex(),
     messageOrder(),
-    layout(new QVBoxLayout()),
+    myMessages(),
+    palMessages(),
+    layout(new QVBoxLayout(this)),
     myName(),
     palNames(),
     views(),
@@ -40,7 +38,6 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     busyShown(false),
     rotation()
 {
-    setLayout(layout);
     setBackgroundRole(QPalette::Base);
     layout->addStretch();
     
@@ -81,14 +78,56 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
         return invalid;
     }
     
-    Shared::Message* copy = new Shared::Message(msg);
-    std::pair<Order::const_iterator, bool> result = messageOrder.insert(std::make_pair(msg.getTime(), copy));
+    QString sender;
+    bool outgoing;
+    
+    if (room) {
+        if (msg.getFromResource() == myName) {
+            sender = myName;
+            outgoing = false;
+        } else {
+            sender = msg.getFromResource();
+            outgoing = true;
+        }
+    } else {
+        if (msg.getOutgoing()) {
+            sender = myName;
+            outgoing = false;
+        } else {
+            QString jid = msg.getFromJid();
+            std::map<QString, QString>::iterator itr = palNames.find(jid);
+            if (itr != palNames.end()) {
+                sender = itr->second;
+            } else {
+                sender = jid;
+            }
+            outgoing = true;
+        }
+    }
+    
+    Message* message = new Message(msg, outgoing, sender);
+    
+    std::pair<Order::const_iterator, bool> result = messageOrder.insert(std::make_pair(msg.getTime(), message));
     if (!result.second) {
         qDebug() << "Error appending a message into a message list - seems like the time of that message exactly matches the time of some other message, can't put them in order, skipping yet";
-        delete copy;
+        delete message;
         return invalid;
     }
-    messageIndex.insert(std::make_pair(id, copy));
+    if (outgoing) {
+        if (room) {
+            
+        } else {
+            QString jid = msg.getFromJid();
+            std::map<QString, Index>::iterator pItr = palMessages.find(jid);
+            if (pItr == palMessages.end()) {
+                pItr = palMessages.insert(std::make_pair(jid, Index())).first;
+            }
+            pItr->second.insert(std::make_pair(id, message));
+        }
+    } else {
+        myMessages.insert(std::make_pair(id, message));
+    }
+    messageIndex.insert(std::make_pair(id, message));
     int index = std::distance<Order::const_iterator>(messageOrder.begin(), result.first);   //need to make with binary indexed tree
     Position res = invalid;
     if (index == 0) {
@@ -103,83 +142,11 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
         index += 1;
     }
     
-    QVBoxLayout* vBox = new QVBoxLayout();
-    QHBoxLayout* hBox = new QHBoxLayout();
-    QWidget* message = new QWidget();
-    message->setLayout(vBox);
-    message->setBackgroundRole(QPalette::AlternateBase);
-    message->setAutoFillBackground(true);
-    
-    
-    QString bd = msg.getBody();
-    //bd.replace(imgReg, "<img src=\"\\1\"/>");
-    bd.replace(urlReg, "<a href=\"\\1\">\\1</a>");
-    QLabel* body = new QLabel(bd);
-    body->setTextInteractionFlags(body->textInteractionFlags() | Qt::TextSelectableByMouse);
-    QLabel* sender = new QLabel();
-    QLabel* time = new QLabel(msg.getTime().toLocalTime().toString());
-    QFont dFont = time->font();
-    dFont.setItalic(true);
-    dFont.setPointSize(dFont.pointSize() - 2);
-    time->setFont(dFont);
-    time->setForegroundRole(QPalette::ToolTipText);
-    QFont f;
-    f.setBold(true);
-    sender->setFont(f);
-    
-    body->setWordWrap(true);
-    body->setOpenExternalLinks(true);
-    
-    vBox->addWidget(sender);
-    vBox->addWidget(body);
-    vBox->addWidget(time);
-    
-    QGraphicsDropShadowEffect *effect = new QGraphicsDropShadowEffect;
-    effect->setBlurRadius(10);
-    effect->setXOffset(1);
-    effect->setYOffset(1);
-    effect->setColor(Qt::black);
-
-    message->setGraphicsEffect(effect);
-    
-    if (room) {
-        if (msg.getFromResource() == myName) {
-            //body->setAlignment(Qt::AlignRight);
-            sender->setAlignment(Qt::AlignRight);
-            time->setAlignment(Qt::AlignRight);
-            sender->setText(myName);
-            hBox->addStretch();
-            hBox->addWidget(message);
-        } else {
-            sender->setText(msg.getFromResource());
-            hBox->addWidget(message);
-            hBox->addStretch();
-        }
-    } else {
-        if (msg.getOutgoing()) {
-            //body->setAlignment(Qt::AlignRight);
-            sender->setAlignment(Qt::AlignRight);
-            time->setAlignment(Qt::AlignRight);
-            sender->setText(myName);
-            hBox->addStretch();
-            hBox->addWidget(message);
-        } else {
-            QString jid = msg.getFromJid();
-            std::map<QString, QString>::iterator itr = palNames.find(jid);
-            if (itr != palNames.end()) {
-                sender->setText(itr->second);
-            } else {
-                sender->setText(jid);
-            }
-            hBox->addWidget(message);
-            hBox->addStretch();
-        }
-    }
         
     if (res == end) {
-        layout->addLayout(hBox);
+        layout->addLayout(message);
     } else {
-        layout->insertLayout(index, hBox);
+        layout->insertLayout(index, message);
     }
     
     return res;
@@ -188,6 +155,9 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
 void MessageLine::setMyName(const QString& name)
 {
     myName = name;
+    for (Index::const_iterator itr = myMessages.begin(), end = myMessages.end(); itr != end; ++itr) {
+        itr->second->setSender(name);
+    }
 }
 
 void MessageLine::setPalName(const QString& jid, const QString& name)
@@ -197,6 +167,13 @@ void MessageLine::setPalName(const QString& jid, const QString& name)
         palNames.insert(std::make_pair(jid, name));
     } else {
         itr->second = name;
+    }
+    
+    std::map<QString, Index>::iterator pItr = palMessages.find(jid);
+    if (pItr != palMessages.end()) {
+        for (Index::const_iterator itr = pItr->second.begin(), end = pItr->second.end(); itr != end; ++itr) {
+            itr->second->setSender(name);
+        }
     }
 }
 

@@ -191,7 +191,7 @@
           <enum>Qt::ScrollBarAlwaysOff</enum>
          </property>
          <property name="sizeAdjustPolicy">
-          <enum>QAbstractScrollArea::AdjustToContents</enum>
+          <enum>QAbstractScrollArea::AdjustIgnored</enum>
          </property>
          <property name="widgetResizable">
           <bool>true</bool>
@@ -202,7 +202,7 @@
             <x>0</x>
             <y>0</y>
             <width>572</width>
-            <height>116</height>
+            <height>123</height>
            </rect>
           </property>
           <layout class="QHBoxLayout" name="horizontalLayout_2">
@@ -339,7 +339,8 @@
              <string/>
             </property>
             <property name="icon">
-             <iconset theme="mail-attachment-symbolic"/>
+             <iconset theme="mail-attachment-symbolic">
+              <normaloff>.</normaloff>.</iconset>
             </property>
             <property name="flat">
              <bool>true</bool>

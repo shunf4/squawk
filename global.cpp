@@ -240,6 +240,7 @@ void Shared::Message::serialize(QDataStream& data) const
     data << t;
     data << outgoing;
     data << forwarded;
+    data << oob;
 }
 
 void Shared::Message::deserialize(QDataStream& data)
@@ -257,6 +258,7 @@ void Shared::Message::deserialize(QDataStream& data)
     type = static_cast<Type>(t);
     data >> outgoing;
     data >> forwarded;
+    data >> oob;
 }
 
 QString Shared::generateUUID()
@@ -272,6 +274,26 @@ QString Shared::generateUUID()
 void Shared::Message::setCurrentTime()
 {
     time = QDateTime::currentDateTime();
+}
+
+QString Shared::Message::getOutOfBandUrl() const
+{
+    return oob;
+}
+
+bool Shared::Message::hasOutOfBandUrl() const
+{
+    return oob.size() > 0;
+}
+
+void Shared::Message::setOutOfBandUrl(const QString& url)
+{
+    oob = url;
+}
+
+bool Shared::Message::storable() const
+{
+    return id.size() > 0 && (body.size() > 0 || oob.size()) > 0;
 }
 
 QIcon Shared::availabilityIcon(Shared::Availability av, bool big)

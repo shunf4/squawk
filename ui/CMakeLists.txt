@@ -30,6 +30,7 @@ set(squawkUI_SRC
   widgets/accounts.cpp
   widgets/account.cpp
   widgets/joinconference.cpp
+  widgets/message.cpp
 )
 
 # Tell CMake to create the helloworld executable

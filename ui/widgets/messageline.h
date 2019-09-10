@@ -29,7 +29,9 @@
 #include <QGraphicsView>
 #include <QGraphicsPixmapItem>
 #include <QVariantAnimation>
+
 #include "../global.h"
+#include "message.h"
 
 class MessageLine : public QWidget
 {
@@ -66,10 +68,12 @@ private:
             return a->getTime() < b->getTime();
         }
     };
-    typedef std::map<QDateTime, Shared::Message*> Order;
-    typedef std::map<QString, Shared::Message*> Index;
+    typedef std::map<QDateTime, Message*> Order;
+    typedef std::map<QString, Message*> Index;
     Index messageIndex;
     Order messageOrder;
+    Index myMessages;
+    std::map<QString, Index> palMessages;
     QVBoxLayout* layout;
     
     QString myName;

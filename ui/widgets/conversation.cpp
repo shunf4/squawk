@@ -35,6 +35,8 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     line(new MessageLine(muc)),
     m_ui(new Ui::Conversation()),
     ker(),
+    res(),
+    vis(),
     thread(),
     statusIcon(0),
     statusLabel(0),
@@ -51,6 +53,9 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     statusLabel = m_ui->statusLabel;
     
     connect(&ker, SIGNAL(enterPressed()), this, SLOT(onEnterPressed()));
+    connect(&res, SIGNAL(resized()), this, SLOT(onScrollResize()));
+    connect(&vis, SIGNAL(shown()), this, SLOT(onScrollResize()));
+    connect(&vis, SIGNAL(hidden()), this, SLOT(onScrollResize()));
     connect(m_ui->sendButton, SIGNAL(clicked(bool)), this, SLOT(onEnterPressed()));
     connect(line, SIGNAL(resize(int)), this, SLOT(onMessagesResize(int)));
     //connect(m_ui->attachButton, SIGNAL(clicked(bool)), this, SLOT(onAttach()));
@@ -59,9 +64,11 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     
     QScrollBar* vs = m_ui->scrollArea->verticalScrollBar();
     m_ui->scrollArea->setWidget(line);
+    vs->installEventFilter(&vis);
     vs->setBackgroundRole(QPalette::Base);
     vs->setAutoFillBackground(true);
     connect(vs, SIGNAL(valueChanged(int)), this, SLOT(onSliderValueChanged(int)));
+    m_ui->scrollArea->installEventFilter(&res);
     
     applyVisualEffects();
 }
@@ -236,6 +243,7 @@ void Conversation::showEvent(QShowEvent* event)
     emit shown();
     
     QWidget::showEvent(event);
+    
 }
 
 void Conversation::onAttach()
@@ -262,3 +270,49 @@ void Conversation::setStatus(const QString& status)
 {
     statusLabel->setText(status);
 }
+
+void Conversation::onScrollResize()
+{
+    if (everShown) {
+        int size = m_ui->scrollArea->width();
+        QScrollBar* bar = m_ui->scrollArea->verticalScrollBar();
+        if (bar->isVisible()) {
+            size -= bar->width();
+        }
+        line->setMaximumWidth(size);
+    }
+}
+
+Resizer::Resizer(QWidget* parent):
+    QObject(parent)
+{
+    
+}
+
+bool Resizer::eventFilter(QObject* obj, QEvent* event)
+{
+    if (event->type() == QEvent::Resize) {
+        emit resized();
+    }
+
+    return false;
+}
+
+bool VisibilityCatcher::eventFilter(QObject* obj, QEvent* event)
+{
+    if (event->type() == QEvent::Show) {
+        emit shown();
+    }
+    
+    if (event->type() == QEvent::Hide) {
+        emit hidden();
+    }
+    
+    return false;
+}
+
+VisibilityCatcher::VisibilityCatcher(QWidget* parent):
+QObject(parent)
+{
+}
+

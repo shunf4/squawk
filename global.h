@@ -128,6 +128,7 @@ public:
     void setForwarded(bool fwd);
     void setType(Type t);
     void setCurrentTime();
+    void setOutOfBandUrl(const QString& url);
     
     QString getFrom() const;
     QString getFromJid() const;
@@ -142,6 +143,9 @@ public:
     bool getOutgoing() const;
     bool getForwarded() const;
     Type getType() const;
+    bool hasOutOfBandUrl() const;
+    bool storable() const;
+    QString getOutOfBandUrl() const;
     
     QString getPenPalJid() const;
     QString getPenPalResource() const;
@@ -162,6 +166,7 @@ private:
     Type type;
     bool outgoing;
     bool forwarded;
+    QString oob;
 };
 
 static const std::deque<QString> fallbackAvailabilityThemeIconsLightBig = {

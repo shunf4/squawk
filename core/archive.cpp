@@ -57,6 +57,7 @@ void Core::Archive::open(const QString& account)
         }
         
         mdb_env_set_maxdbs(environment, 4);
+        mdb_env_set_mapsize(environment, 1UL * 1024UL * 1024UL * 1024UL);
         mdb_env_open(environment, path.toStdString().c_str(), 0, 0664);
         
         MDB_txn *txn;

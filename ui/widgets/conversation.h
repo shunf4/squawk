@@ -42,6 +42,31 @@ signals:
     void enterPressed();
 };
 
+class Resizer : public QObject {
+    Q_OBJECT
+public:
+    Resizer(QWidget* parent = nullptr);
+    
+protected:
+    bool eventFilter(QObject* obj, QEvent* event) override;
+
+signals:
+    void resized();
+};
+
+class VisibilityCatcher : public QObject {
+    Q_OBJECT
+public:
+    VisibilityCatcher(QWidget* parent = nullptr);
+    
+protected:
+    bool eventFilter(QObject* obj, QEvent* event) override;
+
+signals:
+    void hidden();
+    void shown();
+};
+
 class Conversation : public QWidget
 {
     Q_OBJECT
@@ -75,6 +100,7 @@ protected slots:
     void onSliderValueChanged(int value);
     void onAttach();
     void onFileSelected();
+    void onScrollResize();
     
 public:
     const bool isMuc;
@@ -93,6 +119,8 @@ protected:
     MessageLine* line;
     QScopedPointer<Ui::Conversation> m_ui;
     KeyEnterReceiver ker;
+    Resizer res;
+    VisibilityCatcher vis;
     QString thread;
     QLabel* statusIcon;
     QLabel* statusLabel;
