@@ -28,6 +28,7 @@
 
 #include "account.h"
 #include "../global.h"
+#include "storage.h"
 
 namespace Core
 {
@@ -61,6 +62,7 @@ signals:
     void addRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removeRoomParticipant(const QString& account, const QString& jid, const QString& name);
+    void fileLocalPathResponse(const QString& messageId, const QString& path);
     
 public slots:
     void start();
@@ -81,6 +83,7 @@ public slots:
     void setRoomAutoJoin(const QString& account, const QString& jid, bool joined);
     void addRoomRequest(const QString& account, const QString& jid, const QString& nick, const QString& password, bool autoJoin);
     void removeRoomRequest(const QString& account, const QString& jid);
+    void fileLocalPathRequest(const QString& messageId, const QString& url);
     
 private:
     typedef std::deque<Account*> Accounts;
@@ -89,6 +92,7 @@ private:
     Accounts accounts;
     AccountsMap amap;
     Shared::Availability state;
+    Storage files;
     
 private:
     void addAccount(const QString& login, const QString& server, const QString& password, const QString& name, const QString& resource);

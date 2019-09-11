@@ -25,7 +25,8 @@
 Core::Squawk::Squawk(QObject* parent):
     QObject(parent),
     accounts(),
-    amap()
+    amap(),
+    files("files")
 {
 
 }
@@ -42,7 +43,7 @@ Core::Squawk::~Squawk()
 void Core::Squawk::stop()
 {
     qDebug("Stopping squawk core..");
-    
+    files.close();
     QSettings settings;
     settings.beginGroup("core");
     settings.beginWriteArray("accounts");
@@ -82,6 +83,7 @@ void Core::Squawk::start()
     }
     settings.endArray();
     settings.endGroup();
+    files.open();
 }
 
 void Core::Squawk::newAccountRequest(const QMap<QString, QVariant>& map)
@@ -485,3 +487,15 @@ void Core::Squawk::addRoomRequest(const QString& account, const QString& jid, co
     itr->second->addRoomRequest(jid, nick, password, autoJoin);
 }
 
+void Core::Squawk::fileLocalPathRequest(const QString& messageId, const QString& url)
+{
+    try {
+        QString path = files.getRecord(url);
+        emit fileLocalPathResponse(messageId, path);
+    } catch (Archive::NotFound e) {
+        emit fileLocalPathResponse(messageId, "");
+    } catch (Archive::Unknown e) {
+        qDebug() << "Error requesting file path:" << e.what();
+        emit fileLocalPathResponse(messageId, "");
+    }
+}

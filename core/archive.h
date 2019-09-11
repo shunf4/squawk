@@ -100,6 +100,30 @@ public:
         std::string account;
     };
     
+    class Exist: 
+    public Utils::Exception
+    {
+    public:
+        Exist(const std::string& acc, const std::string& p_key):Exception(), account(acc), key(p_key){}
+        
+        std::string getMessage() const{return "An attempt to insert element " + key + " to database " + account + " but it already has an element with given id";}
+    private:
+        std::string account;
+        std::string key;
+    };
+    
+    class Unknown:
+    public Utils::Exception
+    {
+    public:
+        Unknown(const std::string& acc, const std::string& message):Exception(), account(acc), msg(message){}
+        
+        std::string getMessage() const{return "Unknown error on database " + account + ": " + msg;}
+    private:
+        std::string account;
+        std::string msg;
+    };
+    
 private:
     bool opened;
     bool fromTheBeginning;
