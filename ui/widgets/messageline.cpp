@@ -149,6 +149,11 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
         layout->insertLayout(index, message);
     }
     
+    if (msg.hasOutOfBandUrl()) {\
+        emit requestLocalFile(msg.getId(), msg.getOutOfBandUrl());
+        connect(message, SIGNAL(downloadFile(const QString&, const QString&)), this, SIGNAL(downloadFile(const QString&, const QString&)));
+    }
+    
     return res;
 }
 
@@ -216,4 +221,28 @@ void MessageLine::hideBusyIndicator()
 void MessageLine::onAnimationValueChanged(const QVariant& value)
 {
     busyPixmap->setRotation(value.toReal());
+}
+
+void MessageLine::responseDownloadProgress(const QString& messageId, qreal progress)
+{
+    Index::const_iterator itr = messageIndex.find(messageId);
+    if (itr == messageIndex.end()) {
+        
+    } else {
+        itr->second->setProgress(progress);
+    }
+}
+
+void MessageLine::responseLocalFile(const QString& messageId, const QString& path)
+{
+    Index::const_iterator itr = messageIndex.find(messageId);
+    if (itr == messageIndex.end()) {
+        
+    } else {
+        if (path.size() > 0) {
+            itr->second->showFile(path);
+        } else {
+            itr->second->addDownloadDialog();
+        }
+    }
 }

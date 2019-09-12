@@ -58,6 +58,8 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     connect(&vis, SIGNAL(hidden()), this, SLOT(onScrollResize()));
     connect(m_ui->sendButton, SIGNAL(clicked(bool)), this, SLOT(onEnterPressed()));
     connect(line, SIGNAL(resize(int)), this, SLOT(onMessagesResize(int)));
+    connect(line, SIGNAL(downloadFile(const QString&, const QString&)), this, SIGNAL(downloadFile(const QString&, const QString&)));
+    connect(line, SIGNAL(requestLocalFile(const QString&, const QString&)), this, SIGNAL(requestLocalFile(const QString&, const QString&)));
     //connect(m_ui->attachButton, SIGNAL(clicked(bool)), this, SLOT(onAttach()));
     
     m_ui->messageEditor->installEventFilter(&ker);
@@ -281,6 +283,16 @@ void Conversation::onScrollResize()
         }
         line->setMaximumWidth(size);
     }
+}
+
+void Conversation::responseDownloadProgress(const QString& messageId, qreal progress)
+{
+    line->responseDownloadProgress(messageId, progress);
+}
+
+void Conversation::responseLocalFile(const QString& messageId, const QString& path)
+{
+    line->responseLocalFile(messageId, path);
 }
 
 Resizer::Resizer(QWidget* parent):

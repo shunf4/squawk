@@ -87,6 +87,7 @@ int main(int argc, char *argv[])
                      squawk, SLOT(removeRoomRequest(const QString&, const QString&)));
     QObject::connect(&w, SIGNAL(addRoomRequest(const QString&, const QString&, const QString&, const QString&, bool)), 
                      squawk, SLOT(addRoomRequest(const QString&, const QString&, const QString&, const QString&, bool)));
+    QObject::connect(&w, SIGNAL(fileLocalPathRequest(const QString&, const QString&)), squawk, SLOT(fileLocalPathRequest(const QString&, const QString&)));
     
     QObject::connect(squawk, SIGNAL(newAccount(const QMap<QString, QVariant>&)), &w, SLOT(newAccount(const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(addContact(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)), 
@@ -119,6 +120,8 @@ int main(int argc, char *argv[])
                      &w, SLOT(changeRoomParticipant(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(removeRoomParticipant(const QString&, const QString&, const QString&)), 
                      &w, SLOT(removeRoomParticipant(const QString&, const QString&, const QString&)));
+    QObject::connect(squawk, SIGNAL(fileLocalPathResponse(const QString&, const QString&)), &w, SLOT(fileLocalPathResponse(const QString&, const QString&)));
+    
     
     //qDebug() << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
     

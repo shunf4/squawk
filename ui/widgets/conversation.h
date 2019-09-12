@@ -82,11 +82,15 @@ public:
     void setPalResource(const QString& res);
     void responseArchive(const std::list<Shared::Message> list);
     void showEvent(QShowEvent * event) override;
+    void responseLocalFile(const QString& messageId, const QString& path);
+    void responseDownloadProgress(const QString& messageId, qreal progress);
     
 signals:
     void sendMessage(const Shared::Message& message);
     void requestArchive(const QString& before);
     void shown();
+    void requestLocalFile(const QString& messageId, const QString& url);
+    void downloadFile(const QString& messageId, const QString& url);
     
 protected:
     virtual void setName(const QString& name);

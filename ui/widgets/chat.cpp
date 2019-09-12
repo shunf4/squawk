@@ -29,13 +29,6 @@ Chat::Chat(Models::Contact* p_contact, QWidget* parent):
     connect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
     
     line->setMyName(p_contact->getAccountName());
-    
-    Models::Contact::Messages deque;
-    contact->getMessages(deque);
-    
-    for (Models::Contact::Messages::const_iterator itr = deque.begin(), end = deque.end(); itr != end; ++itr) {
-        addMessage(*itr);
-    }
 }
 
 Chat::~Chat()

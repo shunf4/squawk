@@ -30,7 +30,13 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     date(new QLabel(msg.getTime().toLocalTime().toString())),
     sender(new QLabel(p_sender)),
     text(new QLabel()),
-    shadow(new QGraphicsDropShadowEffect())
+    shadow(new QGraphicsDropShadowEffect()),
+    downloadButton(0),
+    file(0),
+    progress(0),
+    hasDownloadButton(false),
+    hasProgress(false),
+    hasFile(false)
 {
     body->setBackgroundRole(QPalette::AlternateBase);
     body->setAutoFillBackground(true);
@@ -42,6 +48,9 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     text->setTextInteractionFlags(text->textInteractionFlags() | Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
     text->setWordWrap(true);
     text->setOpenExternalLinks(true);
+    if (bd.size() == 0) {
+        text->hide();
+    }
     
     QFont dFont = date->font();
     dFont.setItalic(true);
@@ -86,4 +95,67 @@ QString Message::getId() const
 void Message::setSender(const QString& p_sender)
 {
     sender->setText(p_sender);
+}
+
+void Message::addDownloadDialog()
+{
+    if (hasFile) {
+        file->deleteLater();
+        file = 0;
+        hasFile = false;
+    }
+    if (hasProgress) {
+        progress->deleteLater();
+        progress = 0;
+        hasProgress = false;;
+    }
+    if (!hasDownloadButton) {
+        downloadButton = new QPushButton(QIcon::fromTheme("download"), "Download");
+        connect(downloadButton, SIGNAL(clicked()), this, SLOT(onDownload()));
+        bodyLayout->insertWidget(2, downloadButton);
+        hasDownloadButton = true;
+    }
+}
+
+void Message::onDownload()
+{
+    emit downloadFile(msg.getId(), msg.getOutOfBandUrl());
+}
+
+void Message::setProgress(qreal value)
+{
+    if (hasFile) {
+        file->deleteLater();
+        file = 0;
+        hasFile = false;
+    }
+    if (hasDownloadButton) {
+        downloadButton->deleteLater();
+        downloadButton = 0;
+        hasDownloadButton = false;
+    }
+    if (!hasProgress) {
+        progress = new QLabel(std::to_string(value).c_str());
+        bodyLayout->insertWidget(2, progress);
+        hasProgress = true;
+    }
+}
+
+void Message::showFile(const QString& path)
+{
+    if (hasDownloadButton) {
+        downloadButton->deleteLater();
+        downloadButton = 0;
+        hasDownloadButton = false;
+    }
+    if (hasProgress) {
+        progress->deleteLater();
+        progress = 0;
+        hasProgress = false;;
+    }
+    if (!hasFile) {
+        file = new QLabel(path);
+        bodyLayout->insertWidget(2, file);
+        hasFile = true;
+    }
 }

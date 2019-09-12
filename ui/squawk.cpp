@@ -262,14 +262,17 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
             Conversations::const_iterator itr = conversations.find(*id);
             Conversation* conv = 0;
             bool created = false;
+            Models::Contact::Messages deque;
             if (itr != conversations.end()) {
                 conv = itr->second;
             } else if (contact != 0) {
                 created = true;
                 conv = new Chat(contact);
+                contact->getMessages(deque);
             } else if (room != 0) {
                 created = true;
                 conv = new Room(room);
+                room->getMessages(deque);
                 
                 if (!room->getJoined()) {
                     emit setRoomJoined(id->account, id->name, true);
@@ -283,9 +286,17 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                     connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
                     connect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
                     connect(conv, SIGNAL(requestArchive(const QString&)), this, SLOT(onConversationRequestArchive(const QString&)));
+                    connect(conv, SIGNAL(requestLocalFile(const QString&, const QString&)), this, SLOT(onConversationRequestLocalFile(const QString&, const QString&)));
+                    connect(conv, SIGNAL(downloadFile(const QString&, const QString&)), this, SLOT(onConversationDownloadFile(const QString&, const QString&)));
                     connect(conv, SIGNAL(shown()), this, SLOT(onConversationShown()));
                     
                     conversations.insert(std::make_pair(*id, conv));
+                    
+                    if (created) {
+                        for (Models::Contact::Messages::const_iterator itr = deque.begin(), end = deque.end(); itr != end; ++itr) {
+                            conv->addMessage(*itr);
+                        }
+                    }
                 }
                 
                 conv->show();
@@ -323,6 +334,45 @@ void Squawk::onConversationClosed(QObject* parent)
         }
     }
     conversations.erase(itr);
+}
+
+void Squawk::onConversationDownloadFile(const QString& messageId, const QString& url)
+{
+    
+}
+
+void Squawk::fileLocalPathResponse(const QString& messageId, const QString& path)
+{
+    std::map<QString, std::set<Models::Roster::ElId>>::const_iterator itr = requestedFiles.find(messageId);
+    if (itr == requestedFiles.end()) {
+        qDebug() << "fileLocalPathResponse in UI Squawk but there is nobody waiting for that path, skipping";
+        return;
+    } else {
+        const std::set<Models::Roster::ElId>& convs = itr->second;
+        for (std::set<Models::Roster::ElId>::const_iterator cItr = convs.begin(), cEnd = convs.end(); cItr != cEnd; ++cItr) {
+            const Models::Roster::ElId& id = *cItr;
+            Conversations::const_iterator c = conversations.find(id);
+            if (c != conversations.end()) {
+                c->second->responseLocalFile(messageId, path);
+            }
+        }
+        requestedFiles.erase(itr);
+    }
+}
+
+void Squawk::onConversationRequestLocalFile(const QString& messageId, const QString& url)
+{
+    Conversation* conv = static_cast<Conversation*>(sender());
+    std::map<QString, std::set<Models::Roster::ElId>>::iterator itr = requestedFiles.find(messageId);
+    bool created = false;
+    if (itr == requestedFiles.end()) {
+        itr = requestedFiles.insert(std::make_pair(messageId, std::set<Models::Roster::ElId>())).first;
+        created = true;
+    }
+    itr->second.insert(Models::Roster::ElId(conv->getAccount(), conv->getJid()));
+    if (created) {
+        emit fileLocalPathRequest(messageId, url);
+    }
 }
 
 void Squawk::accountMessage(const QString& account, const Shared::Message& data)

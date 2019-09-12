@@ -52,9 +52,13 @@ public:
     QString firstMessageId() const;
     void showBusyIndicator();
     void hideBusyIndicator();
+    void responseLocalFile(const QString& messageId, const QString& path);
+    void responseDownloadProgress(const QString& messageId, qreal progress);
     
 signals:
     void resize(int amount);
+    void downloadFile(const QString& messageId, const QString& url);
+    void requestLocalFile(const QString& messageId, const QString& url);
     
 protected:
     void resizeEvent(QResizeEvent * event) override;

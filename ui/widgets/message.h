@@ -24,6 +24,7 @@
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QGraphicsDropShadowEffect>
+#include <QPushButton>
 
 #include "../../global.h"
 
@@ -40,6 +41,13 @@ public:
     void setSender(const QString& sender);
     QString getId() const;
     
+    void addDownloadDialog();
+    void showFile(const QString& path);
+    void setProgress(qreal value);
+    
+signals:
+    void downloadFile(const QString& messageId, const QString& url);
+    
 private:
     Shared::Message msg;
     QWidget* body;
@@ -48,6 +56,16 @@ private:
     QLabel* sender;
     QLabel* text;
     QGraphicsDropShadowEffect* shadow;
+    QPushButton* downloadButton;
+    QLabel* file;
+    QLabel* progress;
+    bool hasDownloadButton;
+    bool hasProgress;
+    bool hasFile;
+    
+private slots:
+    void onDownload();
+    
 };
 
 #endif // MESSAGE_H
