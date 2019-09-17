@@ -34,6 +34,7 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     downloadButton(0),
     file(0),
     progress(0),
+    fileComment(0),
     hasDownloadButton(false),
     hasProgress(false),
     hasFile(false)
@@ -110,9 +111,15 @@ void Message::addDownloadDialog()
         hasProgress = false;;
     }
     if (!hasDownloadButton) {
+        if (msg.getBody() == msg.getOutOfBandUrl()) {
+            text->setText("");
+            text->hide();
+        }
         downloadButton = new QPushButton(QIcon::fromTheme("download"), "Download");
+        fileComment = new QLabel(sender->text() + " is offering you to download a file");
         connect(downloadButton, SIGNAL(clicked()), this, SLOT(onDownload()));
-        bodyLayout->insertWidget(2, downloadButton);
+        bodyLayout->insertWidget(2, fileComment);
+        bodyLayout->insertWidget(3, downloadButton);
         hasDownloadButton = true;
     }
 }
@@ -131,10 +138,16 @@ void Message::setProgress(qreal value)
     }
     if (hasDownloadButton) {
         downloadButton->deleteLater();
+        fileComment->deleteLater();
         downloadButton = 0;
+        fileComment = 0;
         hasDownloadButton = false;
     }
     if (!hasProgress) {
+        if (msg.getBody() == msg.getOutOfBandUrl()) {
+            text->setText("");
+            text->hide();
+        }
         progress = new QLabel(std::to_string(value).c_str());
         bodyLayout->insertWidget(2, progress);
         hasProgress = true;
@@ -145,16 +158,25 @@ void Message::showFile(const QString& path)
 {
     if (hasDownloadButton) {
         downloadButton->deleteLater();
+        fileComment->deleteLater();
         downloadButton = 0;
+        fileComment = 0;
         hasDownloadButton = false;
     }
     if (hasProgress) {
         progress->deleteLater();
         progress = 0;
-        hasProgress = false;;
+        hasProgress = false;
     }
     if (!hasFile) {
-        file = new QLabel(path);
+        if (msg.getBody() == msg.getOutOfBandUrl()) {
+            text->setText("");
+            text->hide();
+        }
+        //file = new QLabel("<img src=\"" + path + "\">");
+        file = new QLabel();
+        file->setPixmap(QPixmap(path));
+        //file->setScaledContents(true);
         bodyLayout->insertWidget(2, file);
         hasFile = true;
     }

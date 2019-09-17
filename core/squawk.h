@@ -19,7 +19,7 @@
 #ifndef CORE_SQUAWK_H
 #define CORE_SQUAWK_H
 
-#include <QtCore/QObject>
+#include <QObject>
 #include <QString>
 #include <QVariant>
 #include <QMap>
@@ -28,7 +28,7 @@
 
 #include "account.h"
 #include "../global.h"
-#include "storage.h"
+#include "networkaccess.h"
 
 namespace Core
 {
@@ -63,6 +63,7 @@ signals:
     void changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removeRoomParticipant(const QString& account, const QString& jid, const QString& name);
     void fileLocalPathResponse(const QString& messageId, const QString& path);
+    void downloadFileProgress(const QString& messageId, qreal value);
     
 public slots:
     void start();
@@ -84,6 +85,7 @@ public slots:
     void addRoomRequest(const QString& account, const QString& jid, const QString& nick, const QString& password, bool autoJoin);
     void removeRoomRequest(const QString& account, const QString& jid);
     void fileLocalPathRequest(const QString& messageId, const QString& url);
+    void downloadFileRequest(const QString& messageId, const QString& url);
     
 private:
     typedef std::deque<Account*> Accounts;
@@ -92,7 +94,7 @@ private:
     Accounts accounts;
     AccountsMap amap;
     Shared::Availability state;
-    Storage files;
+    NetworkAccess network;
     
 private:
     void addAccount(const QString& login, const QString& server, const QString& password, const QString& name, const QString& resource);

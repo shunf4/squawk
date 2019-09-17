@@ -59,6 +59,7 @@ private:
     QPushButton* downloadButton;
     QLabel* file;
     QLabel* progress;
+    QLabel* fileComment;
     bool hasDownloadButton;
     bool hasProgress;
     bool hasFile;

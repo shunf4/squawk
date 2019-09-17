@@ -26,9 +26,10 @@ Core::Squawk::Squawk(QObject* parent):
     QObject(parent),
     accounts(),
     amap(),
-    files("files")
+    network()
 {
-
+    connect(&network, SIGNAL(fileLocalPathResponse(const QString&, const QString&)), this, SIGNAL(fileLocalPathResponse(const QString&, const QString&)));
+    connect(&network, SIGNAL(downloadFileProgress(const QString&, qreal)), this, SIGNAL(downloadFileProgress(const QString&, qreal)));
 }
 
 Core::Squawk::~Squawk()
@@ -43,7 +44,7 @@ Core::Squawk::~Squawk()
 void Core::Squawk::stop()
 {
     qDebug("Stopping squawk core..");
-    files.close();
+    network.stop();
     QSettings settings;
     settings.beginGroup("core");
     settings.beginWriteArray("accounts");
@@ -83,7 +84,7 @@ void Core::Squawk::start()
     }
     settings.endArray();
     settings.endGroup();
-    files.open();
+    network.start();
 }
 
 void Core::Squawk::newAccountRequest(const QMap<QString, QVariant>& map)
@@ -489,13 +490,10 @@ void Core::Squawk::addRoomRequest(const QString& account, const QString& jid, co
 
 void Core::Squawk::fileLocalPathRequest(const QString& messageId, const QString& url)
 {
-    try {
-        QString path = files.getRecord(url);
-        emit fileLocalPathResponse(messageId, path);
-    } catch (Archive::NotFound e) {
-        emit fileLocalPathResponse(messageId, "");
-    } catch (Archive::Unknown e) {
-        qDebug() << "Error requesting file path:" << e.what();
-        emit fileLocalPathResponse(messageId, "");
-    }
+    network.fileLocalPathRequest(messageId, url);
+}
+
+void Core::Squawk::downloadFileRequest(const QString& messageId, const QString& url)
+{
+    network.downladFileRequest(messageId, url);
 }

@@ -67,6 +67,7 @@ signals:
     void addRoomRequest(const QString& account, const QString& jid, const QString& nick, const QString& password, bool autoJoin);
     void removeRoomRequest(const QString& account, const QString& jid);
     void fileLocalPathRequest(const QString& messageId, const QString& url);
+    void downloadFileRequest(const QString& messageId, const QString& url);
     
 public slots:
     void newAccount(const QMap<QString, QVariant>& account);
@@ -90,6 +91,7 @@ public slots:
     void changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removeRoomParticipant(const QString& account, const QString& jid, const QString& name);
     void fileLocalPathResponse(const QString& messageId, const QString& path);
+    void downloadFileProgress(const QString& messageId, qreal value);
     
 private:
     typedef std::map<Models::Roster::ElId, Conversation*> Conversations;

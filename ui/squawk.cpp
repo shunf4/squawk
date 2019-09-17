@@ -338,7 +338,35 @@ void Squawk::onConversationClosed(QObject* parent)
 
 void Squawk::onConversationDownloadFile(const QString& messageId, const QString& url)
 {
-    
+    Conversation* conv = static_cast<Conversation*>(sender());
+    std::map<QString, std::set<Models::Roster::ElId>>::iterator itr = requestedFiles.find(messageId);
+    bool created = false;
+    if (itr == requestedFiles.end()) {
+        itr = requestedFiles.insert(std::make_pair(messageId, std::set<Models::Roster::ElId>())).first;
+        created = true;
+    }
+    itr->second.insert(Models::Roster::ElId(conv->getAccount(), conv->getJid()));
+    if (created) {
+        emit downloadFileRequest(messageId, url);
+    }
+}
+
+void Squawk::downloadFileProgress(const QString& messageId, qreal value)
+{
+    std::map<QString, std::set<Models::Roster::ElId>>::const_iterator itr = requestedFiles.find(messageId);
+    if (itr == requestedFiles.end()) {
+        qDebug() << "downloadFileProgress in UI Squawk but there is nobody waiting for that id" << messageId << ", skipping";
+        return;
+    } else {
+        const std::set<Models::Roster::ElId>& convs = itr->second;
+        for (std::set<Models::Roster::ElId>::const_iterator cItr = convs.begin(), cEnd = convs.end(); cItr != cEnd; ++cItr) {
+            const Models::Roster::ElId& id = *cItr;
+            Conversations::const_iterator c = conversations.find(id);
+            if (c != conversations.end()) {
+                c->second->responseDownloadProgress(messageId, value);
+            }
+        }
+    }
 }
 
 void Squawk::fileLocalPathResponse(const QString& messageId, const QString& path)
@@ -348,7 +376,8 @@ void Squawk::fileLocalPathResponse(const QString& messageId, const QString& path
         qDebug() << "fileLocalPathResponse in UI Squawk but there is nobody waiting for that path, skipping";
         return;
     } else {
-        const std::set<Models::Roster::ElId>& convs = itr->second;
+        std::set<Models::Roster::ElId> convs = itr->second;
+        requestedFiles.erase(itr);
         for (std::set<Models::Roster::ElId>::const_iterator cItr = convs.begin(), cEnd = convs.end(); cItr != cEnd; ++cItr) {
             const Models::Roster::ElId& id = *cItr;
             Conversations::const_iterator c = conversations.find(id);
@@ -356,7 +385,6 @@ void Squawk::fileLocalPathResponse(const QString& messageId, const QString& path
                 c->second->responseLocalFile(messageId, path);
             }
         }
-        requestedFiles.erase(itr);
     }
 }
 
