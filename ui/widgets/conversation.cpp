@@ -295,21 +295,6 @@ void Conversation::responseLocalFile(const QString& messageId, const QString& pa
     line->responseLocalFile(messageId, path);
 }
 
-Resizer::Resizer(QWidget* parent):
-    QObject(parent)
-{
-    
-}
-
-bool Resizer::eventFilter(QObject* obj, QEvent* event)
-{
-    if (event->type() == QEvent::Resize) {
-        emit resized();
-    }
-
-    return false;
-}
-
 bool VisibilityCatcher::eventFilter(QObject* obj, QEvent* event)
 {
     if (event->type() == QEvent::Show) {

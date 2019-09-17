@@ -23,6 +23,7 @@
 #include <QScopedPointer>
 #include "../../global.h"
 #include "messageline.h"
+#include "../utils/resizer.h"
 
 namespace Ui
 {
@@ -40,18 +41,6 @@ protected:
     
 signals:
     void enterPressed();
-};
-
-class Resizer : public QObject {
-    Q_OBJECT
-public:
-    Resizer(QWidget* parent = nullptr);
-    
-protected:
-    bool eventFilter(QObject* obj, QEvent* event) override;
-
-signals:
-    void resized();
 };
 
 class VisibilityCatcher : public QObject {

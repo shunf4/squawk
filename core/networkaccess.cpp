@@ -115,8 +115,12 @@ void Core::NetworkAccess::onDownloadProgress(qint64 bytesReceived, qint64 bytesT
         qDebug() << "an error downloading" << url << ": the request had some progress but seems like noone is waiting for it, skipping";
     } else {
         Download* dwn = itr->second;
+        qreal received = bytesReceived;
+        qreal total = bytesTotal;
+        qreal progress = received/total;
+        dwn->progress = progress;
         for (std::set<QString>::const_iterator mItr = dwn->messages.begin(), end = dwn->messages.end(); mItr != end; ++mItr) {
-            emit downloadFileProgress(*mItr, bytesReceived/bytesTotal);
+            emit downloadFileProgress(*mItr, progress);
         }
     }
 }

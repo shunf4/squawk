@@ -25,8 +25,14 @@
 #include <QLabel>
 #include <QGraphicsDropShadowEffect>
 #include <QPushButton>
+#include <QProgressBar>
+#include <QAction>
+#include <QDesktopServices>
+#include <QUrl>
 
 #include "../../global.h"
+#include "../utils/resizer.h"
+#include "../utils/image.h"
 
 /**
  * @todo write docs
@@ -58,15 +64,21 @@ private:
     QGraphicsDropShadowEffect* shadow;
     QPushButton* downloadButton;
     QLabel* file;
-    QLabel* progress;
+    QProgressBar* progress;
     QLabel* fileComment;
     bool hasDownloadButton;
     bool hasProgress;
     bool hasFile;
+    bool commentAdded;
     
 private slots:
     void onDownload();
-    
+  
+private:
+    void hideDownload();
+    void hideProgress();
+    void hideFile();
+    void hideComment();
 };
 
 #endif // MESSAGE_H

@@ -17,6 +17,9 @@
  */
 
 #include <QDebug>
+#include <QMimeDatabase>
+#include <QPixmap>
+#include <QFileInfo>
 #include "message.h"
 
 const QRegExp urlReg("^(?!<img\\ssrc=\")((?:https?|ftp)://\\S+)");
@@ -34,10 +37,11 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     downloadButton(0),
     file(0),
     progress(0),
-    fileComment(0),
+    fileComment(new QLabel()),
     hasDownloadButton(false),
     hasProgress(false),
-    hasFile(false)
+    hasFile(false),
+    commentAdded(false)
 {
     body->setBackgroundRole(QPalette::AlternateBase);
     body->setAutoFillBackground(true);
@@ -86,6 +90,9 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
 
 Message::~Message()
 {
+    if (!commentAdded) {
+        delete fileComment;
+    }
 }
 
 QString Message::getId() const
@@ -100,27 +107,23 @@ void Message::setSender(const QString& p_sender)
 
 void Message::addDownloadDialog()
 {
-    if (hasFile) {
-        file->deleteLater();
-        file = 0;
-        hasFile = false;
-    }
-    if (hasProgress) {
-        progress->deleteLater();
-        progress = 0;
-        hasProgress = false;;
-    }
+    hideFile();
+    hideProgress();
     if (!hasDownloadButton) {
+        hideComment();
         if (msg.getBody() == msg.getOutOfBandUrl()) {
             text->setText("");
             text->hide();
         }
         downloadButton = new QPushButton(QIcon::fromTheme("download"), "Download");
-        fileComment = new QLabel(sender->text() + " is offering you to download a file");
+        downloadButton->setToolTip("<a href=\"" + msg.getOutOfBandUrl() + "\">" + msg.getOutOfBandUrl() + "</a>");
+        fileComment->setText(sender->text() + " is offering you to download a file");
+        fileComment->show();
         connect(downloadButton, SIGNAL(clicked()), this, SLOT(onDownload()));
         bodyLayout->insertWidget(2, fileComment);
         bodyLayout->insertWidget(3, downloadButton);
         hasDownloadButton = true;
+        commentAdded = true;
     }
 }
 
@@ -131,53 +134,97 @@ void Message::onDownload()
 
 void Message::setProgress(qreal value)
 {
+    hideFile();
+    hideDownload();
+    if (!hasProgress) {
+        hideComment();
+        if (msg.getBody() == msg.getOutOfBandUrl()) {
+            text->setText("");
+            text->hide();
+        }
+        progress = new QProgressBar();
+        progress->setRange(0, 100);
+        fileComment->setText("Downloading...");
+        fileComment->show();
+        bodyLayout->insertWidget(2, progress);
+        bodyLayout->insertWidget(3, fileComment);
+        hasProgress = true;
+        commentAdded = true;
+    }
+    progress->setValue(value * 100);
+}
+
+void Message::showFile(const QString& path)
+{
+    hideDownload();
+    hideProgress();
+    if (!hasFile) {
+        hideComment();
+        if (msg.getBody() == msg.getOutOfBandUrl()) {
+            text->setText("");
+            text->hide();
+        }
+        QMimeDatabase db;
+        QMimeType type = db.mimeTypeForFile(path);
+        QStringList parts = type.name().split("/");
+        QString big = parts.front();
+        QFileInfo info(path);
+        fileComment = new QLabel();
+        if (big == "image") {
+            file = new Image(path);
+        } else {
+            file = new QLabel();
+            file->setPixmap(QIcon::fromTheme(type.iconName()).pixmap(50));
+            file->setAlignment(Qt::AlignCenter);
+            fileComment->setText(info.fileName());
+            fileComment->setWordWrap(true);
+            fileComment->show();
+        }
+        file->setContextMenuPolicy(Qt::ActionsContextMenu);
+        QAction* openAction = new QAction(QIcon::fromTheme("document-new-from-template"), "Open", file);
+        connect(openAction, &QAction::triggered, [path]() {             //TODO need to get rid of this shame
+            QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+        });
+        file->addAction(openAction);
+        bodyLayout->insertWidget(2, file);
+        bodyLayout->insertWidget(3, fileComment);
+        hasFile = true;
+        commentAdded = true;
+    }
+}
+
+void Message::hideComment()
+{
+    if (commentAdded) {
+        bodyLayout->removeWidget(fileComment);
+        fileComment->hide();
+        fileComment->setWordWrap(false);
+    }
+}
+
+void Message::hideDownload()
+{
+    if (hasDownloadButton) {
+        downloadButton->deleteLater();
+        downloadButton = 0;
+        hasDownloadButton = false;
+    }
+}
+
+void Message::hideFile()
+{
     if (hasFile) {
         file->deleteLater();
         file = 0;
         hasFile = false;
     }
-    if (hasDownloadButton) {
-        downloadButton->deleteLater();
-        fileComment->deleteLater();
-        downloadButton = 0;
-        fileComment = 0;
-        hasDownloadButton = false;
-    }
-    if (!hasProgress) {
-        if (msg.getBody() == msg.getOutOfBandUrl()) {
-            text->setText("");
-            text->hide();
-        }
-        progress = new QLabel(std::to_string(value).c_str());
-        bodyLayout->insertWidget(2, progress);
-        hasProgress = true;
-    }
 }
 
-void Message::showFile(const QString& path)
+void Message::hideProgress()
 {
-    if (hasDownloadButton) {
-        downloadButton->deleteLater();
-        fileComment->deleteLater();
-        downloadButton = 0;
-        fileComment = 0;
-        hasDownloadButton = false;
-    }
     if (hasProgress) {
         progress->deleteLater();
         progress = 0;
-        hasProgress = false;
-    }
-    if (!hasFile) {
-        if (msg.getBody() == msg.getOutOfBandUrl()) {
-            text->setText("");
-            text->hide();
-        }
-        //file = new QLabel("<img src=\"" + path + "\">");
-        file = new QLabel();
-        file->setPixmap(QPixmap(path));
-        //file->setScaledContents(true);
-        bodyLayout->insertWidget(2, file);
-        hasFile = true;
+        hasProgress = false;;
     }
 }
