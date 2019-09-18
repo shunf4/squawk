@@ -369,6 +369,25 @@ void Squawk::downloadFileProgress(const QString& messageId, qreal value)
     }
 }
 
+void Squawk::downloadFileError(const QString& messageId, const QString& error)
+{
+    std::map<QString, std::set<Models::Roster::ElId>>::const_iterator itr = requestedFiles.find(messageId);
+    if (itr == requestedFiles.end()) {
+        qDebug() << "downloadFileError in UI Squawk but there is nobody waiting for that id" << messageId << ", skipping";
+        return;
+    } else {
+        const std::set<Models::Roster::ElId>& convs = itr->second;
+        for (std::set<Models::Roster::ElId>::const_iterator cItr = convs.begin(), cEnd = convs.end(); cItr != cEnd; ++cItr) {
+            const Models::Roster::ElId& id = *cItr;
+            Conversations::const_iterator c = conversations.find(id);
+            if (c != conversations.end()) {
+                c->second->downloadError(messageId, error);
+            }
+        }
+        requestedFiles.erase(itr);
+    }
+}
+
 void Squawk::fileLocalPathResponse(const QString& messageId, const QString& path)
 {
     std::map<QString, std::set<Models::Roster::ElId>>::const_iterator itr = requestedFiles.find(messageId);
@@ -376,8 +395,7 @@ void Squawk::fileLocalPathResponse(const QString& messageId, const QString& path
         qDebug() << "fileLocalPathResponse in UI Squawk but there is nobody waiting for that path, skipping";
         return;
     } else {
-        std::set<Models::Roster::ElId> convs = itr->second;
-        requestedFiles.erase(itr);
+        const std::set<Models::Roster::ElId>& convs = itr->second;
         for (std::set<Models::Roster::ElId>::const_iterator cItr = convs.begin(), cEnd = convs.end(); cItr != cEnd; ++cItr) {
             const Models::Roster::ElId& id = *cItr;
             Conversations::const_iterator c = conversations.find(id);
@@ -385,6 +403,8 @@ void Squawk::fileLocalPathResponse(const QString& messageId, const QString& path
                 c->second->responseLocalFile(messageId, path);
             }
         }
+        
+        requestedFiles.erase(itr);
     }
 }
 

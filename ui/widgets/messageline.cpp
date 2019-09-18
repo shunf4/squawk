@@ -246,3 +246,14 @@ void MessageLine::responseLocalFile(const QString& messageId, const QString& pat
         }
     }
 }
+
+void MessageLine::downloadError(const QString& messageId, const QString& error)
+{
+    Index::const_iterator itr = messageIndex.find(messageId);
+    if (itr == messageIndex.end()) {
+        
+    } else {
+        itr->second->showError(error);
+    }
+}
+

@@ -49,6 +49,7 @@ public:
     
     void addDownloadDialog();
     void showFile(const QString& path);
+    void showError(const QString& error);
     void setProgress(qreal value);
     
 signals:
@@ -66,10 +67,12 @@ private:
     QLabel* file;
     QProgressBar* progress;
     QLabel* fileComment;
+    QString errorText;
     bool hasDownloadButton;
     bool hasProgress;
     bool hasFile;
     bool commentAdded;
+    bool errorDownloadingFile;
     
 private slots:
     void onDownload();

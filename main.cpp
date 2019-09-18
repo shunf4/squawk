@@ -123,6 +123,7 @@ int main(int argc, char *argv[])
                      &w, SLOT(removeRoomParticipant(const QString&, const QString&, const QString&)));
     QObject::connect(squawk, SIGNAL(fileLocalPathResponse(const QString&, const QString&)), &w, SLOT(fileLocalPathResponse(const QString&, const QString&)));
     QObject::connect(squawk, SIGNAL(downloadFileProgress(const QString&, qreal)), &w, SLOT(downloadFileProgress(const QString&, qreal)));
+    QObject::connect(squawk, SIGNAL(downloadFileError(const QString&, const QString&)), &w, SLOT(downloadFileError(const QString&, const QString&)));
     
     
     //qDebug() << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);

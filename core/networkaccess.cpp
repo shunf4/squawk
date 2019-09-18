@@ -21,7 +21,7 @@
 Core::NetworkAccess::NetworkAccess(QObject* parent):
     QObject(parent),
     running(false),
-    manager(),
+    manager(0),
     files("files"),
     downloads()
 {
@@ -29,7 +29,7 @@ Core::NetworkAccess::NetworkAccess(QObject* parent):
 
 Core::NetworkAccess::~NetworkAccess()
 {
-    
+    stop();
 }
 
 void Core::NetworkAccess::fileLocalPathRequest(const QString& messageId, const QString& url)
@@ -93,6 +93,7 @@ void Core::NetworkAccess::downladFileRequest(const QString& messageId, const QSt
 void Core::NetworkAccess::start()
 {
     if (!running) {
+        manager = new QNetworkAccessManager();
         files.open();
         running = true;
     }
@@ -102,7 +103,14 @@ void Core::NetworkAccess::stop()
 {
     if (running) {
         files.close();
+        manager->deleteLater();
+        manager = 0;
         running = false;
+        
+        for (std::map<QString, Download*>::const_iterator itr = downloads.begin(), end = downloads.end(); itr != end; ++itr) {
+            itr->second->success = false;
+            itr->second->reply->abort();        //assuming it's gonna call onRequestFinished slot
+        }
     }
 }
 
@@ -133,7 +141,128 @@ void Core::NetworkAccess::onRequestError(QNetworkReply::NetworkError code)
     if (itr == downloads.end()) {
         qDebug() << "an error downloading" << url << ": the request is reporting an error but seems like noone is waiting for it, skipping";
     } else {
-        itr->second->success = false;
+        QString errorText;
+        switch (code) {
+            case QNetworkReply::NoError:
+                //this never is supposed to happen
+                break;
+
+        // network layer errors [relating to the destination server] (1-99):
+            case QNetworkReply::ConnectionRefusedError:
+                errorText = "Connection refused";
+                break;
+            case QNetworkReply::RemoteHostClosedError:
+                errorText = "Remote server closed the connection";
+                break;
+            case QNetworkReply::HostNotFoundError:
+                errorText = "Remote host is not found";
+                break;
+            case QNetworkReply::TimeoutError:
+                errorText = "Connection was closed because it timed out";
+                break;
+            case QNetworkReply::OperationCanceledError:
+                //this means I closed it myself by abort() or close(), don't think I need to notify here
+                break;
+            case QNetworkReply::SslHandshakeFailedError:
+                errorText = "Security error";           //TODO need to handle sslErrors signal to get a better description here
+                break;
+            case QNetworkReply::TemporaryNetworkFailureError:
+                //this means the connection is lost by opened route, but it's going to be resumed, not sure I need to notify
+                break;
+            case QNetworkReply::NetworkSessionFailedError:
+                errorText = "Outgoing connection problem";
+                break;
+            case QNetworkReply::BackgroundRequestNotAllowedError:
+                errorText = "Background request is not allowed";
+                break;
+            case QNetworkReply::TooManyRedirectsError:
+                errorText = "The request was  redirected too many times";
+                break;
+            case QNetworkReply::InsecureRedirectError:
+                errorText = "The request was redirected to insecure connection";
+                break;
+            case QNetworkReply::UnknownNetworkError:
+                errorText = "Unknown network error";
+                break;
+
+        // proxy errors (101-199):
+            case QNetworkReply::ProxyConnectionRefusedError:
+                errorText = "The connection to the proxy server was refused";
+                break;
+            case QNetworkReply::ProxyConnectionClosedError:
+                errorText = "Proxy server closed the connection";
+                break;
+            case QNetworkReply::ProxyNotFoundError:
+                errorText = "Proxy host was not found";
+                break;
+            case QNetworkReply::ProxyTimeoutError:
+                errorText = "Connection to the proxy server was closed because it timed out";
+                break;
+            case QNetworkReply::ProxyAuthenticationRequiredError:
+                errorText = "Couldn't connect to proxy server, authentication is required";
+                break;
+            case QNetworkReply::UnknownProxyError:
+                errorText = "Unknown proxy error";
+                break;
+
+        // content errors (201-299):
+            case QNetworkReply::ContentAccessDenied:
+                errorText = "The access to file is denied";
+                break;
+            case QNetworkReply::ContentOperationNotPermittedError:
+                errorText = "The operation over requesting file is not permitted";
+                break;
+            case QNetworkReply::ContentNotFoundError:
+                errorText = "The file was not found";
+                break;
+            case QNetworkReply::AuthenticationRequiredError:
+                errorText = "Couldn't access the file, authentication is required";
+                break;
+            case QNetworkReply::ContentReSendError:
+                errorText = "Sending error, one more attempt will probably solve this problem";
+                break;
+            case QNetworkReply::ContentConflictError:
+                errorText = "The request could not be completed due to a conflict with the current state of the resource";
+                break;
+            case QNetworkReply::ContentGoneError:
+                errorText = "The requested resource is no longer available at the server";
+                break;
+            case QNetworkReply::UnknownContentError:
+                errorText = "Unknown content error";
+                break;
+
+        // protocol errors
+            case QNetworkReply::ProtocolUnknownError:
+                errorText = "Unknown protocol error";
+                break;
+            case QNetworkReply::ProtocolInvalidOperationError:
+                errorText = "Requested operation is not permitted in this protocol";
+                break;
+            case QNetworkReply::ProtocolFailure:
+                errorText = "Low level protocol error";
+                break;
+
+        // Server side errors (401-499)
+            case QNetworkReply::InternalServerError:
+                errorText = "Internal server error";
+                break;
+            case QNetworkReply::OperationNotImplementedError:
+                errorText = "Server doesn't support requested operation";
+                break;
+            case QNetworkReply::ServiceUnavailableError:
+                errorText = "The server is not available for this operation right now";
+                break;
+            case QNetworkReply::UnknownServerError:
+                errorText = "Unknown server error";
+                break;
+        }
+        if (errorText.size() > 0) {
+            itr->second->success = false;
+            Download* dwn = itr->second;
+            for (std::set<QString>::const_iterator mItr = dwn->messages.begin(), end = dwn->messages.end(); mItr != end; ++mItr) {
+                emit downloadFileError(*mItr, errorText);
+            }
+        }
     }
 }
 
@@ -193,7 +322,7 @@ void Core::NetworkAccess::startDownload(const QString& messageId, const QString&
 {
     Download* dwn = new Download({{messageId}, 0, 0, true});
     QNetworkRequest req(url);
-    dwn->reply = manager.get(req);
+    dwn->reply = manager->get(req);
     connect(dwn->reply, SIGNAL(downloadProgress(qint64, qint64)), SLOT(onDownloadProgress(qint64, qint64)));
     connect(dwn->reply, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(onRequestError(QNetworkReply::NetworkError)));
     connect(dwn->reply, SIGNAL(finished()), SLOT(onRequestFinished()));

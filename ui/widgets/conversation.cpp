@@ -290,6 +290,11 @@ void Conversation::responseDownloadProgress(const QString& messageId, qreal prog
     line->responseDownloadProgress(messageId, progress);
 }
 
+void Conversation::downloadError(const QString& messageId, const QString& error)
+{
+    line->downloadError(messageId, error);
+}
+
 void Conversation::responseLocalFile(const QString& messageId, const QString& path)
 {
     line->responseLocalFile(messageId, path);

@@ -30,6 +30,7 @@ Core::Squawk::Squawk(QObject* parent):
 {
     connect(&network, SIGNAL(fileLocalPathResponse(const QString&, const QString&)), this, SIGNAL(fileLocalPathResponse(const QString&, const QString&)));
     connect(&network, SIGNAL(downloadFileProgress(const QString&, qreal)), this, SIGNAL(downloadFileProgress(const QString&, qreal)));
+    connect(&network, SIGNAL(downloadFileError(const QString&, const QString&)), this, SIGNAL(downloadFileError(const QString&, const QString&)));
 }
 
 Core::Squawk::~Squawk()

@@ -38,10 +38,12 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     file(0),
     progress(0),
     fileComment(new QLabel()),
+    errorText(""),
     hasDownloadButton(false),
     hasProgress(false),
     hasFile(false),
-    commentAdded(false)
+    commentAdded(false),
+    errorDownloadingFile(false)
 {
     body->setBackgroundRole(QPalette::AlternateBase);
     body->setAutoFillBackground(true);
@@ -117,7 +119,12 @@ void Message::addDownloadDialog()
         }
         downloadButton = new QPushButton(QIcon::fromTheme("download"), "Download");
         downloadButton->setToolTip("<a href=\"" + msg.getOutOfBandUrl() + "\">" + msg.getOutOfBandUrl() + "</a>");
-        fileComment->setText(sender->text() + " is offering you to download a file");
+        if (errorDownloadingFile) {
+            fileComment->setWordWrap(true);
+            fileComment->setText("Error downloading file: " + errorText + "\nYou can try again");
+        } else {
+            fileComment->setText(sender->text() + " is offering you to download a file");
+        }
         fileComment->show();
         connect(downloadButton, SIGNAL(clicked()), this, SLOT(onDownload()));
         bodyLayout->insertWidget(2, fileComment);
@@ -208,6 +215,7 @@ void Message::hideDownload()
         downloadButton->deleteLater();
         downloadButton = 0;
         hasDownloadButton = false;
+        errorDownloadingFile = false;
     }
 }
 
@@ -227,4 +235,11 @@ void Message::hideProgress()
         progress = 0;
         hasProgress = false;;
     }
+}
+
+void Message::showError(const QString& error)
+{
+    errorDownloadingFile = true;
+    errorText = error;
+    addDownloadDialog();
 }

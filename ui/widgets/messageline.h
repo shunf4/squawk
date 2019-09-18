@@ -53,6 +53,7 @@ public:
     void showBusyIndicator();
     void hideBusyIndicator();
     void responseLocalFile(const QString& messageId, const QString& path);
+    void downloadError(const QString& messageId, const QString& error);
     void responseDownloadProgress(const QString& messageId, qreal progress);
     
 signals:

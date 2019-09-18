@@ -91,6 +91,7 @@ public slots:
     void changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removeRoomParticipant(const QString& account, const QString& jid, const QString& name);
     void fileLocalPathResponse(const QString& messageId, const QString& path);
+    void downloadFileError(const QString& messageId, const QString& error);
     void downloadFileProgress(const QString& messageId, qreal value);
     
 private:

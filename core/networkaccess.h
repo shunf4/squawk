@@ -50,6 +50,7 @@ public:
 signals:
     void fileLocalPathResponse(const QString& messageId, const QString& path);
     void downloadFileProgress(const QString& messageId, qreal value);
+    void downloadFileError(const QString& messageId, const QString& path);
     
 public slots:
     void fileLocalPathRequest(const QString& messageId, const QString& url);
@@ -65,7 +66,7 @@ private slots:
     
 private:
     bool running;
-    QNetworkAccessManager manager;
+    QNetworkAccessManager* manager;
     Storage files;
     std::map<QString, Download*> downloads;
     
