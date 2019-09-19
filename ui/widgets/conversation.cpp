@@ -23,6 +23,7 @@
 #include <QTimer>
 #include <QGraphicsDropShadowEffect>
 #include <QFileDialog>
+#include <QMimeDatabase>
 
 Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, const QString pJid, const QString pRes, const QString& acc, QWidget* parent):
     QWidget(parent),
@@ -40,12 +41,18 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     thread(),
     statusIcon(0),
     statusLabel(0),
+    filesLayout(0),
+    filesToAttach(),
     scroll(down),
     manualSliderChange(false),
     requestingHistory(false),
     everShown(false)
 {
     m_ui->setupUi(this);
+    
+    filesLayout = new FlowLayout(m_ui->filesPanel, 0);
+    m_ui->filesPanel->setLayout(filesLayout);
+    
     m_ui->splitter->setSizes({300, 0});
     m_ui->splitter->setStretchFactor(1, 0);
     
@@ -60,7 +67,7 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     connect(line, SIGNAL(resize(int)), this, SLOT(onMessagesResize(int)));
     connect(line, SIGNAL(downloadFile(const QString&, const QString&)), this, SIGNAL(downloadFile(const QString&, const QString&)));
     connect(line, SIGNAL(requestLocalFile(const QString&, const QString&)), this, SIGNAL(requestLocalFile(const QString&, const QString&)));
-    //connect(m_ui->attachButton, SIGNAL(clicked(bool)), this, SLOT(onAttach()));
+    connect(m_ui->attachButton, SIGNAL(clicked(bool)), this, SLOT(onAttach()));
     
     m_ui->messageEditor->installEventFilter(&ker);
     
@@ -263,7 +270,9 @@ void Conversation::onFileSelected()
 {
     QFileDialog* d = static_cast<QFileDialog*>(sender());
     
-    qDebug() << d->selectedFiles();
+    for (const QString& path : d->selectedFiles()) {
+        addAttachedFile(path);
+    }
     
     d->deleteLater();
 }
@@ -298,6 +307,49 @@ void Conversation::downloadError(const QString& messageId, const QString& error)
 void Conversation::responseLocalFile(const QString& messageId, const QString& path)
 {
     line->responseLocalFile(messageId, path);
+}
+
+void Conversation::addAttachedFile(const QString& path)
+{
+    QMimeDatabase db;
+    QMimeType type = db.mimeTypeForFile(path);
+    QFileInfo info(path);
+    
+    Badge* badge = new Badge(path, info.fileName(), QIcon::fromTheme(type.iconName()));
+    
+    connect(badge, SIGNAL(close()), this, SLOT(onBadgeClose()));
+    filesToAttach.push_back(badge);                                                         //TODO neet to check if there are any duplicated ids
+    filesLayout->addWidget(badge);
+    if (filesLayout->count() == 1) {
+        filesLayout->setContentsMargins(3, 3, 3, 3);
+    }
+}
+
+void Conversation::removeAttachedFile(Badge* badge)
+{
+    W::Order<Badge*, Badge::Comparator>::const_iterator itr = filesToAttach.find(badge);
+    if (itr != filesToAttach.end()) {
+        filesToAttach.erase(badge);
+        if (filesLayout->count() == 1) {
+            filesLayout->setContentsMargins(0, 0, 0, 0);
+        }
+        badge->deleteLater();
+    }
+}
+
+void Conversation::onBadgeClose()
+{
+    Badge* badge = static_cast<Badge*>(sender());
+    removeAttachedFile(badge);
+}
+
+void Conversation::clearAttachedFiles()
+{
+    for (Badge* badge : filesToAttach) {
+        badge->deleteLater();
+    }
+    filesToAttach.clear();
+    filesLayout->setContentsMargins(0, 0, 0, 0);
 }
 
 bool VisibilityCatcher::eventFilter(QObject* obj, QEvent* event)

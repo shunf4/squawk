@@ -22,8 +22,11 @@
 #include <QWidget>
 #include <QScopedPointer>
 #include "../../global.h"
-#include "messageline.h"
+#include "../../order.h"
+#include "../utils/messageline.h"
 #include "../utils/resizer.h"
+#include "../utils/flowlayout.h"
+#include "../utils/badge.h"
 
 namespace Ui
 {
@@ -87,6 +90,9 @@ protected:
     void applyVisualEffects();
     virtual void handleSendMessage(const QString& text) = 0;
     void setStatus(const QString& status);
+    void addAttachedFile(const QString& path);
+    void removeAttachedFile(Badge* badge);
+    void clearAttachedFiles();
     
 protected slots:
     void onEnterPressed();
@@ -95,6 +101,7 @@ protected slots:
     void onAttach();
     void onFileSelected();
     void onScrollResize();
+    void onBadgeClose();
     
 public:
     const bool isMuc;
@@ -118,6 +125,8 @@ protected:
     QString thread;
     QLabel* statusIcon;
     QLabel* statusLabel;
+    FlowLayout* filesLayout;
+    W::Order<Badge*, Badge::Comparator> filesToAttach;
     Scroll scroll;
     bool manualSliderChange;
     bool requestingHistory;
