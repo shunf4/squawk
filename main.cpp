@@ -70,6 +70,8 @@ int main(int argc, char *argv[])
     QObject::connect(&w, SIGNAL(disconnectAccount(const QString&)), squawk, SLOT(disconnectAccount(const QString&)));
     QObject::connect(&w, SIGNAL(changeState(int)), squawk, SLOT(changeState(int)));
     QObject::connect(&w, SIGNAL(sendMessage(const QString&, const Shared::Message&)), squawk, SLOT(sendMessage(const QString&, const Shared::Message&)));
+    QObject::connect(&w, SIGNAL(sendMessage(const QString&, const Shared::Message&, const QString&)), 
+                     squawk, SLOT(sendMessage(const QString&, const Shared::Message&, const QString&)));
     QObject::connect(&w, SIGNAL(requestArchive(const QString&, const QString&, int, const QString&)), 
                      squawk, SLOT(requestArchive(const QString&, const QString&, int, const QString&)));
     QObject::connect(&w, SIGNAL(subscribeContact(const QString&, const QString&, const QString&)), 
@@ -124,9 +126,6 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, SIGNAL(fileLocalPathResponse(const QString&, const QString&)), &w, SLOT(fileLocalPathResponse(const QString&, const QString&)));
     QObject::connect(squawk, SIGNAL(downloadFileProgress(const QString&, qreal)), &w, SLOT(downloadFileProgress(const QString&, qreal)));
     QObject::connect(squawk, SIGNAL(downloadFileError(const QString&, const QString&)), &w, SLOT(downloadFileError(const QString&, const QString&)));
-    
-    
-    //qDebug() << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
     
     coreThread->start();
 

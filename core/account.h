@@ -30,6 +30,7 @@
 #include <QXmppClient.h>
 #include <QXmppBookmarkManager.h>
 #include <QXmppBookmarkSet.h>
+#include <QXmppHttpUploadIq.h>
 #include "../global.h"
 #include "contact.h"
 #include "conference.h"

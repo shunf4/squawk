@@ -65,6 +65,8 @@ signals:
     void fileLocalPathResponse(const QString& messageId, const QString& path);
     void downloadFileError(const QString& messageId, const QString& error);
     void downloadFileProgress(const QString& messageId, qreal value);
+    void uploadFileError(const QString& messageId, const QString& error);
+    void uploadFileProgress(const QString& messageId, qreal value);
     
 public slots:
     void start();
@@ -76,6 +78,7 @@ public slots:
     void disconnectAccount(const QString& account);
     void changeState(int state);
     void sendMessage(const QString& account, const Shared::Message& data);
+    void sendMessage(const QString& account, const Shared::Message& data, const QString& path);
     void requestArchive(const QString& account, const QString& jid, int count, const QString& before);
     void subscribeContact(const QString& account, const QString& jid, const QString& reason);
     void unsubscribeContact(const QString& account, const QString& jid, const QString& reason);

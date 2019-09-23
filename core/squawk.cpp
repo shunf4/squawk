@@ -31,6 +31,8 @@ Core::Squawk::Squawk(QObject* parent):
     connect(&network, SIGNAL(fileLocalPathResponse(const QString&, const QString&)), this, SIGNAL(fileLocalPathResponse(const QString&, const QString&)));
     connect(&network, SIGNAL(downloadFileProgress(const QString&, qreal)), this, SIGNAL(downloadFileProgress(const QString&, qreal)));
     connect(&network, SIGNAL(downloadFileError(const QString&, const QString&)), this, SIGNAL(downloadFileError(const QString&, const QString&)));
+    connect(&network, SIGNAL(uploadFileProgress(const QString&, qreal)), this, SIGNAL(uploadFileProgress(const QString&, qreal)));
+    connect(&network, SIGNAL(uploadFileError(const QString&, const QString&)), this, SIGNAL(uploadFileError(const QString&, const QString&)));
 }
 
 Core::Squawk::~Squawk()
@@ -276,6 +278,11 @@ void Core::Squawk::sendMessage(const QString& account, const Shared::Message& da
     itr->second->sendMessage(data);
 }
 
+void Core::Squawk::sendMessage(const QString& account, const Shared::Message& data, const QString& path)
+{
+    
+}
+
 void Core::Squawk::requestArchive(const QString& account, const QString& jid, int count, const QString& before)
 {
     AccountsMap::const_iterator itr = amap.find(account);
@@ -367,7 +374,6 @@ void Core::Squawk::removeAccountRequest(const QString& name)
     emit removeAccount(name);
     acc->deleteLater();
 }
-
 
 void Core::Squawk::subscribeContact(const QString& account, const QString& jid, const QString& reason)
 {

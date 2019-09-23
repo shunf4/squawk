@@ -285,6 +285,7 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                     
                     connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
                     connect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
+                    connect(conv, SIGNAL(sendMessage(const Shared::Message&, const QString&)), this, SLOT(onConversationMessage(const Shared::Message&, const QString&)));
                     connect(conv, SIGNAL(requestArchive(const QString&)), this, SLOT(onConversationRequestArchive(const QString&)));
                     connect(conv, SIGNAL(requestLocalFile(const QString&, const QString&)), this, SLOT(onConversationRequestLocalFile(const QString&, const QString&)));
                     connect(conv, SIGNAL(downloadFile(const QString&, const QString&)), this, SLOT(onConversationDownloadFile(const QString&, const QString&)));
@@ -468,8 +469,13 @@ void Squawk::notify(const QString& account, const Shared::Message& msg)
 void Squawk::onConversationMessage(const Shared::Message& msg)
 {
     Conversation* conv = static_cast<Conversation*>(sender());
-    
     emit sendMessage(conv->getAccount(), msg);
+}
+
+void Squawk::onConversationMessage(const Shared::Message& msg, const QString& path)
+{
+    Conversation* conv = static_cast<Conversation*>(sender());
+    emit sendMessage(conv->getAccount(), msg, path);
 }
 
 void Squawk::onConversationRequestArchive(const QString& before)

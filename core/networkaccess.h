@@ -39,7 +39,7 @@ namespace Core {
 class NetworkAccess : public QObject
 {
     Q_OBJECT
-    struct Download;
+    struct Transfer;
 public:
     NetworkAccess(QObject* parent = nullptr);
     virtual ~NetworkAccess();
@@ -51,30 +51,41 @@ signals:
     void fileLocalPathResponse(const QString& messageId, const QString& path);
     void downloadFileProgress(const QString& messageId, qreal value);
     void downloadFileError(const QString& messageId, const QString& path);
+    void uploadFileProgress(const QString& messageId, qreal value);
+    void uploadFileError(const QString& messageId, const QString& path);
     
 public slots:
     void fileLocalPathRequest(const QString& messageId, const QString& url);
     void downladFileRequest(const QString& messageId, const QString& url);
+    void uploadFileRequest(const QString& messageId, const QString& url, const QString& path);
     
 private:
     void startDownload(const QString& messageId, const QString& url);
+    void startUpload(const QString& messageId, const QString& url, const QString& path);
+    QString getErrorText(QNetworkReply::NetworkError code);
     
 private slots:
     void onDownloadProgress(qint64 bytesReceived, qint64 bytesTotal);
-    void onRequestError(QNetworkReply::NetworkError code);
-    void onRequestFinished();
+    void onDownloadError(QNetworkReply::NetworkError code);
+    void onDownloadFinished();
+    void onUploadProgress(qint64 bytesReceived, qint64 bytesTotal);
+    void onUploadError(QNetworkReply::NetworkError code);
+    void onUploadFinished();
     
 private:
     bool running;
     QNetworkAccessManager* manager;
     Storage files;
-    std::map<QString, Download*> downloads;
+    std::map<QString, Transfer*> downloads;
+    std::map<QString, Transfer*> uploads;
     
-    struct Download {
+    struct Transfer {
         std::set<QString> messages;
         qreal progress;
         QNetworkReply* reply;
         bool success;
+        QString path;
+        QFile* file;
     };
 };
 

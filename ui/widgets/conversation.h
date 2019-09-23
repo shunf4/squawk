@@ -80,6 +80,7 @@ public:
     
 signals:
     void sendMessage(const Shared::Message& message);
+    void sendMessage(const Shared::Message& message, const QString& path);
     void requestArchive(const QString& before);
     void shown();
     void requestLocalFile(const QString& messageId, const QString& url);
