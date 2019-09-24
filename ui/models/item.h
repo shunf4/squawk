@@ -55,6 +55,7 @@ class Item : public QObject{
     public:
         virtual void appendChild(Item *child);
         virtual void removeChild(int index);
+        virtual QString getDisplayedName() const;
         QString getName() const;
         void setName(const QString& name);
         
@@ -76,7 +77,11 @@ class Item : public QObject{
     protected:
         virtual void changed(int col);
         virtual void _removeChild(int index);
+        virtual bool columnInvolvedInDisplay(int col);
         const Item* getParentAccount() const;
+        
+    protected slots:
+        void onChildChanged(Models::Item* item, int row, int col);
         
     protected:
         QString name;

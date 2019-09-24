@@ -738,7 +738,7 @@ QString Models::Roster::getContactName(const QString& account, const QString& ji
         if (rItr == rooms.end()) {
             qDebug() << "An attempt to get a name of non existing contact/room " << account << ":" << jid << ", skipping";
         } else {
-            name = rItr->second->getName();
+            name = rItr->second->getRoomName();
         }
     } else {
         name = cItr->second->getContactName();

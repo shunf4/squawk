@@ -57,9 +57,11 @@ public:
     unsigned int getMessagesCount() const;
     void dropMessages();
     void getMessages(Messages& container) const;
+    QString getDisplayedName() const override;
     
 protected:
     void _removeChild(int index) override;
+    bool columnInvolvedInDisplay(int col) override;
     
 protected slots:
     void refresh();

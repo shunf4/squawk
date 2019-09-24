@@ -309,3 +309,13 @@ void Models::Room::setSubject(const QString& sub)
         changed(6);
     }
 }
+
+QString Models::Room::getDisplayedName() const
+{
+    return getRoomName();
+}
+
+bool Models::Room::columnInvolvedInDisplay(int col)
+{
+    return Item::columnInvolvedInDisplay(col) && col == 1;
+}

@@ -313,3 +313,13 @@ void Models::Contact::toOfflineState()
     emit childRemoved();
     refresh();
 }
+
+QString Models::Contact::getDisplayedName() const
+{
+    return getContactName();
+}
+
+bool Models::Contact::columnInvolvedInDisplay(int col)
+{
+    return Item::columnInvolvedInDisplay(col) && col == 1;
+}

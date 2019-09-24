@@ -68,9 +68,13 @@ public:
     void removeParticipant(const QString& name);
     
     void toOfflineState() override;
+    QString getDisplayedName() const override;
     
 private:
     void handleParticipantUpdate(std::map<QString, Participant*>::const_iterator itr, const QMap<QString, QVariant>& data);
+    
+protected:
+    bool columnInvolvedInDisplay(int col) override;
     
 private:
     bool autoJoin;

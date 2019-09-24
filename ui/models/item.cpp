@@ -55,16 +55,28 @@ void Models::Item::setName(const QString& p_name)
 void Models::Item::appendChild(Models::Item* child)
 {
     bool moving = false;
-    int oldRow = child->row();
-    int newRow = this->childCount();
+    int newRow = 0;
+    std::deque<Item*>::const_iterator before = childItems.begin();
+    while (before != childItems.end()) {
+        Item* bfr = *before;
+        if (bfr->type > child->type) {
+            break;
+        } else if (bfr->type == child->type && bfr->getDisplayedName() > child->getDisplayedName()) {
+            break;
+        }
+        newRow++;
+        before++;
+    }
+    
     if (child->parent != 0) {
+        int oldRow = child->row();
         moving = true;
         emit childIsAboutToBeMoved(child->parent, oldRow, oldRow, this, newRow);
         child->parent->_removeChild(oldRow);
     } else {
         emit childIsAboutToBeInserted(this, newRow, newRow);
     }
-    childItems.push_back(child);
+    childItems.insert(before, child);
     child->parent = this;
     
     QObject::connect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SIGNAL(childChanged(Models::Item*, int, int)));
@@ -147,7 +159,7 @@ void Models::Item::_removeChild(int index)
 {
     Item* child = childItems[index];
     
-    QObject::disconnect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SIGNAL(childChanged(Models::Item*, int, int)));
+    QObject::disconnect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onChildChanged(Models::Item*, int, int)));
     QObject::disconnect(child, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SIGNAL(childIsAboutToBeInserted(Item*, int, int)));
     QObject::disconnect(child, SIGNAL(childInserted()), this, SIGNAL(childInserted()));
     QObject::disconnect(child, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)));
@@ -211,4 +223,45 @@ QString Models::Item::getAccountName() const
         return "";
     }
     return acc->getName();
+}
+
+QString Models::Item::getDisplayedName() const
+{
+    return name;
+}
+
+void Models::Item::onChildChanged(Models::Item* item, int row, int col)
+{
+    Item* parent = item->parentItem();
+    if (parent != 0 && parent == this) {
+        if (item->columnInvolvedInDisplay(col)) {
+            int newRow = 0;
+            std::deque<Item*>::const_iterator before = childItems.begin();
+            while (before != childItems.end()) {
+                Item* bfr = *before;
+                if (bfr->type > item->type) {
+                    break;
+                } else if (bfr->type == item->type && bfr->getDisplayedName() > item->getDisplayedName()) {
+                    break;
+                }
+                newRow++;
+                before++;
+            }
+            
+            if (newRow != row || (before != childItems.end() && *before != item)) {
+                emit childIsAboutToBeMoved(this, row, row, this, newRow);
+                std::deque<Item*>::const_iterator old = childItems.begin();
+                old += row;
+                childItems.erase(old);
+                childItems.insert(before, item);
+                emit childMoved();
+            }
+        }
+    }
+    emit childChanged(item, row, col);
+}
+
+bool Models::Item::columnInvolvedInDisplay(int col)
+{
+    return col == 0;
 }
