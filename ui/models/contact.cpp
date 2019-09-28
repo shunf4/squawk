@@ -323,3 +323,28 @@ bool Models::Contact::columnInvolvedInDisplay(int col)
 {
     return Item::columnInvolvedInDisplay(col) && col == 1;
 }
+
+Models::Contact * Models::Contact::copy() const
+{
+    Contact* cnt = new Contact(*this);
+    return cnt;
+}
+
+Models::Contact::Contact(const Models::Contact& other):
+    Item(other),
+    jid(other.jid),
+    availability(other.availability),
+    state(other.state),
+    presences(),
+    messages(other.messages),
+    childMessages(0)
+{
+    for (const Presence* pres : other.presences) {
+        Presence* pCopy = new Presence(*pres);
+        presences.insert(pCopy->getName(), pCopy);
+        Item::appendChild(pCopy);
+        connect(pCopy, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
+    }
+    
+    refresh();
+}

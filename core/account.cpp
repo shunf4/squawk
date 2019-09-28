@@ -1153,3 +1153,50 @@ void Core::Account::addNewRoom(const QString& jid, const QString& nick, const QS
         {"name", conf->getName()}
     });
 }
+
+void Core::Account::addContactToGroupRequest(const QString& jid, const QString& groupName)
+{
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    if (itr == contacts.end()) {
+        qDebug() << "An attempt to add non existing contact" << jid << "of account" << name << "to the group" << groupName << ", skipping";
+    } else {
+        QXmppRosterManager& rm = client.rosterManager();
+        QXmppRosterIq::Item item = rm.getRosterEntry(jid);
+        QSet<QString> groups = item.groups();
+        if (groups.find(groupName) == groups.end()) {           //TODO need to change it, I guess that sort of code is better in qxmpp lib
+            groups.insert(groupName);
+            item.setGroups(groups);
+            
+            QXmppRosterIq iq;
+            iq.setType(QXmppIq::Set);
+            iq.addItem(item);
+            client.sendPacket(iq);
+        } else {
+            qDebug() << "An attempt to add contact" << jid << "of account" << name << "to the group" << groupName << "but it's already in that group, skipping";
+        }
+    }
+}
+
+void Core::Account::removeContactFromGroupRequest(const QString& jid, const QString& groupName)
+{
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    if (itr == contacts.end()) {
+        qDebug() << "An attempt to remove non existing contact" << jid << "of account" << name << "from the group" << groupName << ", skipping";
+    } else {
+        QXmppRosterManager& rm = client.rosterManager();
+        QXmppRosterIq::Item item = rm.getRosterEntry(jid);
+        QSet<QString> groups = item.groups();
+        QSet<QString>::const_iterator gItr = groups.find(groupName);
+        if (gItr != groups.end()) {
+            groups.erase(gItr);
+            item.setGroups(groups);
+            
+            QXmppRosterIq iq;
+            iq.setType(QXmppIq::Set);
+            iq.addItem(item);
+            client.sendPacket(iq);
+        } else {
+            qDebug() << "An attempt to remove contact" << jid << "of account" << name << "from the group" << groupName << "but it's not in that group, skipping";
+        }
+    }
+}

@@ -70,6 +70,8 @@ public:
     void unsubscribeFromContact(const QString& jid, const QString& reason);
     void removeContactRequest(const QString& jid);
     void addContactRequest(const QString& jid, const QString& name, const QSet<QString>& groups);
+    void addContactToGroupRequest(const QString& jid, const QString& groupName);
+    void removeContactFromGroupRequest(const QString& jid, const QString& groupName);
     
     void setRoomJoined(const QString& jid, bool joined);
     void setRoomAutoJoin(const QString& jid, bool joined);

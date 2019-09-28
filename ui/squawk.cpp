@@ -20,6 +20,7 @@
 #include "ui_squawk.h"
 #include <QDebug>
 #include <QIcon>
+#include <QInputDialog>
 
 Squawk::Squawk(QWidget *parent) :
     QMainWindow(parent),
@@ -517,6 +518,7 @@ void Squawk::onRosterContextMenu(const QPoint& point)
     
         contextMenu->clear();
         bool hasMenu = false;
+        bool active = item->getAccountConnectionState() == Shared::connected;
         switch (item->type) {
             case Models::Item::account: {
                 Models::Account* acc = static_cast<Models::Account*>(item);
@@ -525,17 +527,20 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 
                 if (acc->getState() != Shared::disconnected) {
                     QAction* con = contextMenu->addAction(Shared::icon("network-disconnect"), "Disconnect");
+                    con->setEnabled(active);
                     connect(con, &QAction::triggered, [this, name]() {
                         emit disconnectAccount(name);
                     });
                 } else {
                     QAction* con = contextMenu->addAction(Shared::icon("network-connect"), "Connect");
+                    con->setEnabled(active);
                     connect(con, &QAction::triggered, [this, name]() {
                         emit connectAccount(name);
                     });
                 }
                 
                 QAction* remove = contextMenu->addAction(Shared::icon("edit-delete"), "Remove");
+                remove->setEnabled(active);
                 connect(remove, &QAction::triggered, [this, name]() {
                     emit removeAccount(name);
                 });
@@ -547,6 +552,7 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 hasMenu = true;
                 
                 QAction* dialog = contextMenu->addAction(Shared::icon("mail-message"), "Open dialog");
+                dialog->setEnabled(active);
                 connect(dialog, &QAction::triggered, [this, index]() {
                     onRosterItemDoubleClicked(index);
                 });
@@ -556,6 +562,7 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                     case Shared::both:
                     case Shared::to: {
                         QAction* unsub = contextMenu->addAction(Shared::icon("news-unsubscribe"), "Unsubscribe");
+                        unsub->setEnabled(active);
                         connect(unsub, &QAction::triggered, [this, cnt]() {
                             emit unsubscribeContact(cnt->getAccountName(), cnt->getJid(), "");
                         });
@@ -565,13 +572,48 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                     case Shared::unknown:
                     case Shared::none: {
                         QAction* sub = contextMenu->addAction(Shared::icon("news-subscribe"), "Subscribe");
+                        sub->setEnabled(active);
                         connect(sub, &QAction::triggered, [this, cnt]() {
                             emit subscribeContact(cnt->getAccountName(), cnt->getJid(), "");
                         });
                     }    
                 }
                 
+                QMenu* groupsMenu = contextMenu->addMenu(Shared::icon("group"), "Groups");
+                QString accName = cnt->getAccountName();
+                QString cntJID = cnt->getJid();
+                std::deque<QString> groupList = rosterModel.groupList(accName);
+                for (QString groupName : groupList) {
+                    QAction* gr = groupsMenu->addAction(groupName);
+                    gr->setCheckable(true);
+                    gr->setChecked(rosterModel.groupHasContact(accName, groupName, cntJID));
+                    gr->setEnabled(active);
+                    connect(gr, &QAction::toggled, [this, accName, groupName, cntJID](bool checked) {
+                        if (checked) {
+                            emit addContactToGroupRequest(accName, cntJID, groupName);
+                        } else {
+                            emit removeContactFromGroupRequest(accName, cntJID, groupName);
+                        }
+                    });
+                }
+                QAction* newGroup = groupsMenu->addAction(Shared::icon("resource-group-new"), "New group");
+                newGroup->setEnabled(active);
+                connect(newGroup, &QAction::triggered, [this, accName, cntJID]() {
+                    QInputDialog* dialog = new QInputDialog(this);
+                    connect(dialog, &QDialog::accepted, [this, dialog, accName, cntJID]() {
+                        emit addContactToGroupRequest(accName, cntJID, dialog->textValue());
+                        dialog->deleteLater();
+                    });
+                    connect(dialog, &QDialog::rejected, dialog, &QObject::deleteLater);
+                    dialog->setInputMode(QInputDialog::TextInput);
+                    dialog->setLabelText("New group name");
+                    dialog->setWindowTitle("Add " + cntJID + " to a new group");
+                    dialog->exec();
+                });
+                
+                
                 QAction* remove = contextMenu->addAction(Shared::icon("edit-delete"), "Remove");
+                remove->setEnabled(active);
                 connect(remove, &QAction::triggered, [this, cnt]() {
                     emit removeContactRequest(cnt->getAccountName(), cnt->getJid());
                 });
@@ -583,6 +625,7 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 hasMenu = true;
                 
                 QAction* dialog = contextMenu->addAction(Shared::icon("mail-message"), "Open conversation");
+                dialog->setEnabled(active);
                 connect(dialog, &QAction::triggered, [this, index]() {
                     onRosterItemDoubleClicked(index);
                 });
@@ -591,6 +634,7 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 Models::Roster::ElId id(room->getAccountName(), room->getJid());
                 if (room->getAutoJoin()) {
                     QAction* unsub = contextMenu->addAction(Shared::icon("news-unsubscribe"), "Unsubscribe");
+                    unsub->setEnabled(active);
                     connect(unsub, &QAction::triggered, [this, id]() {
                         emit setRoomAutoJoin(id.account, id.name, false);
                         if (conversations.find(id) == conversations.end()) {    //to leave the room if it's not opened in a conversation window
@@ -599,6 +643,7 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                     });
                 } else {
                     QAction* unsub = contextMenu->addAction(Shared::icon("news-subscribe"), "Subscribe");
+                    unsub->setEnabled(active);
                     connect(unsub, &QAction::triggered, [this, id]() {
                         emit setRoomAutoJoin(id.account, id.name, true);
                         if (conversations.find(id) == conversations.end()) {    //to join the room if it's not already joined
@@ -608,6 +653,7 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 }
                 
                 QAction* remove = contextMenu->addAction(Shared::icon("edit-delete"), "Remove");
+                remove->setEnabled(active);
                 connect(remove, &QAction::triggered, [this, id]() {
                     emit removeRoomRequest(id.account, id.name);
                 });

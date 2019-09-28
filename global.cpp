@@ -350,6 +350,6 @@ QIcon Shared::icon(const QString& name, bool big)
         return QIcon::fromTheme(itr->second.first, QIcon(prefix + itr->second.second));
     } else {
         qDebug() << "Icon" << name << "not found";
-        throw 1;
+        return QIcon::fromTheme(name);
     }
 }

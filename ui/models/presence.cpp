@@ -24,6 +24,13 @@ Models::Presence::Presence(const QMap<QString, QVariant>& data, Item* parentItem
 {
 }
 
+Models::Presence::Presence(const Models::Presence& other):
+    AbstractParticipant(other),
+    messages(other.messages)
+{
+}
+
+
 Models::Presence::~Presence()
 {
 }

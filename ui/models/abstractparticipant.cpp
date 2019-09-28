@@ -32,6 +32,15 @@ Models::AbstractParticipant::AbstractParticipant(Models::Item::Type p_type, cons
     }
 }
 
+Models::AbstractParticipant::AbstractParticipant(const Models::AbstractParticipant& other):
+    Item(other),
+    availability(other.availability),
+    lastActivity(other.lastActivity),
+    status(other.status)
+{
+}
+
+
 Models::AbstractParticipant::~AbstractParticipant()
 {
 }

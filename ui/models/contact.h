@@ -34,6 +34,7 @@ class Contact : public Item
 public:
     typedef std::deque<Shared::Message> Messages;
     Contact(const QString& p_jid, const QMap<QString, QVariant> &data, Item *parentItem = 0);
+    Contact(const Contact& other);
     ~Contact();
     
     QString getJid() const;
@@ -58,6 +59,8 @@ public:
     void dropMessages();
     void getMessages(Messages& container) const;
     QString getDisplayedName() const override;
+    
+    Contact* copy() const;
     
 protected:
     void _removeChild(int index) override;

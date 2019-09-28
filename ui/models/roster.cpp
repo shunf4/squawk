@@ -383,50 +383,52 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
 {
     Item* parent;
     Account* acc;
-    Contact* contact;
+    Contact* sample = 0;
     ElId id(account, jid);
     
     {
         std::map<QString, Account*>::iterator itr = accounts.find(account);
         if (itr == accounts.end()) {
-            qDebug() << "An attempt to add a contact " << jid << " to non existing account " << account << ", skipping";
+            qDebug() << "An attempt to add a contact" << jid << "to non existing account" << account << ", skipping";
             return;
         }
         acc = itr->second;
     }
     
-    if (group == "") {
-        std::multimap<ElId, Contact*>::iterator itr = contacts.lower_bound(id);
-        std::multimap<ElId, Contact*>::iterator eItr = contacts.upper_bound(id);
-        while (itr != eItr) {
-            if (itr->second->parentItem() == acc) {
-                qDebug() << "An attempt to add a contact " << jid << " ungrouped to non the account " << account << " for the second time, skipping";
-                return;
-            }
-            itr++;
+    for (std::multimap<ElId, Contact*>::iterator itr = contacts.lower_bound(id), eItr = contacts.upper_bound(id); itr != eItr; ++itr) {
+        sample = itr->second;                   //need to find if this contact is already added somewhere
+        break;                                  //so one iteration is enough
+    }
+    
+    if (group == "") {       //this means this contact is already added somewhere and there is no sense to add it ungrouped
+        if (sample != 0) {
+            qDebug() << "An attempt to add a contact" << jid << "to the ungrouped contact set of account" << account << "for the second time, skipping";
+            return;
+        } else {
+            parent = acc;
         }
-        parent = acc;
     } else {
         std::map<ElId, Group*>::iterator itr = groups.find({account, group});
         if (itr == groups.end()) {
-            qDebug() << "An attempt to add a contact " << jid << " to non existing group " << group << ", skipping";
-            return;
+            qDebug() << "An attempt to add a contact" << jid << "to non existing group" << group << ", adding group";
+            addGroup(account, group);
+            itr = groups.find({account, group});
         }
         
         parent = itr->second;
         
-        for (int i = 0; i < parent->childCount(); ++i) {
+        for (int i = 0; i < parent->childCount(); ++i) {        //checking if the contact is already added to that group
             Item* item = parent->child(i);
             if (item->type == Item::contact) {
                 Contact* ca = static_cast<Contact*>(item);
                 if (ca->getJid() == jid) {
-                    qDebug() << "An attempt to add a contact " << jid << " to the group " << group << " for the second time, skipping";
+                    qDebug() << "An attempt to add a contact" << jid << "to the group" << group << "for the second time, skipping";
                     return;
                 }
             }
         }
         
-        for (int i = 0; i < acc->childCount(); ++i) {
+        for (int i = 0; i < acc->childCount(); ++i) {           //checking if that contact is among ugrouped
             Item* item = acc->child(i);
             if (item->type == Item::contact) {
                 Contact* ca = static_cast<Contact*>(item);
@@ -440,7 +442,12 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
         }
         
     }
-    contact = new Contact(jid, data);
+    Contact* contact;
+    if (sample == 0) {
+        contact = new Contact(jid, data);
+    } else {
+        contact = sample->copy();
+    }
     contacts.insert(std::make_pair(id, contact));
     parent->appendChild(contact);
 }
@@ -548,29 +555,59 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
         qDebug() << "An attempt to remove contact " << jid << " from non existing group " << group << " of account " << account <<", skipping";
         return;
     }
+    Account* acc = accounts.find(account)->second;  //I assume the account is found, otherwise there will be no groups with that ElId;
     Group* gr = gItr->second;
     Contact* cont = 0;
     
-    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId);
-    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(contactId);
-    for (;cBeg != cEnd; ++cBeg) {
-        if (cBeg->second->parentItem() == gr) {
-            cont = cBeg->second;
-            contacts.erase(cBeg);
-            break;
+    unsigned int entries(0);
+    unsigned int ungroupped(0);
+    for (std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId), cEnd = contacts.upper_bound(contactId); cBeg != cEnd; ++cBeg) {
+        ++entries;
+        Contact* elem = cBeg->second;
+        if (elem->parentItem() == acc) {
+            ++ungroupped;
         }
     }
     
-    if (cont == 0) {
-        qDebug() << "An attempt to remove contact " << jid << " of account " << account << " from group " << group  <<", but there is no such contact in that group, skipping";
-        return;
-    }
-    
-    gr->removeChild(cont->row());
-    cont->deleteLater();
-    
-    if (gr->childCount() == 0) {
-        removeGroup(account, group);
+    if (ungroupped == 0 && entries == 1) {
+        for (std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId), cEnd = contacts.upper_bound(contactId); cBeg != cEnd; ++cBeg) {
+            if (cBeg->second->parentItem() == gr) {
+                cont = cBeg->second;
+                break;
+            }
+        }
+        
+        if (cont == 0) {
+            qDebug() << "An attempt to remove contact " << jid << " of account " << account << " from group " << group  <<", but there is no such contact in that group, skipping";
+            return;
+        }
+        
+        qDebug() << "An attempt to remove last instance of contact" << jid << "from the group" << group << ", contact will be moved to ungrouped contacts of" << account;
+        acc->appendChild(cont);
+        
+        if (gr->childCount() == 0) {
+            removeGroup(account, group);
+        }
+    } else {
+        for (std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId), cEnd = contacts.upper_bound(contactId); cBeg != cEnd; ++cBeg) {
+            if (cBeg->second->parentItem() == gr) {
+                cont = cBeg->second;
+                contacts.erase(cBeg);
+                break;
+            }
+        }
+        
+        if (cont == 0) {
+            qDebug() << "An attempt to remove contact" << jid << "of account" << account << "from group" << group  <<", but there is no such contact in that group, skipping";
+            return;
+        }
+        
+        gr->removeChild(cont->row());
+        cont->deleteLater();
+        
+        if (gr->childCount() == 0) {
+            removeGroup(account, group);
+        }
     }
 }
 
@@ -842,5 +879,29 @@ void Models::Roster::removeRoomParticipant(const QString& account, const QString
         return;
     } else {
         itr->second->removeParticipant(name);
+    }
+}
+
+std::deque<QString> Models::Roster::groupList(const QString& account) const
+{
+    std::deque<QString> answer;
+    for (std::pair<ElId, Group*> pair : groups) {
+        if (pair.first.account == account) {
+            answer.push_back(pair.first.name);
+        }
+    }
+    
+    return answer;
+}
+
+bool Models::Roster::groupHasContact(const QString& account, const QString& group, const QString& contact) const
+{
+    ElId grId({account, group});
+    std::map<ElId, Group*>::const_iterator gItr = groups.find(grId);
+    if (gItr == groups.end()) {
+        return false;
+    } else {
+        const Group* gr = gItr->second;
+        return gr->hasContact(contact);
     }
 }

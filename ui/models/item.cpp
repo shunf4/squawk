@@ -34,6 +34,15 @@ Models::Item::Item(Type p_type, const QMap<QString, QVariant> &p_data, Item *p_p
     }
 }
 
+Models::Item::Item(const Models::Item& other):
+    QObject(),
+    type(other.type),
+    name(other.name),
+    childItems(),
+    parent(nullptr)
+{
+}
+
 Models::Item::~Item()
 {
     std::deque<Item*>::const_iterator itr = childItems.begin();
@@ -223,6 +232,24 @@ QString Models::Item::getAccountName() const
         return "";
     }
     return acc->getName();
+}
+
+Shared::Availability Models::Item::getAccountAvailability() const
+{
+    const Account* acc = static_cast<const Account*>(getParentAccount());
+    if (acc == 0) {
+        return Shared::offline;
+    }
+    return acc->getAvailability();
+}
+
+Shared::ConnectionState Models::Item::getAccountConnectionState() const
+{
+    const Account* acc = static_cast<const Account*>(getParentAccount());
+    if (acc == 0) {
+        return Shared::disconnected;
+    }
+    return acc->getState();
 }
 
 QString Models::Item::getDisplayedName() const

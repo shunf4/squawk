@@ -25,6 +25,8 @@
 
 #include <deque>
 
+#include "../../global.h"
+
 namespace Models {
 
 class Item : public QObject{
@@ -41,6 +43,7 @@ class Item : public QObject{
         };
         
         explicit Item(Type p_type, const QMap<QString, QVariant> &data, Item *parentItem = 0);
+        Item(const Item& other);
         ~Item();
         
     signals:
@@ -71,6 +74,8 @@ class Item : public QObject{
         QString getAccountName() const;
         QString getAccountJid() const;
         QString getAccountResource() const;
+        Shared::ConnectionState getAccountConnectionState() const;
+        Shared::Availability getAccountAvailability() const;
         
         const Type type;
         

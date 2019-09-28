@@ -103,3 +103,16 @@ unsigned int Models::Group::getOnlineContacts() const
     
     return amount;
 }
+
+bool Models::Group::hasContact(const QString& jid) const
+{
+    for (Models::Item* item : childItems) {
+        if (item->type == Item::contact) {
+            const Contact* cnt = static_cast<const Contact*>(item);
+            if (cnt->getJid() == jid) {
+                return true;
+            }
+        }
+    }
+    return false;
+}

@@ -498,3 +498,23 @@ void Core::Squawk::downloadFileRequest(const QString& messageId, const QString& 
 {
     network.downladFileRequest(messageId, url);
 }
+
+void Core::Squawk::addContactToGroupRequest(const QString& account, const QString& jid, const QString& groupName)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to add contact" << jid << "of existing account" << account << "to the group" << groupName << ", skipping";
+        return;
+    }
+    itr->second->addContactToGroupRequest(jid, groupName);
+}
+
+void Core::Squawk::removeContactFromGroupRequest(const QString& account, const QString& jid, const QString& groupName)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to add contact" << jid << "of existing account" << account << "to the group" << groupName << ", skipping";
+        return;
+    }
+    itr->second->removeContactFromGroupRequest(jid, groupName);
+}

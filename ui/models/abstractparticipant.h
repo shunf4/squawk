@@ -31,6 +31,7 @@ class AbstractParticipant : public Models::Item
     Q_OBJECT
 public:
     explicit AbstractParticipant(Type p_type, const QMap<QString, QVariant> &data, Item *parentItem = 0);
+    AbstractParticipant(const AbstractParticipant& other);
     ~AbstractParticipant();
     
     virtual int columnCount() const override;
