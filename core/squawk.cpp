@@ -101,8 +101,12 @@ void Core::Squawk::newAccountRequest(const QMap<QString, QVariant>& map)
 
 void Core::Squawk::addAccount(const QString& login, const QString& server, const QString& password, const QString& name, const QString& resource)
 {
+    QSettings settings;
+    unsigned int reconnects = settings.value("reconnects", 2).toUInt();
+    
     Account* acc = new Account(login, server, password, name);
     acc->setResource(resource);
+    acc->setReconnectTimes(reconnects);
     accounts.push_back(acc);
     amap.insert(std::make_pair(name, acc));
     
@@ -517,4 +521,14 @@ void Core::Squawk::removeContactFromGroupRequest(const QString& account, const Q
         return;
     }
     itr->second->removeContactFromGroupRequest(jid, groupName);
+}
+
+void Core::Squawk::renameContactRequest(const QString& account, const QString& jid, const QString& newName)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to rename contact" << jid << "of existing account" << account << ", skipping";
+        return;
+    }
+    itr->second->renameContactRequest(jid, newName);
 }

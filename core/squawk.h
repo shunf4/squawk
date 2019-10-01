@@ -82,6 +82,7 @@ public slots:
     void addContactToGroupRequest(const QString& account, const QString& jid, const QString& groupName);
     void removeContactFromGroupRequest(const QString& account, const QString& jid, const QString& groupName);
     void removeContactRequest(const QString& account, const QString& jid);
+    void renameContactRequest(const QString& account, const QString& jid, const QString& newName);
     void addContactRequest(const QString& account, const QString& jid, const QString& name, const QSet<QString>& groups);
     void setRoomJoined(const QString& account, const QString& jid, bool joined);
     void setRoomAutoJoin(const QString& account, const QString& jid, bool joined);

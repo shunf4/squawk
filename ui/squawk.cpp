@@ -578,10 +578,31 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                         });
                     }    
                 }
-                
-                QMenu* groupsMenu = contextMenu->addMenu(Shared::icon("group"), "Groups");
                 QString accName = cnt->getAccountName();
                 QString cntJID = cnt->getJid();
+                QString cntName = cnt->getName();
+                
+                QAction* rename = contextMenu->addAction(Shared::icon("edit-rename"), "Rename");
+                rename->setEnabled(active);
+                connect(rename, &QAction::triggered, [this, cntName, accName, cntJID]() {
+                    QInputDialog* dialog = new QInputDialog(this);
+                    connect(dialog, &QDialog::accepted, [this, dialog, cntName, accName, cntJID]() {
+                        QString newName = dialog->textValue();
+                        if (newName != cntName) {
+                            emit renameContactRequest(accName, cntJID, newName);
+                        }
+                        dialog->deleteLater();
+                    });
+                    connect(dialog, &QDialog::rejected, dialog, &QObject::deleteLater);
+                    dialog->setInputMode(QInputDialog::TextInput);
+                    dialog->setLabelText("Input new name for " + cntJID + " \nor leave it empty for the contact \nto be displayed as " + cntJID);
+                    dialog->setWindowTitle("Renaming " + cntJID);
+                    dialog->setTextValue(cntName);
+                    dialog->exec();
+                });
+                
+                
+                QMenu* groupsMenu = contextMenu->addMenu(Shared::icon("group"), "Groups");
                 std::deque<QString> groupList = rosterModel.groupList(accName);
                 for (QString groupName : groupList) {
                     QAction* gr = groupsMenu->addAction(groupName);

@@ -91,6 +91,7 @@ int main(int argc, char *argv[])
     QObject::connect(&w, SIGNAL(downloadFileRequest(const QString&, const QString&)), squawk, SLOT(downloadFileRequest(const QString&, const QString&)));
     QObject::connect(&w, &Squawk::addContactToGroupRequest, squawk, &Core::Squawk::addContactToGroupRequest);
     QObject::connect(&w, &Squawk::removeContactFromGroupRequest, squawk, &Core::Squawk::removeContactFromGroupRequest);
+    QObject::connect(&w, &Squawk::renameContactRequest, squawk, &Core::Squawk::renameContactRequest);
     
     QObject::connect(squawk, SIGNAL(newAccount(const QMap<QString, QVariant>&)), &w, SLOT(newAccount(const QMap<QString, QVariant>&)));
     QObject::connect(squawk, SIGNAL(addContact(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)), 

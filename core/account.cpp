@@ -1200,3 +1200,14 @@ void Core::Account::removeContactFromGroupRequest(const QString& jid, const QStr
         }
     }
 }
+
+void Core::Account::renameContactRequest(const QString& jid, const QString& newName)
+{
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    if (itr == contacts.end()) {
+        qDebug() << "An attempt to rename non existing contact" << jid << "of account" << name << ", skipping";
+    } else {
+        QXmppRosterManager& rm = client.rosterManager();
+        rm.renameItem(jid, newName);
+    }
+}
