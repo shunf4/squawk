@@ -151,7 +151,7 @@ QVariant Models::Account::data(int column) const
         case 1:
             return server;
         case 2:
-            return Shared::connectionStateNames[state];
+            return QCoreApplication::translate("Global", Shared::connectionStateNames[state].toLatin1());
         case 3:
             return error;
         case 4:
@@ -159,7 +159,7 @@ QVariant Models::Account::data(int column) const
         case 5:
             return password;
         case 6:
-            return Shared::availabilityNames[availability];
+            return QCoreApplication::translate("Global", Shared::availabilityNames[availability].toLatin1());
         case 7:
             return resource;
         default:

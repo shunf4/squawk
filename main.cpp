@@ -23,6 +23,8 @@
 #include <QtCore/QThread>
 #include <QtCore/QObject>
 #include <QSettings>
+#include <QTranslator>
+#include <QLibraryInfo>
 
 int main(int argc, char *argv[])
 {
@@ -36,7 +38,15 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationName("Macaw");
     QCoreApplication::setOrganizationDomain("macaw.me");
     QCoreApplication::setApplicationName("Squawk");
-    QCoreApplication::setApplicationVersion("0.0.3");
+    QCoreApplication::setApplicationVersion("0.0.4");
+    
+    QTranslator qtTranslator;
+    qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
+    app.installTranslator(&qtTranslator);
+    
+    QTranslator myappTranslator;
+    myappTranslator.load(QLocale(), QLatin1String("squawk"), ".");
+    app.installTranslator(&myappTranslator);
     
     QIcon icon;
     icon.addFile(":images/logo.svg", QSize(16, 16));
