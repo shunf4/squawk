@@ -20,13 +20,9 @@
 #include "../../global.h"
 
 #include <QIcon>
+#include <QDebug>
 
-std::deque<QString> Models::Accounts::columns = {
-    "name",
-    "server",
-    "state",
-    "error"
-};
+std::deque<QString> Models::Accounts::columns = {"Name", "Server", "State", "Error"};
 
 Models::Accounts::Accounts(QObject* parent):
     QAbstractTableModel(parent),
@@ -72,7 +68,7 @@ int Models::Accounts::rowCount ( const QModelIndex& parent ) const
 QVariant Models::Accounts::headerData(int section, Qt::Orientation orientation, int role) const
 {
     if (role == Qt::DisplayRole && orientation == Qt::Horizontal) {
-        return columns[section];
+        return tr(columns[section].toLatin1());
     }
     return QVariant();
 }
@@ -81,7 +77,18 @@ QVariant Models::Accounts::headerData(int section, Qt::Orientation orientation, 
 void Models::Accounts::addAccount(Account* account)
 {
     beginInsertRows(QModelIndex(), accs.size(), accs.size());
-    accs.push_back(account);
+    int index = 0;
+    std::deque<Account*>::const_iterator before = accs.begin();
+    while (before != accs.end()) {
+        Account* bfr = *before;
+        if (bfr->getDisplayedName() > account->getDisplayedName()) {
+            break;
+        }
+        index++;
+        before++;
+    }
+    
+    accs.insert(before, account);
     connect(account, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onAccountChanged(Models::Item*, int, int)));
     endInsertRows();
     
@@ -96,8 +103,32 @@ void Models::Accounts::onAccountChanged(Item* item, int row, int col)
             return;     //it means the signal is emitted by one of accounts' children, not exactly him, this model has no interest in that
         }
         
+        if (col == 0) {
+            int newRow = 0;
+            std::deque<Account*>::const_iterator before = accs.begin();
+            while (before != accs.end()) {
+                Item* bfr = *before;
+                if (bfr->getDisplayedName() > item->getDisplayedName()) {
+                    break;
+                }
+                newRow++;
+                before++;
+            }
+            
+            if (newRow != row || (before != accs.end() && *before != item)) {
+                emit beginMoveRows(createIndex(row, 0), row, row, createIndex(newRow, 0), newRow);
+                std::deque<Account*>::const_iterator old = accs.begin();
+                old += row;
+                accs.erase(old);
+                accs.insert(before, acc);
+                emit endMoveRows();
+                
+                row = newRow;
+            }
+        }
+        
         if (col < columnCount(QModelIndex())) {
-            emit dataChanged(createIndex(row, col, this), createIndex(row, col, this));
+            emit dataChanged(createIndex(row, col), createIndex(row, col));
         }
         emit changed();
     }

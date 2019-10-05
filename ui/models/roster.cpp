@@ -21,8 +21,6 @@
 #include <QIcon>
 #include <QFont>
 
-using namespace Models;
-
 Models::Roster::Roster(QObject* parent):
     QAbstractItemModel(parent),
     accountsModel(new Accounts()),
@@ -78,7 +76,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     str += gr->getName();
                     unsigned int amount = gr->getUnreadMessages();
                     if (amount > 0) {
-                        str += QString(" (") +  "New messages" + ")";
+                        str += QString(" (") +  tr("New messages") + ")";
                     }
                     
                     result = str;
@@ -143,7 +141,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
             switch (item->type) {
                 case Item::account: {
                     Account* acc = static_cast<Account*>(item);
-                    result = QString(Shared::availabilityNames[acc->getAvailability()]);
+                    result = QCoreApplication::translate("Global", Shared::availabilityNames[acc->getAvailability()].toLatin1());
                 }
                     break;
                 case Item::contact: {
@@ -151,22 +149,22 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     QString str("");
                     int mc = contact->getMessagesCount();
                     if (mc > 0) {
-                        str += QString("New messages: ") + std::to_string(mc).c_str() + "\n";
+                        str += QString(tr("New messages: ")) + std::to_string(mc).c_str() + "\n";
                     }
-                    str += "Jabber ID: " + contact->getJid() + "\n";
+                    str += tr("Jabber ID: ") + contact->getJid() + "\n";
                     Shared::SubscriptionState ss = contact->getState();
                     if (ss == Shared::both) {
                         Shared::Availability av = contact->getAvailability();
-                        str += "Availability: " + Shared::availabilityNames[av];
+                        str += tr("Availability: ") + QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1());
                         if (av != Shared::offline) {
                             QString s = contact->getStatus();
                             if (s.size() > 0) {
-                                str += "\nStatus: " + s;
+                                str += "\n" + tr("Status: ") + s;
                             }
                         }
-                        str += "\nSubscription: " + Shared::subscriptionStateNames[ss];
+                        str += "\n" + tr("Subscription: ") + QCoreApplication::translate("Global", Shared::subscriptionStateNames[ss].toLatin1());
                     } else {
-                        str += "Subscription: " + Shared::subscriptionStateNames[ss];
+                        str += tr("Subscription: ") + QCoreApplication::translate("Global", Shared::subscriptionStateNames[ss].toLatin1());
                     }
                     
                     result = str;
@@ -177,13 +175,13 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     QString str("");
                     int mc = contact->getMessagesCount();
                     if (mc > 0) {
-                        str += QString("New messages: ") + std::to_string(mc).c_str() + "\n";
+                        str += tr("New messages: ") + std::to_string(mc).c_str() + "\n";
                     }
                     Shared::Availability av = contact->getAvailability();
-                    str += "Availability: " + Shared::availabilityNames[av];
+                    str += tr("Availability: ") + QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1());
                     QString s = contact->getStatus();
                     if (s.size() > 0) {
-                        str += "\nStatus: " + s;
+                        str += "\n" + tr("Status: ") + s;
                     }
                     
                     result = str;
@@ -193,14 +191,18 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     Participant* p = static_cast<Participant*>(item);
                     QString str("");
                     Shared::Availability av = p->getAvailability();
-                    str += "Availability: " + Shared::availabilityNames[av] + "\n";
+                    str += tr("Availability: ") + QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1()) + "\n";
                     QString s = p->getStatus();
                     if (s.size() > 0) {
-                        str += "Status: " + s + "\n";
+                        str += tr("Status: ") + s + "\n";
                     }
                     
-                    str += "Affiliation: " + Shared::affiliationNames[static_cast<unsigned int>(p->getAffiliation())] + "\n";
-                    str += "Role: " + Shared::roleNames[static_cast<unsigned int>(p->getRole())];
+                    str += tr("Affiliation: ") + 
+                    QCoreApplication::translate("Global", 
+                                                Shared::affiliationNames[static_cast<unsigned int>(p->getAffiliation())].toLatin1()) + "\n";
+                    str += tr("Role: ") + 
+                    QCoreApplication::translate("Global", 
+                                                Shared::roleNames[static_cast<unsigned int>(p->getRole())].toLatin1());
                     
                     result = str;
                 }
@@ -210,10 +212,10 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     unsigned int count = gr->getUnreadMessages();
                     QString str("");
                     if (count > 0) {
-                        str += QString("New messages: ") + std::to_string(count).c_str() + "\n";
+                        str += tr("New messages: ") + std::to_string(count).c_str() + "\n";
                     }
-                    str += QString("Online contacts: ") + std::to_string(gr->getOnlineContacts()).c_str() + "\n";
-                    str += QString("Total contacts: ") + std::to_string(gr->childCount()).c_str();
+                    str += tr("Online contacts: ") + std::to_string(gr->getOnlineContacts()).c_str() + "\n";
+                    str += tr("Total contacts: ") + std::to_string(gr->childCount()).c_str();
                     result = str;
                 }
                     break;
@@ -222,11 +224,11 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     unsigned int count = rm->getUnreadMessagesCount();
                     QString str("");
                     if (count > 0) {
-                        str += QString("New messages: ") + std::to_string(count).c_str() + "\n";
+                        str += tr("New messages: ") + std::to_string(count).c_str() + "\n";
                     }
-                    str += QString("Subscription: ") + rm->getStatusText();
+                    str += tr("Subscription: ") + rm->getStatusText();
                     if (rm->getJoined()) {
-                        str += QString("\nMembers: ") + std::to_string(rm->childCount()).c_str();
+                        str += QString("\n") + tr("Members: ") + std::to_string(rm->childCount()).c_str();
                     }
                     result = str;
                 }

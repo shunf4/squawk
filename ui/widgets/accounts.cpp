@@ -120,13 +120,13 @@ void Accounts::updateConnectButton()
         }
         if (allConnected) {
             toDisconnect = true;
-            m_ui->connectButton->setText("Disconnect");
+            m_ui->connectButton->setText(tr("Disconnect"));
         } else {
             toDisconnect = false;
-            m_ui->connectButton->setText("Connect");
+            m_ui->connectButton->setText(tr("Connect"));
         }
     } else {
-        m_ui->connectButton->setText("Connect");
+        m_ui->connectButton->setText(tr("Connect"));
         toDisconnect = false;
         m_ui->connectButton->setEnabled(false);
     }

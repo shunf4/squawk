@@ -22,7 +22,7 @@
 #include <QFileInfo>
 #include "message.h"
 
-const QRegExp urlReg("^(?!<img\\ssrc=\")((?:https?|ftp)://\\S+)");
+const QRegExp urlReg("(?!<img\\ssrc=\")((?:https?|ftp)://\\S+)");
 const QRegExp imgReg("((?:https?|ftp)://\\S+\\.(?:jpg|jpeg|png|svg|gif))");
 
 Message::Message(const Shared::Message& source, bool outgoing, const QString& p_sender, QWidget* parent):
@@ -117,13 +117,13 @@ void Message::addDownloadDialog()
             text->setText("");
             text->hide();
         }
-        downloadButton = new QPushButton(QIcon::fromTheme("download"), "Download");
+        downloadButton = new QPushButton(QIcon::fromTheme("download"), tr("Download"));
         downloadButton->setToolTip("<a href=\"" + msg.getOutOfBandUrl() + "\">" + msg.getOutOfBandUrl() + "</a>");
         if (errorDownloadingFile) {
             fileComment->setWordWrap(true);
-            fileComment->setText("Error downloading file: " + errorText + "\nYou can try again");
+            fileComment->setText(tr("Error downloading file: %1\nYou can try again").arg(QCoreApplication::translate("NetworkErrors", errorText.toLatin1())));
         } else {
-            fileComment->setText(sender->text() + " is offering you to download a file");
+            fileComment->setText(tr("%1 is offering you to download a file").arg(sender->text()));
         }
         fileComment->show();
         connect(downloadButton, SIGNAL(clicked()), this, SLOT(onDownload()));
@@ -188,7 +188,7 @@ void Message::showFile(const QString& path)
             fileComment->show();
         }
         file->setContextMenuPolicy(Qt::ActionsContextMenu);
-        QAction* openAction = new QAction(QIcon::fromTheme("document-new-from-template"), "Open", file);
+        QAction* openAction = new QAction(QIcon::fromTheme("document-new-from-template"), tr("Open"), file);
         connect(openAction, &QAction::triggered, [path]() {             //TODO need to get rid of this shame
             QDesktopServices::openUrl(QUrl::fromLocalFile(path));
         });

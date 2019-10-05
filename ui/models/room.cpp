@@ -193,15 +193,15 @@ QString Models::Room::getStatusText() const
 {
     if (autoJoin) {
         if (joined) {
-            return "Subscribed";
+            return tr("Subscribed");
         } else {
-            return "Temporarily unsubscribed";
+            return tr("Temporarily unsubscribed");
         }
     } else {
         if (joined) {
-            return "Temporarily subscribed";
+            return tr("Temporarily subscribed");
         } else {
-            return "Unsubscribed";
+            return tr("Unsubscribed");
         }
     }
 }

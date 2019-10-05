@@ -20,6 +20,7 @@
 #define GLOBAL_H
 
 #include <QString>
+#include <QCoreApplication>
 #include <deque>
 #include <QDateTime>
 #include <QDataStream>
@@ -99,7 +100,6 @@ static const std::deque<QString> subscriptionStateNames = {"None", "From", "To",
 
 static const std::deque<QString> affiliationNames = {"Unspecified", "Outcast", "Nobody", "Member", "Admin", "Owner"};
 static const std::deque<QString> roleNames = {"Unspecified", "Nobody", "Visitor", "Participant", "Moderator"};
-
 QString generateUUID();
 
 class Message {
