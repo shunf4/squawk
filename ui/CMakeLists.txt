@@ -43,6 +43,3 @@ add_library(squawkUI ${squawkUI_SRC})
 # Use the Widgets module from Qt 5.
 target_link_libraries(squawkUI Qt5::Widgets)
 target_link_libraries(squawkUI Qt5::DBus)
-
-# Install the executable
-install(TARGETS squawkUI DESTINATION lib)

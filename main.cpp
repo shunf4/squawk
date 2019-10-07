@@ -25,6 +25,7 @@
 #include <QSettings>
 #include <QTranslator>
 #include <QLibraryInfo>
+#include <QStandardPaths>
 
 int main(int argc, char *argv[])
 {
@@ -38,14 +39,25 @@ int main(int argc, char *argv[])
     QCoreApplication::setOrganizationName("Macaw");
     QCoreApplication::setOrganizationDomain("macaw.me");
     QCoreApplication::setApplicationName("Squawk");
-    QCoreApplication::setApplicationVersion("0.0.4");
+    QCoreApplication::setApplicationVersion("0.0.5");
     
     QTranslator qtTranslator;
     qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
     app.installTranslator(&qtTranslator);
     
     QTranslator myappTranslator;
-    myappTranslator.load(QLocale(), QLatin1String("squawk"), ".");
+    QStringList shares = QStandardPaths::standardLocations(QStandardPaths::AppDataLocation);
+    bool found = false;
+    for (QString share : shares) {
+        found = myappTranslator.load(QLocale(), QLatin1String("squawk"), ".", share + "/l10n");
+        if (found) {
+            break;
+        }
+    }
+    if (!found) {
+        myappTranslator.load(QLocale(), QLatin1String("squawk"), ".", QCoreApplication::applicationDirPath());
+    }
+    
     app.installTranslator(&myappTranslator);
     
     QIcon icon;

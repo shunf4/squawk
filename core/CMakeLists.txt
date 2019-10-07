@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 3.0)
 project(squawkCORE)
 
 # Instruct CMake to run moc automatically when needed.
-set (CMAKE_CXX_STANDARD 17)
 set(CMAKE_AUTOMOC ON)
 
 find_package(Qt5Widgets CONFIG REQUIRED)
@@ -22,11 +21,15 @@ set(squawkCORE_SRC
 # Tell CMake to create the helloworld executable
 add_library(squawkCORE ${squawkCORE_SRC})
 
+if(SYSTEM_QXMPP)
+    find_package(QXmpp CONFIG REQUIRED)
+    get_target_property(QXMPP_INTERFACE_INCLUDE_DIRECTORIES QXmpp::QXmpp INTERFACE_INCLUDE_DIRECTORIES)
+    target_include_directories(squawkCORE PUBLIC ${QXMPP_INTERFACE_INCLUDE_DIRECTORIES})
+endif()
+
+
 # Use the Widgets module from Qt 5.
 target_link_libraries(squawkCORE Qt5::Core)
 target_link_libraries(squawkCORE Qt5::Network)
 target_link_libraries(squawkCORE qxmpp)
 target_link_libraries(squawkCORE lmdb)
-
-# Install the executable
-install(TARGETS squawkCORE DESTINATION lib)

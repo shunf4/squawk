@@ -21,7 +21,7 @@
 
 #include "item.h"
 #include "participant.h"
-#include "../global.h"
+#include "../../global.h"
 
 namespace Models {
 

@@ -30,7 +30,7 @@
 #include <QGraphicsPixmapItem>
 #include <QVariantAnimation>
 
-#include "../global.h"
+#include "../../global.h"
 #include "message.h"
 
 class MessageLine : public QWidget
