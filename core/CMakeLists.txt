@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(squawkCORE)
 
-# Instruct CMake to run moc automatically when needed.
 set(CMAKE_AUTOMOC ON)
 
 find_package(Qt5Widgets CONFIG REQUIRED)

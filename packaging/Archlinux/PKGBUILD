@@ -1,5 +1,5 @@
 # Maintainer: Yury Gubich <blue@macaw.me>
-pkgname=squawk-git
+pkgname=squawk
 pkgver=0.0.5
 pkgrel=1
 pkgdesc="An XMPP desktop messenger, written on qt"
@@ -7,7 +7,7 @@ arch=('i686' 'x86_64')
 url="https://git.macaw.me/blue/squawk"
 license=('GPLv3')
 depends=('qt5-base' 'qt5-svg' 'lmdb' 'qxmpp>=1.0.0' 'libutil-linux')
-makedepends=('cmake')
+makedepends=('cmake>=3.3' 'imagemagick')
 source=("https://git.macaw.me/blue/squawk/archive/master.tar.gz")
 md5sums=('SKIP')
 build() {
