@@ -39,14 +39,14 @@ qt5_add_resources(RCC resources/resources.qrc)
 add_executable(squawk ${squawk_SRC} ${RCC})
 target_link_libraries(squawk Qt5::Widgets)
 
-add_subdirectory(ui)
-add_subdirectory(core)
-
-option(SYSTEM_QXMPP "Use system qxmpp lib" OFF) 
+option(SYSTEM_QXMPP "Use system qxmpp lib" ON) 
 
 if(NOT SYSTEM_QXMPP)
     add_subdirectory(external/qxmpp)
 endif()
+
+add_subdirectory(ui)
+add_subdirectory(core)
 
 target_link_libraries(squawk squawkUI)
 target_link_libraries(squawk squawkCORE)
@@ -56,7 +56,7 @@ add_dependencies(${CMAKE_PROJECT_NAME} translations)
 
 # Install the executable
 install(TARGETS squawk DESTINATION ${CMAKE_INSTALL_BINDIR})
-install(FILES ${QM_FILES} DESTINATION ${CMAKE_INSTALL_DATADIR}/Macaw/Squawk/l10n)
+install(FILES ${QM_FILES} DESTINATION ${CMAKE_INSTALL_DATADIR}/squawk/l10n)
 install(FILES squawk.svg DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
 install(FILES squawk48.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/48x48/apps RENAME squawk.png)
 install(FILES squawk64.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/64x64/apps RENAME squawk.png)

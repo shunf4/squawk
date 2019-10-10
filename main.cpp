@@ -36,10 +36,9 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     SignalCatcher sc(&app);
     
-    QCoreApplication::setOrganizationName("Macaw");
-    QCoreApplication::setOrganizationDomain("macaw.me");
-    QCoreApplication::setApplicationName("Squawk");
-    QCoreApplication::setApplicationVersion("0.0.5");
+    QApplication::setApplicationName("squawk");
+    QApplication::setApplicationDisplayName("Squawk");
+    QApplication::setApplicationVersion("0.0.5");
     
     QTranslator qtTranslator;
     qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
@@ -49,6 +48,7 @@ int main(int argc, char *argv[])
     QStringList shares = QStandardPaths::standardLocations(QStandardPaths::AppDataLocation);
     bool found = false;
     for (QString share : shares) {
+        qDebug() << share;
         found = myappTranslator.load(QLocale(), QLatin1String("squawk"), ".", share + "/l10n");
         if (found) {
             break;
