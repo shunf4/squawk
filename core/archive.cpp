@@ -32,7 +32,10 @@ Core::Archive::Archive(const QString& p_jid, QObject* parent):
     environment(),
     main(),
     order(),
-    stats()
+    stats(),
+    hasAvatar(false),
+    avatarHash(),
+    avatarType()
 {
 }
 
@@ -66,7 +69,26 @@ void Core::Archive::open(const QString& account)
         mdb_dbi_open(txn, "order", MDB_CREATE | MDB_INTEGERKEY, &order);
         mdb_dbi_open(txn, "stats", MDB_CREATE, &stats);
         mdb_txn_commit(txn);
-        fromTheBeginning = _isFromTheBeginning();
+        
+        mdb_txn_begin(environment, NULL, 0, &txn);
+        try {
+            fromTheBeginning = getStatBoolValue("beginning", txn);
+        } catch (NotFound e) {
+            fromTheBeginning = false;
+        }
+        try {
+            hasAvatar = getStatBoolValue("hasAvatar", txn);
+        } catch (NotFound e) {
+            hasAvatar = false;
+        }
+        if (hasAvatar) {
+            avatarHash = getStatStringValue("avatarHash", txn).c_str();
+            avatarType = getStatStringValue("avatarType", txn).c_str();
+        } else {
+            avatarHash = "";
+            avatarType = "";
+        }
+        mdb_txn_abort(txn);
         opened = true;
     }
 }
@@ -396,40 +418,6 @@ std::list<Shared::Message> Core::Archive::getBefore(int count, const QString& id
     return res;
 }
 
-bool Core::Archive::_isFromTheBeginning()
-{
-    std::string strKey = "beginning";
-    
-    MDB_val lmdbKey, lmdbData;
-    lmdbKey.mv_size = strKey.size();
-    lmdbKey.mv_data = (char*)strKey.c_str();
-    
-    MDB_txn *txn;
-    int rc;
-    mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
-    rc = mdb_get(txn, stats, &lmdbKey, &lmdbData);
-    if (rc == MDB_NOTFOUND) {
-        mdb_txn_abort(txn);
-        return false;
-    } else if (rc) {
-        qDebug() <<"isFromTheBeginning error: " << mdb_strerror(rc);
-        mdb_txn_abort(txn);
-        throw NotFound(strKey, jid.toStdString());
-    } else {
-        uint8_t value = *(uint8_t*)(lmdbData.mv_data);
-        bool is;
-        if (value == 144) {
-            is = false;
-        } else if (value == 72) {
-            is = true;
-        } else {
-            qDebug() <<"isFromTheBeginning error: stored value doesn't match any magic number, the answer is most probably wrong";
-        }
-        mdb_txn_abort(txn);
-        return is;
-    }
-}
-
 bool Core::Archive::isFromTheBeginning()
 {
     if (!opened) {
@@ -445,26 +433,15 @@ void Core::Archive::setFromTheBeginning(bool is)
     }
     if (fromTheBeginning != is) {
         fromTheBeginning = is;
-        const std::string& id = "beginning";
-        uint8_t value = 144;
-        if (is) {
-            value = 72;
-        }
         
-        MDB_val lmdbKey, lmdbData;
-        lmdbKey.mv_size = id.size();
-        lmdbKey.mv_data = (char*)id.c_str();
-        lmdbData.mv_size = sizeof value;
-        lmdbData.mv_data = &value;
         MDB_txn *txn;
         mdb_txn_begin(environment, NULL, 0, &txn);
-        int rc;
-        rc = mdb_put(txn, stats, &lmdbKey, &lmdbData, 0);
-        if (rc != 0) {
-            qDebug() << "Couldn't store beginning key into stat database:" << mdb_strerror(rc);
+        bool success = setStatValue("beginning", is, txn);
+        if (success != 0) {
             mdb_txn_abort(txn);
+        } else {
+            mdb_txn_commit(txn);
         }
-        mdb_txn_commit(txn);
     }
 }
 
@@ -507,4 +484,113 @@ void Core::Archive::printKeys()
     
     mdb_cursor_close(cursor);
     mdb_txn_abort(txn);
+}
+
+bool Core::Archive::getStatBoolValue(const std::string& id, MDB_txn* txn)
+{
+    MDB_val lmdbKey, lmdbData;
+    lmdbKey.mv_size = id.size();
+    lmdbKey.mv_data = (char*)id.c_str();
+    
+    int rc;
+    rc = mdb_get(txn, stats, &lmdbKey, &lmdbData);
+    if (rc == MDB_NOTFOUND) {
+        throw NotFound(id, jid.toStdString());
+    } else if (rc) {
+        qDebug() << "error retrieving" << id.c_str() << "from stats db of" << jid << mdb_strerror(rc);
+        throw 15;            //TODO proper exception
+    } else {
+        uint8_t value = *(uint8_t*)(lmdbData.mv_data);
+        bool is;
+        if (value == 144) {
+            is = false;
+        } else if (value == 72) {
+            is = true;
+        } else {
+            qDebug() << "error retrieving boolean stat" << id.c_str() << ": stored value doesn't match any magic number, the answer is most probably wrong";
+            throw NotFound(id, jid.toStdString());
+        }
+        return is;
+    }
+}
+
+std::string Core::Archive::getStatStringValue(const std::string& id, MDB_txn* txn)
+{
+    MDB_cursor* cursor;
+    MDB_val lmdbKey, lmdbData;
+    lmdbKey.mv_size = id.size();
+    lmdbKey.mv_data = (char*)id.c_str();
+    
+    int rc;
+    rc = mdb_get(txn, stats, &lmdbKey, &lmdbData);
+    if (rc == MDB_NOTFOUND) {
+        throw NotFound(id, jid.toStdString());
+    } else if (rc) {
+        qDebug() << "error retrieving" << id.c_str() << "from stats db of" << jid << mdb_strerror(rc);
+        throw 15;            //TODO proper exception
+    } else {
+        std::string value((char*)lmdbData.mv_data, lmdbData.mv_size);
+        return value;
+    }
+}
+
+bool Core::Archive::setStatValue(const std::string& id, bool value, MDB_txn* txn)
+{
+    uint8_t binvalue = 144;
+    if (value) {
+        binvalue = 72;
+    }
+    MDB_val lmdbKey, lmdbData;
+    lmdbKey.mv_size = id.size();
+    lmdbKey.mv_data = (char*)id.c_str();
+    lmdbData.mv_size = sizeof binvalue;
+    lmdbData.mv_data = &binvalue;
+    int rc = mdb_put(txn, stats, &lmdbKey, &lmdbData, 0);
+    if (rc != 0) {
+        qDebug() << "Couldn't store" << id.c_str() << "key into stat database:" << mdb_strerror(rc);
+        return false;
+    }
+    return true;
+}
+
+bool Core::Archive::setStatValue(const std::string& id, const std::string& value, MDB_txn* txn)
+{
+    MDB_val lmdbKey, lmdbData;
+    lmdbKey.mv_size = id.size();
+    lmdbKey.mv_data = (char*)id.c_str();
+    lmdbData.mv_size = value.size();
+    lmdbData.mv_data = (char*)value.c_str();
+    int rc = mdb_put(txn, stats, &lmdbKey, &lmdbData, 0);
+    if (rc != 0) {
+        qDebug() << "Couldn't store" << id.c_str() << "key into stat database:" << mdb_strerror(rc);
+        return false;
+    }
+    return true;
+}
+
+bool Core::Archive::getHasAvatar() const
+{
+    if (!opened) {
+        throw Closed("getHasAvatar", jid.toStdString());
+    }
+    
+    return hasAvatar;
+}
+
+QString Core::Archive::getAvatarHash() const
+{
+    if (!opened) {
+        throw Closed("getAvatarHash", jid.toStdString());
+    }
+    
+    return avatarHash;
+}
+
+QString Core::Archive::getAvatarType() const
+{
+    if (!opened) {
+        throw Closed("getAvatarType", jid.toStdString());
+    }
+    
+    return avatarType;
 }

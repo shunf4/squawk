@@ -48,7 +48,6 @@ int main(int argc, char *argv[])
     QStringList shares = QStandardPaths::standardLocations(QStandardPaths::AppDataLocation);
     bool found = false;
     for (QString share : shares) {
-        qDebug() << share;
         found = myappTranslator.load(QLocale(), QLatin1String("squawk"), ".", share + "/l10n");
         if (found) {
             break;

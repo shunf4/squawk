@@ -20,9 +20,10 @@
 
 #include <QDebug>
 
-Core::RosterItem::RosterItem(const QString& pJid, const QString& account, QObject* parent):
+Core::RosterItem::RosterItem(const QString& pJid, const QString& pAccount, QObject* parent):
     QObject(parent),
     jid(pJid),
+    account(pAccount),
     name(),
     archiveState(empty),
     archive(new Archive(jid)),
@@ -330,4 +331,16 @@ QString Core::RosterItem::getServer() const
 bool Core::RosterItem::isMuc() const
 {
     return muc;
+}
+
+QString Core::RosterItem::avatarHash() const
+{
+    return archive->getAvatarHash();
+}
+
+QString Core::RosterItem::avatarPath() const
+{
+    QString path(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
+    path += "/" + account + "/" + jid + "/avatar." + archive->getAvatarType();
+    return path;
 }

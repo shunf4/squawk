@@ -3,7 +3,7 @@ project(squawkCORE)
 
 set(CMAKE_AUTOMOC ON)
 
-find_package(Qt5Widgets CONFIG REQUIRED)
+find_package(Qt5Core CONFIG REQUIRED)
 find_package(Qt5Network CONFIG REQUIRED)
 
 set(squawkCORE_SRC

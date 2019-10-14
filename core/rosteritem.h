@@ -21,6 +21,7 @@
 
 #include <QObject>
 #include <QString>
+#include <QStandardPaths>
 
 #include <list>
 
@@ -58,6 +59,9 @@ public:
     void flushMessagesToArchive(bool finished, const QString& firstId, const QString& lastId);
     void requestHistory(int count, const QString& before);
     void requestFromEmpty(int count, const QString& before);
+    bool hasAvatar() const;
+    QString avatarHash() const;
+    QString avatarPath() const;
     
 signals:
     void nameChanged(const QString& name);
@@ -67,6 +71,7 @@ signals:
     
 public:
     const QString jid;
+    const QString account;
     
 protected:
     QString name;

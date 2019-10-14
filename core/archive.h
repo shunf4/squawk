@@ -49,6 +49,9 @@ public:
     std::list<Shared::Message> getBefore(int count, const QString& id);
     bool isFromTheBeginning();
     void setFromTheBeginning(bool is);
+    bool getHasAvatar() const;
+    QString getAvatarHash() const;
+    QString getAvatarType() const;
     
 public:
     const QString jid;
@@ -131,8 +134,15 @@ private:
     MDB_dbi main;
     MDB_dbi order;
     MDB_dbi stats;
+    bool hasAvatar;
+    QString avatarHash;
+    QString avatarType;
     
-    bool _isFromTheBeginning();
+    bool getStatBoolValue(const std::string& id, MDB_txn* txn);
+    std::string getStatStringValue(const std::string& id, MDB_txn* txn);
+    
+    bool setStatValue(const std::string& id, bool value, MDB_txn* txn);
+    bool setStatValue(const std::string& id, const std::string& value, MDB_txn* txn);
     void printOrder();
     void printKeys();
 };
