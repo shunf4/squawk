@@ -4,7 +4,9 @@ project(squawkCORE)
 set(CMAKE_AUTOMOC ON)
 
 find_package(Qt5Core CONFIG REQUIRED)
+find_package(Qt5Gui CONFIG REQUIRED)
 find_package(Qt5Network CONFIG REQUIRED)
+find_package(Qt5Xml CONFIG REQUIRED)
 
 set(squawkCORE_SRC
     squawk.cpp
@@ -30,5 +32,7 @@ endif()
 # Use the Widgets module from Qt 5.
 target_link_libraries(squawkCORE Qt5::Core)
 target_link_libraries(squawkCORE Qt5::Network)
+target_link_libraries(squawkCORE Qt5::Gui)
+target_link_libraries(squawkCORE Qt5::Xml)
 target_link_libraries(squawkCORE qxmpp)
 target_link_libraries(squawkCORE lmdb)

@@ -24,6 +24,7 @@
 #include <deque>
 #include <QDateTime>
 #include <QDataStream>
+#include <QColor>
 
 namespace Shared {
     
@@ -69,6 +70,12 @@ enum class Role {
     moderator 
 };
 
+enum class Avatar {
+    empty,
+    autocreated,
+    valid
+};
+
 static const Availability availabilityHighest = offline;
 static const Availability availabilityLowest = online;
 
@@ -101,6 +108,45 @@ static const std::deque<QString> subscriptionStateNames = {"None", "From", "To",
 static const std::deque<QString> affiliationNames = {"Unspecified", "Outcast", "Nobody", "Member", "Admin", "Owner"};
 static const std::deque<QString> roleNames = {"Unspecified", "Nobody", "Visitor", "Participant", "Moderator"};
 QString generateUUID();
+
+static const std::vector<QColor> colorPalette = {
+    QColor(244, 27, 63),
+    QColor(21, 104, 156),
+    QColor(38, 156, 98),
+    QColor(247, 103, 101),
+    QColor(121, 37, 117),
+    QColor(242, 202, 33),
+    QColor(168, 22, 63),
+    QColor(35, 100, 52),
+    QColor(52, 161, 152),
+    QColor(239, 53, 111),
+    QColor(237, 234, 36),
+    QColor(153, 148, 194),
+    QColor(211, 102, 151),
+    QColor(194, 63, 118),
+    QColor(249, 149, 51),
+    QColor(244, 206, 109),
+    QColor(121, 105, 153),
+    QColor(244, 199, 30),
+    QColor(28, 112, 28),
+    QColor(172, 18, 20),
+    QColor(25, 66, 110),
+    QColor(25, 149, 104),
+    QColor(214, 148, 0),
+    QColor(203, 47, 57),
+    QColor(4, 54, 84),
+    QColor(116, 161, 97),
+    QColor(50, 68, 52),
+    QColor(237, 179, 20),
+    QColor(69, 114, 147),
+    QColor(242, 212, 31),
+    QColor(248, 19, 20),
+    QColor(84, 102, 84),
+    QColor(25, 53, 122),
+    QColor(91, 91, 109),
+    QColor(17, 17, 80),
+    QColor(54, 54, 94)
+};
 
 class Message {
 public:

@@ -30,6 +30,8 @@
 #include <QXmppClient.h>
 #include <QXmppBookmarkManager.h>
 #include <QXmppBookmarkSet.h>
+#include <QXmppVCardIq.h>
+#include <QXmppVCardManager.h>
 #include "../global.h"
 #include "contact.h"
 #include "conference.h"
@@ -119,6 +121,7 @@ private:
     
     std::map<QString, QString> queuedContacts;
     std::set<QString> outOfRosterContacts;
+    std::set<QString> pendingVCardRequests;
     
 private slots:
     void onClientConnected();
@@ -157,8 +160,11 @@ private slots:
     void onContactSubscriptionStateChanged(Shared::SubscriptionState state);
     void onContactHistoryResponse(const std::list<Shared::Message>& list);
     void onContactNeedHistory(const QString& before, const QString& after, const QDateTime& at);
+    void onContactAvatarChanged(Shared::Avatar, const QString& path);
     
     void onMamLog(QXmppLogger::MessageType type, const QString &msg);
+    
+    void onVCardReceived(const QXmppVCardIq& card);
   
 private:
     void addedAccount(const QString &bareJid);
