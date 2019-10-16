@@ -19,7 +19,13 @@
 #ifndef CORE_ACCOUNT_H
 #define CORE_ACCOUNT_H
 
-#include <QtCore/QObject>
+#include <QObject>
+#include <QCryptographicHash>
+#include <QFile>
+#include <QMimeDatabase>
+#include <QStandardPaths>
+#include <QDir>
+
 #include <map>
 #include <set>
 
@@ -56,6 +62,7 @@ public:
     QString getServer() const;
     QString getPassword() const;
     QString getResource() const;
+    QString getAvatarPath() const;
     Shared::Availability getAvailability() const;
     
     void setName(const QString& p_name);
@@ -82,6 +89,7 @@ public:
     void addRoomRequest(const QString& jid, const QString& nick, const QString& password, bool autoJoin);
     
 signals:
+    void changed(const QMap<QString, QVariant>& data);
     void connectionStateChanged(int);
     void availabilityChanged(int);
     void addGroup(const QString& name);
@@ -122,6 +130,10 @@ private:
     std::map<QString, QString> queuedContacts;
     std::set<QString> outOfRosterContacts;
     std::set<QString> pendingVCardRequests;
+    
+    QString avatarHash;
+    QString avatarType;
+    bool ownVCardRequestInProgress;
     
 private slots:
     void onClientConnected();
@@ -165,6 +177,7 @@ private slots:
     void onMamLog(QXmppLogger::MessageType type, const QString &msg);
     
     void onVCardReceived(const QXmppVCardIq& card);
+    void onOwnVCardReceived(const QXmppVCardIq& card);
   
 private:
     void addedAccount(const QString &bareJid);

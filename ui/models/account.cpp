@@ -26,6 +26,7 @@ Models::Account::Account(const QMap<QString, QVariant>& data, Models::Item* pare
     server(data.value("server").toString()),
     resource(data.value("resource").toString()),
     error(data.value("error").toString()),
+    avatarPath(data.value("avatarPath").toString()),
     state(Shared::disconnected),
     availability(Shared::offline)
 {
@@ -162,6 +163,8 @@ QVariant Models::Account::data(int column) const
             return QCoreApplication::translate("Global", Shared::availabilityNames[availability].toLatin1());
         case 7:
             return resource;
+        case 8:
+            return avatarPath;
         default:
             return QVariant();
     }
@@ -169,7 +172,7 @@ QVariant Models::Account::data(int column) const
 
 int Models::Account::columnCount() const
 {
-    return 8;
+    return 9;
 }
 
 void Models::Account::update(const QString& field, const QVariant& value)
@@ -190,6 +193,8 @@ void Models::Account::update(const QString& field, const QVariant& value)
         setResource(value.toString());
     } else if (field == "error") {
         setError(value.toString());
+    } else if (field == "avatarPath") {
+        setAvatarPath(value.toString());
     }
 }
 
@@ -224,3 +229,15 @@ void Models::Account::toOfflineState()
     setAvailability(Shared::offline);
     Item::toOfflineState();
 }
+
+QString Models::Account::getAvatarPath()
+{
+    return avatarPath;
+}
+
+void Models::Account::setAvatarPath(const QString& path)
+{
+    avatarPath = path;
+    changed(8);             //it's uncoditional because the path doesn't change when one avatar of the same type replaces another, sha1 sums checks are on the backend
+}
+

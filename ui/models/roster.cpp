@@ -68,6 +68,9 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
     switch (role) {
         case Qt::DisplayRole:
         {
+            if (index.column() != 0) {
+                break;
+            }
             switch (item->type) {
                 case Item::group: {
                     Group* gr = static_cast<Group*>(item);
@@ -91,26 +94,50 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
         case Qt::DecorationRole:
             switch (item->type) {
                 case Item::account: {
+                    quint8 col = index.column();
                     Account* acc = static_cast<Account*>(item);
-                    result = acc->getStatusIcon(false);
+                    if (col == 0) {
+                        result = acc->getStatusIcon(false);
+                    } else if (col == 1) {
+                        QString path = acc->getAvatarPath();
+                        if (path.size() > 0) {
+                            result = QIcon(path);
+                        }
+                    }
                 }
                     break;
                 case Item::contact: {
                     Contact* contact = static_cast<Contact*>(item);
-                    result = contact->getStatusIcon(false);
+                    quint8 col = index.column();
+                    if (col == 0) {
+                        result = contact->getStatusIcon(false);
+                    } else if (col == 1) {
+                        if (contact->getAvatarState() != Shared::Avatar::empty) {
+                            result = QIcon(contact->getAvatarPath());
+                        }
+                    }
                 }
                     break;
                 case Item::presence: {
+                    if (index.column() != 0) {
+                        break;
+                    }
                     Presence* presence = static_cast<Presence*>(item);
                     result = presence->getStatusIcon(false);
                 }
                     break;
                 case Item::room: {
+                    if (index.column() != 0) {
+                        break;
+                    }
                     Room* room = static_cast<Room*>(item);
                     result = room->getStatusIcon(false);
                 }
                     break;
                 case Item::participant: {
+                    if (index.column() != 0) {
+                        break;
+                    }
                     Participant* p = static_cast<Participant*>(item);
                     result = p->getStatusIcon(false);
                 }

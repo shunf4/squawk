@@ -50,6 +50,9 @@ namespace Models {
         void setError(const QString& p_resource);
         QString getError() const;
         
+        void setAvatarPath(const QString& path);
+        QString getAvatarPath();
+        
         void setAvailability(Shared::Availability p_avail);
         void setAvailability(unsigned int p_avail);
         Shared::Availability getAvailability() const;
@@ -67,6 +70,7 @@ namespace Models {
         QString server;
         QString resource;
         QString error;
+        QString avatarPath;
         Shared::ConnectionState state;
         Shared::Availability availability;
         

@@ -23,7 +23,8 @@
 #include <QString>
 #include <QVariant>
 #include <QMap>
-#include <deque>
+#include <QtGlobal>
+
 #include <deque>
 
 #include "account.h"
@@ -106,6 +107,7 @@ private:
 private slots:
     void onAccountConnectionStateChanged(int state);
     void onAccountAvailabilityChanged(int state);
+    void onAccountChanged(const QMap<QString, QVariant>& data);
     void onAccountAddGroup(const QString& name);
     void onAccountError(const QString& text);
     void onAccountRemoveGroup(const QString& name);

@@ -25,13 +25,25 @@ Models::Contact::Contact(const QString& p_jid ,const QMap<QString, QVariant> &da
     jid(p_jid),
     availability(Shared::offline),
     state(Shared::none),
+    avatarState(Shared::Avatar::empty),
     presences(),
     messages(),
-    childMessages(0)
+    childMessages(0),
+    status(),
+    avatarPath()
 {
     QMap<QString, QVariant>::const_iterator itr = data.find("state");
     if (itr != data.end()) {
         setState(itr.value().toUInt());
+    }
+    
+    itr = data.find("avatarState");
+    if (itr != data.end()) {
+        setAvatarState(itr.value().toUInt());
+    }
+    itr = data.find("avatarPath");
+    if (itr != data.end()) {
+        setAvatarPath(itr.value().toString());
     }
 }
 
@@ -100,7 +112,7 @@ void Models::Contact::setStatus(const QString& p_state)
 
 int Models::Contact::columnCount() const
 {
-    return 6;
+    return 8;
 }
 
 QVariant Models::Contact::data(int column) const
@@ -118,6 +130,10 @@ QVariant Models::Contact::data(int column) const
             return getMessagesCount();
         case 5:
             return getStatus();
+        case 6:
+            return static_cast<quint8>(getAvatarState());
+        case 7:
+            return getAvatarPath();
         default:
             return QVariant();
     }
@@ -142,6 +158,10 @@ void Models::Contact::update(const QString& field, const QVariant& value)
         setAvailability(value.toUInt());
     } else if (field == "state") {
         setState(value.toUInt());
+    } else if (field == "avatarState") {
+        setAvatarState(value.toUInt());
+    } else if (field == "avatarPath") {
+        setAvatarPath(value.toString());
     }
 }
 
@@ -347,4 +367,40 @@ Models::Contact::Contact(const Models::Contact& other):
     }
     
     refresh();
+}
+
+QString Models::Contact::getAvatarPath() const
+{
+    return avatarPath;
+}
+
+Shared::Avatar Models::Contact::getAvatarState() const
+{
+    return avatarState;
+}
+
+void Models::Contact::setAvatarPath(const QString& path)
+{
+    if (path != avatarPath) {
+        avatarPath = path;
+        changed(7);
+    }
+}
+
+void Models::Contact::setAvatarState(Shared::Avatar p_state)
+{
+    if (avatarState != p_state) {
+        avatarState = p_state;
+        changed(6);
+    }
+}
+
+void Models::Contact::setAvatarState(unsigned int p_state)
+{
+    if (p_state <= static_cast<quint8>(Shared::Avatar::valid)) {
+        Shared::Avatar state = static_cast<Shared::Avatar>(p_state);
+        setAvatarState(state);
+    } else {
+        qDebug() << "An attempt to set invalid avatar state" << p_state << "to the contact" << jid << ", skipping";
+    }
 }

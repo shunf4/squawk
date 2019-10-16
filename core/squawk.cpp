@@ -28,9 +28,9 @@ Core::Squawk::Squawk(QObject* parent):
     amap(),
     network()
 {
-    connect(&network, SIGNAL(fileLocalPathResponse(const QString&, const QString&)), this, SIGNAL(fileLocalPathResponse(const QString&, const QString&)));
-    connect(&network, SIGNAL(downloadFileProgress(const QString&, qreal)), this, SIGNAL(downloadFileProgress(const QString&, qreal)));
-    connect(&network, SIGNAL(downloadFileError(const QString&, const QString&)), this, SIGNAL(downloadFileError(const QString&, const QString&)));
+    connect(&network, &NetworkAccess::fileLocalPathResponse, this, &Squawk::fileLocalPathResponse);
+    connect(&network, &NetworkAccess::downloadFileProgress, this, &Squawk::downloadFileProgress);
+    connect(&network, &NetworkAccess::downloadFileError, this, &Squawk::downloadFileError);
 }
 
 Core::Squawk::~Squawk()
@@ -110,36 +110,28 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     accounts.push_back(acc);
     amap.insert(std::make_pair(name, acc));
     
-    connect(acc, SIGNAL(connectionStateChanged(int)), this, SLOT(onAccountConnectionStateChanged(int)));
-    connect(acc, SIGNAL(error(const QString&)), this, SLOT(onAccountError(const QString&)));
-    connect(acc, SIGNAL(availabilityChanged(int)), this, SLOT(onAccountAvailabilityChanged(int)));
-    connect(acc, SIGNAL(addContact(const QString&, const QString&, const QMap<QString, QVariant>&)), 
-            this, SLOT(onAccountAddContact(const QString&, const QString&, const QMap<QString, QVariant>&)));
-    connect(acc, SIGNAL(addGroup(const QString&)), this, SLOT(onAccountAddGroup(const QString&)));
-    connect(acc, SIGNAL(removeGroup(const QString&)), this, SLOT(onAccountRemoveGroup(const QString&)));
-    connect(acc, SIGNAL(removeContact(const QString&)), this, SLOT(onAccountRemoveContact(const QString&)));
-    connect(acc, SIGNAL(removeContact(const QString&, const QString&)), this, SLOT(onAccountRemoveContact(const QString&, const QString&)));
-    connect(acc, SIGNAL(changeContact(const QString&, const QMap<QString, QVariant>&)), 
-            this, SLOT(onAccountChangeContact(const QString&, const QMap<QString, QVariant>&)));
-    connect(acc, SIGNAL(addPresence(const QString&, const QString&, const QMap<QString, QVariant>&)), 
-            this, SLOT(onAccountAddPresence(const QString&, const QString&, const QMap<QString, QVariant>&)));
-    connect(acc, SIGNAL(removePresence(const QString&, const QString&)), this, SLOT(onAccountRemovePresence(const QString&, const QString&)));
-    connect(acc, SIGNAL(message(const Shared::Message&)), this, SLOT(onAccountMessage(const Shared::Message&)));
-    connect(acc, SIGNAL(responseArchive(const QString&, const std::list<Shared::Message>&)), 
-            this, SLOT(onAccountResponseArchive(const QString&, const std::list<Shared::Message>&)));
+    connect(acc, &Account::connectionStateChanged, this, &Squawk::onAccountConnectionStateChanged);
+    connect(acc, &Account::changed, this, &Squawk::onAccountChanged);
+    connect(acc, &Account::error, this, &Squawk::onAccountError);
+    connect(acc, &Account::availabilityChanged, this, &Squawk::onAccountAvailabilityChanged);
+    connect(acc, &Account::addContact, this, &Squawk::onAccountAddContact);
+    connect(acc, &Account::addGroup, this, &Squawk::onAccountAddGroup);
+    connect(acc, &Account::removeGroup, this, &Squawk::onAccountRemoveGroup);
+    connect(acc, qOverload<const QString&, const QString&>(&Account::removeContact), this, qOverload<const QString&, const QString&>(&Squawk::onAccountRemoveContact));
+    connect(acc, qOverload<const QString&>(&Account::removeContact), this, qOverload<const QString&>(&Squawk::onAccountRemoveContact));
+    connect(acc, &Account::changeContact, this, &Squawk::onAccountChangeContact);
+    connect(acc, &Account::addPresence, this, &Squawk::onAccountAddPresence);
+    connect(acc, &Account::removePresence, this, &Squawk::onAccountRemovePresence);
+    connect(acc, &Account::message, this, &Squawk::onAccountMessage);
+    connect(acc, &Account::responseArchive, this, &Squawk::onAccountResponseArchive);
+
+    connect(acc, &Account::addRoom, this, &Squawk::onAccountAddRoom);
+    connect(acc, &Account::changeRoom, this, &Squawk::onAccountChangeRoom);
+    connect(acc, &Account::removeRoom, this, &Squawk::onAccountRemoveRoom);
     
-    connect(acc, SIGNAL(addRoom(const QString&, const QMap<QString, QVariant>&)), 
-            this, SLOT(onAccountAddRoom(const QString&, const QMap<QString, QVariant>&)));
-    connect(acc, SIGNAL(changeRoom(const QString&, const QMap<QString, QVariant>&)), 
-            this, SLOT(onAccountChangeRoom(const QString&, const QMap<QString, QVariant>&)));
-    connect(acc, SIGNAL(removeRoom(const QString&)), this, SLOT(onAccountRemoveRoom(const QString&)));
-    
-    connect(acc, SIGNAL(addRoomParticipant(const QString&, const QString&, const QMap<QString, QVariant>&)), 
-            this, SLOT(onAccountAddRoomPresence(const QString&, const QString&, const QMap<QString, QVariant>&)));
-    connect(acc, SIGNAL(changeRoomParticipant(const QString&, const QString&, const QMap<QString, QVariant>&)), 
-            this, SLOT(onAccountChangeRoomPresence(const QString&, const QString&, const QMap<QString, QVariant>&)));
-    connect(acc, SIGNAL(removeRoomParticipant(const QString&, const QString&)), 
-            this, SLOT(onAccountRemoveRoomPresence(const QString&, const QString&)));
+    connect(acc, &Account::addRoomParticipant, this, &Squawk::onAccountAddRoomPresence);
+    connect(acc, &Account::changeRoomParticipant, this, &Squawk::onAccountChangeRoomPresence);
+    connect(acc, &Account::removeRoomParticipant, this, &Squawk::onAccountRemoveRoomPresence);
     
     
     QMap<QString, QVariant> map = {
@@ -150,8 +142,10 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
         {"resource", resource},
         {"state", Shared::disconnected},
         {"offline", Shared::offline},
-        {"error", ""}
+        {"error", ""},
+        {"avatarPath", acc->getAvatarPath()}
     };
+    
     emit newAccount(map);
 }
 
@@ -261,6 +255,12 @@ void Core::Squawk::onAccountAvailabilityChanged(int state)
 {
     Account* acc = static_cast<Account*>(sender());
     emit changeAccount(acc->getName(), {{"availability", state}});
+}
+
+void Core::Squawk::onAccountChanged(const QMap<QString, QVariant>& data)
+{    
+    Account* acc = static_cast<Account*>(sender());
+    emit changeAccount(acc->getName(), data);
 }
 
 void Core::Squawk::onAccountMessage(const Shared::Message& data)

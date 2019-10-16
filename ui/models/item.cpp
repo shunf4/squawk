@@ -141,7 +141,7 @@ const Models::Item * Models::Item::parentItemConst() const
 
 int Models::Item::columnCount() const
 {
-    return 1;
+    return 2;
 }
 
 QString Models::Item::getName() const
