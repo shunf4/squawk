@@ -215,6 +215,78 @@ private:
     QString oob;
 };
 
+class VCard {
+    class Contact {
+    public:
+        enum Role {
+            none,
+            home,
+            work
+        };
+        
+        Contact(Role p_role = none, bool p_prefered = false);
+        
+        Role role;
+        bool prefered;
+    };
+public:
+    class Email : public Contact {
+    public:
+        Email(const QString& address, Role p_role = none, bool p_prefered = false);
+        
+        QString address;
+    };
+    class Phone : public Contact {
+        enum Type {
+            fax,
+            pager,
+            voice,
+            cell,
+            video,
+            modem
+        };
+        Phone(const QString& number, Type p_type = voice, Role p_role = none, bool p_prefered = false);
+        
+        QString number;
+        Type type;
+    };
+    class Address : public Contact {
+        Address(
+            const QString& zCode = "", 
+            const QString& cntry = "", 
+            const QString& rgn = "", 
+            const QString& lclty = "", 
+            const QString& strt = "", 
+            const QString& ext = "", 
+            Role p_role = none, 
+            bool p_prefered = false
+        );
+        
+        QString zipCode;
+        QString country;
+        QString region;
+        QString locality;
+        QString street;
+        QString external;
+    };
+    VCard();
+    VCard(const QDateTime& creationTime);
+    
+private:
+    QString firstName;
+    QString middleName;
+    QString lastName;
+    QString nickName;
+    QString description;
+    QDate birthday;
+    Avatar photoType;
+    QString photoPath;
+    QDateTime receivingTime;
+    std::deque<Email> emails;
+    std::deque<Phone> phones;
+    std::deque<Address> addresses;
+};
+
 static const std::deque<QString> fallbackAvailabilityThemeIconsLightBig = {
     ":images/fallback/light/big/online.svg",
     ":images/fallback/light/big/away.svg",

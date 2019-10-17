@@ -30,6 +30,7 @@
 int main(int argc, char *argv[])
 {
     qRegisterMetaType<Shared::Message>("Shared::Message");
+    qRegisterMetaType<Shared::VCard>("Shared::VCard");
     qRegisterMetaType<std::list<Shared::Message>>("std::list<Shared::Message>");
     qRegisterMetaType<QSet<QString>>("QSet<QString>");
     
@@ -78,76 +79,58 @@ int main(int argc, char *argv[])
     QThread* coreThread = new QThread();
     squawk->moveToThread(coreThread);
     
-    QObject::connect(coreThread, SIGNAL(started()), squawk, SLOT(start()));
-    QObject::connect(&app, SIGNAL(aboutToQuit()), squawk, SLOT(stop()));
-    QObject::connect(squawk, SIGNAL(quit()), coreThread, SLOT(quit()));
-    QObject::connect(coreThread, SIGNAL(finished()), squawk, SLOT(deleteLater()));
+    QObject::connect(coreThread, &QThread::started, squawk, &Core::Squawk::start);
+    QObject::connect(&app, &QApplication::aboutToQuit, squawk, &Core::Squawk::stop);
+    QObject::connect(squawk, &Core::Squawk::quit, coreThread, &QThread::quit);
+    QObject::connect(coreThread, &QThread::finished, squawk, &Core::Squawk::deleteLater);
     
-    QObject::connect(&w, SIGNAL(newAccountRequest(const QMap<QString, QVariant>&)), squawk, SLOT(newAccountRequest(const QMap<QString, QVariant>&)));
-    QObject::connect(&w, SIGNAL(modifyAccountRequest(const QString&, const QMap<QString, QVariant>&)), 
-                     squawk, SLOT(modifyAccountRequest(const QString&, const QMap<QString, QVariant>&)));
-    QObject::connect(&w, SIGNAL(removeAccountRequest(const QString&)), squawk, SLOT(removeAccountRequest(const QString&)));
-    QObject::connect(&w, SIGNAL(connectAccount(const QString&)), squawk, SLOT(connectAccount(const QString&)));
-    QObject::connect(&w, SIGNAL(disconnectAccount(const QString&)), squawk, SLOT(disconnectAccount(const QString&)));
-    QObject::connect(&w, SIGNAL(changeState(int)), squawk, SLOT(changeState(int)));
-    QObject::connect(&w, SIGNAL(sendMessage(const QString&, const Shared::Message&)), squawk, SLOT(sendMessage(const QString&, const Shared::Message&)));
-    QObject::connect(&w, SIGNAL(requestArchive(const QString&, const QString&, int, const QString&)), 
-                     squawk, SLOT(requestArchive(const QString&, const QString&, int, const QString&)));
-    QObject::connect(&w, SIGNAL(subscribeContact(const QString&, const QString&, const QString&)), 
-                     squawk, SLOT(subscribeContact(const QString&, const QString&, const QString&)));
-    QObject::connect(&w, SIGNAL(unsubscribeContact(const QString&, const QString&, const QString&)), 
-                     squawk, SLOT(unsubscribeContact(const QString&, const QString&, const QString&)));
-    QObject::connect(&w, SIGNAL(addContactRequest(const QString&, const QString&, const QString&, const QSet<QString>&)), 
-                     squawk, SLOT(addContactRequest(const QString&, const QString&, const QString&, const QSet<QString>&)));
-    QObject::connect(&w, SIGNAL(removeContactRequest(const QString&, const QString&)), 
-                     squawk, SLOT(removeContactRequest(const QString&, const QString&)));
-    QObject::connect(&w, SIGNAL(setRoomJoined(const QString&, const QString&, bool)), squawk, SLOT(setRoomJoined(const QString&, const QString&, bool)));
-    QObject::connect(&w, SIGNAL(setRoomAutoJoin(const QString&, const QString&, bool)), squawk, SLOT(setRoomAutoJoin(const QString&, const QString&, bool)));
-    
-    QObject::connect(&w, SIGNAL(removeRoomRequest(const QString&, const QString&)), 
-                     squawk, SLOT(removeRoomRequest(const QString&, const QString&)));
-    QObject::connect(&w, SIGNAL(addRoomRequest(const QString&, const QString&, const QString&, const QString&, bool)), 
-                     squawk, SLOT(addRoomRequest(const QString&, const QString&, const QString&, const QString&, bool)));
-    QObject::connect(&w, SIGNAL(fileLocalPathRequest(const QString&, const QString&)), squawk, SLOT(fileLocalPathRequest(const QString&, const QString&)));
-    QObject::connect(&w, SIGNAL(downloadFileRequest(const QString&, const QString&)), squawk, SLOT(downloadFileRequest(const QString&, const QString&)));
+    QObject::connect(&w, &Squawk::newAccountRequest, squawk, &Core::Squawk::newAccountRequest);
+    QObject::connect(&w, &Squawk::modifyAccountRequest, squawk, &Core::Squawk::modifyAccountRequest);
+    QObject::connect(&w, &Squawk::removeAccountRequest, squawk, &Core::Squawk::removeAccountRequest);
+    QObject::connect(&w, &Squawk::connectAccount, squawk, &Core::Squawk::connectAccount);
+    QObject::connect(&w, &Squawk::disconnectAccount, squawk, &Core::Squawk::disconnectAccount);
+    QObject::connect(&w, &Squawk::changeState, squawk, &Core::Squawk::changeState);
+    QObject::connect(&w, &Squawk::sendMessage, squawk, &Core::Squawk::sendMessage);
+    QObject::connect(&w, &Squawk::requestArchive, squawk, &Core::Squawk::requestArchive);
+    QObject::connect(&w, &Squawk::subscribeContact, squawk, &Core::Squawk::subscribeContact);
+    QObject::connect(&w, &Squawk::unsubscribeContact, squawk, &Core::Squawk::unsubscribeContact);
+    QObject::connect(&w, &Squawk::addContactRequest, squawk, &Core::Squawk::addContactRequest);
+    QObject::connect(&w, &Squawk::removeContactRequest, squawk, &Core::Squawk::removeContactRequest);
+    QObject::connect(&w, &Squawk::setRoomJoined, squawk, &Core::Squawk::setRoomJoined);
+    QObject::connect(&w, &Squawk::setRoomAutoJoin, squawk, &Core::Squawk::setRoomAutoJoin);
+    QObject::connect(&w, &Squawk::removeRoomRequest, squawk, &Core::Squawk::removeRoomRequest);
+    QObject::connect(&w, &Squawk::addRoomRequest, squawk, &Core::Squawk::addRoomRequest);
+    QObject::connect(&w, &Squawk::fileLocalPathRequest, squawk, &Core::Squawk::fileLocalPathRequest);
+    QObject::connect(&w, &Squawk::downloadFileRequest, squawk, &Core::Squawk::downloadFileRequest);
     QObject::connect(&w, &Squawk::addContactToGroupRequest, squawk, &Core::Squawk::addContactToGroupRequest);
     QObject::connect(&w, &Squawk::removeContactFromGroupRequest, squawk, &Core::Squawk::removeContactFromGroupRequest);
     QObject::connect(&w, &Squawk::renameContactRequest, squawk, &Core::Squawk::renameContactRequest);
     
-    QObject::connect(squawk, SIGNAL(newAccount(const QMap<QString, QVariant>&)), &w, SLOT(newAccount(const QMap<QString, QVariant>&)));
-    QObject::connect(squawk, SIGNAL(addContact(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)), 
-                     &w, SLOT(addContact(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)));
-    QObject::connect(squawk, SIGNAL(changeAccount(const QString&, const QMap<QString, QVariant>&)), 
-                     &w, SLOT(changeAccount(const QString&, const QMap<QString, QVariant>&)));
-    QObject::connect(squawk, SIGNAL(removeAccount(const QString&)), &w, SLOT(removeAccount(const QString&)));
-    QObject::connect(squawk, SIGNAL(addGroup(const QString&, const QString&)), &w, SLOT(addGroup(const QString&, const QString&)));
-    QObject::connect(squawk, SIGNAL(removeGroup(const QString&, const QString&)), &w, SLOT(removeGroup(const QString&, const QString&)));
-    QObject::connect(squawk, SIGNAL(removeContact(const QString&, const QString&)), &w, SLOT(removeContact(const QString&, const QString&)));
-    QObject::connect(squawk, SIGNAL(removeContact(const QString&, const QString&, const QString&)), &w, SLOT(removeContact(const QString&, const QString&, const QString&)));
-    QObject::connect(squawk, SIGNAL(changeContact(const QString&, const QString&, const QMap<QString, QVariant>&)), 
-                     &w, SLOT(changeContact(const QString&, const QString&, const QMap<QString, QVariant>&)));
-    QObject::connect(squawk, SIGNAL(addPresence(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)), 
-                     &w, SLOT(addPresence(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)));
-    QObject::connect(squawk, SIGNAL(removePresence(const QString&, const QString&, const QString&)), &w, SLOT(removePresence(const QString&, const QString&, const QString&)));
-    QObject::connect(squawk, SIGNAL(stateChanged(int)), &w, SLOT(stateChanged(int)));
-    QObject::connect(squawk, SIGNAL(accountMessage(const QString&, const Shared::Message&)), &w, SLOT(accountMessage(const QString&, const Shared::Message&)));
-    QObject::connect(squawk, SIGNAL(responseArchive(const QString&, const QString&, const std::list<Shared::Message>&)), 
-                     &w, SLOT(responseArchive(const QString&, const QString&, const std::list<Shared::Message>&)));
-    
-    QObject::connect(squawk, SIGNAL(addRoom(const QString&, const QString&, const QMap<QString, QVariant>&)), 
-                     &w, SLOT(addRoom(const QString&, const QString&, const QMap<QString, QVariant>&)));
-    QObject::connect(squawk, SIGNAL(changeRoom(const QString&, const QString&, const QMap<QString, QVariant>&)), 
-                     &w, SLOT(changeRoom(const QString&, const QString&, const QMap<QString, QVariant>&)));
-    QObject::connect(squawk, SIGNAL(removeRoom(const QString&, const QString&)), &w, SLOT(removeRoom(const QString&, const QString&)));
-    QObject::connect(squawk, SIGNAL(addRoomParticipant(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)), 
-                     &w, SLOT(addRoomParticipant(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)));
-    QObject::connect(squawk, SIGNAL(changeRoomParticipant(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)), 
-                     &w, SLOT(changeRoomParticipant(const QString&, const QString&, const QString&, const QMap<QString, QVariant>&)));
-    QObject::connect(squawk, SIGNAL(removeRoomParticipant(const QString&, const QString&, const QString&)), 
-                     &w, SLOT(removeRoomParticipant(const QString&, const QString&, const QString&)));
-    QObject::connect(squawk, SIGNAL(fileLocalPathResponse(const QString&, const QString&)), &w, SLOT(fileLocalPathResponse(const QString&, const QString&)));
-    QObject::connect(squawk, SIGNAL(downloadFileProgress(const QString&, qreal)), &w, SLOT(downloadFileProgress(const QString&, qreal)));
-    QObject::connect(squawk, SIGNAL(downloadFileError(const QString&, const QString&)), &w, SLOT(downloadFileError(const QString&, const QString&)));
+    QObject::connect(squawk, &Core::Squawk::newAccount, &w, &Squawk::newAccount);
+    QObject::connect(squawk, &Core::Squawk::addContact, &w, &Squawk::addContact);
+    QObject::connect(squawk, &Core::Squawk::changeAccount, &w, &Squawk::changeAccount);
+    QObject::connect(squawk, &Core::Squawk::removeAccount, &w, &Squawk::removeAccount);
+    QObject::connect(squawk, &Core::Squawk::addGroup, &w, &Squawk::addGroup);
+    QObject::connect(squawk, &Core::Squawk::removeGroup, &w, &Squawk::removeGroup);
+    QObject::connect(squawk, qOverload<const QString&, const QString&>(&Core::Squawk::removeContact), 
+                     &w, qOverload<const QString&, const QString&>(&Squawk::removeContact));
+    QObject::connect(squawk, qOverload<const QString&, const QString&, const QString&>(&Core::Squawk::removeContact), 
+                     &w, qOverload<const QString&, const QString&, const QString&>(&Squawk::removeContact));
+    QObject::connect(squawk, &Core::Squawk::changeContact, &w, &Squawk::changeContact);
+    QObject::connect(squawk, &Core::Squawk::addPresence, &w, &Squawk::addPresence);
+    QObject::connect(squawk, &Core::Squawk::removePresence, &w, &Squawk::removePresence);
+    QObject::connect(squawk, &Core::Squawk::stateChanged, &w, &Squawk::stateChanged);
+    QObject::connect(squawk, &Core::Squawk::accountMessage, &w, &Squawk::accountMessage);
+    QObject::connect(squawk, &Core::Squawk::responseArchive, &w, &Squawk::responseArchive);
+    QObject::connect(squawk, &Core::Squawk::addRoom, &w, &Squawk::addRoom);
+    QObject::connect(squawk, &Core::Squawk::changeRoom, &w, &Squawk::changeRoom);
+    QObject::connect(squawk, &Core::Squawk::removeRoom, &w, &Squawk::removeRoom);
+    QObject::connect(squawk, &Core::Squawk::addRoomParticipant, &w, &Squawk::addRoomParticipant);
+    QObject::connect(squawk, &Core::Squawk::changeRoomParticipant, &w, &Squawk::changeRoomParticipant);
+    QObject::connect(squawk, &Core::Squawk::removeRoomParticipant, &w, &Squawk::removeRoomParticipant);
+    QObject::connect(squawk, &Core::Squawk::fileLocalPathResponse, &w, &Squawk::fileLocalPathResponse);
+    QObject::connect(squawk, &Core::Squawk::downloadFileProgress, &w, &Squawk::downloadFileProgress);
+    QObject::connect(squawk, &Core::Squawk::downloadFileError, &w, &Squawk::downloadFileError);
     
     
     //qDebug() << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);

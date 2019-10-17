@@ -296,6 +296,63 @@ bool Shared::Message::storable() const
     return id.size() > 0 && (body.size() > 0 || oob.size()) > 0;
 }
 
+Shared::VCard::Contact::Contact(Shared::VCard::Contact::Role p_role, bool p_prefered):
+    role(p_role),
+    prefered(p_prefered)
+{}
+
+Shared::VCard::Email::Email(const QString& addr, Shared::VCard::Contact::Role p_role, bool p_prefered):
+    Contact(p_role, p_prefered),
+    address(addr)
+{}
+
+Shared::VCard::Phone::Phone(const QString& nmbr, Shared::VCard::Phone::Type p_type, Shared::VCard::Contact::Role p_role, bool p_prefered):
+    Contact(p_role, p_prefered),
+    number(nmbr),
+    type(p_type)
+{}
+
+Shared::VCard::Address::Address(const QString& zCode, const QString& cntry, const QString& rgn, const QString& lclty, const QString& strt, const QString& ext, Shared::VCard::Contact::Role p_role, bool p_prefered):
+    Contact(p_role, p_prefered),
+    zipCode(zCode),
+    country(cntry),
+    region(rgn),
+    locality(lclty),
+    street(strt),
+    external(ext)
+{}
+
+Shared::VCard::VCard():
+    firstName(),
+    middleName(),
+    lastName(),
+    nickName(),
+    description(),
+    birthday(),
+    photoType(Avatar::empty),
+    photoPath(),
+    receivingTime(QDateTime::currentDateTime()),
+    emails(),
+    phones(),
+    addresses()
+{}
+
+Shared::VCard::VCard(const QDateTime& creationTime):
+    firstName(),
+    middleName(),
+    lastName(),
+    nickName(),
+    description(),
+    birthday(),
+    photoType(Avatar::empty),
+    photoPath(),
+    receivingTime(creationTime),
+    emails(),
+    phones(),
+    addresses()
+{
+}
+
 QIcon Shared::availabilityIcon(Shared::Availability av, bool big)
 {
     const std::deque<QString>& fallback = QApplication::palette().window().color().lightnessF() > 0.5 ? 
