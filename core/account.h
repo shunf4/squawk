@@ -87,6 +87,7 @@ public:
     void setRoomAutoJoin(const QString& jid, bool joined);
     void removeRoomRequest(const QString& jid);
     void addRoomRequest(const QString& jid, const QString& nick, const QString& password, bool autoJoin);
+    void requestVCard(const QString& jid);
     
 signals:
     void changed(const QMap<QString, QVariant>& data);
@@ -109,6 +110,7 @@ signals:
     void addRoomParticipant(const QString& jid, const QString& nickName, const QMap<QString, QVariant>& data);
     void changeRoomParticipant(const QString& jid, const QString& nickName, const QMap<QString, QVariant>& data);
     void removeRoomParticipant(const QString& jid, const QString& nickName);
+    void receivedVCard(const QString& jid, const Shared::VCard& card);
     
 private:
     QString name;

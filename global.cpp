@@ -353,6 +353,102 @@ Shared::VCard::VCard(const QDateTime& creationTime):
 {
 }
 
+QString Shared::VCard::getAvatarPath() const
+{
+    return photoPath;
+}
+
+Shared::Avatar Shared::VCard::getAvatarType() const
+{
+    return photoType;
+}
+
+QDate Shared::VCard::getBirthday() const
+{
+    return birthday;
+}
+
+QString Shared::VCard::getDescription() const
+{
+    return description;
+}
+
+QString Shared::VCard::getFirstName() const
+{
+    return firstName;
+}
+
+QString Shared::VCard::getLastName() const
+{
+    return lastName;
+}
+
+QString Shared::VCard::getMiddleName() const
+{
+    return middleName;
+}
+
+QString Shared::VCard::getNickName() const
+{
+    return nickName;
+}
+
+void Shared::VCard::setAvatarPath(const QString& path)
+{
+    if (path != photoPath) {
+        photoPath = path;
+    }
+}
+
+void Shared::VCard::setAvatarType(Shared::Avatar type)
+{
+    if (photoType != type) {
+        photoType = type;
+    }
+}
+
+void Shared::VCard::setBirthday(const QDate& date)
+{
+    if (date.isValid() && birthday != date) {
+        birthday = date;
+    }
+}
+
+void Shared::VCard::setDescription(const QString& descr)
+{
+    if (description != descr) {
+        description = descr;
+    }
+}
+
+void Shared::VCard::setFirstName(const QString& first)
+{
+    if (firstName != first) {
+        firstName = first;
+    }
+}
+
+void Shared::VCard::setLastName(const QString& last)
+{
+    if (lastName != last) {
+        lastName = last;
+    }
+}
+
+void Shared::VCard::setMiddleName(const QString& middle)
+{
+    if (middleName != middle) {
+        middleName = middle;
+    }
+}
+
+void Shared::VCard::setNickName(const QString& nick)
+{
+    if (nickName != nick) {
+        nickName = nick;
+    }
+}
+
 QIcon Shared::availabilityIcon(Shared::Availability av, bool big)
 {
     const std::deque<QString>& fallback = QApplication::palette().window().color().lightnessF() > 0.5 ? 

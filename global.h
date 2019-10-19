@@ -272,6 +272,23 @@ public:
     VCard();
     VCard(const QDateTime& creationTime);
     
+    QString getFirstName() const;
+    void setFirstName(const QString& first);
+    QString getMiddleName() const;
+    void setMiddleName(const QString& middle);
+    QString getLastName() const;
+    void setLastName(const QString& last);
+    QString getNickName() const;
+    void setNickName(const QString& nick);
+    QString getDescription() const;
+    void setDescription(const QString& descr);
+    QDate getBirthday() const;
+    void setBirthday(const QDate& date);
+    Avatar getAvatarType() const;
+    void setAvatarType(Avatar type);
+    QString getAvatarPath() const;
+    void setAvatarPath(const QString& path);
+    
 private:
     QString firstName;
     QString middleName;
