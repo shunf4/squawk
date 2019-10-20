@@ -29,6 +29,7 @@ set(squawkUI_SRC
   widgets/accounts.cpp
   widgets/account.cpp
   widgets/joinconference.cpp
+  widgets/vcard.cpp
   utils/messageline.cpp
   utils//message.cpp
   utils/resizer.cpp
