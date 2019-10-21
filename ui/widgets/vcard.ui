@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>434</width>
+    <width>544</width>
     <height>534</height>
    </rect>
   </property>
@@ -49,7 +49,7 @@
      <property name="tabBarAutoHide">
       <bool>false</bool>
      </property>
-     <widget class="QWidget" name="General" native="true">
+     <widget class="QWidget" name="General">
       <attribute name="title">
        <string>General</string>
       </attribute>
@@ -433,7 +433,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="Contact" native="true">
+     <widget class="QWidget" name="Contact">
       <attribute name="title">
        <string>Contact</string>
       </attribute>
@@ -479,7 +479,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>422</width>
+            <width>532</width>
             <height>410</height>
            </rect>
           </property>
@@ -539,10 +539,33 @@
              <item row="0" column="0">
               <widget class="QLabel" name="jabberIDLabel">
                <property name="text">
-                <string>JabberID</string>
+                <string>Jabber ID</string>
                </property>
                <property name="buddy">
                 <cstring>jabberID</cstring>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="1">
+              <widget class="QLineEdit" name="lineEdit">
+               <property name="minimumSize">
+                <size>
+                 <width>150</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>300</width>
+                 <height>16777215</height>
+                </size>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="0">
+              <widget class="QLabel" name="urlLabel">
+               <property name="text">
+                <string>Web site</string>
                </property>
               </widget>
              </item>

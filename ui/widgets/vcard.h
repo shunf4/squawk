@@ -22,6 +22,9 @@
 #include <QWidget>
 #include <QScopedPointer>
 
+#include "../../global.h"
+#include "../utils/image.h"
+
 namespace Ui
 {
 class VCard;
@@ -34,11 +37,20 @@ class VCard : public QWidget
 {
     Q_OBJECT
 public:
-    VCard(QWidget* parent = nullptr);
+    VCard(bool edit = false, QWidget* parent = nullptr);
     ~VCard();
+    
+    void setVCard(const QString& jid, const Shared::VCard& card);
+    
+signals:
+    void saveVCard(const QString& jid, const Shared::VCard& card);
+    
+private slots:
+    void onButtonBoxAccepted();
     
 private:
     QScopedPointer<Ui::VCard> m_ui;
+    Image avatar;
 };
 
 #endif // VCARD_H
