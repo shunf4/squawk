@@ -105,6 +105,7 @@ int main(int argc, char *argv[])
     QObject::connect(&w, &Squawk::addContactToGroupRequest, squawk, &Core::Squawk::addContactToGroupRequest);
     QObject::connect(&w, &Squawk::removeContactFromGroupRequest, squawk, &Core::Squawk::removeContactFromGroupRequest);
     QObject::connect(&w, &Squawk::renameContactRequest, squawk, &Core::Squawk::renameContactRequest);
+    QObject::connect(&w, &Squawk::requestVCard, squawk, &Core::Squawk::requestVCard);
     
     QObject::connect(squawk, &Core::Squawk::newAccount, &w, &Squawk::newAccount);
     QObject::connect(squawk, &Core::Squawk::addContact, &w, &Squawk::addContact);
@@ -131,6 +132,7 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, &Core::Squawk::fileLocalPathResponse, &w, &Squawk::fileLocalPathResponse);
     QObject::connect(squawk, &Core::Squawk::downloadFileProgress, &w, &Squawk::downloadFileProgress);
     QObject::connect(squawk, &Core::Squawk::downloadFileError, &w, &Squawk::downloadFileError);
+    QObject::connect(squawk, &Core::Squawk::responseVCard, &w, &Squawk::responseVCard);
     
     
     //qDebug() << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);

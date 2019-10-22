@@ -133,6 +133,7 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     connect(acc, &Account::changeRoomParticipant, this, &Squawk::onAccountChangeRoomPresence);
     connect(acc, &Account::removeRoomParticipant, this, &Squawk::onAccountRemoveRoomPresence);
     
+    connect(acc, &Account::receivedVCard, this, &Squawk::responseVCard);
     
     QMap<QString, QVariant> map = {
         {"login", login},
@@ -507,7 +508,7 @@ void Core::Squawk::addContactToGroupRequest(const QString& account, const QStrin
 {
     AccountsMap::const_iterator itr = amap.find(account);
     if (itr == amap.end()) {
-        qDebug() << "An attempt to add contact" << jid << "of existing account" << account << "to the group" << groupName << ", skipping";
+        qDebug() << "An attempt to add contact" << jid << "of non existing account" << account << "to the group" << groupName << ", skipping";
         return;
     }
     itr->second->addContactToGroupRequest(jid, groupName);
@@ -517,7 +518,7 @@ void Core::Squawk::removeContactFromGroupRequest(const QString& account, const Q
 {
     AccountsMap::const_iterator itr = amap.find(account);
     if (itr == amap.end()) {
-        qDebug() << "An attempt to add contact" << jid << "of existing account" << account << "to the group" << groupName << ", skipping";
+        qDebug() << "An attempt to add contact" << jid << "of non existing account" << account << "to the group" << groupName << ", skipping";
         return;
     }
     itr->second->removeContactFromGroupRequest(jid, groupName);
@@ -527,8 +528,18 @@ void Core::Squawk::renameContactRequest(const QString& account, const QString& j
 {
     AccountsMap::const_iterator itr = amap.find(account);
     if (itr == amap.end()) {
-        qDebug() << "An attempt to rename contact" << jid << "of existing account" << account << ", skipping";
+        qDebug() << "An attempt to rename contact" << jid << "of non existing account" << account << ", skipping";
         return;
     }
     itr->second->renameContactRequest(jid, newName);
+}
+
+void Core::Squawk::requestVCard(const QString& account, const QString& jid)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to request" << jid << "vcard of non existing account" << account << ", skipping";
+        return;
+    }
+    itr->second->requestVCard(jid);
 }

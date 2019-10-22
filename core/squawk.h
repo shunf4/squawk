@@ -66,6 +66,7 @@ signals:
     void fileLocalPathResponse(const QString& messageId, const QString& path);
     void downloadFileError(const QString& messageId, const QString& error);
     void downloadFileProgress(const QString& messageId, qreal value);
+    void responseVCard(const QString& jid, const Shared::VCard& card);
     
 public slots:
     void start();
@@ -91,6 +92,7 @@ public slots:
     void removeRoomRequest(const QString& account, const QString& jid);
     void fileLocalPathRequest(const QString& messageId, const QString& url);
     void downloadFileRequest(const QString& messageId, const QString& url);
+    void requestVCard(const QString& account, const QString& jid);
     
 private:
     typedef std::deque<Account*> Accounts;

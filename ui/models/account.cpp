@@ -241,3 +241,12 @@ void Models::Account::setAvatarPath(const QString& path)
     changed(8);             //it's uncoditional because the path doesn't change when one avatar of the same type replaces another, sha1 sums checks are on the backend
 }
 
+QString Models::Account::getBareJid() const
+{
+    return login + "@" + server;
+}
+
+QString Models::Account::getFullJid() const
+{
+    return getBareJid() + "/" + resource;
+}

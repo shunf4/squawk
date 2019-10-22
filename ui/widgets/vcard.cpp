@@ -19,12 +19,19 @@
 #include "vcard.h"
 #include "ui_vcard.h"
 
-VCard::VCard(bool edit, QWidget* parent):
+VCard::VCard(const QString& jid, bool edit, QWidget* parent):
     QWidget(parent),
     m_ui(new Ui::VCard()),
-    avatar(":/images/logo.svg", 64)
+    avatar(QApplication::palette().window().color().lightnessF() > 0.5 ? ":/images/fallback/dark/big/user.svg" : ":/images/fallback/light/big/user.svg", 256, 256, 256)
 {
     m_ui->setupUi(this);
+    m_ui->jabberID->setText(jid);
+    m_ui->jabberID->setReadOnly(true);
+    QGridLayout* general = static_cast<QGridLayout*>(m_ui->General->layout());
+    general->addWidget(&avatar, 2, 2, 1, 1);
+    avatar.setFrameShape(QFrame::StyledPanel);
+    avatar.setFrameShadow(QFrame::Sunken);
+    avatar.setMargin(6);
     
     if (edit) {
         
@@ -40,11 +47,15 @@ VCard::VCard(bool edit, QWidget* parent):
         m_ui->organizationTitle->setReadOnly(true);
         m_ui->organizationRole->setReadOnly(true);
         m_ui->description->setReadOnly(true);
-        m_ui->jabberID->setReadOnly(true);
+        m_ui->url->setReadOnly(true);
     }
     
     connect(m_ui->buttonBox, &QDialogButtonBox::accepted, this, &VCard::onButtonBoxAccepted);
     connect(m_ui->buttonBox, &QDialogButtonBox::rejected, m_ui->buttonBox, &QDialogButtonBox::deleteLater);
+    
+    int height = m_ui->personalForm->minimumSize().height();
+    avatar.setMaximumSize(avatar.widthForHeight(height), height);
+    avatar.setMinimumSize(avatar.widthForHeight(height), height);
 }
 
 VCard::~VCard()
@@ -54,6 +65,11 @@ VCard::~VCard()
 void VCard::setVCard(const QString& jid, const Shared::VCard& card)
 {
     m_ui->jabberID->setText(jid);
+    setVCard(card);
+}
+
+void VCard::setVCard(const Shared::VCard& card)
+{
     m_ui->firstName->setText(card.getFirstName());
     m_ui->middleName->setText(card.getMiddleName());
     m_ui->lastName->setText(card.getLastName());
@@ -65,17 +81,24 @@ void VCard::setVCard(const QString& jid, const Shared::VCard& card)
     //m_ui->organizationRole->setText(card.get());
     m_ui->description->setText(card.getDescription());
     
-    QString path;
     switch (card.getAvatarType()) {
         case Shared::Avatar::empty:
-            path = QApplication::palette().window().color().lightnessF() > 0.5 ? ":/images/fallback/dark/big/user.svg" : ":/images/fallback/light/big/user.svg";
+            avatar.setPath(QApplication::palette().window().color().lightnessF() > 0.5 ? ":/images/fallback/dark/big/user.svg" : ":/images/fallback/light/big/user.svg", 256, 256);
             break;
         case Shared::Avatar::autocreated:
         case Shared::Avatar::valid:
-            path = card.getAvatarPath();
+            avatar.setPath(card.getAvatarPath());
             break;
     }
-    avatar.setPath(path);
+    
+    int height = m_ui->personalForm->minimumSize().height();
+    avatar.setMaximumSize(avatar.widthForHeight(height), height);
+    avatar.setMinimumSize(avatar.widthForHeight(height), height);
+}
+
+QString VCard::getJid() const
+{
+    return m_ui->jabberID->text();
 }
 
 void VCard::onButtonBoxAccepted()
@@ -88,5 +111,5 @@ void VCard::onButtonBoxAccepted()
     card.setBirthday(m_ui->birthday->date());
     card.setDescription(m_ui->description->toPlainText());
     
-    emit saveVCard(m_ui->jabberID->text(), card);
+    emit saveVCard(card);
 }

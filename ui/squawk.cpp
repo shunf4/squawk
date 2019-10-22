@@ -29,7 +29,9 @@ Squawk::Squawk(QWidget *parent) :
     rosterModel(),
     conversations(),
     contextMenu(new QMenu()),
-    dbus("org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", QDBusConnection::sessionBus())
+    dbus("org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", QDBusConnection::sessionBus()),
+    requestedFiles(),
+    vCards()
 {
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
@@ -136,11 +138,18 @@ void Squawk::closeEvent(QCloseEvent* event)
     if (accounts != 0) {
         accounts->close();
     }
+    
     for (Conversations::const_iterator itr = conversations.begin(), end = conversations.end(); itr != end; ++itr) {
-        disconnect(itr->second, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
+        disconnect(itr->second, &Conversation::destroyed, this, &Squawk::onConversationClosed);
         itr->second->close();
     }
     conversations.clear();
+    
+    for (std::map<QString, VCard*>::const_iterator itr = vCards.begin(), end = vCards.end(); itr != end; ++itr) {
+        disconnect(itr->second, &VCard::destroyed, this, &Squawk::onVCardClosed);
+        itr->second->close();
+    }
+    vCards.clear();
     
     QMainWindow::closeEvent(event);
 }
@@ -542,6 +551,10 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                     });
                 }
                 
+                QAction* card = contextMenu->addAction(Shared::icon("user-properties"), tr("VCard"));
+                card->setEnabled(active);
+                connect(card, &QAction::triggered, std::bind(&Squawk::onActivateVCard, this, name, acc->getBareJid(), true));
+                
                 QAction* remove = contextMenu->addAction(Shared::icon("edit-delete"), tr("Remove"));
                 remove->setEnabled(active);
                 connect(remove, &QAction::triggered, [this, name]() {
@@ -636,6 +649,10 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 });
                 
                 
+                QAction* card = contextMenu->addAction(Shared::icon("user-properties"), tr("VCard"));
+                card->setEnabled(active);
+                connect(card, &QAction::triggered, std::bind(&Squawk::onActivateVCard, this, accName, cnt->getJid(), false));
+                
                 QAction* remove = contextMenu->addAction(Shared::icon("edit-delete"), tr("Remove"));
                 remove->setEnabled(active);
                 connect(remove, &QAction::triggered, [this, cnt]() {
@@ -720,4 +737,46 @@ void Squawk::changeRoomParticipant(const QString& account, const QString& jid, c
 void Squawk::removeRoomParticipant(const QString& account, const QString& jid, const QString& name)
 {
     rosterModel.removeRoomParticipant(account, jid, name);
+}
+
+void Squawk::responseVCard(const QString& jid, const Shared::VCard& card)
+{
+    std::map<QString, VCard*>::const_iterator itr = vCards.find(jid);
+    if (itr != vCards.end()) {
+        itr->second->setVCard(card);
+    }
+}
+
+void Squawk::onVCardClosed()
+{
+    VCard* vCard = static_cast<VCard*>(sender());
+    
+    std::map<QString, VCard*>::const_iterator itr = vCards.find(vCard->getJid());
+    if (itr == vCards.end()) {
+        qDebug() << "VCard has been closed but can not be found among other opened vCards, application is most probably going to crash";
+        return;
+    }
+    vCards.erase(itr);
+}
+
+void Squawk::onActivateVCard(const QString& account, const QString& jid, bool edition)
+{
+    std::map<QString, VCard*>::const_iterator itr = vCards.find(jid);
+    VCard* card;
+    Models::Contact::Messages deque;
+    if (itr != vCards.end()) {
+        card = itr->second;
+    } else {
+        card = new VCard(jid, edition);
+        card->setAttribute(Qt::WA_DeleteOnClose);
+        vCards.insert(std::make_pair(jid, card));
+        
+        connect(card, &VCard::destroyed, this, &Squawk::onVCardClosed);
+    }
+    
+    card->show();
+    card->raise();
+    card->activateWindow();
+    
+    emit requestVCard(account, jid);
 }

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>544</width>
+    <width>560</width>
     <height>534</height>
    </rect>
   </property>
@@ -80,6 +80,12 @@
          <property name="styleSheet">
           <string notr="true"/>
          </property>
+         <property name="frameShape">
+          <enum>QFrame::NoFrame</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Plain</enum>
+         </property>
          <property name="text">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Personal information&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
@@ -97,6 +103,9 @@
        </item>
        <item row="2" column="1">
         <layout class="QFormLayout" name="personalForm">
+         <property name="sizeConstraint">
+          <enum>QLayout::SetDefaultConstraint</enum>
+         </property>
          <property name="formAlignment">
           <set>Qt::AlignHCenter|Qt::AlignTop</set>
          </property>
@@ -104,13 +113,13 @@
           <widget class="QLineEdit" name="middleName">
            <property name="minimumSize">
             <size>
-             <width>150</width>
+             <width>200</width>
              <height>0</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>300</width>
+             <width>350</width>
              <height>16777215</height>
             </size>
            </property>
@@ -120,13 +129,13 @@
           <widget class="QLineEdit" name="firstName">
            <property name="minimumSize">
             <size>
-             <width>150</width>
+             <width>200</width>
              <height>0</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>300</width>
+             <width>350</width>
              <height>16777215</height>
             </size>
            </property>
@@ -166,13 +175,13 @@
           <widget class="QLineEdit" name="lastName">
            <property name="minimumSize">
             <size>
-             <width>150</width>
+             <width>200</width>
              <height>0</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>300</width>
+             <width>350</width>
              <height>16777215</height>
             </size>
            </property>
@@ -192,13 +201,13 @@
           <widget class="QLineEdit" name="nickName">
            <property name="minimumSize">
             <size>
-             <width>150</width>
+             <width>200</width>
              <height>0</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>300</width>
+             <width>350</width>
              <height>16777215</height>
             </size>
            </property>
@@ -218,35 +227,6 @@
           <widget class="QDateEdit" name="birthday"/>
          </item>
         </layout>
-       </item>
-       <item row="2" column="2">
-        <widget class="QFrame" name="avatarFrame">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="sizeIncrement">
-          <size>
-           <width>0</width>
-           <height>0</height>
-          </size>
-         </property>
-         <property name="frameShape">
-          <enum>QFrame::StyledPanel</enum>
-         </property>
-         <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout"/>
-        </widget>
        </item>
        <item row="2" column="3" rowspan="7">
         <spacer name="generalRightHSpacer">
@@ -314,7 +294,7 @@
          <item row="0" column="0">
           <widget class="QLabel" name="organizationNameLabel">
            <property name="text">
-            <string>Name</string>
+            <string>Organization name</string>
            </property>
            <property name="buddy">
             <cstring>organizationName</cstring>
@@ -325,13 +305,13 @@
           <widget class="QLineEdit" name="organizationName">
            <property name="minimumSize">
             <size>
-             <width>150</width>
+             <width>200</width>
              <height>0</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>300</width>
+             <width>350</width>
              <height>16777215</height>
             </size>
            </property>
@@ -340,7 +320,7 @@
          <item row="1" column="0">
           <widget class="QLabel" name="organizationDepartmentLabel">
            <property name="text">
-            <string>Department</string>
+            <string>Unit / Department</string>
            </property>
            <property name="buddy">
             <cstring>organizationDepartment</cstring>
@@ -351,13 +331,13 @@
           <widget class="QLineEdit" name="organizationDepartment">
            <property name="minimumSize">
             <size>
-             <width>150</width>
+             <width>200</width>
              <height>0</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>300</width>
+             <width>350</width>
              <height>16777215</height>
             </size>
            </property>
@@ -366,7 +346,7 @@
          <item row="2" column="0">
           <widget class="QLabel" name="roleLabel">
            <property name="text">
-            <string>Role</string>
+            <string>Role / Profession</string>
            </property>
            <property name="buddy">
             <cstring>organizationRole</cstring>
@@ -377,13 +357,13 @@
           <widget class="QLineEdit" name="organizationRole">
            <property name="minimumSize">
             <size>
-             <width>150</width>
+             <width>200</width>
              <height>0</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>300</width>
+             <width>350</width>
              <height>16777215</height>
             </size>
            </property>
@@ -392,7 +372,7 @@
          <item row="3" column="0">
           <widget class="QLabel" name="organizationTitleLabel">
            <property name="text">
-            <string>Title</string>
+            <string>Job title</string>
            </property>
            <property name="buddy">
             <cstring>organizationTitle</cstring>
@@ -403,13 +383,13 @@
           <widget class="QLineEdit" name="organizationTitle">
            <property name="minimumSize">
             <size>
-             <width>150</width>
+             <width>200</width>
              <height>0</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>300</width>
+             <width>350</width>
              <height>16777215</height>
             </size>
            </property>
@@ -479,7 +459,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>532</width>
+            <width>548</width>
             <height>410</height>
            </rect>
           </property>
@@ -547,7 +527,7 @@
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QLineEdit" name="lineEdit">
+              <widget class="QLineEdit" name="url">
                <property name="minimumSize">
                 <size>
                  <width>150</width>

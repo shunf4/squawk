@@ -64,6 +64,9 @@ namespace Models {
         
         void update(const QString& field, const QVariant& value);
         
+        QString getBareJid() const;
+        QString getFullJid() const;
+        
     private:
         QString login;
         QString password;

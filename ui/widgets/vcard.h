@@ -37,13 +37,15 @@ class VCard : public QWidget
 {
     Q_OBJECT
 public:
-    VCard(bool edit = false, QWidget* parent = nullptr);
+    VCard(const QString& jid, bool edit = false, QWidget* parent = nullptr);
     ~VCard();
     
+    void setVCard(const Shared::VCard& card);
     void setVCard(const QString& jid, const Shared::VCard& card);
+    QString getJid() const;
     
 signals:
-    void saveVCard(const QString& jid, const Shared::VCard& card);
+    void saveVCard(const Shared::VCard& card);
     
 private slots:
     void onButtonBoxAccepted();

@@ -26,6 +26,17 @@ Image::Image(const QString& path, quint16 p_minWidth, QWidget* parent):
     minWidth(p_minWidth)
 {
     setScaledContents(true);
+    recalculateAspectRatio();
+}
+
+Image::Image(const QString& path, quint16 width, quint16 height, quint16 p_minWidth, QWidget* parent):
+    QLabel(parent),
+    pixmap(QIcon(path).pixmap(QSize(width, height))),
+    aspectRatio(0),
+    minWidth(p_minWidth)
+{
+    setScaledContents(true);
+    recalculateAspectRatio();
 }
 
 Image::~Image()
@@ -37,6 +48,11 @@ int Image::heightForWidth(int width) const
 {
     int height = width / aspectRatio;
     return height;
+}
+
+int Image::widthForHeight(int height) const
+{
+    return height * aspectRatio;
 }
 
 bool Image::hasHeightForWidth() const
@@ -65,5 +81,11 @@ void Image::setMinWidth(quint16 p_minWidth)
 void Image::setPath(const QString& path)
 {
     pixmap = QPixmap(path);
+    recalculateAspectRatio();
+}
+
+void Image::setPath(const QString& path, quint16 width, quint16 height)
+{
+    pixmap = QPixmap(QIcon(path).pixmap(QSize(width, height)));
     recalculateAspectRatio();
 }
