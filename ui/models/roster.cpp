@@ -29,17 +29,14 @@ Models::Roster::Roster(QObject* parent):
     groups(),
     contacts()
 {
-    connect(accountsModel, 
-            SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)), 
-            this, 
-            SLOT(onAccountDataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)));
-    connect(root, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onChildChanged(Models::Item*, int, int)));
-    connect(root, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SLOT(onChildIsAboutToBeInserted(Item*, int, int)));
-    connect(root, SIGNAL(childInserted()), this, SLOT(onChildInserted()));
-    connect(root, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SLOT(onChildIsAboutToBeRemoved(Item*, int, int)));
-    connect(root, SIGNAL(childRemoved()), this, SLOT(onChildRemoved()));
-    connect(root, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)), this, SLOT(onChildIsAboutToBeMoved(Item*, int, int, Item*, int)));
-    connect(root, SIGNAL(childMoved()), this, SLOT(onChildMoved()));
+    connect(accountsModel, &Accounts::dataChanged, this, &Roster::onAccountDataChanged);
+    connect(root, &Item::childChanged, this, &Roster::onChildChanged);
+    connect(root, &Item::childIsAboutToBeInserted, this,  &Roster::onChildIsAboutToBeInserted);
+    connect(root, &Item::childInserted, this, &Roster::onChildInserted);
+    connect(root, &Item::childIsAboutToBeRemoved, this, &Roster::onChildIsAboutToBeRemoved);
+    connect(root, &Item::childRemoved, this, &Roster::onChildRemoved);
+    connect(root, &Item::childIsAboutToBeMoved, this, &Roster::onChildIsAboutToBeMoved);
+    connect(root, &Item::childMoved, this, &Roster::onChildMoved);
 }
 
 Models::Roster::~Roster()
@@ -69,6 +66,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
         case Qt::DisplayRole:
         {
             if (index.column() != 0) {
+                result = "";
                 break;
             }
             switch (item->type) {

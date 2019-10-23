@@ -21,9 +21,16 @@
 
 #include <QWidget>
 #include <QScopedPointer>
+#include <QPixmap>
+#include <QMenu>
+#include <QFileDialog>
+#include <QMimeDatabase>
+#include <QImage>
+#include <QStandardPaths>
+
+#include <set>
 
 #include "../../global.h"
-#include "../utils/image.h"
 
 namespace Ui
 {
@@ -49,10 +56,22 @@ signals:
     
 private slots:
     void onButtonBoxAccepted();
+    void onClearAvatar();
+    void onSetAvatar();
+    void onAvatarSelected();
     
 private:
     QScopedPointer<Ui::VCard> m_ui;
-    Image avatar;
+    QSize avatarButtonMargins;
+    QMenu* avatarMenu;
+    bool editable;
+    Shared::Avatar currentAvatarType;
+    QString currentAvatarPath;
+    
+    static const std::set<QString> supportedTypes;
+    
+private:
+    void updateAvatar();
 };
 
 #endif // VCARD_H

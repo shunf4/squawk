@@ -21,7 +21,6 @@
 
 #include <QLabel>
 #include <QPixmap>
-#include <QIcon>
 
 /**
  * @todo write docs
@@ -30,7 +29,6 @@ class Image : public QLabel
 {
 public:
     Image(const QString& path, quint16 minWidth = 50, QWidget* parent = nullptr);
-    Image(const QString& path, quint16 width, quint16 height, quint16 minWidth = 50, QWidget* parent = nullptr);
 
     ~Image();
 
@@ -38,7 +36,6 @@ public:
     int widthForHeight(int height) const;
     bool hasHeightForWidth() const override;
     void setPath(const QString& path);
-    void setPath(const QString& path, quint16 width, quint16 height);
     void setMinWidth(quint16 minWidth);
     
 private:

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>560</width>
-    <height>534</height>
+    <width>537</width>
+    <height>539</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -411,6 +411,43 @@
          </property>
         </widget>
        </item>
+       <item row="2" column="2">
+        <widget class="QToolButton" name="avatarButton">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="text">
+          <string/>
+         </property>
+         <property name="icon">
+          <iconset theme="user"/>
+         </property>
+         <property name="iconSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
+         </property>
+         <property name="popupMode">
+          <enum>QToolButton::InstantPopup</enum>
+         </property>
+         <property name="toolButtonStyle">
+          <enum>Qt::ToolButtonIconOnly</enum>
+         </property>
+         <property name="arrowType">
+          <enum>Qt::NoArrow</enum>
+         </property>
+        </widget>
+       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="Contact">
@@ -459,8 +496,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>548</width>
-            <height>410</height>
+            <width>525</width>
+            <height>415</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,4,1">
@@ -625,7 +662,7 @@
            <item row="9" column="1">
             <layout class="QVBoxLayout" name="addressesLayout">
              <item>
-              <widget class="QLabel" name="EmptyAddressesPlaceholder">
+              <widget class="QLabel" name="emptyAddressesPlaceholder">
                <property name="text">
                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;User has no contact e-mail addresses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
@@ -717,6 +754,22 @@
     </widget>
    </item>
   </layout>
+  <action name="actionSetAvatar">
+   <property name="icon">
+    <iconset theme="photo"/>
+   </property>
+   <property name="text">
+    <string>Set avatar</string>
+   </property>
+  </action>
+  <action name="actionClearAvatar">
+   <property name="icon">
+    <iconset theme="edit-clear-all"/>
+   </property>
+   <property name="text">
+    <string>Clear avatar</string>
+   </property>
+  </action>
  </widget>
  <tabstops>
   <tabstop>firstName</tabstop>

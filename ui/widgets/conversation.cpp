@@ -257,11 +257,11 @@ void Conversation::showEvent(QShowEvent* event)
 
 void Conversation::onAttach()
 {
-    QFileDialog* d = new QFileDialog(this, "Chose a file to send");
+    QFileDialog* d = new QFileDialog(this, tr("Chose a file to send"));
     d->setFileMode(QFileDialog::ExistingFile);
     
-    connect(d, SIGNAL(accepted()), this, SLOT(onFileSelected()));
-    connect(d, SIGNAL(rejected()), d, SLOT(deleteLater()));
+    connect(d, &QFileDialog::accepted, this, &Conversation::onFileSelected);
+    connect(d, &QFileDialog::rejected, d, &QFileDialog::deleteLater);
     
     d->show();
 }

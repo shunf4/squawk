@@ -56,6 +56,8 @@ Squawk::Squawk(QWidget *parent) :
     
     connect(rosterModel.accountsModel, SIGNAL(sizeChanged(unsigned int)), this, SLOT(onAccountsSizeChanged(unsigned int)));
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
+    
+    setWindowTitle(tr("Contact list"));
 }
 
 Squawk::~Squawk() {
@@ -768,10 +770,16 @@ void Squawk::onActivateVCard(const QString& account, const QString& jid, bool ed
         card = itr->second;
     } else {
         card = new VCard(jid, edition);
+        if (edition) {
+            card->setWindowTitle(tr("%1 account card").arg(account));
+        } else {
+            card->setWindowTitle(tr("%1 contact card").arg(jid));
+        }
         card->setAttribute(Qt::WA_DeleteOnClose);
         vCards.insert(std::make_pair(jid, card));
         
         connect(card, &VCard::destroyed, this, &Squawk::onVCardClosed);
+        connect(card, &VCard::saveVCard, std::bind( &Squawk::onVCardSave, this, std::placeholders::_1, account));
     }
     
     card->show();
@@ -779,4 +787,12 @@ void Squawk::onActivateVCard(const QString& account, const QString& jid, bool ed
     card->activateWindow();
     
     emit requestVCard(account, jid);
+}
+
+void Squawk::onVCardSave(const Shared::VCard& card, const QString& account)
+{
+    VCard* widget = static_cast<VCard*>(sender());
+    emit uploadVCard(account, card);
+    
+    widget->deleteLater();
 }

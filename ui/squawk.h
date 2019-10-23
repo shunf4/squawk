@@ -73,6 +73,7 @@ signals:
     void fileLocalPathRequest(const QString& messageId, const QString& url);
     void downloadFileRequest(const QString& messageId, const QString& url);
     void requestVCard(const QString& account, const QString& jid);
+    void uploadVCard(const QString& account, const Shared::VCard& card);
     
 public slots:
     void newAccount(const QMap<QString, QVariant>& account);
@@ -126,6 +127,7 @@ private slots:
     void onAccountsClosed(QObject* parent = 0);
     void onConversationClosed(QObject* parent = 0);
     void onVCardClosed();
+    void onVCardSave(const Shared::VCard& card, const QString& account);
     void onActivateVCard(const QString& account, const QString& jid, bool edition = false);
     void onComboboxActivated(int index);
     void onRosterItemDoubleClicked(const QModelIndex& item);
