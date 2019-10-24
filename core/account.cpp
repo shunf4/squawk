@@ -103,15 +103,15 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     if (!avatar->exists()) {
         delete avatar;
         avatar = new QFile(path + "/avatar.jpg");
-        QString type = "jpg";
+        type = "jpg";
         if (!avatar->exists()) {
             delete avatar;
             avatar = new QFile(path + "/avatar.jpeg");
-            QString type = "jpeg";
+            type = "jpeg";
             if (!avatar->exists()) {
                 delete avatar;
                 avatar = new QFile(path + "/avatar.gif");
-                QString type = "gif";
+                type = "gif";
             }
         }
     }
@@ -1337,7 +1337,6 @@ void Core::Account::onVCardReceived(const QXmppVCardIq& card)
         if (confItr == conferences.end()) {
             if (jid == getLogin() + "@" + getServer()) {
                 onOwnVCardReceived(card);
-                
             } else {
                 qDebug() << "received vCard" << jid << "doesn't belong to any of known contacts or conferences, skipping";
             }
@@ -1375,13 +1374,18 @@ void Core::Account::onVCardReceived(const QXmppVCardIq& card)
         vCard.setAvatarType(Shared::Avatar::empty);
     }
     
+    QMap<QString, QVariant> cd = {
+        {"avatarState", static_cast<quint8>(vCard.getAvatarType())},
+        {"avatarPath", vCard.getAvatarPath()}
+    };
+    emit changeContact(jid, cd);
     emit receivedVCard(jid, vCard);
 }
 
 void Core::Account::onOwnVCardReceived(const QXmppVCardIq& card)
 {
     QByteArray ava = card.photo();
-    bool changed = false;
+    bool avaChanged = false;
     QString path = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/" + name + "/";
     if (ava.size() > 0) {
         QCryptographicHash sha1(QCryptographicHash::Sha1);
@@ -1407,7 +1411,7 @@ void Core::Account::onOwnVCardReceived(const QXmppVCardIq& card)
                     newAvatar.close();
                     avatarHash = newHash;
                     avatarType = newType.preferredSuffix();
-                    changed = true;
+                    avaChanged = true;
                 } else {
                     qDebug() << "Received new avatar for account" << name << "but can't save it";
                     if (oldToRemove) {
@@ -1425,7 +1429,7 @@ void Core::Account::onOwnVCardReceived(const QXmppVCardIq& card)
                 newAvatar.close();
                 avatarHash = newHash;
                 avatarType = newType.preferredSuffix();
-                changed = true;
+                avaChanged = true;
             } else {
                 qDebug() << "Received new avatar for account" << name << "but can't save it";
             }
@@ -1436,12 +1440,14 @@ void Core::Account::onOwnVCardReceived(const QXmppVCardIq& card)
             if (!oldAvatar.remove()) {
                 qDebug() << "Received vCard for account" << name << "without avatar, but can't get rid of the file, doing nothing";
             } else {
-                changed = true;
+                avatarType = "";
+                avatarHash = "";
+                avaChanged = true;
             }
         }
     }
     
-    if (changed) {
+    if (avaChanged) {
         QMap<QString, QVariant> change;
         if (avatarType.size() > 0) {
             presence.setPhotoHash(avatarHash.toUtf8());
@@ -1453,6 +1459,7 @@ void Core::Account::onOwnVCardReceived(const QXmppVCardIq& card)
             change.insert("avatarPath", "");
         }
         client.setClientPresence(presence);
+        emit changed(change);
     }
     
     ownVCardRequestInProgress = false;
@@ -1503,4 +1510,67 @@ void Core::Account::requestVCard(const QString& jid)
             pendingVCardRequests.insert(jid);
         }
     }
+}
+
+void Core::Account::uploadVCard(const Shared::VCard& card)
+{
+    QXmppVCardIq iq;
+    iq.setFirstName(card.getFirstName());
+    iq.setMiddleName(card.getMiddleName());
+    iq.setLastName(card.getLastName());
+    iq.setNickName(card.getNickName());
+    iq.setBirthday(card.getBirthday());
+    iq.setDescription(card.getDescription());
+    
+    bool avatarChanged = false;
+    if (card.getAvatarType() == Shared::Avatar::empty) {
+        if (avatarType.size() > 0) {
+            avatarChanged = true;
+        }
+    } else {
+        QString newPath = card.getAvatarPath();
+        QString oldPath = getAvatarPath();
+        QByteArray data;
+        QString type;
+        if (newPath != oldPath) {
+            QFile avatar(newPath);
+            if (!avatar.open(QFile::ReadOnly)) {
+                qDebug() << "An attempt to upload new vCard to account" << name 
+                << "but it wasn't possible to read file" << newPath 
+                << "which was supposed to be new avatar, uploading old avatar";
+                if (avatarType.size() > 0) {
+                    QFile oA(oldPath);
+                    if (!oA.open(QFile::ReadOnly)) {
+                        qDebug() << "Couldn't read old avatar of account" << name << ", uploading empty avatar";
+                        avatarChanged = true;
+                    } else {
+                        data = oA.readAll();
+                    }
+                }
+            } else {
+                data = avatar.readAll();
+                avatarChanged = true;
+            }
+        } else {
+            if (avatarType.size() > 0) {
+                QFile oA(oldPath);
+                if (!oA.open(QFile::ReadOnly)) {
+                    qDebug() << "Couldn't read old avatar of account" << name << ", uploading empty avatar";
+                    avatarChanged = true;
+                } else {
+                    data = oA.readAll();
+                }
+            }
+        }
+        
+        if (data.size() > 0) {
+            QMimeDatabase db;
+            type = db.mimeTypeForData(data).name();
+            iq.setPhoto(data);
+            iq.setPhotoType(type);
+        }
+    }
+    
+    client.vCardManager().setClientVCard(iq);
+    onOwnVCardReceived(iq);
 }

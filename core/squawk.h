@@ -93,6 +93,7 @@ public slots:
     void fileLocalPathRequest(const QString& messageId, const QString& url);
     void downloadFileRequest(const QString& messageId, const QString& url);
     void requestVCard(const QString& account, const QString& jid);
+    void uploadVCard(const QString& account, const Shared::VCard& card);
     
 private:
     typedef std::deque<Account*> Accounts;

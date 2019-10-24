@@ -437,6 +437,7 @@ static const std::map<QString, std::pair<QString, QString>> icons = {
     {"view-refresh", {"view-refresh", "view-refresh"}},
     {"send", {"document-send", "send"}},
     {"clean", {"edit-clear-all", "clean"}},
+    {"user", {"user", "user"}},
 };
 
 };

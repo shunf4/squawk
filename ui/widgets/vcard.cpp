@@ -66,7 +66,7 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
     }
     
     connect(m_ui->buttonBox, &QDialogButtonBox::accepted, this, &VCard::onButtonBoxAccepted);
-    connect(m_ui->buttonBox, &QDialogButtonBox::rejected, m_ui->buttonBox, &QDialogButtonBox::deleteLater);
+    connect(m_ui->buttonBox, &QDialogButtonBox::rejected, this, &VCard::close);
     
     avatarButtonMargins = m_ui->avatarButton->size();
     

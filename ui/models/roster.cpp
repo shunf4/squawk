@@ -98,6 +98,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                         result = acc->getStatusIcon(false);
                     } else if (col == 1) {
                         QString path = acc->getAvatarPath();
+                        
                         if (path.size() > 0) {
                             result = QIcon(path);
                         }
@@ -641,7 +642,8 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
 void Models::Roster::onChildChanged(Models::Item* item, int row, int col)
 {
     QModelIndex index = createIndex(row, 0, item);
-    emit dataChanged(index, index);
+    QModelIndex index2 = createIndex(row, 1, item);
+    emit dataChanged(index, index2);
 }
 
 void Models::Roster::onChildIsAboutToBeInserted(Models::Item* parent, int first, int last)

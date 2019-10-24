@@ -543,3 +543,13 @@ void Core::Squawk::requestVCard(const QString& account, const QString& jid)
     }
     itr->second->requestVCard(jid);
 }
+
+void Core::Squawk::uploadVCard(const QString& account, const Shared::VCard& card)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to upload vcard to non existing account" << account << ", skipping";
+        return;
+    }
+    itr->second->uploadVCard(card);
+}

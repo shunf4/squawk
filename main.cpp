@@ -106,6 +106,7 @@ int main(int argc, char *argv[])
     QObject::connect(&w, &Squawk::removeContactFromGroupRequest, squawk, &Core::Squawk::removeContactFromGroupRequest);
     QObject::connect(&w, &Squawk::renameContactRequest, squawk, &Core::Squawk::renameContactRequest);
     QObject::connect(&w, &Squawk::requestVCard, squawk, &Core::Squawk::requestVCard);
+    QObject::connect(&w, &Squawk::uploadVCard, squawk, &Core::Squawk::uploadVCard);
     
     QObject::connect(squawk, &Core::Squawk::newAccount, &w, &Squawk::newAccount);
     QObject::connect(squawk, &Core::Squawk::addContact, &w, &Squawk::addContact);
