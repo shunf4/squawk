@@ -323,11 +323,17 @@ Shared::VCard::Address::Address(const QString& zCode, const QString& cntry, cons
 {}
 
 Shared::VCard::VCard():
+    fullName(),
     firstName(),
     middleName(),
     lastName(),
     nickName(),
     description(),
+    url(),
+    organizationName(),
+    organizationUnit(),
+    organizationRole(),
+    jobTitle(),
     birthday(),
     photoType(Avatar::empty),
     photoPath(),
@@ -338,11 +344,17 @@ Shared::VCard::VCard():
 {}
 
 Shared::VCard::VCard(const QDateTime& creationTime):
+    fullName(),
     firstName(),
     middleName(),
     lastName(),
     nickName(),
     description(),
+    url(),
+    organizationName(),
+    organizationUnit(),
+    organizationRole(),
+    jobTitle(),
     birthday(),
     photoType(Avatar::empty),
     photoPath(),
@@ -446,6 +458,78 @@ void Shared::VCard::setNickName(const QString& nick)
 {
     if (nickName != nick) {
         nickName = nick;
+    }
+}
+
+QString Shared::VCard::getFullName() const
+{
+    return fullName;
+}
+
+QString Shared::VCard::getUrl() const
+{
+    return url;
+}
+
+void Shared::VCard::setFullName(const QString& name)
+{
+    if (fullName != name) {
+        fullName = name;
+    }
+}
+
+void Shared::VCard::setUrl(const QString& u)
+{
+    if (url != u) {
+        url = u;
+    }
+}
+
+QString Shared::VCard::getOrgName() const
+{
+    return organizationName;
+}
+
+QString Shared::VCard::getOrgRole() const
+{
+    return organizationRole;
+}
+
+QString Shared::VCard::getOrgTitle() const
+{
+    return jobTitle;
+}
+
+QString Shared::VCard::getOrgUnit() const
+{
+    return organizationUnit;
+}
+
+void Shared::VCard::setOrgName(const QString& name)
+{
+    if (organizationName != name) {
+        organizationName = name;
+    }
+}
+
+void Shared::VCard::setOrgRole(const QString& role)
+{
+    if (organizationRole != role) {
+        organizationRole = role;
+    }
+}
+
+void Shared::VCard::setOrgTitle(const QString& title)
+{
+    if (jobTitle != title) {
+        jobTitle = title;
+    }
+}
+
+void Shared::VCard::setOrgUnit(const QString& unit)
+{
+    if (organizationUnit != unit) {
+        organizationUnit = unit;
     }
 }
 

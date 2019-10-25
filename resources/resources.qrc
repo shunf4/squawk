@@ -32,6 +32,10 @@
     <file>images/fallback/dark/big/clean.svg</file>
     <file>images/fallback/dark/big/send.svg</file>
     <file>images/fallback/dark/big/mail-attachment.svg</file>
+    <file>images/fallback/dark/big/group.svg</file>
+    <file>images/fallback/dark/big/group-new.svg</file>
+    <file>images/fallback/dark/big/edit-rename.svg</file>
+    <file>images/fallback/dark/big/user-properties.svg</file>
     
     
     <file>images/fallback/dark/small/absent.svg</file>
@@ -64,6 +68,10 @@
     <file>images/fallback/dark/small/clean.svg</file>
     <file>images/fallback/dark/small/send.svg</file>
     <file>images/fallback/dark/small/mail-attachment.svg</file>
+    <file>images/fallback/dark/small/group.svg</file>
+    <file>images/fallback/dark/small/group-new.svg</file>
+    <file>images/fallback/dark/small/edit-rename.svg</file>
+    <file>images/fallback/dark/small/user-properties.svg</file>
     
     
     <file>images/fallback/light/big/absent.svg</file>
@@ -96,6 +104,10 @@
     <file>images/fallback/light/big/clean.svg</file>
     <file>images/fallback/light/big/send.svg</file>
     <file>images/fallback/light/big/mail-attachment.svg</file>
+    <file>images/fallback/light/big/group.svg</file>
+    <file>images/fallback/light/big/group-new.svg</file>
+    <file>images/fallback/light/big/edit-rename.svg</file>
+    <file>images/fallback/light/big/user-properties.svg</file>
     
     
     <file>images/fallback/light/small/absent.svg</file>
@@ -128,5 +140,9 @@
     <file>images/fallback/light/small/clean.svg</file>
     <file>images/fallback/light/small/send.svg</file>
     <file>images/fallback/light/small/mail-attachment.svg</file>
+    <file>images/fallback/light/small/group.svg</file>
+    <file>images/fallback/light/small/group-new.svg</file>
+    <file>images/fallback/light/small/edit-rename.svg</file>
+    <file>images/fallback/light/small/user-properties.svg</file>
 </qresource>
 </RCC>

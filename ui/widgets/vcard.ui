@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>537</width>
-    <height>539</height>
+    <width>594</width>
+    <height>595</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -94,14 +94,177 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="1" colspan="2">
+       <item row="4" column="1" colspan="2">
         <widget class="Line" name="personalLine">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="3" column="0" rowspan="7">
+        <spacer name="generalLeftHSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="0" column="0" colspan="4">
+        <widget class="QLabel" name="generalHeading">
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:24pt; font-weight:600;&quot;&gt;General&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="3" rowspan="7">
+        <spacer name="generalRightHSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="6" column="1" colspan="2">
+        <widget class="QLabel" name="organizationHeading">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"/>
+         </property>
+         <property name="text">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Organization&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1" colspan="2">
+        <layout class="QFormLayout" name="organizationForm">
+         <property name="formAlignment">
+          <set>Qt::AlignHCenter|Qt::AlignTop</set>
+         </property>
+         <item row="0" column="0">
+          <widget class="QLabel" name="organizationNameLabel">
+           <property name="text">
+            <string>Organization name</string>
+           </property>
+           <property name="buddy">
+            <cstring>organizationName</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="organizationName">
+           <property name="minimumSize">
+            <size>
+             <width>200</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>350</width>
+             <height>16777215</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="organizationDepartmentLabel">
+           <property name="text">
+            <string>Unit / Department</string>
+           </property>
+           <property name="buddy">
+            <cstring>organizationDepartment</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="1" column="1">
+          <widget class="QLineEdit" name="organizationDepartment">
+           <property name="minimumSize">
+            <size>
+             <width>200</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>350</width>
+             <height>16777215</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="roleLabel">
+           <property name="text">
+            <string>Role / Profession</string>
+           </property>
+           <property name="buddy">
+            <cstring>organizationRole</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="1">
+          <widget class="QLineEdit" name="organizationRole">
+           <property name="minimumSize">
+            <size>
+             <width>200</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>350</width>
+             <height>16777215</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="0">
+          <widget class="QLabel" name="organizationTitleLabel">
+           <property name="text">
+            <string>Job title</string>
+           </property>
+           <property name="buddy">
+            <cstring>organizationTitle</cstring>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QLineEdit" name="organizationTitle">
+           <property name="minimumSize">
+            <size>
+             <width>200</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="maximumSize">
+            <size>
+             <width>350</width>
+             <height>16777215</height>
+            </size>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="3" column="1">
         <layout class="QFormLayout" name="personalForm">
          <property name="sizeConstraint">
           <enum>QLayout::SetDefaultConstraint</enum>
@@ -228,190 +391,7 @@
          </item>
         </layout>
        </item>
-       <item row="2" column="3" rowspan="7">
-        <spacer name="generalRightHSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="8" column="1" colspan="2">
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="2" column="0" rowspan="7">
-        <spacer name="generalLeftHSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="5" column="1" colspan="2">
-        <widget class="QLabel" name="organizationHeading">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="styleSheet">
-          <string notr="true"/>
-         </property>
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Organization&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
-        </widget>
-       </item>
-       <item row="6" column="1" colspan="2">
-        <layout class="QFormLayout" name="organizationForm">
-         <property name="formAlignment">
-          <set>Qt::AlignHCenter|Qt::AlignTop</set>
-         </property>
-         <item row="0" column="0">
-          <widget class="QLabel" name="organizationNameLabel">
-           <property name="text">
-            <string>Organization name</string>
-           </property>
-           <property name="buddy">
-            <cstring>organizationName</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="0" column="1">
-          <widget class="QLineEdit" name="organizationName">
-           <property name="minimumSize">
-            <size>
-             <width>200</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>350</width>
-             <height>16777215</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="0">
-          <widget class="QLabel" name="organizationDepartmentLabel">
-           <property name="text">
-            <string>Unit / Department</string>
-           </property>
-           <property name="buddy">
-            <cstring>organizationDepartment</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="1" column="1">
-          <widget class="QLineEdit" name="organizationDepartment">
-           <property name="minimumSize">
-            <size>
-             <width>200</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>350</width>
-             <height>16777215</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="0">
-          <widget class="QLabel" name="roleLabel">
-           <property name="text">
-            <string>Role / Profession</string>
-           </property>
-           <property name="buddy">
-            <cstring>organizationRole</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="2" column="1">
-          <widget class="QLineEdit" name="organizationRole">
-           <property name="minimumSize">
-            <size>
-             <width>200</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>350</width>
-             <height>16777215</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="0">
-          <widget class="QLabel" name="organizationTitleLabel">
-           <property name="text">
-            <string>Job title</string>
-           </property>
-           <property name="buddy">
-            <cstring>organizationTitle</cstring>
-           </property>
-          </widget>
-         </item>
-         <item row="3" column="1">
-          <widget class="QLineEdit" name="organizationTitle">
-           <property name="minimumSize">
-            <size>
-             <width>200</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="maximumSize">
-            <size>
-             <width>350</width>
-             <height>16777215</height>
-            </size>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="7" column="1" colspan="2">
-        <widget class="Line" name="organizationLine">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0" colspan="4">
-        <widget class="QLabel" name="generalHeading">
-         <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:24pt; font-weight:600;&quot;&gt;General&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="2">
+       <item row="3" column="2">
         <widget class="QToolButton" name="avatarButton">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -429,7 +409,8 @@
           <string/>
          </property>
          <property name="icon">
-          <iconset theme="user"/>
+          <iconset theme="user">
+           <normaloff>.</normaloff>.</iconset>
          </property>
          <property name="iconSize">
           <size>
@@ -447,6 +428,43 @@
           <enum>Qt::NoArrow</enum>
          </property>
         </widget>
+       </item>
+       <item row="8" column="1" colspan="2">
+        <widget class="Line" name="organizationLine">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1" colspan="2">
+        <layout class="QFormLayout" name="commonForm">
+         <item row="0" column="1">
+          <widget class="QLineEdit" name="fullName"/>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="fullNameLabel">
+           <property name="text">
+            <string>Full name</string>
+           </property>
+           <property name="buddy">
+            <cstring>fullName</cstring>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="9" column="1" colspan="2">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>
@@ -496,8 +514,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>525</width>
-            <height>415</height>
+            <width>582</width>
+            <height>471</height>
            </rect>
           </property>
           <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,4,1">
@@ -583,6 +601,9 @@
               <widget class="QLabel" name="urlLabel">
                <property name="text">
                 <string>Web site</string>
+               </property>
+               <property name="buddy">
+                <cstring>url</cstring>
                </property>
               </widget>
              </item>
@@ -756,7 +777,8 @@
   </layout>
   <action name="actionSetAvatar">
    <property name="icon">
-    <iconset theme="photo"/>
+    <iconset theme="photo">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Set avatar</string>
@@ -764,7 +786,8 @@
   </action>
   <action name="actionClearAvatar">
    <property name="icon">
-    <iconset theme="edit-clear-all"/>
+    <iconset theme="edit-clear-all">
+     <normaloff>.</normaloff>.</iconset>
    </property>
    <property name="text">
     <string>Clear avatar</string>
@@ -772,19 +795,22 @@
   </action>
  </widget>
  <tabstops>
+  <tabstop>fullName</tabstop>
   <tabstop>firstName</tabstop>
   <tabstop>middleName</tabstop>
   <tabstop>lastName</tabstop>
   <tabstop>nickName</tabstop>
   <tabstop>birthday</tabstop>
+  <tabstop>avatarButton</tabstop>
   <tabstop>organizationName</tabstop>
   <tabstop>organizationDepartment</tabstop>
   <tabstop>organizationRole</tabstop>
   <tabstop>organizationTitle</tabstop>
-  <tabstop>scrollArea</tabstop>
-  <tabstop>jabberID</tabstop>
-  <tabstop>description</tabstop>
   <tabstop>tabWidget</tabstop>
+  <tabstop>jabberID</tabstop>
+  <tabstop>url</tabstop>
+  <tabstop>description</tabstop>
+  <tabstop>scrollArea</tabstop>
  </tabstops>
  <resources>
   <include location="../../resources/resources.qrc"/>

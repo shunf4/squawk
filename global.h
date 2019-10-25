@@ -272,6 +272,8 @@ public:
     VCard();
     VCard(const QDateTime& creationTime);
     
+    QString getFullName() const;
+    void setFullName(const QString& name);
     QString getFirstName() const;
     void setFirstName(const QString& first);
     QString getMiddleName() const;
@@ -282,19 +284,35 @@ public:
     void setNickName(const QString& nick);
     QString getDescription() const;
     void setDescription(const QString& descr);
+    QString getUrl() const;
+    void setUrl(const QString& u);
     QDate getBirthday() const;
     void setBirthday(const QDate& date);
     Avatar getAvatarType() const;
     void setAvatarType(Avatar type);
     QString getAvatarPath() const;
     void setAvatarPath(const QString& path);
+    QString getOrgName() const;
+    void setOrgName(const QString& name);
+    QString getOrgUnit() const;
+    void setOrgUnit(const QString& unit);
+    QString getOrgRole() const;
+    void setOrgRole(const QString& role);
+    QString getOrgTitle() const;
+    void setOrgTitle(const QString& title);
     
 private:
+    QString fullName;
     QString firstName;
     QString middleName;
     QString lastName;
     QString nickName;
     QString description;
+    QString url;
+    QString organizationName;
+    QString organizationUnit;
+    QString organizationRole;
+    QString jobTitle;
     QDate birthday;
     Avatar photoType;
     QString photoPath;
@@ -438,6 +456,10 @@ static const std::map<QString, std::pair<QString, QString>> icons = {
     {"send", {"document-send", "send"}},
     {"clean", {"edit-clear-all", "clean"}},
     {"user", {"user", "user"}},
+    {"user-properties", {"user-properties", "user-properties"}},
+    {"edit-rename", {"edit-rename", "edit-rename"}},
+    {"group", {"group", "group"}},
+    {"group-new", {"resurce-group-new", "group-new"}},
 };
 
 };

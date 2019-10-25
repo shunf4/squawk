@@ -464,11 +464,16 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
 
 void Squawk::notify(const QString& account, const Shared::Message& msg)
 {
-    QString name = QString(rosterModel.getContactName(account, msg.getPenPalJid()));;
+    QString name = QString(rosterModel.getContactName(account, msg.getPenPalJid()));
+    QString path = QString(rosterModel.getContactIconPath(account, msg.getPenPalJid()));
     QVariantList args;
     args << QString(QCoreApplication::applicationName());
     args << QVariant(QVariant::UInt);   //TODO some normal id
-    args << QString("mail-message");    //TODO icon
+    if (path.size() > 0) {
+        args << path;
+    } else {
+        args << QString("mail-message");
+    }
     if (msg.getType() == Shared::Message::groupChat) {
         args << msg.getFromResource() + " from " + name;
     } else {
@@ -635,7 +640,7 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                         }
                     });
                 }
-                QAction* newGroup = groupsMenu->addAction(Shared::icon("resource-group-new"), tr("New group"));
+                QAction* newGroup = groupsMenu->addAction(Shared::icon("group-new"), tr("New group"));
                 newGroup->setEnabled(active);
                 connect(newGroup, &QAction::triggered, [this, accName, cntJID]() {
                     QInputDialog* dialog = new QInputDialog(this);

@@ -52,6 +52,7 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
         avatarMenu->addAction(clearAvatar);
     } else {
         m_ui->buttonBox->hide();
+        m_ui->fullName->setReadOnly(true);
         m_ui->firstName->setReadOnly(true);
         m_ui->middleName->setReadOnly(true);
         m_ui->lastName->setReadOnly(true);
@@ -89,16 +90,18 @@ void VCard::setVCard(const QString& jid, const Shared::VCard& card)
 
 void VCard::setVCard(const Shared::VCard& card)
 {
+    m_ui->fullName->setText(card.getFullName());
     m_ui->firstName->setText(card.getFirstName());
     m_ui->middleName->setText(card.getMiddleName());
     m_ui->lastName->setText(card.getLastName());
     m_ui->nickName->setText(card.getNickName());
     m_ui->birthday->setDate(card.getBirthday());
-    //m_ui->organizationName->setText(card.get());
-    //m_ui->organizationDepartment->setText(card.get());
-    //m_ui->organizationTitle->setText(card.get());
-    //m_ui->organizationRole->setText(card.get());
+    m_ui->organizationName->setText(card.getOrgName());
+    m_ui->organizationDepartment->setText(card.getOrgUnit());
+    m_ui->organizationTitle->setText(card.getOrgTitle());
+    m_ui->organizationRole->setText(card.getOrgRole());
     m_ui->description->setText(card.getDescription());
+    m_ui->url->setText(card.getUrl());
     currentAvatarType = card.getAvatarType();
     currentAvatarPath = card.getAvatarPath();
     
@@ -113,12 +116,18 @@ QString VCard::getJid() const
 void VCard::onButtonBoxAccepted()
 {
     Shared::VCard card;
+    card.setFullName(m_ui->fullName->text());
     card.setFirstName(m_ui->firstName->text());
     card.setMiddleName(m_ui->middleName->text());
     card.setLastName(m_ui->lastName->text());
     card.setNickName(m_ui->nickName->text());
     card.setBirthday(m_ui->birthday->date());
     card.setDescription(m_ui->description->toPlainText());
+    card.setUrl(m_ui->url->text());
+    card.setOrgName(m_ui->organizationName->text());
+    card.setOrgUnit(m_ui->organizationDepartment->text());
+    card.setOrgRole(m_ui->organizationRole->text());
+    card.setOrgTitle(m_ui->organizationTitle->text());
     card.setAvatarPath(currentAvatarPath);
     card.setAvatarType(currentAvatarType);
     
