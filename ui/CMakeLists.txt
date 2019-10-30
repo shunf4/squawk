@@ -36,6 +36,7 @@ set(squawkUI_SRC
   utils/image.cpp
   utils/flowlayout.cpp
   utils/badge.cpp
+  utils/progress.cpp
 )
 
 # Tell CMake to create the helloworld executable

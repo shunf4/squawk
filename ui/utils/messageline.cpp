@@ -31,35 +31,11 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     palNames(),
     views(),
     room(p_room),
-    busyPixmap(new QGraphicsPixmapItem(Shared::icon("view-refresh", true).pixmap(70))),
-    busyScene(),
-    busyLabel(&busyScene),
-    busyLayout(),
     busyShown(false),
-    rotation()
+    progress()
 {
     setBackgroundRole(QPalette::Base);
     layout->addStretch();
-    
-    busyScene.addItem(busyPixmap);
-    busyLayout.addStretch();
-    busyLayout.addWidget(&busyLabel);
-    busyLayout.addStretch();
-    busyLabel.setMaximumSize(70, 70);
-    busyLabel.setMinimumSize(70, 70);
-    busyLabel.setSceneRect(0, 0, 70, 70);
-    busyLabel.setFrameStyle(0);
-    busyLabel.setContentsMargins(0, 0, 0, 0);
-    busyLabel.setInteractive(false);
-    busyPixmap->setTransformOriginPoint(35, 35);
-    busyPixmap->setTransformationMode(Qt::SmoothTransformation);
-    busyPixmap->setOffset(0, 0);;
-    
-    rotation.setDuration(500);
-    rotation.setStartValue(0.0f);
-    rotation.setEndValue(180.0f);
-    rotation.setLoopCount(-1);
-    connect(&rotation, SIGNAL(valueChanged(const QVariant&)), this, SLOT(onAnimationValueChanged(const QVariant&)));
 }
 
 MessageLine::~MessageLine()
@@ -201,26 +177,19 @@ QString MessageLine::firstMessageId() const
 void MessageLine::showBusyIndicator()
 {
     if (!busyShown)  {
-        layout->insertLayout(0, &busyLayout);
+        layout->insertWidget(0, &progress);
+        progress.start();
         busyShown = true;
-        rotation.start();
-        busyLabel.show();
     }
 }
 
 void MessageLine::hideBusyIndicator()
 {
     if (busyShown) {
-        busyLabel.hide();
-        rotation.stop();
-        layout->removeItem(&busyLayout);
+        progress.stop();
+        layout->removeWidget(&progress);
         busyShown = false;
     }
-}
-
-void MessageLine::onAnimationValueChanged(const QVariant& value)
-{
-    busyPixmap->setRotation(value.toReal());
 }
 
 void MessageLine::responseDownloadProgress(const QString& messageId, qreal progress)
