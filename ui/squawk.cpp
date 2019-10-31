@@ -751,6 +751,7 @@ void Squawk::responseVCard(const QString& jid, const Shared::VCard& card)
     std::map<QString, VCard*>::const_iterator itr = vCards.find(jid);
     if (itr != vCards.end()) {
         itr->second->setVCard(card);
+        itr->second->hideProgress();
     }
 }
 
@@ -790,6 +791,7 @@ void Squawk::onActivateVCard(const QString& account, const QString& jid, bool ed
     card->show();
     card->raise();
     card->activateWindow();
+    card->showProgress(tr("Downloading vCard"));
     
     emit requestVCard(account, jid);
 }

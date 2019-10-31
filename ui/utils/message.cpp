@@ -63,7 +63,6 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     dFont.setItalic(true);
     dFont.setPointSize(dFont.pointSize() - 2);
     date->setFont(dFont);
-    date->setForegroundRole(QPalette::ToolTipText);
     
     QFont f;
     f.setBold(true);

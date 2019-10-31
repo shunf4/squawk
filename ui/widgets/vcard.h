@@ -27,10 +27,14 @@
 #include <QMimeDatabase>
 #include <QImage>
 #include <QStandardPaths>
+#include <QLabel>
+#include <QGraphicsOpacityEffect>
+#include <QVBoxLayout>
 
 #include <set>
 
 #include "../../global.h"
+#include "../utils/progress.h"
 
 namespace Ui
 {
@@ -50,6 +54,8 @@ public:
     void setVCard(const Shared::VCard& card);
     void setVCard(const QString& jid, const Shared::VCard& card);
     QString getJid() const;
+    void showProgress(const QString& = "");
+    void hideProgress();
     
 signals:
     void saveVCard(const Shared::VCard& card);
@@ -67,6 +73,9 @@ private:
     bool editable;
     Shared::Avatar currentAvatarType;
     QString currentAvatarPath;
+    Progress* progress;
+    QLabel* progressLabel;
+    QWidget* overlay;
     
     static const std::set<QString> supportedTypes;
     

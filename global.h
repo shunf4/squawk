@@ -300,6 +300,7 @@ public:
     void setOrgRole(const QString& role);
     QString getOrgTitle() const;
     void setOrgTitle(const QString& title);
+    QDateTime getReceivingTime() const;
     
 private:
     QString fullName;

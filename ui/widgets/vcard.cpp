@@ -30,7 +30,10 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
     avatarMenu(nullptr),
     editable(edit),
     currentAvatarType(Shared::Avatar::empty),
-    currentAvatarPath("")
+    currentAvatarPath(""),
+    progress(new Progress(100)),
+    progressLabel(new QLabel()),
+    overlay(new QWidget())
 {
     m_ui->setupUi(this);
     m_ui->jabberID->setText(jid);
@@ -50,6 +53,7 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
         m_ui->avatarButton->setMenu(avatarMenu);
         avatarMenu->addAction(setAvatar);
         avatarMenu->addAction(clearAvatar);
+        m_ui->title->setText(tr("Your card"));
     } else {
         m_ui->buttonBox->hide();
         m_ui->fullName->setReadOnly(true);
@@ -64,6 +68,7 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
         m_ui->organizationRole->setReadOnly(true);
         m_ui->description->setReadOnly(true);
         m_ui->url->setReadOnly(true);
+        m_ui->title->setText(tr("Contact %1 card").arg(jid));
     }
     
     connect(m_ui->buttonBox, &QDialogButtonBox::accepted, this, &VCard::onButtonBoxAccepted);
@@ -73,6 +78,23 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
     
     int height = m_ui->personalForm->minimumSize().height() - avatarButtonMargins.height();
     m_ui->avatarButton->setIconSize(QSize(height, height));
+    
+    QGridLayout* gr = static_cast<QGridLayout*>(layout());
+    gr->addWidget(overlay, 0, 0, 4, 1);
+    QVBoxLayout* nl = new QVBoxLayout();
+    QGraphicsOpacityEffect* opacity = new QGraphicsOpacityEffect();
+    opacity->setOpacity(0.8);
+    overlay->setLayout(nl);
+    overlay->setBackgroundRole(QPalette::Base);
+    overlay->setAutoFillBackground(true);
+    overlay->setGraphicsEffect(opacity);
+    progressLabel->setAlignment(Qt::AlignCenter);
+    progressLabel->setStyleSheet("font: 16pt");
+    nl->addStretch();
+    nl->addWidget(progress);
+    nl->addWidget(progressLabel);
+    nl->addStretch();
+    overlay->hide();
 }
 
 VCard::~VCard()
@@ -102,6 +124,9 @@ void VCard::setVCard(const Shared::VCard& card)
     m_ui->organizationRole->setText(card.getOrgRole());
     m_ui->description->setText(card.getDescription());
     m_ui->url->setText(card.getUrl());
+    
+    QDateTime receivingTime = card.getReceivingTime();
+    m_ui->receivingTimeLabel->setText(tr("Received %1 at %2").arg(receivingTime.date().toString()).arg(receivingTime.time().toString()));
     currentAvatarType = card.getAvatarType();
     currentAvatarPath = card.getAvatarPath();
     
@@ -210,4 +235,17 @@ void VCard::onAvatarSelected()
             qDebug() << "couldn't save avatar" << path << ", skipping";
         }
     }
+}
+
+void VCard::showProgress(const QString& line)
+{
+    progressLabel->setText(line);
+    overlay->show();
+    progress->start();
+}
+
+void VCard::hideProgress()
+{
+    overlay->hide();
+    progress->stop();
 }

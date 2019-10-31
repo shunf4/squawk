@@ -34,9 +34,10 @@ Progress::Progress(quint16 p_size, QWidget* parent):
     label.setFrameStyle(0);
     label.setContentsMargins(0, 0, 0, 0);
     label.setInteractive(false);
+    label.setStyleSheet("background: transparent");
     pixmap->setTransformOriginPoint(size / 2, size / 2);
     pixmap->setTransformationMode(Qt::SmoothTransformation);
-    pixmap->setOffset(0, 0);;
+    pixmap->setOffset(0, 0);
     
     animation.setDuration(500);
     animation.setStartValue(0.0f);
