@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>594</width>
-    <height>651</height>
+    <width>526</width>
+    <height>662</height>
    </rect>
   </property>
   <layout class="QGridLayout" name="gridLayout_4">
@@ -560,22 +560,31 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>575</width>
-              <height>475</height>
+              <width>514</width>
+              <height>488</height>
              </rect>
             </property>
-            <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,4,1">
-             <item row="10" column="1">
-              <widget class="Line" name="addressesLine">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+            <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,2,2,1">
+             <item row="2" column="2">
+              <widget class="QPushButton" name="addEmailButton">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset theme="list-add"/>
                </property>
               </widget>
              </item>
-             <item row="3" column="1">
-              <layout class="QVBoxLayout" name="emailsLayout">
+             <item row="6" column="1" colspan="2">
+              <layout class="QVBoxLayout" name="phonesLayout">
                <item>
-                <widget class="QLabel" name="emptyEmailsPlaceholder">
+                <widget class="QLabel" name="emptyPhonesPlaceholder">
                  <property name="text">
                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;User has no contact e-mail addresses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
@@ -586,17 +595,34 @@
                </item>
               </layout>
              </item>
-             <item row="2" column="1">
-              <widget class="QLabel" name="emailsHeading">
-               <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;E-Mail addresses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <item row="11" column="1" colspan="2">
+              <spacer name="contactBottomSpacer">
+               <property name="orientation">
+                <enum>Qt::Vertical</enum>
                </property>
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>40</height>
+                </size>
                </property>
-              </widget>
+              </spacer>
              </item>
-             <item row="0" column="1">
+             <item row="9" column="1" colspan="2">
+              <layout class="QVBoxLayout" name="addressesLayout">
+               <item>
+                <widget class="QLabel" name="emptyAddressesPlaceholder">
+                 <property name="text">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;User has no contact e-mail addresses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item row="0" column="1" colspan="2">
               <layout class="QFormLayout" name="contactForm">
                <property name="formAlignment">
                 <set>Qt::AlignHCenter|Qt::AlignTop</set>
@@ -655,39 +681,109 @@
                </item>
               </layout>
              </item>
-             <item row="7" column="1">
-              <widget class="Line" name="phonesLine">
-               <property name="orientation">
-                <enum>Qt::Horizontal</enum>
+             <item row="8" column="1">
+              <widget class="QLabel" name="addressesHeading">
+               <property name="text">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Addresses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
                </property>
               </widget>
              </item>
-             <item row="1" column="1">
+             <item row="1" column="1" colspan="2">
               <widget class="Line" name="contactFormLine">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
               </widget>
              </item>
-             <item row="4" column="1">
+             <item row="8" column="2">
+              <widget class="QPushButton" name="addAddressButton">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset theme="list-add"/>
+               </property>
+              </widget>
+             </item>
+             <item row="10" column="1" colspan="2">
+              <widget class="Line" name="addressesLine">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="2">
+              <widget class="QPushButton" name="addPhoneButton">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string/>
+               </property>
+               <property name="icon">
+                <iconset theme="list-add"/>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="1">
+              <widget class="QLabel" name="emailsHeading">
+               <property name="text">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;E-Mail addresses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="5" column="1">
+              <widget class="QLabel" name="phenesHeading">
+               <property name="text">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Phone numbers&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+               </property>
+              </widget>
+             </item>
+             <item row="4" column="1" colspan="2">
               <widget class="Line" name="emailsLine">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>
               </widget>
              </item>
-             <item row="11" column="1">
-              <spacer name="contactBottomSpacer">
+             <item row="3" column="1" colspan="2">
+              <layout class="QVBoxLayout" name="emailsLayout">
+               <item>
+                <widget class="QLabel" name="emptyEmailsPlaceholder">
+                 <property name="text">
+                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;User has no contact e-mail addresses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                 </property>
+                 <property name="alignment">
+                  <set>Qt::AlignCenter</set>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item row="7" column="1" colspan="2">
+              <widget class="Line" name="phonesLine">
                <property name="orientation">
-                <enum>Qt::Vertical</enum>
+                <enum>Qt::Horizontal</enum>
                </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>20</width>
-                 <height>40</height>
-                </size>
-               </property>
-              </spacer>
+              </widget>
              </item>
              <item row="0" column="0" rowspan="12">
               <spacer name="contactLeftSpacer">
@@ -702,55 +798,7 @@
                </property>
               </spacer>
              </item>
-             <item row="6" column="1">
-              <layout class="QVBoxLayout" name="phonesLayout">
-               <item>
-                <widget class="QLabel" name="emptyPhonesPlaceholder">
-                 <property name="text">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;User has no contact e-mail addresses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item row="8" column="1">
-              <widget class="QLabel" name="addressesHeading">
-               <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Addresses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
-               </property>
-              </widget>
-             </item>
-             <item row="9" column="1">
-              <layout class="QVBoxLayout" name="addressesLayout">
-               <item>
-                <widget class="QLabel" name="emptyAddressesPlaceholder">
-                 <property name="text">
-                  <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-style:italic;&quot;&gt;User has no contact e-mail addresses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                 </property>
-                 <property name="alignment">
-                  <set>Qt::AlignCenter</set>
-                 </property>
-                </widget>
-               </item>
-              </layout>
-             </item>
-             <item row="5" column="1">
-              <widget class="QLabel" name="phenesHeading">
-               <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Phone numbers&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignCenter</set>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="2" rowspan="12">
+             <item row="0" column="3" rowspan="12">
               <spacer name="contactRightSpacer">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>

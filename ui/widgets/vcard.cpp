@@ -69,6 +69,10 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
         m_ui->description->setReadOnly(true);
         m_ui->url->setReadOnly(true);
         m_ui->title->setText(tr("Contact %1 card").arg(jid));
+        
+        m_ui->addAddressButton->hide();
+        m_ui->addPhoneButton->hide();
+        m_ui->addEmailButton->hide();
     }
     
     connect(m_ui->buttonBox, &QDialogButtonBox::accepted, this, &VCard::onButtonBoxAccepted);
