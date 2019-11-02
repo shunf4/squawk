@@ -538,6 +538,8 @@ QDateTime Shared::VCard::getReceivingTime() const
     return receivingTime;
 }
 
+const std::deque<QString>Shared::VCard::Contact::roleNames = {"Not specified", "Personal", "Business"};
+
 QIcon Shared::availabilityIcon(Shared::Availability av, bool big)
 {
     const std::deque<QString>& fallback = QApplication::palette().window().color().lightnessF() > 0.5 ? 

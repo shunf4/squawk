@@ -9,6 +9,7 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 include(GNUInstallDirs)
+include_directories(.)
 
 find_package(Qt5Widgets CONFIG REQUIRED)
 find_package(Qt5LinguistTools)

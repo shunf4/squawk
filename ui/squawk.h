@@ -33,10 +33,10 @@
 #include "widgets/room.h"
 #include "widgets/newcontact.h"
 #include "widgets/joinconference.h"
-#include "widgets/vcard.h"
 #include "models/roster.h"
+#include "widgets/vcard/vcard.h"
 
-#include "../global.h"
+#include "global.h"
 
 namespace Ui {
 class Squawk;

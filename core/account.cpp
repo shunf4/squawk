@@ -36,6 +36,8 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     am(new QXmppMamManager()),
     mm(new QXmppMucManager()),
     bm(new QXmppBookmarkManager()),
+    rm(client.findExtension<QXmppRosterManager>()),
+    vm(client.findExtension<QXmppVCardManager>()),
     contacts(),
     conferences(),
     maxReconnectTimes(0),
@@ -57,12 +59,10 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     QObject::connect(&client, &QXmppClient::messageReceived, this, &Account::onMessageReceived);
     QObject::connect(&client, &QXmppClient::error, this, &Account::onClientError);
     
-    QXmppRosterManager& rm = client.rosterManager();
-    
-    QObject::connect(&rm, &QXmppRosterManager::rosterReceived, this, &Account::onRosterReceived);
-    QObject::connect(&rm, &QXmppRosterManager::itemAdded, this, &Account::onRosterItemAdded);
-    QObject::connect(&rm, &QXmppRosterManager::itemRemoved, this, &Account::onRosterItemRemoved);
-    QObject::connect(&rm, &QXmppRosterManager::itemChanged, this, &Account::onRosterItemChanged);
+    QObject::connect(rm, &QXmppRosterManager::rosterReceived, this, &Account::onRosterReceived);
+    QObject::connect(rm, &QXmppRosterManager::itemAdded, this, &Account::onRosterItemAdded);
+    QObject::connect(rm, &QXmppRosterManager::itemRemoved, this, &Account::onRosterItemRemoved);
+    QObject::connect(rm, &QXmppRosterManager::itemChanged, this, &Account::onRosterItemChanged);
     //QObject::connect(&rm, &QXmppRosterManager::presenceChanged, this, &Account::onRosterPresenceChanged);
     
     client.addExtension(cm);
@@ -82,8 +82,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     client.addExtension(bm);
     QObject::connect(bm, &QXmppBookmarkManager::bookmarksReceived, this, &Account::bookmarksReceived);
     
-    QXmppVCardManager& vm = client.vCardManager();
-    QObject::connect(&vm, &QXmppVCardManager::vCardReceived, this, &Account::onVCardReceived);
+    QObject::connect(vm, &QXmppVCardManager::vCardReceived, this, &Account::onVCardReceived);
     //QObject::connect(&vm, &QXmppVCardManager::clientVCardReceived, this, &Account::onOwnVCardReceived); //for some reason it doesn't work, launching from common handler
     
     QString path(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
@@ -240,11 +239,10 @@ QString Core::Account::getServer() const
 
 void Core::Account::onRosterReceived()
 {
-    client.vCardManager().requestClientVCard();         //TODO need to make sure server actually supports vCards
+    vm->requestClientVCard();         //TODO need to make sure server actually supports vCards
     ownVCardRequestInProgress = true;
     
-    QXmppRosterManager& rm = client.rosterManager();
-    QStringList bj = rm.getRosterBareJids();
+    QStringList bj = rm->getRosterBareJids();
     for (int i = 0; i < bj.size(); ++i) {
         const QString& jid = bj[i];
         addedAccount(jid);
@@ -264,8 +262,7 @@ void Core::Account::onRosterItemAdded(const QString& bareJid)
     addedAccount(bareJid);
     std::map<QString, QString>::const_iterator itr = queuedContacts.find(bareJid);
     if (itr != queuedContacts.end()) {
-        QXmppRosterManager& rm = client.rosterManager();
-        rm.subscribe(bareJid, itr->second);
+        rm->subscribe(bareJid, itr->second);
         queuedContacts.erase(itr);
     }
 }
@@ -278,8 +275,7 @@ void Core::Account::onRosterItemChanged(const QString& bareJid)
         return;
     }
     Contact* contact = itr->second;
-    QXmppRosterManager& rm = client.rosterManager();
-    QXmppRosterIq::Item re = rm.getRosterEntry(bareJid);
+    QXmppRosterIq::Item re = rm->getRosterEntry(bareJid);
     
     Shared::SubscriptionState state = castSubscriptionState(re.subscriptionType());
 
@@ -308,9 +304,8 @@ void Core::Account::onRosterItemRemoved(const QString& bareJid)
 
 void Core::Account::addedAccount(const QString& jid)
 {
-    QXmppRosterManager& rm = client.rosterManager();
     std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
-    QXmppRosterIq::Item re = rm.getRosterEntry(jid);
+    QXmppRosterIq::Item re = rm->getRosterEntry(jid);
     Contact* contact;
     bool newContact = false;
     if (itr == contacts.end()) {
@@ -410,13 +405,13 @@ void Core::Account::onPresenceReceived(const QXmppPresence& p_presence)
                         break;
                     case QXmppPresence::VCardUpdateNoPhoto:         //there is no photo, need to drop if any
                         if (avatarType.size() > 0) {
-                            client.vCardManager().requestClientVCard();
+                            vm->requestClientVCard();
                             ownVCardRequestInProgress = true;
                         }
                         break;
                     case QXmppPresence::VCardUpdateValidPhoto:      //there is a photo, need to load
                         if (avatarHash != p_presence.photoHash()) {
-                            client.vCardManager().requestClientVCard();
+                            vm->requestClientVCard();
                             ownVCardRequestInProgress = true;
                         }
                         break;
@@ -493,7 +488,7 @@ void Core::Account::onRosterPresenceChanged(const QString& bareJid, const QStrin
 {
     //not used for now;
     qDebug() << "presence changed for " << bareJid << " resource " << resource;
-    const QXmppPresence& presence = client.rosterManager().getPresence(bareJid, resource);
+    const QXmppPresence& presence = rm->getPresence(bareJid, resource);
 }
 
 void Core::Account::setLogin(const QString& p_login)
@@ -1053,8 +1048,7 @@ void Core::Account::onClientError(QXmppClient::Error err)
 void Core::Account::subscribeToContact(const QString& jid, const QString& reason)
 {
     if (state == Shared::connected) {
-        QXmppRosterManager& rm = client.rosterManager();
-        rm.subscribe(jid, reason);
+        rm->subscribe(jid, reason);
     } else {
         qDebug() << "An attempt to subscribe account " << name << " to contact " << jid << " but the account is not in the connected state, skipping";
     }
@@ -1063,8 +1057,7 @@ void Core::Account::subscribeToContact(const QString& jid, const QString& reason
 void Core::Account::unsubscribeFromContact(const QString& jid, const QString& reason)
 {
     if (state == Shared::connected) {
-        QXmppRosterManager& rm = client.rosterManager();
-        rm.unsubscribe(jid, reason);
+        rm->unsubscribe(jid, reason);
     } else {
         qDebug() << "An attempt to unsubscribe account " << name << " from contact " << jid << " but the account is not in the connected state, skipping";
     }
@@ -1078,8 +1071,7 @@ void Core::Account::removeContactRequest(const QString& jid)
             outOfRosterContacts.erase(itr);
             onRosterItemRemoved(jid);
         } else {
-            QXmppRosterManager& rm = client.rosterManager();
-            rm.removeItem(jid);
+            rm->removeItem(jid);
         }
     } else {
         qDebug() << "An attempt to remove contact " << jid << " from account " << name << " but the account is not in the connected state, skipping";
@@ -1095,8 +1087,7 @@ void Core::Account::addContactRequest(const QString& jid, const QString& name, c
             qDebug() << "An attempt to add contact " << jid << " to account " << name << " but the account is already queued for adding, skipping";
         } else {
             queuedContacts.insert(std::make_pair(jid, ""));     //TODO need to add reason here;
-            QXmppRosterManager& rm = client.rosterManager();
-            rm.addItem(jid, name, groups);
+            rm->addItem(jid, name, groups);
         }
     } else {
         qDebug() << "An attempt to add contact " << jid << " to account " << name << " but the account is not in the connected state, skipping";
@@ -1273,8 +1264,7 @@ void Core::Account::addContactToGroupRequest(const QString& jid, const QString& 
     if (itr == contacts.end()) {
         qDebug() << "An attempt to add non existing contact" << jid << "of account" << name << "to the group" << groupName << ", skipping";
     } else {
-        QXmppRosterManager& rm = client.rosterManager();
-        QXmppRosterIq::Item item = rm.getRosterEntry(jid);
+        QXmppRosterIq::Item item = rm->getRosterEntry(jid);
         QSet<QString> groups = item.groups();
         if (groups.find(groupName) == groups.end()) {           //TODO need to change it, I guess that sort of code is better in qxmpp lib
             groups.insert(groupName);
@@ -1296,8 +1286,7 @@ void Core::Account::removeContactFromGroupRequest(const QString& jid, const QStr
     if (itr == contacts.end()) {
         qDebug() << "An attempt to remove non existing contact" << jid << "of account" << name << "from the group" << groupName << ", skipping";
     } else {
-        QXmppRosterManager& rm = client.rosterManager();
-        QXmppRosterIq::Item item = rm.getRosterEntry(jid);
+        QXmppRosterIq::Item item = rm->getRosterEntry(jid);
         QSet<QString> groups = item.groups();
         QSet<QString>::const_iterator gItr = groups.find(groupName);
         if (gItr != groups.end()) {
@@ -1320,8 +1309,7 @@ void Core::Account::renameContactRequest(const QString& jid, const QString& newN
     if (itr == contacts.end()) {
         qDebug() << "An attempt to rename non existing contact" << jid << "of account" << name << ", skipping";
     } else {
-        QXmppRosterManager& rm = client.rosterManager();
-        rm.renameItem(jid, newName);
+        rm->renameItem(jid, newName);
     }
 }
 
@@ -1519,11 +1507,11 @@ void Core::Account::requestVCard(const QString& jid)
     if (pendingVCardRequests.find(jid) == pendingVCardRequests.end()) {
         if (jid == getLogin() + "@" + getServer()) {
             if (!ownVCardRequestInProgress) {
-                client.vCardManager().requestClientVCard();
+                vm->requestClientVCard();
                 ownVCardRequestInProgress = true;
             }
         } else {
-            client.vCardManager().requestVCard(jid);
+            vm->requestVCard(jid);
             pendingVCardRequests.insert(jid);
         }
     }
@@ -1596,6 +1584,6 @@ void Core::Account::uploadVCard(const Shared::VCard& card)
         }
     }
     
-    client.vCardManager().setClientVCard(iq);
+    vm->setClientVCard(iq);
     onOwnVCardReceived(iq);
 }

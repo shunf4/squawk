@@ -30,11 +30,14 @@
 #include <QLabel>
 #include <QGraphicsOpacityEffect>
 #include <QVBoxLayout>
+#include <QMenu>
 
 #include <set>
 
-#include "../../global.h"
-#include "../utils/progress.h"
+#include "global.h"
+#include "emailsmodel.h"
+#include "ui/utils/progress.h"
+#include "ui/utils/comboboxdelegate.h"
 
 namespace Ui
 {
@@ -65,6 +68,13 @@ private slots:
     void onClearAvatar();
     void onSetAvatar();
     void onAvatarSelected();
+    void onAddAddress();
+    void onRemoveAddress();
+    void onAddEmail();
+    void onRemoveEmail();
+    void onAddPhone();
+    void onRemovePhone();
+    void onContextMenu(const QPoint& point);
     
 private:
     QScopedPointer<Ui::VCard> m_ui;
@@ -76,6 +86,9 @@ private:
     Progress* progress;
     QLabel* progressLabel;
     QWidget* overlay;
+    QMenu* contextMenu;
+    UI::VCard::EMailsModel emails;
+    ComboboxDelegate* roleDelegate;
     
     static const std::set<QString> supportedTypes;
     

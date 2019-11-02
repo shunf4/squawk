@@ -33,7 +33,10 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
     currentAvatarPath(""),
     progress(new Progress(100)),
     progressLabel(new QLabel()),
-    overlay(new QWidget())
+    overlay(new QWidget()),
+    contextMenu(new QMenu()),
+    emails(edit),
+    roleDelegate(new ComboboxDelegate())
 {
     m_ui->setupUi(this);
     m_ui->jabberID->setText(jid);
@@ -47,6 +50,18 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
     
     setAvatar->setEnabled(true);
     clearAvatar->setEnabled(false);
+    
+    roleDelegate->addEntry(tr(Shared::VCard::Email::roleNames[0].toStdString().c_str()));
+    roleDelegate->addEntry(tr(Shared::VCard::Email::roleNames[1].toStdString().c_str()));
+    roleDelegate->addEntry(tr(Shared::VCard::Email::roleNames[2].toStdString().c_str()));
+    
+    m_ui->emailsView->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_ui->emailsView->setModel(&emails);
+    m_ui->emailsView->setItemDelegateForColumn(1, roleDelegate);
+    m_ui->emailsView->horizontalHeader()->setStretchLastSection(false);
+    m_ui->emailsView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    
+    connect(m_ui->emailsView, &QWidget::customContextMenuRequested, this, &VCard::onContextMenu);
     
     if (edit) {
         avatarMenu = new QMenu();
@@ -69,10 +84,6 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
         m_ui->description->setReadOnly(true);
         m_ui->url->setReadOnly(true);
         m_ui->title->setText(tr("Contact %1 card").arg(jid));
-        
-        m_ui->addAddressButton->hide();
-        m_ui->addPhoneButton->hide();
-        m_ui->addEmailButton->hide();
     }
     
     connect(m_ui->buttonBox, &QDialogButtonBox::accepted, this, &VCard::onButtonBoxAccepted);
@@ -106,6 +117,9 @@ VCard::~VCard()
     if (editable) {
         avatarMenu->deleteLater();
     }
+    
+    roleDelegate->deleteLater();
+    contextMenu->deleteLater();
 }
 
 void VCard::setVCard(const QString& jid, const Shared::VCard& card)
@@ -252,4 +266,47 @@ void VCard::hideProgress()
 {
     overlay->hide();
     progress->stop();
+}
+
+void VCard::onContextMenu(const QPoint& point)
+{
+    contextMenu->clear();
+    bool hasMenu = false;
+    QAbstractItemView* snd = static_cast<QAbstractItemView*>(sender());
+    if (snd == m_ui->emailsView) {
+        if (editable) {
+            hasMenu = true;
+            QAction* add = contextMenu->addAction(Shared::icon("list-add"), tr("Add email address"));
+            connect(add, &QAction::triggered, this, &VCard::onAddEmail);
+        }
+    }
+    
+    if (hasMenu) {
+        contextMenu->popup(snd->viewport()->mapToGlobal(point));
+    }
+}
+
+void VCard::onAddEmail()
+{
+    QModelIndex index = emails.addNewEmptyLine();
+    m_ui->emailsView->setCurrentIndex(index);
+    m_ui->emailsView->edit(index);
+}
+
+void VCard::onAddAddress()
+{
+    
+}
+void VCard::onAddPhone()
+{
+}
+void VCard::onRemoveAddress()
+{
+}
+void VCard::onRemoveEmail()
+{
+}
+
+void VCard::onRemovePhone()
+{
 }

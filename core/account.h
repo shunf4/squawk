@@ -125,6 +125,8 @@ private:
     QXmppMamManager* am;
     QXmppMucManager* mm;
     QXmppBookmarkManager* bm;
+    QXmppRosterManager* rm;
+    QXmppVCardManager* vm;
     std::map<QString, Contact*> contacts;
     std::map<QString, Conference*> conferences;
     unsigned int maxReconnectTimes;

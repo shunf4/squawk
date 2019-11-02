@@ -47,14 +47,14 @@ Squawk::Squawk(QWidget *parent) :
     }
     m_ui->comboBox->setCurrentIndex(Shared::offline);
     
-    connect(m_ui->actionAccounts, SIGNAL(triggered()), this, SLOT(onAccounts()));
-    connect(m_ui->actionAddContact, SIGNAL(triggered()), this, SLOT(onNewContact()));
-    connect(m_ui->actionAddConference, SIGNAL(triggered()), this, SLOT(onNewConference()));
-    connect(m_ui->comboBox, SIGNAL(activated(int)), this, SLOT(onComboboxActivated(int)));
-    connect(m_ui->roster, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(onRosterItemDoubleClicked(const QModelIndex&)));
-    connect(m_ui->roster, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(onRosterContextMenu(const QPoint&)));
+    connect(m_ui->actionAccounts, &QAction::triggered, this, &Squawk::onAccounts);
+    connect(m_ui->actionAddContact, &QAction::triggered, this, &Squawk::onNewContact);
+    connect(m_ui->actionAddConference, &QAction::triggered, this, &Squawk::onNewConference);
+    connect(m_ui->comboBox, qOverload<int>(&QComboBox::activated), this, &Squawk::onComboboxActivated);
+    connect(m_ui->roster, &QTreeView::doubleClicked, this, &Squawk::onRosterItemDoubleClicked);
+    connect(m_ui->roster, &QTreeView::customContextMenuRequested, this, &Squawk::onRosterContextMenu);
     
-    connect(rosterModel.accountsModel, SIGNAL(sizeChanged(unsigned int)), this, SLOT(onAccountsSizeChanged(unsigned int)));
+    connect(rosterModel.accountsModel, &Models::Accounts::sizeChanged, this, &Squawk::onAccountsSizeChanged);
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
     
     setWindowTitle(tr("Contact list"));

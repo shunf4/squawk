@@ -223,6 +223,7 @@ class VCard {
             home,
             work
         };
+        static const std::deque<QString> roleNames;
         
         Contact(Role p_role = none, bool p_prefered = false);
         
