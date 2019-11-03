@@ -69,12 +69,12 @@ void Squawk::onAccounts()
     if (accounts == 0) {
         accounts = new Accounts(rosterModel.accountsModel, this);
         accounts->setAttribute(Qt::WA_DeleteOnClose);
-        connect(accounts, SIGNAL(destroyed(QObject*)), this, SLOT(onAccountsClosed(QObject*)));
-        connect(accounts, SIGNAL(newAccount(const QMap<QString, QVariant>&)), this, SIGNAL(newAccountRequest(const QMap<QString, QVariant>&)));
-        connect(accounts, SIGNAL(changeAccount(const QString&, const QMap<QString, QVariant>&)), this, SIGNAL(modifyAccountRequest(const QString&, const QMap<QString, QVariant>&)));
-        connect(accounts, SIGNAL(connectAccount(const QString&)), this, SIGNAL(connectAccount(const QString&)));
-        connect(accounts, SIGNAL(disconnectAccount(const QString&)), this, SIGNAL(disconnectAccount(const QString&)));
-        connect(accounts, SIGNAL(removeAccount(const QString&)), this, SIGNAL(removeAccountRequest(const QString&)));
+        connect(accounts, &Accounts::destroyed, this, &Squawk::onAccountsClosed);
+        connect(accounts, &Accounts::newAccount, this, &Squawk::newAccountRequest);
+        connect(accounts, &Accounts::changeAccount, this, &Squawk::modifyAccountRequest);
+        connect(accounts, &Accounts::connectAccount, this, &Squawk::connectAccount);
+        connect(accounts, &Accounts::disconnectAccount, this, &Squawk::disconnectAccount);
+        connect(accounts, &Accounts::removeAccount, this, &Squawk::removeAccountRequest);
         
         accounts->show();
     } else {
@@ -99,8 +99,8 @@ void Squawk::onNewContact()
 {
     NewContact* nc = new NewContact(rosterModel.accountsModel, this);
     
-    connect(nc, SIGNAL(accepted()), this, SLOT(onNewContactAccepted()));
-    connect(nc, SIGNAL(rejected()), nc, SLOT(deleteLater()));
+    connect(nc, &NewContact::accepted, this, &Squawk::onNewContactAccepted);
+    connect(nc, &NewContact::rejected, nc, &NewContact::deleteLater);
     
     nc->exec();
 }
@@ -109,8 +109,8 @@ void Squawk::onNewConference()
 {
     JoinConference* jc = new JoinConference(rosterModel.accountsModel, this);
     
-    connect(jc, SIGNAL(accepted()), this, SLOT(onJoinConferenceAccepted()));
-    connect(jc, SIGNAL(rejected()), jc, SLOT(deleteLater()));
+    connect(jc, &JoinConference::accepted, this, &Squawk::onJoinConferenceAccepted);
+    connect(jc, &JoinConference::rejected, jc, &JoinConference::deleteLater);
     
     jc->exec();
 }
@@ -299,12 +299,12 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 if (created) {
                     conv->setAttribute(Qt::WA_DeleteOnClose);
                     
-                    connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
-                    connect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
-                    connect(conv, SIGNAL(requestArchive(const QString&)), this, SLOT(onConversationRequestArchive(const QString&)));
-                    connect(conv, SIGNAL(requestLocalFile(const QString&, const QString&)), this, SLOT(onConversationRequestLocalFile(const QString&, const QString&)));
-                    connect(conv, SIGNAL(downloadFile(const QString&, const QString&)), this, SLOT(onConversationDownloadFile(const QString&, const QString&)));
-                    connect(conv, SIGNAL(shown()), this, SLOT(onConversationShown()));
+                    connect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
+                    connect(conv, &Conversation::sendMessage, this, &Squawk::onConversationMessage);
+                    connect(conv, &Conversation::requestArchive, this, &Squawk::onConversationRequestArchive);
+                    connect(conv, &Conversation::requestLocalFile, this, &Squawk::onConversationRequestLocalFile);
+                    connect(conv, &Conversation::downloadFile, this, &Squawk::onConversationDownloadFile);
+                    connect(conv, &Conversation::shown, this, &Squawk::onConversationShown);
                     
                     conversations.insert(std::make_pair(*id, conv));
                     
@@ -517,10 +517,10 @@ void Squawk::removeAccount(const QString& account)
             Conversations::const_iterator lItr = itr;
             ++itr;
             Conversation* conv = lItr->second;
-            disconnect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
-            disconnect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
-            disconnect(conv, SIGNAL(requestArchive(const QString&)), this, SLOT(onConversationRequestArchive(const QString&)));
-            disconnect(conv, SIGNAL(shown()), this, SLOT(onConversationShown()));
+            disconnect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
+            disconnect(conv, &Conversation::sendMessage, this, &Squawk::onConversationMessage);
+            disconnect(conv, &Conversation::requestArchive, this, &Squawk::onConversationRequestArchive);
+            disconnect(conv, &Conversation::shown, this, &Squawk::onConversationShown);
             conv->close();
             conversations.erase(lItr);
         } else {

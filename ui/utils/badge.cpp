@@ -42,7 +42,7 @@ Badge::Badge(const QString& p_id, const QString& p_text, const QIcon& icon, QWid
     
     layout->setContentsMargins(2, 2, 2, 2);
     
-    connect(closeButton, SIGNAL(clicked()), this, SIGNAL(close()));
+    connect(closeButton, &QPushButton::clicked, this, &Badge::close);
 }
 
 Badge::~Badge()

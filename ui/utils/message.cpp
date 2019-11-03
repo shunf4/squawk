@@ -125,7 +125,7 @@ void Message::addDownloadDialog()
             fileComment->setText(tr("%1 is offering you to download a file").arg(sender->text()));
         }
         fileComment->show();
-        connect(downloadButton, SIGNAL(clicked()), this, SLOT(onDownload()));
+        connect(downloadButton, &QPushButton::clicked, this, &Message::onDownload);
         bodyLayout->insertWidget(2, fileComment);
         bodyLayout->insertWidget(3, downloadButton);
         hasDownloadButton = true;

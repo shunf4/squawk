@@ -59,15 +59,15 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     statusIcon = m_ui->statusIcon;
     statusLabel = m_ui->statusLabel;
     
-    connect(&ker, SIGNAL(enterPressed()), this, SLOT(onEnterPressed()));
-    connect(&res, SIGNAL(resized()), this, SLOT(onScrollResize()));
-    connect(&vis, SIGNAL(shown()), this, SLOT(onScrollResize()));
-    connect(&vis, SIGNAL(hidden()), this, SLOT(onScrollResize()));
-    connect(m_ui->sendButton, SIGNAL(clicked(bool)), this, SLOT(onEnterPressed()));
-    connect(line, SIGNAL(resize(int)), this, SLOT(onMessagesResize(int)));
-    connect(line, SIGNAL(downloadFile(const QString&, const QString&)), this, SIGNAL(downloadFile(const QString&, const QString&)));
-    connect(line, SIGNAL(requestLocalFile(const QString&, const QString&)), this, SIGNAL(requestLocalFile(const QString&, const QString&)));
-    connect(m_ui->attachButton, SIGNAL(clicked(bool)), this, SLOT(onAttach()));
+    connect(&ker, &KeyEnterReceiver::enterPressed, this, &Conversation::onEnterPressed);
+    connect(&res, &Resizer::resized, this, &Conversation::onScrollResize);
+    connect(&vis, &VisibilityCatcher::shown, this, &Conversation::onScrollResize);
+    connect(&vis, &VisibilityCatcher::hidden, this, &Conversation::onScrollResize);
+    connect(m_ui->sendButton, &QPushButton::clicked, this, &Conversation::onEnterPressed);
+    connect(line, &MessageLine::resize, this, &Conversation::onMessagesResize);
+    connect(line, &MessageLine::downloadFile, this, &Conversation::downloadFile);
+    connect(line, &MessageLine::requestLocalFile, this, &Conversation::requestLocalFile);
+    connect(m_ui->attachButton, &QPushButton::clicked, this, &Conversation::onAttach);
     
     m_ui->messageEditor->installEventFilter(&ker);
     
@@ -76,7 +76,7 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     vs->installEventFilter(&vis);
     vs->setBackgroundRole(QPalette::Base);
     vs->setAutoFillBackground(true);
-    connect(vs, SIGNAL(valueChanged(int)), this, SLOT(onSliderValueChanged(int)));
+    connect(vs, &QScrollBar::valueChanged, this, &Conversation::onSliderValueChanged);
     m_ui->scrollArea->installEventFilter(&res);
     
     applyVisualEffects();
@@ -317,7 +317,7 @@ void Conversation::addAttachedFile(const QString& path)
     
     Badge* badge = new Badge(path, info.fileName(), QIcon::fromTheme(type.iconName()));
     
-    connect(badge, SIGNAL(close()), this, SLOT(onBadgeClose()));
+    connect(badge, &Badge::close, this, &Conversation::onBadgeClose);
     filesToAttach.push_back(badge);                                                         //TODO neet to check if there are any duplicated ids
     filesLayout->addWidget(badge);
     if (filesLayout->count() == 1) {

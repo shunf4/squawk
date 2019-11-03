@@ -127,7 +127,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
     
     if (msg.hasOutOfBandUrl()) {\
         emit requestLocalFile(msg.getId(), msg.getOutOfBandUrl());
-        connect(message, SIGNAL(downloadFile(const QString&, const QString&)), this, SIGNAL(downloadFile(const QString&, const QString&)));
+        connect(message, &Message::downloadFile, this, &MessageLine::downloadFile);
     }
     
     return res;

@@ -38,7 +38,7 @@ SignalCatcher::SignalCatcher(QCoreApplication *p_app, QObject *parent):
     }
     
     snInt = new QSocketNotifier(sigintFd[1], QSocketNotifier::Read, this);
-    connect(snInt, SIGNAL(activated(int)), this, SLOT(handleSigInt()));
+    connect(snInt, &QSocketNotifier::activated, this, &SignalCatcher::handleSigInt);
 }
 
 SignalCatcher::~SignalCatcher()

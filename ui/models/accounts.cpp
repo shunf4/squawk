@@ -89,7 +89,7 @@ void Models::Accounts::addAccount(Account* account)
     }
     
     accs.insert(before, account);
-    connect(account, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onAccountChanged(Models::Item*, int, int)));
+    connect(account, &Account::childChanged, this, &Accounts::onAccountChanged);
     endInsertRows();
     
     emit sizeChanged(accs.size());
@@ -143,7 +143,7 @@ void Models::Accounts::removeAccount(int index)
 {
     Account* account = accs[index];
     beginRemoveRows(QModelIndex(), index, index);
-    disconnect(account, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onAccountChanged(Models::Item*, int, int)));
+    disconnect(account, &Account::childChanged, this, &Accounts::onAccountChanged);
     accs.erase(accs.begin() + index);
     endRemoveRows();
     

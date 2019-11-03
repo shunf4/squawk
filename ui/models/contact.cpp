@@ -229,7 +229,7 @@ void Models::Contact::refresh()
 void Models::Contact::_removeChild(int index)
 {
     Item* child = childItems[index];
-    disconnect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
+    disconnect(child, &Item::childChanged, this, &Contact::refresh);
     Item::_removeChild(index);
     refresh();
 }
@@ -237,7 +237,7 @@ void Models::Contact::_removeChild(int index)
 void Models::Contact::appendChild(Models::Item* child)
 {
     Item::appendChild(child);
-    connect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
+    connect(child, &Item::childChanged, this, &Contact::refresh);
     refresh();
 }
 
@@ -324,7 +324,7 @@ void Models::Contact::toOfflineState()
     emit childIsAboutToBeRemoved(this, 0, childItems.size());
     for (int i = 0; i < childItems.size(); ++i) {
         Item* item = childItems[i];
-        disconnect(item, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
+        disconnect(item, &Item::childChanged, this, &Contact::refresh);
         Item::_removeChild(i);
         item->deleteLater();
     }
@@ -363,7 +363,7 @@ Models::Contact::Contact(const Models::Contact& other):
         Presence* pCopy = new Presence(*pres);
         presences.insert(pCopy->getName(), pCopy);
         Item::appendChild(pCopy);
-        connect(pCopy, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
+        connect(pCopy, &Item::childChanged, this, &Contact::refresh);
     }
     
     refresh();
