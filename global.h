@@ -302,6 +302,12 @@ public:
     QString getOrgTitle() const;
     void setOrgTitle(const QString& title);
     QDateTime getReceivingTime() const;
+    std::deque<Email>& getEmails();
+    const std::deque<Email>& getEmails() const;
+    std::deque<Phone>& getPhones();
+    const std::deque<Phone>& getPhones() const;
+    std::deque<Address>& getAddresses();
+    const std::deque<Address>& getAddresses() const;
     
 private:
     QString fullName;

@@ -538,6 +538,36 @@ QDateTime Shared::VCard::getReceivingTime() const
     return receivingTime;
 }
 
+std::deque<Shared::VCard::Email> & Shared::VCard::getEmails()
+{
+    return emails;
+}
+
+std::deque<Shared::VCard::Address> & Shared::VCard::getAddresses()
+{
+    return addresses;
+}
+
+std::deque<Shared::VCard::Phone> & Shared::VCard::getPhones()
+{
+    return phones;
+}
+
+const std::deque<Shared::VCard::Email> & Shared::VCard::getEmails() const
+{
+    return emails;
+}
+
+const std::deque<Shared::VCard::Address> & Shared::VCard::getAddresses() const
+{
+    return addresses;
+}
+
+const std::deque<Shared::VCard::Phone> & Shared::VCard::getPhones() const
+{
+    return phones;
+}
+
 const std::deque<QString>Shared::VCard::Contact::roleNames = {"Not specified", "Personal", "Business"};
 
 QIcon Shared::availabilityIcon(Shared::Availability av, bool big)

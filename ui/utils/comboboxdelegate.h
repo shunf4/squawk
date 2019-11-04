@@ -21,6 +21,7 @@
 
 #include <QStyledItemDelegate>
 #include <QComboBox>
+#include <QFocusEvent>
 
 #include <deque>
 
@@ -30,6 +31,12 @@
 class ComboboxDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
+    
+    class FocusFilter : public QObject {
+    public:
+        bool eventFilter(QObject *src, QEvent *evt) override;
+    };
+    
 public:
     ComboboxDelegate(QObject *parent = nullptr);
     ~ComboboxDelegate();
@@ -42,6 +49,9 @@ public:
     
 private:
     std::deque<std::pair<QString, QIcon>> entries;
+    FocusFilter* ff;
 };
+
+
 
 #endif // COMBOBOXDELEGATE_H

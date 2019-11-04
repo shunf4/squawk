@@ -15,18 +15,21 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
+#include "QTimer"
 
 #include "comboboxdelegate.h"
 
 ComboboxDelegate::ComboboxDelegate(QObject *parent):
     QStyledItemDelegate(parent),
-    entries()
+    entries(),
+    ff(new FocusFilter())
 {
 }
 
 
 ComboboxDelegate::~ComboboxDelegate()
 {
+    delete ff;
 }
 
 
@@ -48,6 +51,7 @@ void ComboboxDelegate::setEditorData(QWidget *editor, const QModelIndex &index) 
     int currentIndex = index.data(Qt::EditRole).toInt();
     if (currentIndex >= 0) {
         cb->setCurrentIndex(currentIndex);
+        cb->installEventFilter(ff);
     }
 }
 
@@ -61,4 +65,21 @@ void ComboboxDelegate::setModelData(QWidget *editor, QAbstractItemModel *model, 
 void ComboboxDelegate::addEntry(const QString& title, const QIcon& icon)
 {
     entries.emplace_back(title, icon);
+}
+
+bool ComboboxDelegate::FocusFilter::eventFilter(QObject* src, QEvent* evt)
+{
+    if (evt->type() == QEvent::FocusIn) {
+        QComboBox* cb = static_cast<QComboBox*>(src);
+        cb->removeEventFilter(this);
+        QTimer* timer = new QTimer;                                 //TODO that is ridiculous! I refuse to believe there is no better way than that one!
+        QObject::connect(timer, &QTimer::timeout, [timer, cb]() {
+            cb->showPopup();
+            timer->deleteLater();
+        });
+        
+        timer->setSingleShot(true);
+        timer->start(100);
+    }
+    return QObject::eventFilter(src, evt);
 }

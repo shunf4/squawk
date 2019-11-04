@@ -21,6 +21,8 @@
 
 #include <QDebug>
 
+#include <algorithm>
+
 const std::set<QString> VCard::supportedTypes = {"image/jpeg", "image/png"};
 
 VCard::VCard(const QString& jid, bool edit, QWidget* parent):
@@ -58,6 +60,7 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
     m_ui->emailsView->setContextMenuPolicy(Qt::CustomContextMenu);
     m_ui->emailsView->setModel(&emails);
     m_ui->emailsView->setItemDelegateForColumn(1, roleDelegate);
+    m_ui->emailsView->setColumnWidth(2, 30);
     m_ui->emailsView->horizontalHeader()->setStretchLastSection(false);
     m_ui->emailsView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     
@@ -68,7 +71,7 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
         m_ui->avatarButton->setMenu(avatarMenu);
         avatarMenu->addAction(setAvatar);
         avatarMenu->addAction(clearAvatar);
-        m_ui->title->setText(tr("Your card"));
+        m_ui->title->setText(tr("Account %1 card").arg(jid));
     } else {
         m_ui->buttonBox->hide();
         m_ui->fullName->setReadOnly(true);
@@ -149,6 +152,9 @@ void VCard::setVCard(const Shared::VCard& card)
     currentAvatarPath = card.getAvatarPath();
     
     updateAvatar();
+    
+    const std::deque<Shared::VCard::Email>& ems = card.getEmails();
+    emails.setEmails(ems);
 }
 
 QString VCard::getJid() const
@@ -173,6 +179,8 @@ void VCard::onButtonBoxAccepted()
     card.setOrgTitle(m_ui->organizationTitle->text());
     card.setAvatarPath(currentAvatarPath);
     card.setAvatarType(currentAvatarType);
+    
+    emails.getEmails(card.getEmails());
     
     emit saveVCard(card);
 }
@@ -278,6 +286,25 @@ void VCard::onContextMenu(const QPoint& point)
             hasMenu = true;
             QAction* add = contextMenu->addAction(Shared::icon("list-add"), tr("Add email address"));
             connect(add, &QAction::triggered, this, &VCard::onAddEmail);
+            
+            QItemSelectionModel* sm = m_ui->emailsView->selectionModel();
+            int selectionSize = sm->selectedRows().size();
+            
+            if (selectionSize > 0) {
+                if (selectionSize == 1) {
+                    int row = sm->selectedRows().at(0).row();
+                    if (emails.isPreferred(row)) {
+                        QAction* rev = contextMenu->addAction(Shared::icon("view-media-favorite"), tr("Unset this email as preferred"));
+                        connect(rev, &QAction::triggered, std::bind(&UI::VCard::EMailsModel::revertPreferred, &emails, row));
+                    } else {
+                        QAction* rev = contextMenu->addAction(Shared::icon("favorite"), tr("Set this email as preferred"));
+                        connect(rev, &QAction::triggered, std::bind(&UI::VCard::EMailsModel::revertPreferred, &emails, row));
+                    }
+                }
+                
+                QAction* del = contextMenu->addAction(Shared::icon("remove"), tr("Remove selected email addresses"));
+                connect(del, &QAction::triggered, this, &VCard::onRemoveEmail);
+            }
         }
     }
     
@@ -305,6 +332,23 @@ void VCard::onRemoveAddress()
 }
 void VCard::onRemoveEmail()
 {
+    QItemSelection selection(m_ui->emailsView->selectionModel()->selection());
+    
+    QList<int> rows;
+    for (const QModelIndex& index : selection.indexes()) {
+        rows.append(index.row());
+    }
+    
+    std::sort(rows.begin(), rows.end());
+    
+    int prev = -1;
+    for (int i = rows.count() - 1; i >= 0; i -= 1) {
+        int current = rows[i];
+        if (current != prev) {
+            emails.removeLines(current, 1);
+            prev = current;
+        }
+    }
 }
 
 void VCard::onRemovePhone()

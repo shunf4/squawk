@@ -43,6 +43,7 @@ QVariant UI::VCard::EMailsModel::data(const QModelIndex& index, int role) const
             case 0:
                 switch (role) {
                     case Qt::DisplayRole:
+                    case Qt::EditRole:
                         return deque[index.row()].address;
                     default:
                         return QVariant();
@@ -142,4 +143,58 @@ QModelIndex UI::VCard::EMailsModel::addNewEmptyLine()
     deque.emplace_back("");
     endInsertRows();
     return createIndex(deque.size() - 1, 0, &(deque.back()));
+}
+
+bool UI::VCard::EMailsModel::isPreferred(int row) const
+{
+    if (row < deque.size()) {
+        return deque[row].prefered;
+    } else {
+        return false;
+    }
+}
+
+void UI::VCard::EMailsModel::removeLines(int index, int count)
+{
+    if (index < deque.size()) {
+        int maxCount = deque.size() - index;
+        if (count > maxCount) {
+            count = maxCount;
+        }
+        
+        if (count > 0) {
+            beginRemoveRows(QModelIndex(), index, index + count - 1);
+            std::deque<Shared::VCard::Email>::const_iterator itr = deque.begin() + index;
+            std::deque<Shared::VCard::Email>::const_iterator end = itr + count;
+            deque.erase(itr, end);
+            endRemoveRows();
+        }
+    }
+}
+
+void UI::VCard::EMailsModel::getEmails(std::deque<Shared::VCard::Email>& emails) const
+{
+    for (const Shared::VCard::Email& my : deque) {
+        emails.emplace_back(my);
+    }
+}
+
+void UI::VCard::EMailsModel::setEmails(const std::deque<Shared::VCard::Email>& emails)
+{
+    if (deque.size() > 0) {
+        removeLines(0, deque.size());
+    }
+    
+    if (emails.size() > 0) {
+        beginInsertRows(QModelIndex(), 0, emails.size() - 1);
+        for (const Shared::VCard::Email& comming : emails) {
+            deque.emplace_back(comming);
+        }
+        endInsertRows();
+    }
+}
+
+void UI::VCard::EMailsModel::revertPreferred(int row)
+{
+    setData(createIndex(row, 2), !isPreferred(row));
 }
