@@ -17,6 +17,7 @@ set(squawkCORE_SRC
     conference.cpp
     storage.cpp
     networkaccess.cpp
+    adapterFuctions.cpp
 )
 
 # Tell CMake to create the helloworld executable

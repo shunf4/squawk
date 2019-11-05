@@ -202,6 +202,8 @@ private:
     
 };
 
+void initializeVCard(Shared::VCard& vCard, const QXmppVCardIq& card);
+void initializeQXmppVCard(QXmppVCardIq& card, const Shared::VCard& vCard);
 }
 
 

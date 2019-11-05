@@ -238,13 +238,15 @@ public:
         QString address;
     };
     class Phone : public Contact {
+    public:
         enum Type {
             fax,
             pager,
             voice,
             cell,
             video,
-            modem
+            modem,
+            other
         };
         Phone(const QString& number, Type p_type = voice, Role p_role = none, bool p_prefered = false);
         
@@ -252,6 +254,7 @@ public:
         Type type;
     };
     class Address : public Contact {
+    public:
         Address(
             const QString& zCode = "", 
             const QString& cntry = "", 

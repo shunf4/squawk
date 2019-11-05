@@ -108,7 +108,7 @@ bool UI::VCard::EMailsModel::setData(const QModelIndex& index, const QVariant& v
                 bool newDef = value.toBool();
                 if (newDef != item.prefered) {
                     if (newDef) {
-                        dropPrefered();
+                        //dropPrefered();
                     }
                     item.prefered = newDef;
                     return true;
