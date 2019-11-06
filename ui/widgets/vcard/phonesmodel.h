@@ -1,6 +1,6 @@
 /*
  * Squawk messenger. 
- * Copyright (C) 2019  Yury Gubich <blue@macaw.me>
+ * Copyright (C) 2019 Yury Gubich <blue@macaw.me>
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,36 +16,37 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef UI_VCARD_EMAILSMODEL_H
-#define UI_VCARD_EMAILSMODEL_H
+#ifndef UI_VCARD_PHONESMODEL_H
+#define UI_VCARD_PHONESMODEL_H
 
 #include <QAbstractTableModel>
 #include <QIcon>
-
-#include <deque>
 
 #include "global.h"
 
 namespace UI {
 namespace VCard {
 
-class EMailsModel : public QAbstractTableModel
+/**
+ * @todo write docs
+ */
+class PhonesModel : public QAbstractTableModel
 {
     Q_OBJECT
 public:
-    EMailsModel(bool edit = false, QObject *parent = nullptr);
+    PhonesModel(bool edit = false, QObject *parent = nullptr);
     
-    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
-    int columnCount(const QModelIndex& parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+    QVariant data(const QModelIndex& index, int role) const override;
+    int columnCount(const QModelIndex& parent) const override;
+    int rowCount(const QModelIndex& parent) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
     bool isPreferred(int row) const;
     
     void removeLines(int index, int count);
-    void setEmails(const std::deque<Shared::VCard::Email>& emails);
-    void getEmails(std::deque<Shared::VCard::Email>& emails) const;
-    QString getEmail(int row) const;
+    void setPhones(const std::deque<Shared::VCard::Phone>& phones);
+    void getPhones(std::deque<Shared::VCard::Phone>& phones) const;
+    QString getPhone(int row) const;
     
 public slots:
     QModelIndex addNewEmptyLine();
@@ -53,7 +54,7 @@ public slots:
     
 private:
     bool edit;
-    std::deque<Shared::VCard::Email> deque;
+    std::deque<Shared::VCard::Phone> deque;
     
 private:
     bool dropPrefered();
@@ -61,4 +62,4 @@ private:
 
 }}
 
-#endif // UI_VCARD_EMAILSMODEL_H
+#endif // UI_VCARD_PHONESMODEL_H

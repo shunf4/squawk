@@ -218,6 +218,7 @@ void Core::initializeQXmppVCard(QXmppVCardIq& iq, const Shared::VCard& card) {
             itr = phones.emplace(mPh.number, QXmppVCardPhone()).first;
         }
         QXmppVCardPhone& phone = itr->second;
+        phone.setNumber(mPh.number);
         
         switch (mPh.type) {
             case Shared::VCard::Phone::fax:

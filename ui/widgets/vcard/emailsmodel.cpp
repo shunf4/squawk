@@ -198,3 +198,8 @@ void UI::VCard::EMailsModel::revertPreferred(int row)
 {
     setData(createIndex(row, 2), !isPreferred(row));
 }
+
+QString UI::VCard::EMailsModel::getEmail(int row) const
+{
+    return deque[row].address;
+}

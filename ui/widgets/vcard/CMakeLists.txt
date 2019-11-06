@@ -12,6 +12,7 @@ find_package(Qt5Widgets CONFIG REQUIRED)
 set(vCardUI_SRC
   vcard.cpp
   emailsmodel.cpp
+  phonesmodel.cpp
 )
 
 # Tell CMake to create the helloworld executable

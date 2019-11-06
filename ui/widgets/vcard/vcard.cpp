@@ -38,7 +38,9 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
     overlay(new QWidget()),
     contextMenu(new QMenu()),
     emails(edit),
-    roleDelegate(new ComboboxDelegate())
+    phones(edit),
+    roleDelegate(new ComboboxDelegate()),
+    phoneTypeDelegate(new ComboboxDelegate())
 {
     m_ui->setupUi(this);
     m_ui->jabberID->setText(jid);
@@ -57,13 +59,30 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
     roleDelegate->addEntry(tr(Shared::VCard::Email::roleNames[1].toStdString().c_str()));
     roleDelegate->addEntry(tr(Shared::VCard::Email::roleNames[2].toStdString().c_str()));
     
+    phoneTypeDelegate->addEntry(tr(Shared::VCard::Phone::typeNames[0].toStdString().c_str()));
+    phoneTypeDelegate->addEntry(tr(Shared::VCard::Phone::typeNames[1].toStdString().c_str()));
+    phoneTypeDelegate->addEntry(tr(Shared::VCard::Phone::typeNames[2].toStdString().c_str()));
+    phoneTypeDelegate->addEntry(tr(Shared::VCard::Phone::typeNames[3].toStdString().c_str()));
+    phoneTypeDelegate->addEntry(tr(Shared::VCard::Phone::typeNames[4].toStdString().c_str()));
+    phoneTypeDelegate->addEntry(tr(Shared::VCard::Phone::typeNames[5].toStdString().c_str()));
+    phoneTypeDelegate->addEntry(tr(Shared::VCard::Phone::typeNames[6].toStdString().c_str()));
+    
     m_ui->emailsView->setContextMenuPolicy(Qt::CustomContextMenu);
     m_ui->emailsView->setModel(&emails);
     m_ui->emailsView->setItemDelegateForColumn(1, roleDelegate);
-    m_ui->emailsView->setColumnWidth(2, 30);
+    m_ui->emailsView->setColumnWidth(2, 25);
     m_ui->emailsView->horizontalHeader()->setStretchLastSection(false);
     m_ui->emailsView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
     
+    m_ui->phonesView->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_ui->phonesView->setModel(&phones);
+    m_ui->phonesView->setItemDelegateForColumn(1, roleDelegate);
+    m_ui->phonesView->setItemDelegateForColumn(2, phoneTypeDelegate);
+    m_ui->phonesView->setColumnWidth(3, 25);
+    m_ui->phonesView->horizontalHeader()->setStretchLastSection(false);
+    m_ui->phonesView->horizontalHeader()->setSectionResizeMode(0, QHeaderView::Stretch);
+    
+    connect(m_ui->phonesView, &QWidget::customContextMenuRequested, this, &VCard::onContextMenu);
     connect(m_ui->emailsView, &QWidget::customContextMenuRequested, this, &VCard::onContextMenu);
     
     if (edit) {
@@ -121,6 +140,7 @@ VCard::~VCard()
         avatarMenu->deleteLater();
     }
     
+    phoneTypeDelegate->deleteLater();
     roleDelegate->deleteLater();
     contextMenu->deleteLater();
 }
@@ -154,7 +174,9 @@ void VCard::setVCard(const Shared::VCard& card)
     updateAvatar();
     
     const std::deque<Shared::VCard::Email>& ems = card.getEmails();
+    const std::deque<Shared::VCard::Phone>& phs = card.getPhones();
     emails.setEmails(ems);
+    phones.setPhones(phs);
 }
 
 QString VCard::getJid() const
@@ -181,6 +203,7 @@ void VCard::onButtonBoxAccepted()
     card.setAvatarType(currentAvatarType);
     
     emails.getEmails(card.getEmails());
+    phones.getPhones(card.getPhones());
     
     emit saveVCard(card);
 }
@@ -282,8 +305,8 @@ void VCard::onContextMenu(const QPoint& point)
     bool hasMenu = false;
     QAbstractItemView* snd = static_cast<QAbstractItemView*>(sender());
     if (snd == m_ui->emailsView) {
+        hasMenu = true;
         if (editable) {
-            hasMenu = true;
             QAction* add = contextMenu->addAction(Shared::icon("list-add"), tr("Add email address"));
             connect(add, &QAction::triggered, this, &VCard::onAddEmail);
             
@@ -306,6 +329,37 @@ void VCard::onContextMenu(const QPoint& point)
                 connect(del, &QAction::triggered, this, &VCard::onRemoveEmail);
             }
         }
+        
+        QAction* cp = contextMenu->addAction(Shared::icon("copy"), tr("Copy selected emails to clipboard"));
+        connect(cp, &QAction::triggered, this, &VCard::onCopyEmail);
+    } else if (snd == m_ui->phonesView) {
+        hasMenu = true;
+        if (editable) {
+            QAction* add = contextMenu->addAction(Shared::icon("list-add"), tr("Add phone number"));
+            connect(add, &QAction::triggered, this, &VCard::onAddPhone);
+            
+            QItemSelectionModel* sm = m_ui->phonesView->selectionModel();
+            int selectionSize = sm->selectedRows().size();
+            
+            if (selectionSize > 0) {
+                if (selectionSize == 1) {
+                    int row = sm->selectedRows().at(0).row();
+                    if (phones.isPreferred(row)) {
+                        QAction* rev = contextMenu->addAction(Shared::icon("view-media-favorite"), tr("Unset this phone as preferred"));
+                        connect(rev, &QAction::triggered, std::bind(&UI::VCard::PhonesModel::revertPreferred, &phones, row));
+                    } else {
+                        QAction* rev = contextMenu->addAction(Shared::icon("favorite"), tr("Set this phone as preferred"));
+                        connect(rev, &QAction::triggered, std::bind(&UI::VCard::PhonesModel::revertPreferred, &phones, row));
+                    }
+                }
+                
+                QAction* del = contextMenu->addAction(Shared::icon("remove"), tr("Remove selected phone numbers"));
+                connect(del, &QAction::triggered, this, &VCard::onRemovePhone);
+            }
+        }
+        
+        QAction* cp = contextMenu->addAction(Shared::icon("copy"), tr("Copy selected phones to clipboard"));
+        connect(cp, &QAction::triggered, this, &VCard::onCopyPhone);
     }
     
     if (hasMenu) {
@@ -326,6 +380,9 @@ void VCard::onAddAddress()
 }
 void VCard::onAddPhone()
 {
+    QModelIndex index = phones.addNewEmptyLine();
+    m_ui->phonesView->setCurrentIndex(index);
+    m_ui->phonesView->edit(index);
 }
 void VCard::onRemoveAddress()
 {
@@ -353,4 +410,53 @@ void VCard::onRemoveEmail()
 
 void VCard::onRemovePhone()
 {
+    QItemSelection selection(m_ui->phonesView->selectionModel()->selection());
+    
+    QList<int> rows;
+    for (const QModelIndex& index : selection.indexes()) {
+        rows.append(index.row());
+    }
+    
+    std::sort(rows.begin(), rows.end());
+    
+    int prev = -1;
+    for (int i = rows.count() - 1; i >= 0; i -= 1) {
+        int current = rows[i];
+        if (current != prev) {
+            phones.removeLines(current, 1);
+            prev = current;
+        }
+    }
+}
+
+void VCard::onCopyEmail()
+{
+    QItemSelection selection(m_ui->emailsView->selectionModel()->selection());
+    
+    QList<QString> addrs;
+    for (const QModelIndex& index : selection.indexes()) {
+        addrs.push_back(emails.getEmail(index.row()));
+    }
+    
+    QString list = addrs.join("\n");
+    
+    qDebug() << list;
+    QClipboard* cb = QApplication::clipboard();
+    cb->setText(list);
+}
+
+void VCard::onCopyPhone()
+{
+    QItemSelection selection(m_ui->phonesView->selectionModel()->selection());
+    
+    QList<QString> phs;
+    for (const QModelIndex& index : selection.indexes()) {
+        phs.push_back(phones.getPhone(index.row()));
+    }
+    
+    QString list = phs.join("\n");
+    
+    qDebug() << list;
+    QClipboard* cb = QApplication::clipboard();
+    cb->setText(list);
 }

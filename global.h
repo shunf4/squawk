@@ -248,6 +248,7 @@ public:
             modem,
             other
         };
+        static const std::deque<QString> typeNames;
         Phone(const QString& number, Type p_type = voice, Role p_role = none, bool p_prefered = false);
         
         QString number;

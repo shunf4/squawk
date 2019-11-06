@@ -31,11 +31,14 @@
 #include <QGraphicsOpacityEffect>
 #include <QVBoxLayout>
 #include <QMenu>
+#include <QApplication>
+#include <QClipboard>
 
 #include <set>
 
 #include "global.h"
 #include "emailsmodel.h"
+#include "phonesmodel.h"
 #include "ui/utils/progress.h"
 #include "ui/utils/comboboxdelegate.h"
 
@@ -71,8 +74,10 @@ private slots:
     void onAddAddress();
     void onRemoveAddress();
     void onAddEmail();
+    void onCopyEmail();
     void onRemoveEmail();
     void onAddPhone();
+    void onCopyPhone();
     void onRemovePhone();
     void onContextMenu(const QPoint& point);
     
@@ -88,7 +93,9 @@ private:
     QWidget* overlay;
     QMenu* contextMenu;
     UI::VCard::EMailsModel emails;
+    UI::VCard::PhonesModel phones;
     ComboboxDelegate* roleDelegate;
+    ComboboxDelegate* phoneTypeDelegate;
     
     static const std::set<QString> supportedTypes;
     

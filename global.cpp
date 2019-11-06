@@ -569,6 +569,7 @@ const std::deque<Shared::VCard::Phone> & Shared::VCard::getPhones() const
 }
 
 const std::deque<QString>Shared::VCard::Contact::roleNames = {"Not specified", "Personal", "Business"};
+const std::deque<QString>Shared::VCard::Phone::typeNames = {"Fax", "Pager", "Voice", "Cell", "Video", "Modem", "Other"};
 
 QIcon Shared::availabilityIcon(Shared::Availability av, bool big)
 {
