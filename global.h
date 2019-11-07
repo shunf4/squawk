@@ -457,7 +457,9 @@ static const std::map<QString, std::pair<QString, QString>> icons = {
     {"state-ok", {"state-ok", "state-ok"}}, 
     {"state-error", {"state-error", "state-error"}},
     
+    {"edit-copy", {"edit-copy", "copy"}},
     {"edit-delete", {"edit-delete", "edit-delete"}},
+    {"edit-rename", {"edit-rename", "edit-rename"}},
     {"mail-message", {"mail-message", "mail-message"}},
     {"mail-attachment", {"mail-attachment", "mail-attachment"}},
     {"network-connect", {"network-connect", "network-connect"}},
@@ -469,9 +471,11 @@ static const std::map<QString, std::pair<QString, QString>> icons = {
     {"clean", {"edit-clear-all", "clean"}},
     {"user", {"user", "user"}},
     {"user-properties", {"user-properties", "user-properties"}},
-    {"edit-rename", {"edit-rename", "edit-rename"}},
     {"group", {"group", "group"}},
     {"group-new", {"resurce-group-new", "group-new"}},
+    {"favorite", {"favorite", "favorite"}},
+    {"unfavorite", {"draw-star", "unfavorite"}},
+    {"list-add", {"list-add", "add"}},
 };
 
 };

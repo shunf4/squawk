@@ -52,7 +52,7 @@ QVariant UI::VCard::EMailsModel::data(const QModelIndex& index, int role) const
             case 1:
                 switch (role) {
                     case Qt::DisplayRole:
-                        return tr(Shared::VCard::Email::roleNames[deque[index.row()].role].toStdString().c_str());
+                        return QCoreApplication::translate("Global", Shared::VCard::Email::roleNames[deque[index.row()].role].toStdString().c_str());
                     case Qt::EditRole: 
                         return deque[index.row()].role;
                     default:

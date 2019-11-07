@@ -36,6 +36,10 @@
     <file>images/fallback/dark/big/group-new.svg</file>
     <file>images/fallback/dark/big/edit-rename.svg</file>
     <file>images/fallback/dark/big/user-properties.svg</file>
+    <file>images/fallback/dark/big/copy.svg</file>
+    <file>images/fallback/dark/big/favorite.svg</file>
+    <file>images/fallback/dark/big/unfavorite.svg</file>
+    <file>images/fallback/dark/big/add.svg</file>
     
     
     <file>images/fallback/dark/small/absent.svg</file>
@@ -72,6 +76,10 @@
     <file>images/fallback/dark/small/group-new.svg</file>
     <file>images/fallback/dark/small/edit-rename.svg</file>
     <file>images/fallback/dark/small/user-properties.svg</file>
+    <file>images/fallback/dark/small/copy.svg</file>
+    <file>images/fallback/dark/small/favorite.svg</file>
+    <file>images/fallback/dark/small/unfavorite.svg</file>
+    <file>images/fallback/dark/small/add.svg</file>
     
     
     <file>images/fallback/light/big/absent.svg</file>
@@ -108,6 +116,10 @@
     <file>images/fallback/light/big/group-new.svg</file>
     <file>images/fallback/light/big/edit-rename.svg</file>
     <file>images/fallback/light/big/user-properties.svg</file>
+    <file>images/fallback/light/big/copy.svg</file>
+    <file>images/fallback/light/big/favorite.svg</file>
+    <file>images/fallback/light/big/unfavorite.svg</file>
+    <file>images/fallback/light/big/add.svg</file>
     
     
     <file>images/fallback/light/small/absent.svg</file>
@@ -144,5 +156,9 @@
     <file>images/fallback/light/small/group-new.svg</file>
     <file>images/fallback/light/small/edit-rename.svg</file>
     <file>images/fallback/light/small/user-properties.svg</file>
+    <file>images/fallback/light/small/copy.svg</file>
+    <file>images/fallback/light/small/favorite.svg</file>
+    <file>images/fallback/light/small/unfavorite.svg</file>
+    <file>images/fallback/light/small/add.svg</file>
 </qresource>
 </RCC>

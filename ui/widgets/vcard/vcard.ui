@@ -124,10 +124,10 @@
             </sizepolicy>
            </property>
            <property name="styleSheet">
-            <string notr="true"/>
+            <string notr="true">font: 600 16pt;</string>
            </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Organization&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Organization</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
@@ -418,8 +418,11 @@
          </item>
          <item row="0" column="0" colspan="4">
           <widget class="QLabel" name="generalHeading">
+           <property name="styleSheet">
+            <string notr="true">font: 600 24pt ;</string>
+           </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:24pt; font-weight:600;&quot;&gt;General&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>General</string>
            </property>
           </widget>
          </item>
@@ -445,7 +448,7 @@
             </sizepolicy>
            </property>
            <property name="styleSheet">
-            <string notr="true"/>
+            <string notr="true">font: 600 16pt;</string>
            </property>
            <property name="frameShape">
             <enum>QFrame::NoFrame</enum>
@@ -454,7 +457,7 @@
             <enum>QFrame::Plain</enum>
            </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Personal information&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Personal information</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignCenter</set>
@@ -536,8 +539,11 @@
          </property>
          <item>
           <widget class="QLabel" name="contactHeading">
+           <property name="styleSheet">
+            <string notr="true">font: 600 24pt ;</string>
+           </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:24pt; font-weight:600;&quot;&gt;Contact&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Contact</string>
            </property>
           </widget>
          </item>
@@ -561,7 +567,7 @@
               <x>0</x>
               <y>0</y>
               <width>566</width>
-              <height>497</height>
+              <height>498</height>
              </rect>
             </property>
             <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,3,1">
@@ -640,8 +646,11 @@
              </item>
              <item row="8" column="1">
               <widget class="QLabel" name="addressesHeading">
+               <property name="styleSheet">
+                <string notr="true">font: 600 16pt;</string>
+               </property>
                <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Addresses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>Addresses</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
@@ -666,8 +675,11 @@
              </item>
              <item row="2" column="1">
               <widget class="QLabel" name="emailsHeading">
+               <property name="styleSheet">
+                <string notr="true">font: 600 16pt;</string>
+               </property>
                <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;E-Mail addresses&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>E-Mail addresses</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
@@ -748,8 +760,11 @@
              </item>
              <item row="5" column="1">
               <widget class="QLabel" name="phenesHeading">
+               <property name="styleSheet">
+                <string notr="true">font: 600 16pt;</string>
+               </property>
                <property name="text">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:16pt; font-weight:600;&quot;&gt;Phone numbers&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>Phone numbers</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignCenter</set>
@@ -800,8 +815,11 @@
          </property>
          <item row="0" column="0">
           <widget class="QLabel" name="descriptionHeading">
+           <property name="styleSheet">
+            <string notr="true">font: 600 24pt ;</string>
+           </property>
            <property name="text">
-            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:24pt; font-weight:600;&quot;&gt;Description&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            <string>Description</string>
            </property>
           </widget>
          </item>

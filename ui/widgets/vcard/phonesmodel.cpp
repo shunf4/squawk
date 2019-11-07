@@ -52,7 +52,7 @@ QVariant UI::VCard::PhonesModel::data(const QModelIndex& index, int role) const
             case 1:
                 switch (role) {
                     case Qt::DisplayRole:
-                        return tr(Shared::VCard::Phone::roleNames[deque[index.row()].role].toStdString().c_str());
+                        return QCoreApplication::translate("Global", Shared::VCard::Phone::roleNames[deque[index.row()].role].toStdString().c_str());
                     case Qt::EditRole: 
                         return deque[index.row()].role;
                     default:
@@ -62,7 +62,7 @@ QVariant UI::VCard::PhonesModel::data(const QModelIndex& index, int role) const
             case 2:
                 switch (role) {
                     case Qt::DisplayRole:
-                        return tr(Shared::VCard::Phone::typeNames[deque[index.row()].type].toStdString().c_str());
+                        return QCoreApplication::translate("Global", Shared::VCard::Phone::typeNames[deque[index.row()].type].toStdString().c_str());
                     case Qt::EditRole: 
                         return deque[index.row()].type;
                     default:

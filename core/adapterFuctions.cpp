@@ -39,22 +39,25 @@ void Core::initializeVCard(Shared::VCard& vCard, const QXmppVCardIq& card)
     QList<QXmppVCardEmail> emails = card.emails();
     std::deque<Shared::VCard::Email>& myEmails = vCard.getEmails();
     for (const QXmppVCardEmail& em : emails) {
-        QXmppVCardEmail::Type et = em.type();
-        bool prefered = false;
-        bool accounted = false;
-        if (et & QXmppVCardEmail::Preferred) {
-            prefered = true;
-        }
-        if (et & QXmppVCardEmail::Home) {
-            myEmails.emplace_back(em.address(), Shared::VCard::Email::home, prefered);
-            accounted = true;
-        } 
-        if (et & QXmppVCardEmail::Work) {
-            myEmails.emplace_back(em.address(), Shared::VCard::Email::work, prefered);
-            accounted = true;
-        }
-        if (!accounted) {
-            myEmails.emplace_back(em.address(), Shared::VCard::Email::none, prefered);
+        QString addr = em.address();
+        if (addr.size() != 0) {
+            QXmppVCardEmail::Type et = em.type();
+            bool prefered = false;
+            bool accounted = false;
+            if (et & QXmppVCardEmail::Preferred) {
+                prefered = true;
+            }
+            if (et & QXmppVCardEmail::Home) {
+                myEmails.emplace_back(addr, Shared::VCard::Email::home, prefered);
+                accounted = true;
+            } 
+            if (et & QXmppVCardEmail::Work) {
+                myEmails.emplace_back(addr, Shared::VCard::Email::work, prefered);
+                accounted = true;
+            }
+            if (!accounted) {
+                myEmails.emplace_back(addr, Shared::VCard::Email::none, prefered);
+            }
         }
         
     }
@@ -62,113 +65,115 @@ void Core::initializeVCard(Shared::VCard& vCard, const QXmppVCardIq& card)
     QList<QXmppVCardPhone> phones = card.phones();
     std::deque<Shared::VCard::Phone>& myPhones = vCard.getPhones();
     for (const QXmppVCardPhone& ph : phones) {
-        Shared::VCard::Phone mPh(ph.number());
-        QXmppVCardPhone::Type pt = ph.type();
-        bool prefered = false;
-        bool accounted = false;
-        if (pt & QXmppVCardPhone::Preferred) {
-            prefered = true;
-        }
-        
-        bool home = false;
-        bool work = false;
-        
-        if (pt & QXmppVCardPhone::Home) {
-            home = true;
-        }
-        if (pt & QXmppVCardPhone::Work) {
-            work = true;
-        }
-        
-        
-        if (pt & QXmppVCardPhone::Fax) {
-            if (home || work) {
-                if (home) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::fax, Shared::VCard::Phone::home, prefered);
-                }
-                if (work) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::fax, Shared::VCard::Phone::work, prefered);
-                }
-            } else {
-                myPhones.emplace_back(ph.number(), Shared::VCard::Phone::fax, Shared::VCard::Phone::none, prefered);
+        QString num = ph.number();
+        if (num.size() != 0) {
+            QXmppVCardPhone::Type pt = ph.type();
+            bool prefered = false;
+            bool accounted = false;
+            if (pt & QXmppVCardPhone::Preferred) {
+                prefered = true;
             }
-            accounted = true;
-        } 
-        if (pt & QXmppVCardPhone::Voice) {
-            if (home || work) {
-                if (home) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::voice, Shared::VCard::Phone::home, prefered);
-                }
-                if (work) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::voice, Shared::VCard::Phone::work, prefered);
-                }
-            } else {
-                myPhones.emplace_back(ph.number(), Shared::VCard::Phone::voice, Shared::VCard::Phone::none, prefered);
+            
+            bool home = false;
+            bool work = false;
+            
+            if (pt & QXmppVCardPhone::Home) {
+                home = true;
             }
-            accounted = true;
-        } 
-        if (pt & QXmppVCardPhone::Pager) {
-            if (home || work) {
-                if (home) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::pager, Shared::VCard::Phone::home, prefered);
-                }
-                if (work) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::pager, Shared::VCard::Phone::work, prefered);
-                }
-            } else {
-                myPhones.emplace_back(ph.number(), Shared::VCard::Phone::pager, Shared::VCard::Phone::none, prefered);
+            if (pt & QXmppVCardPhone::Work) {
+                work = true;
             }
-            accounted = true;
-        } 
-        if (pt & QXmppVCardPhone::Cell) {
-            if (home || work) {
-                if (home) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::cell, Shared::VCard::Phone::home, prefered);
+            
+            
+            if (pt & QXmppVCardPhone::Fax) {
+                if (home || work) {
+                    if (home) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::fax, Shared::VCard::Phone::home, prefered);
+                    }
+                    if (work) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::fax, Shared::VCard::Phone::work, prefered);
+                    }
+                } else {
+                    myPhones.emplace_back(num, Shared::VCard::Phone::fax, Shared::VCard::Phone::none, prefered);
                 }
-                if (work) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::cell, Shared::VCard::Phone::work, prefered);
+                accounted = true;
+            } 
+            if (pt & QXmppVCardPhone::Voice) {
+                if (home || work) {
+                    if (home) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::voice, Shared::VCard::Phone::home, prefered);
+                    }
+                    if (work) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::voice, Shared::VCard::Phone::work, prefered);
+                    }
+                } else {
+                    myPhones.emplace_back(num, Shared::VCard::Phone::voice, Shared::VCard::Phone::none, prefered);
                 }
-            } else {
-                myPhones.emplace_back(ph.number(), Shared::VCard::Phone::cell, Shared::VCard::Phone::none, prefered);
-            }
-            accounted = true;
-        } 
-        if (pt & QXmppVCardPhone::Video) {
-            if (home || work) {
-                if (home) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::video, Shared::VCard::Phone::home, prefered);
+                accounted = true;
+            } 
+            if (pt & QXmppVCardPhone::Pager) {
+                if (home || work) {
+                    if (home) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::pager, Shared::VCard::Phone::home, prefered);
+                    }
+                    if (work) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::pager, Shared::VCard::Phone::work, prefered);
+                    }
+                } else {
+                    myPhones.emplace_back(num, Shared::VCard::Phone::pager, Shared::VCard::Phone::none, prefered);
                 }
-                if (work) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::video, Shared::VCard::Phone::work, prefered);
+                accounted = true;
+            } 
+            if (pt & QXmppVCardPhone::Cell) {
+                if (home || work) {
+                    if (home) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::cell, Shared::VCard::Phone::home, prefered);
+                    }
+                    if (work) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::cell, Shared::VCard::Phone::work, prefered);
+                    }
+                } else {
+                    myPhones.emplace_back(num, Shared::VCard::Phone::cell, Shared::VCard::Phone::none, prefered);
                 }
-            } else {
-                myPhones.emplace_back(ph.number(), Shared::VCard::Phone::video, Shared::VCard::Phone::none, prefered);
-            }
-            accounted = true;
-        } 
-        if (pt & QXmppVCardPhone::Modem) {
-            if (home || work) {
-                if (home) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::modem, Shared::VCard::Phone::home, prefered);
+                accounted = true;
+            } 
+            if (pt & QXmppVCardPhone::Video) {
+                if (home || work) {
+                    if (home) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::video, Shared::VCard::Phone::home, prefered);
+                    }
+                    if (work) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::video, Shared::VCard::Phone::work, prefered);
+                    }
+                } else {
+                    myPhones.emplace_back(num, Shared::VCard::Phone::video, Shared::VCard::Phone::none, prefered);
                 }
-                if (work) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::modem, Shared::VCard::Phone::work, prefered);
+                accounted = true;
+            } 
+            if (pt & QXmppVCardPhone::Modem) {
+                if (home || work) {
+                    if (home) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::modem, Shared::VCard::Phone::home, prefered);
+                    }
+                    if (work) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::modem, Shared::VCard::Phone::work, prefered);
+                    }
+                } else {
+                    myPhones.emplace_back(num, Shared::VCard::Phone::modem, Shared::VCard::Phone::none, prefered);
                 }
-            } else {
-                myPhones.emplace_back(ph.number(), Shared::VCard::Phone::modem, Shared::VCard::Phone::none, prefered);
-            }
-            accounted = true;
-        } 
-        if (!accounted) {
-            if (home || work) {
-                if (home) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::other, Shared::VCard::Phone::home, prefered);
+                accounted = true;
+            } 
+            if (!accounted) {
+                if (home || work) {
+                    if (home) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::other, Shared::VCard::Phone::home, prefered);
+                    }
+                    if (work) {
+                        myPhones.emplace_back(num, Shared::VCard::Phone::other, Shared::VCard::Phone::work, prefered);
+                    }
+                } else {
+                    myPhones.emplace_back(num, Shared::VCard::Phone::other, Shared::VCard::Phone::none, prefered);
                 }
-                if (work) {
-                    myPhones.emplace_back(ph.number(), Shared::VCard::Phone::other, Shared::VCard::Phone::work, prefered);
-                }
-            } else {
-                myPhones.emplace_back(ph.number(), Shared::VCard::Phone::other, Shared::VCard::Phone::none, prefered);
             }
         }
     }
