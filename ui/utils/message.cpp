@@ -63,7 +63,6 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     dFont.setItalic(true);
     dFont.setPointSize(dFont.pointSize() - 2);
     date->setFont(dFont);
-    date->setForegroundRole(QPalette::ToolTipText);
     
     QFont f;
     f.setBold(true);
@@ -126,7 +125,7 @@ void Message::addDownloadDialog()
             fileComment->setText(tr("%1 is offering you to download a file").arg(sender->text()));
         }
         fileComment->show();
-        connect(downloadButton, SIGNAL(clicked()), this, SLOT(onDownload()));
+        connect(downloadButton, &QPushButton::clicked, this, &Message::onDownload);
         bodyLayout->insertWidget(2, fileComment);
         bodyLayout->insertWidget(3, downloadButton);
         hasDownloadButton = true;

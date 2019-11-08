@@ -29,17 +29,14 @@ Models::Roster::Roster(QObject* parent):
     groups(),
     contacts()
 {
-    connect(accountsModel, 
-            SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)), 
-            this, 
-            SLOT(onAccountDataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)));
-    connect(root, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onChildChanged(Models::Item*, int, int)));
-    connect(root, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SLOT(onChildIsAboutToBeInserted(Item*, int, int)));
-    connect(root, SIGNAL(childInserted()), this, SLOT(onChildInserted()));
-    connect(root, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SLOT(onChildIsAboutToBeRemoved(Item*, int, int)));
-    connect(root, SIGNAL(childRemoved()), this, SLOT(onChildRemoved()));
-    connect(root, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)), this, SLOT(onChildIsAboutToBeMoved(Item*, int, int, Item*, int)));
-    connect(root, SIGNAL(childMoved()), this, SLOT(onChildMoved()));
+    connect(accountsModel, &Accounts::dataChanged, this, &Roster::onAccountDataChanged);
+    connect(root, &Item::childChanged, this, &Roster::onChildChanged);
+    connect(root, &Item::childIsAboutToBeInserted, this,  &Roster::onChildIsAboutToBeInserted);
+    connect(root, &Item::childInserted, this, &Roster::onChildInserted);
+    connect(root, &Item::childIsAboutToBeRemoved, this, &Roster::onChildIsAboutToBeRemoved);
+    connect(root, &Item::childRemoved, this, &Roster::onChildRemoved);
+    connect(root, &Item::childIsAboutToBeMoved, this, &Roster::onChildIsAboutToBeMoved);
+    connect(root, &Item::childMoved, this, &Roster::onChildMoved);
 }
 
 Models::Roster::~Roster()
@@ -68,6 +65,10 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
     switch (role) {
         case Qt::DisplayRole:
         {
+            if (index.column() != 0) {
+                result = "";
+                break;
+            }
             switch (item->type) {
                 case Item::group: {
                     Group* gr = static_cast<Group*>(item);
@@ -91,26 +92,51 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
         case Qt::DecorationRole:
             switch (item->type) {
                 case Item::account: {
+                    quint8 col = index.column();
                     Account* acc = static_cast<Account*>(item);
-                    result = acc->getStatusIcon(false);
+                    if (col == 0) {
+                        result = acc->getStatusIcon(false);
+                    } else if (col == 1) {
+                        QString path = acc->getAvatarPath();
+                        
+                        if (path.size() > 0) {
+                            result = QIcon(path);
+                        }
+                    }
                 }
                     break;
                 case Item::contact: {
                     Contact* contact = static_cast<Contact*>(item);
-                    result = contact->getStatusIcon(false);
+                    quint8 col = index.column();
+                    if (col == 0) {
+                        result = contact->getStatusIcon(false);
+                    } else if (col == 1) {
+                        if (contact->getAvatarState() != Shared::Avatar::empty) {
+                            result = QIcon(contact->getAvatarPath());
+                        }
+                    }
                 }
                     break;
                 case Item::presence: {
+                    if (index.column() != 0) {
+                        break;
+                    }
                     Presence* presence = static_cast<Presence*>(item);
                     result = presence->getStatusIcon(false);
                 }
                     break;
                 case Item::room: {
+                    if (index.column() != 0) {
+                        break;
+                    }
                     Room* room = static_cast<Room*>(item);
                     result = room->getStatusIcon(false);
                 }
                     break;
                 case Item::participant: {
+                    if (index.column() != 0) {
+                        break;
+                    }
                     Participant* p = static_cast<Participant*>(item);
                     result = p->getStatusIcon(false);
                 }
@@ -616,7 +642,8 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
 void Models::Roster::onChildChanged(Models::Item* item, int row, int col)
 {
     QModelIndex index = createIndex(row, 0, item);
-    emit dataChanged(index, index);
+    QModelIndex index2 = createIndex(row, 1, item);
+    emit dataChanged(index, index2);
 }
 
 void Models::Roster::onChildIsAboutToBeInserted(Models::Item* parent, int first, int last)
@@ -906,4 +933,24 @@ bool Models::Roster::groupHasContact(const QString& account, const QString& grou
         const Group* gr = gItr->second;
         return gr->hasContact(contact);
     }
+}
+
+QString Models::Roster::getContactIconPath(const QString& account, const QString& jid)
+{
+    ElId id(account, jid);
+    std::multimap<ElId, Contact*>::const_iterator cItr = contacts.find(id);
+    QString path = "";
+    if (cItr == contacts.end()) {
+        std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
+        if (rItr == rooms.end()) {
+            qDebug() << "An attempt to get an icon path of non existing contact" << account << ":" << jid << ", returning empty value";
+        } else {
+            //path = rItr->second->getRoomName();
+        }
+    } else {
+        if (cItr->second->getAvatarState() != Shared::Avatar::empty) {
+            path = cItr->second->getAvatarPath();
+        }
+    }
+    return path;
 }

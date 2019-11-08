@@ -23,7 +23,8 @@
 #include <QString>
 #include <QVariant>
 #include <QMap>
-#include <deque>
+#include <QtGlobal>
+
 #include <deque>
 
 #include "account.h"
@@ -65,6 +66,7 @@ signals:
     void fileLocalPathResponse(const QString& messageId, const QString& path);
     void downloadFileError(const QString& messageId, const QString& error);
     void downloadFileProgress(const QString& messageId, qreal value);
+    void responseVCard(const QString& jid, const Shared::VCard& card);
     
 public slots:
     void start();
@@ -90,6 +92,8 @@ public slots:
     void removeRoomRequest(const QString& account, const QString& jid);
     void fileLocalPathRequest(const QString& messageId, const QString& url);
     void downloadFileRequest(const QString& messageId, const QString& url);
+    void requestVCard(const QString& account, const QString& jid);
+    void uploadVCard(const QString& account, const Shared::VCard& card);
     
 private:
     typedef std::deque<Account*> Accounts;
@@ -106,6 +110,7 @@ private:
 private slots:
     void onAccountConnectionStateChanged(int state);
     void onAccountAvailabilityChanged(int state);
+    void onAccountChanged(const QMap<QString, QVariant>& data);
     void onAccountAddGroup(const QString& name);
     void onAccountError(const QString& text);
     void onAccountRemoveGroup(const QString& name);

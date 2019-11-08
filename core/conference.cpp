@@ -30,15 +30,15 @@ Core::Conference::Conference(const QString& p_jid, const QString& p_account, boo
     muc = true;
     name = p_name;
     
-    connect(room, SIGNAL(joined()), this, SLOT(onRoomJoined()));
-    connect(room, SIGNAL(left()), this, SLOT(onRoomLeft()));
-    connect(room, SIGNAL(nameChanged(const QString&)), this, SLOT(onRoomNameChanged(const QString&)));
-    connect(room, SIGNAL(subjectChanged(const QString&)), this, SLOT(onRoomSubjectChanged(const QString&)));
-    connect(room, SIGNAL(participantAdded(const QString&)), this, SLOT(onRoomParticipantAdded(const QString&)));
-    connect(room, SIGNAL(participantChanged(const QString&)), this, SLOT(onRoomParticipantChanged(const QString&)));
-    connect(room, SIGNAL(participantRemoved(const QString&)), this, SLOT(onRoomParticipantRemoved(const QString&)));
-    connect(room, SIGNAL(nickNameChanged(const QString&)), this, SLOT(onRoomNickNameChanged(const QString&)));
-    connect(room, SIGNAL(error(const QXmppStanza::Error&)), this, SLOT(onRoomError(const QXmppStanza::Error&)));
+    connect(room, &QXmppMucRoom::joined, this, &Conference::onRoomJoined);
+    connect(room, &QXmppMucRoom::left, this, &Conference::onRoomLeft);
+    connect(room, &QXmppMucRoom::nameChanged, this, &Conference::onRoomNameChanged);
+    connect(room, &QXmppMucRoom::subjectChanged, this, &Conference::onRoomSubjectChanged);
+    connect(room, &QXmppMucRoom::participantAdded, this, &Conference::onRoomParticipantAdded);
+    connect(room, &QXmppMucRoom::participantChanged, this, &Conference::onRoomParticipantChanged);
+    connect(room, &QXmppMucRoom::participantRemoved, this, &Conference::onRoomParticipantRemoved);
+    connect(room, &QXmppMucRoom::nickNameChanged, this, &Conference::onRoomNickNameChanged);
+    connect(room, &QXmppMucRoom::error, this, &Conference::onRoomError);
     
     room->setNickName(nick);
     if (autoJoin) {

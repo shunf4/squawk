@@ -238,7 +238,6 @@ void Models::Room::toOfflineState()
     emit childIsAboutToBeRemoved(this, 0, childItems.size());
     for (int i = 0; i < childItems.size(); ++i) {
         Item* item = childItems[i];
-        disconnect(item, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
         Item::_removeChild(i);
         item->deleteLater();
     }

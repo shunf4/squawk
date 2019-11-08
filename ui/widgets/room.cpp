@@ -26,7 +26,7 @@ Room::Room(Models::Room* p_room, QWidget* parent):
     line->setMyName(room->getNick());
     setStatus(room->getSubject());
     
-    connect(room, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onRoomChanged(Models::Item*, int, int)));
+    connect(room, &Models::Room::childChanged, this, &Room::onRoomChanged);
 }
 
 Room::~Room()

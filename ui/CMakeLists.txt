@@ -10,6 +10,8 @@ set(CMAKE_AUTOUIC ON)
 find_package(Qt5Widgets CONFIG REQUIRED)
 find_package(Qt5DBus CONFIG REQUIRED)
 
+add_subdirectory(widgets)
+
 set(squawkUI_SRC
   squawk.cpp
   models/accounts.cpp
@@ -22,24 +24,20 @@ set(squawkUI_SRC
   models/room.cpp
   models/abstractparticipant.cpp
   models/participant.cpp
-  widgets/conversation.cpp
-  widgets/chat.cpp
-  widgets/room.cpp
-  widgets/newcontact.cpp
-  widgets/accounts.cpp
-  widgets/account.cpp
-  widgets/joinconference.cpp
   utils/messageline.cpp
   utils//message.cpp
   utils/resizer.cpp
   utils/image.cpp
   utils/flowlayout.cpp
   utils/badge.cpp
+  utils/progress.cpp
+  utils/comboboxdelegate.cpp
 )
 
 # Tell CMake to create the helloworld executable
 add_library(squawkUI ${squawkUI_SRC})
 
 # Use the Widgets module from Qt 5.
+target_link_libraries(squawkUI squawkWidgets)
 target_link_libraries(squawkUI Qt5::Widgets)
 target_link_libraries(squawkUI Qt5::DBus)

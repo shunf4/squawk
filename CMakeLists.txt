@@ -2,13 +2,14 @@ cmake_minimum_required(VERSION 3.0)
 project(squawk)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 include(GNUInstallDirs)
+include_directories(.)
 
 find_package(Qt5Widgets CONFIG REQUIRED)
 find_package(Qt5LinguistTools)

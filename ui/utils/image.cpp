@@ -19,19 +19,14 @@
 #include <QDebug>
 #include "image.h"
 
-Image::Image(const QString& path, QWidget* parent):
+Image::Image(const QString& path, quint16 p_minWidth, QWidget* parent):
     QLabel(parent),
     pixmap(path),
-    aspectRatio(0)
+    aspectRatio(0),
+    minWidth(p_minWidth)
 {
-    
-    qreal height = pixmap.height();
-    qreal width = pixmap.width();
-    aspectRatio = width / height;
-    setPixmap(pixmap);
     setScaledContents(true);
-    setMinimumHeight(50 / aspectRatio);
-    setMinimumWidth(50);
+    recalculateAspectRatio();
 }
 
 Image::~Image()
@@ -42,11 +37,39 @@ Image::~Image()
 int Image::heightForWidth(int width) const
 {
     int height = width / aspectRatio;
-    //qDebug() << height << width << aspectRatio;
     return height;
+}
+
+int Image::widthForHeight(int height) const
+{
+    return height * aspectRatio;
 }
 
 bool Image::hasHeightForWidth() const
 {
     return true;
+}
+
+void Image::recalculateAspectRatio()
+{
+    qreal height = pixmap.height();
+    qreal width = pixmap.width();
+    aspectRatio = width / height;
+    setPixmap(pixmap);
+    setMinimumHeight(minWidth / aspectRatio);
+    setMinimumWidth(minWidth);
+}
+
+void Image::setMinWidth(quint16 p_minWidth)
+{
+    if (minWidth != p_minWidth) {
+        minWidth = p_minWidth;
+        recalculateAspectRatio();
+    }
+}
+
+void Image::setPath(const QString& path)
+{
+    pixmap = QPixmap(path);
+    recalculateAspectRatio();
 }

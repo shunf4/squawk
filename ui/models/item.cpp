@@ -88,13 +88,13 @@ void Models::Item::appendChild(Models::Item* child)
     childItems.insert(before, child);
     child->parent = this;
     
-    QObject::connect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SIGNAL(childChanged(Models::Item*, int, int)));
-    QObject::connect(child, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SIGNAL(childIsAboutToBeInserted(Item*, int, int)));
-    QObject::connect(child, SIGNAL(childInserted()), this, SIGNAL(childInserted()));
-    QObject::connect(child, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)));
-    QObject::connect(child, SIGNAL(childRemoved()), this, SIGNAL(childRemoved()));
-    QObject::connect(child, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)), this, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)));
-    QObject::connect(child, SIGNAL(childMoved()), this, SIGNAL(childMoved()));
+    QObject::connect(child, &Item::childChanged, this, &Item::childChanged);
+    QObject::connect(child, &Item::childIsAboutToBeInserted, this, &Item::childIsAboutToBeInserted);
+    QObject::connect(child, &Item::childInserted, this, &Item::childInserted);
+    QObject::connect(child, &Item::childIsAboutToBeRemoved, this, &Item::childIsAboutToBeRemoved);
+    QObject::connect(child, &Item::childRemoved, this, &Item::childRemoved);
+    QObject::connect(child, &Item::childIsAboutToBeMoved, this, &Item::childIsAboutToBeMoved);
+    QObject::connect(child, &Item::childMoved, this, &Item::childMoved);
     
     if (moving) {
         emit childMoved();
@@ -141,7 +141,7 @@ const Models::Item * Models::Item::parentItemConst() const
 
 int Models::Item::columnCount() const
 {
-    return 1;
+    return 2;
 }
 
 QString Models::Item::getName() const
@@ -168,13 +168,13 @@ void Models::Item::_removeChild(int index)
 {
     Item* child = childItems[index];
     
-    QObject::disconnect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onChildChanged(Models::Item*, int, int)));
-    QObject::disconnect(child, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SIGNAL(childIsAboutToBeInserted(Item*, int, int)));
-    QObject::disconnect(child, SIGNAL(childInserted()), this, SIGNAL(childInserted()));
-    QObject::disconnect(child, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)));
-    QObject::disconnect(child, SIGNAL(childRemoved()), this, SIGNAL(childRemoved()));
-    QObject::disconnect(child, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)), this, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)));
-    QObject::disconnect(child, SIGNAL(childMoved()), this, SIGNAL(childMoved()));
+    QObject::disconnect(child, &Item::childChanged, this, &Item::childChanged);
+    QObject::disconnect(child, &Item::childIsAboutToBeInserted, this, &Item::childIsAboutToBeInserted);
+    QObject::disconnect(child, &Item::childInserted, this, &Item::childInserted);
+    QObject::disconnect(child, &Item::childIsAboutToBeRemoved, this, &Item::childIsAboutToBeRemoved);
+    QObject::disconnect(child, &Item::childRemoved, this, &Item::childRemoved);
+    QObject::disconnect(child, &Item::childIsAboutToBeMoved, this, &Item::childIsAboutToBeMoved);
+    QObject::disconnect(child, &Item::childMoved, this, &Item::childMoved);
     
     childItems.erase(childItems.begin() + index);
     child->parent = 0;

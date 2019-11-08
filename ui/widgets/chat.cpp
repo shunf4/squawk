@@ -26,7 +26,7 @@ Chat::Chat(Models::Contact* p_contact, QWidget* parent):
     updateState();
     setStatus(p_contact->getStatus());
     
-    connect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
+    connect(contact, &Models::Contact::childChanged, this, &Chat::onContactChanged);
     
     line->setMyName(p_contact->getAccountName());
 }

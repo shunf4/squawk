@@ -40,6 +40,8 @@ public:
     QString getJid() const;
     Shared::Availability getAvailability() const;
     Shared::SubscriptionState getState() const;
+    Shared::Avatar getAvatarState() const;
+    QString getAvatarPath() const;
     QIcon getStatusIcon(bool big = false) const;
     
     int columnCount() const override;
@@ -75,6 +77,9 @@ protected:
     void setAvailability(unsigned int p_state);
     void setState(Shared::SubscriptionState p_state);
     void setState(unsigned int p_state);
+    void setAvatarState(Shared::Avatar p_state);
+    void setAvatarState(unsigned int p_state);
+    void setAvatarPath(const QString& path);
     void setJid(const QString p_jid);
     void setStatus(const QString& p_state);
     
@@ -82,10 +87,12 @@ private:
     QString jid;
     Shared::Availability availability;
     Shared::SubscriptionState state;
+    Shared::Avatar avatarState;
     QMap<QString, Presence*> presences;
     Messages messages;
     unsigned int childMessages;
     QString status;
+    QString avatarPath;
 };
 
 }

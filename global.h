@@ -24,6 +24,7 @@
 #include <deque>
 #include <QDateTime>
 #include <QDataStream>
+#include <QColor>
 
 namespace Shared {
     
@@ -69,6 +70,12 @@ enum class Role {
     moderator 
 };
 
+enum class Avatar {
+    empty,
+    autocreated,
+    valid
+};
+
 static const Availability availabilityHighest = offline;
 static const Availability availabilityLowest = online;
 
@@ -101,6 +108,45 @@ static const std::deque<QString> subscriptionStateNames = {"None", "From", "To",
 static const std::deque<QString> affiliationNames = {"Unspecified", "Outcast", "Nobody", "Member", "Admin", "Owner"};
 static const std::deque<QString> roleNames = {"Unspecified", "Nobody", "Visitor", "Participant", "Moderator"};
 QString generateUUID();
+
+static const std::vector<QColor> colorPalette = {
+    QColor(244, 27, 63),
+    QColor(21, 104, 156),
+    QColor(38, 156, 98),
+    QColor(247, 103, 101),
+    QColor(121, 37, 117),
+    QColor(242, 202, 33),
+    QColor(168, 22, 63),
+    QColor(35, 100, 52),
+    QColor(52, 161, 152),
+    QColor(239, 53, 111),
+    QColor(237, 234, 36),
+    QColor(153, 148, 194),
+    QColor(211, 102, 151),
+    QColor(194, 63, 118),
+    QColor(249, 149, 51),
+    QColor(244, 206, 109),
+    QColor(121, 105, 153),
+    QColor(244, 199, 30),
+    QColor(28, 112, 28),
+    QColor(172, 18, 20),
+    QColor(25, 66, 110),
+    QColor(25, 149, 104),
+    QColor(214, 148, 0),
+    QColor(203, 47, 57),
+    QColor(4, 54, 84),
+    QColor(116, 161, 97),
+    QColor(50, 68, 52),
+    QColor(237, 179, 20),
+    QColor(69, 114, 147),
+    QColor(242, 212, 31),
+    QColor(248, 19, 20),
+    QColor(84, 102, 84),
+    QColor(25, 53, 122),
+    QColor(91, 91, 109),
+    QColor(17, 17, 80),
+    QColor(54, 54, 94)
+};
 
 class Message {
 public:
@@ -167,6 +213,125 @@ private:
     bool outgoing;
     bool forwarded;
     QString oob;
+};
+
+class VCard {
+    class Contact {
+    public:
+        enum Role {
+            none,
+            home,
+            work
+        };
+        static const std::deque<QString> roleNames;
+        
+        Contact(Role p_role = none, bool p_prefered = false);
+        
+        Role role;
+        bool prefered;
+    };
+public:
+    class Email : public Contact {
+    public:
+        Email(const QString& address, Role p_role = none, bool p_prefered = false);
+        
+        QString address;
+    };
+    class Phone : public Contact {
+    public:
+        enum Type {
+            fax,
+            pager,
+            voice,
+            cell,
+            video,
+            modem,
+            other
+        };
+        static const std::deque<QString> typeNames;
+        Phone(const QString& number, Type p_type = voice, Role p_role = none, bool p_prefered = false);
+        
+        QString number;
+        Type type;
+    };
+    class Address : public Contact {
+    public:
+        Address(
+            const QString& zCode = "", 
+            const QString& cntry = "", 
+            const QString& rgn = "", 
+            const QString& lclty = "", 
+            const QString& strt = "", 
+            const QString& ext = "", 
+            Role p_role = none, 
+            bool p_prefered = false
+        );
+        
+        QString zipCode;
+        QString country;
+        QString region;
+        QString locality;
+        QString street;
+        QString external;
+    };
+    VCard();
+    VCard(const QDateTime& creationTime);
+    
+    QString getFullName() const;
+    void setFullName(const QString& name);
+    QString getFirstName() const;
+    void setFirstName(const QString& first);
+    QString getMiddleName() const;
+    void setMiddleName(const QString& middle);
+    QString getLastName() const;
+    void setLastName(const QString& last);
+    QString getNickName() const;
+    void setNickName(const QString& nick);
+    QString getDescription() const;
+    void setDescription(const QString& descr);
+    QString getUrl() const;
+    void setUrl(const QString& u);
+    QDate getBirthday() const;
+    void setBirthday(const QDate& date);
+    Avatar getAvatarType() const;
+    void setAvatarType(Avatar type);
+    QString getAvatarPath() const;
+    void setAvatarPath(const QString& path);
+    QString getOrgName() const;
+    void setOrgName(const QString& name);
+    QString getOrgUnit() const;
+    void setOrgUnit(const QString& unit);
+    QString getOrgRole() const;
+    void setOrgRole(const QString& role);
+    QString getOrgTitle() const;
+    void setOrgTitle(const QString& title);
+    QDateTime getReceivingTime() const;
+    std::deque<Email>& getEmails();
+    const std::deque<Email>& getEmails() const;
+    std::deque<Phone>& getPhones();
+    const std::deque<Phone>& getPhones() const;
+    std::deque<Address>& getAddresses();
+    const std::deque<Address>& getAddresses() const;
+    
+private:
+    QString fullName;
+    QString firstName;
+    QString middleName;
+    QString lastName;
+    QString nickName;
+    QString description;
+    QString url;
+    QString organizationName;
+    QString organizationUnit;
+    QString organizationRole;
+    QString jobTitle;
+    QDate birthday;
+    Avatar photoType;
+    QString photoPath;
+    QDateTime receivingTime;
+    std::deque<Email> emails;
+    std::deque<Phone> phones;
+    std::deque<Address> addresses;
 };
 
 static const std::deque<QString> fallbackAvailabilityThemeIconsLightBig = {
@@ -292,7 +457,9 @@ static const std::map<QString, std::pair<QString, QString>> icons = {
     {"state-ok", {"state-ok", "state-ok"}}, 
     {"state-error", {"state-error", "state-error"}},
     
+    {"edit-copy", {"edit-copy", "copy"}},
     {"edit-delete", {"edit-delete", "edit-delete"}},
+    {"edit-rename", {"edit-rename", "edit-rename"}},
     {"mail-message", {"mail-message", "mail-message"}},
     {"mail-attachment", {"mail-attachment", "mail-attachment"}},
     {"network-connect", {"network-connect", "network-connect"}},
@@ -302,6 +469,13 @@ static const std::map<QString, std::pair<QString, QString>> icons = {
     {"view-refresh", {"view-refresh", "view-refresh"}},
     {"send", {"document-send", "send"}},
     {"clean", {"edit-clear-all", "clean"}},
+    {"user", {"user", "user"}},
+    {"user-properties", {"user-properties", "user-properties"}},
+    {"group", {"group", "group"}},
+    {"group-new", {"resurce-group-new", "group-new"}},
+    {"favorite", {"favorite", "favorite"}},
+    {"unfavorite", {"draw-star", "unfavorite"}},
+    {"list-add", {"list-add", "add"}},
 };
 
 };
