@@ -36,49 +36,99 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     am(new QXmppMamManager()),
     mm(new QXmppMucManager()),
     bm(new QXmppBookmarkManager()),
+    rm(client.findExtension<QXmppRosterManager>()),
+    vm(client.findExtension<QXmppVCardManager>()),
     contacts(),
     conferences(),
     maxReconnectTimes(0),
     reconnectTimes(0),
     queuedContacts(),
-    outOfRosterContacts()
+    outOfRosterContacts(),
+    avatarHash(),
+    avatarType(),
+    ownVCardRequestInProgress(false)
 {
     config.setUser(p_login);
     config.setDomain(p_server);
     config.setPassword(p_password);
     config.setAutoAcceptSubscriptions(true);
     
-    QObject::connect(&client, SIGNAL(connected()), this, SLOT(onClientConnected()));
-    QObject::connect(&client, SIGNAL(disconnected()), this, SLOT(onClientDisconnected()));
-    QObject::connect(&client, SIGNAL(presenceReceived(const QXmppPresence&)), this, SLOT(onPresenceReceived(const QXmppPresence&)));
-    QObject::connect(&client, SIGNAL(messageReceived(const QXmppMessage&)), this, SLOT(onMessageReceived(const QXmppMessage&)));
-    QObject::connect(&client, SIGNAL(error(QXmppClient::Error)), this, SLOT(onClientError(QXmppClient::Error)));
+    QObject::connect(&client, &QXmppClient::connected, this, &Account::onClientConnected);
+    QObject::connect(&client, &QXmppClient::disconnected, this, &Account::onClientDisconnected);
+    QObject::connect(&client, &QXmppClient::presenceReceived, this, &Account::onPresenceReceived);
+    QObject::connect(&client, &QXmppClient::messageReceived, this, &Account::onMessageReceived);
+    QObject::connect(&client, &QXmppClient::error, this, &Account::onClientError);
     
-    QXmppRosterManager& rm = client.rosterManager();
-    
-    QObject::connect(&rm, SIGNAL(rosterReceived()), this, SLOT(onRosterReceived()));
-    QObject::connect(&rm, SIGNAL(itemAdded(const QString&)), this, SLOT(onRosterItemAdded(const QString&)));
-    QObject::connect(&rm, SIGNAL(itemRemoved(const QString&)), this, SLOT(onRosterItemRemoved(const QString&)));
-    QObject::connect(&rm, SIGNAL(itemChanged(const QString&)), this, SLOT(onRosterItemChanged(const QString&)));
-    //QObject::connect(&rm, SIGNAL(presenceChanged(const QString&, const QString&)), this, SLOT(onRosterPresenceChanged(const QString&, const QString&)));
+    QObject::connect(rm, &QXmppRosterManager::rosterReceived, this, &Account::onRosterReceived);
+    QObject::connect(rm, &QXmppRosterManager::itemAdded, this, &Account::onRosterItemAdded);
+    QObject::connect(rm, &QXmppRosterManager::itemRemoved, this, &Account::onRosterItemRemoved);
+    QObject::connect(rm, &QXmppRosterManager::itemChanged, this, &Account::onRosterItemChanged);
+    //QObject::connect(&rm, &QXmppRosterManager::presenceChanged, this, &Account::onRosterPresenceChanged);
     
     client.addExtension(cm);
     
-    QObject::connect(cm, SIGNAL(messageReceived(const QXmppMessage&)), this, SLOT(onCarbonMessageReceived(const QXmppMessage&)));
-    QObject::connect(cm, SIGNAL(messageSent(const QXmppMessage&)), this, SLOT(onCarbonMessageSent(const QXmppMessage&)));
+    QObject::connect(cm, &QXmppCarbonManager::messageReceived, this, &Account::onCarbonMessageReceived);
+    QObject::connect(cm, &QXmppCarbonManager::messageSent, this, &Account::onCarbonMessageSent);
     
     client.addExtension(am);
     
-    QObject::connect(am, SIGNAL(logMessage(QXmppLogger::MessageType, const QString&)), this, SLOT(onMamLog(QXmppLogger::MessageType, const QString)));
-    QObject::connect(am, SIGNAL(archivedMessageReceived(const QString&, const QXmppMessage&)), this, SLOT(onMamMessageReceived(const QString&, const QXmppMessage&)));
-    QObject::connect(am, SIGNAL(resultsRecieved(const QString&, const QXmppResultSetReply&, bool)), 
-                     this, SLOT(onMamResultsReceived(const QString&, const QXmppResultSetReply&, bool)));
+    QObject::connect(am, &QXmppMamManager::logMessage, this, &Account::onMamLog);
+    QObject::connect(am, &QXmppMamManager::archivedMessageReceived, this, &Account::onMamMessageReceived);
+    QObject::connect(am, &QXmppMamManager::resultsRecieved, this, &Account::onMamResultsReceived);
     
     client.addExtension(mm);
-    QObject::connect(mm, SIGNAL(roomAdded(QXmppMucRoom*)), this, SLOT(onMucRoomAdded(QXmppMucRoom*)));
+    QObject::connect(mm, &QXmppMucManager::roomAdded, this, &Account::onMucRoomAdded);
     
     client.addExtension(bm);
-    QObject::connect(bm, SIGNAL(bookmarksReceived(const QXmppBookmarkSet&)), this, SLOT(bookmarksReceived(const QXmppBookmarkSet&)));
+    QObject::connect(bm, &QXmppBookmarkManager::bookmarksReceived, this, &Account::bookmarksReceived);
+    
+    QObject::connect(vm, &QXmppVCardManager::vCardReceived, this, &Account::onVCardReceived);
+    //QObject::connect(&vm, &QXmppVCardManager::clientVCardReceived, this, &Account::onOwnVCardReceived); //for some reason it doesn't work, launching from common handler
+    
+    QString path(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
+    path += "/" + name;
+    QDir dir(path);
+    
+    if (!dir.exists()) {
+        bool res = dir.mkpath(path);
+        if (!res) {
+            qDebug() << "Couldn't create a cache directory for account" << name;
+            throw 22;
+        }
+    }
+    
+    QFile* avatar = new QFile(path + "/avatar.png");
+    QString type = "png";
+    if (!avatar->exists()) {
+        delete avatar;
+        avatar = new QFile(path + "/avatar.jpg");
+        type = "jpg";
+        if (!avatar->exists()) {
+            delete avatar;
+            avatar = new QFile(path + "/avatar.jpeg");
+            type = "jpeg";
+            if (!avatar->exists()) {
+                delete avatar;
+                avatar = new QFile(path + "/avatar.gif");
+                type = "gif";
+            }
+        }
+    }
+    
+    if (avatar->exists()) {
+        if (avatar->open(QFile::ReadOnly)) {
+            QCryptographicHash sha1(QCryptographicHash::Sha1);
+            sha1.addData(avatar);
+            avatarHash = sha1.result();
+            avatarType = type;
+        }
+    }
+    if (avatarType.size() != 0) {
+        presence.setVCardUpdateType(QXmppPresence::VCardUpdateValidPhoto);
+        presence.setPhotoHash(avatarHash.toUtf8());
+    } else {
+        presence.setVCardUpdateType(QXmppPresence::VCardUpdateNotReady);
+    }
 }
 
 Account::~Account()
@@ -189,8 +239,10 @@ QString Core::Account::getServer() const
 
 void Core::Account::onRosterReceived()
 {
-    QXmppRosterManager& rm = client.rosterManager();
-    QStringList bj = rm.getRosterBareJids();
+    vm->requestClientVCard();         //TODO need to make sure server actually supports vCards
+    ownVCardRequestInProgress = true;
+    
+    QStringList bj = rm->getRosterBareJids();
     for (int i = 0; i < bj.size(); ++i) {
         const QString& jid = bj[i];
         addedAccount(jid);
@@ -210,8 +262,7 @@ void Core::Account::onRosterItemAdded(const QString& bareJid)
     addedAccount(bareJid);
     std::map<QString, QString>::const_iterator itr = queuedContacts.find(bareJid);
     if (itr != queuedContacts.end()) {
-        QXmppRosterManager& rm = client.rosterManager();
-        rm.subscribe(bareJid, itr->second);
+        rm->subscribe(bareJid, itr->second);
         queuedContacts.erase(itr);
     }
 }
@@ -224,8 +275,7 @@ void Core::Account::onRosterItemChanged(const QString& bareJid)
         return;
     }
     Contact* contact = itr->second;
-    QXmppRosterManager& rm = client.rosterManager();
-    QXmppRosterIq::Item re = rm.getRosterEntry(bareJid);
+    QXmppRosterIq::Item re = rm->getRosterEntry(bareJid);
     
     Shared::SubscriptionState state = castSubscriptionState(re.subscriptionType());
 
@@ -254,9 +304,8 @@ void Core::Account::onRosterItemRemoved(const QString& bareJid)
 
 void Core::Account::addedAccount(const QString& jid)
 {
-    QXmppRosterManager& rm = client.rosterManager();
     std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
-    QXmppRosterIq::Item re = rm.getRosterEntry(jid);
+    QXmppRosterIq::Item re = rm->getRosterEntry(jid);
     Contact* contact;
     bool newContact = false;
     if (itr == contacts.end()) {
@@ -279,6 +328,19 @@ void Core::Account::addedAccount(const QString& jid)
             {"name", re.name()},
             {"state", state}
         });
+        
+        if (contact->hasAvatar()) {
+            if (!contact->isAvatarAutoGenerated()) {
+                cData.insert("avatarState", static_cast<uint>(Shared::Avatar::valid));
+            } else {
+                cData.insert("avatarState", static_cast<uint>(Shared::Avatar::autocreated));
+            }
+            cData.insert("avatarPath", contact->avatarPath());
+        } else {
+            cData.insert("avatarState", static_cast<uint>(Shared::Avatar::empty));
+            cData.insert("avatarPath", "");
+            requestVCard(jid);
+        }
         int grCount = 0;
         for (QSet<QString>::const_iterator itr = gr.begin(), end = gr.end(); itr != end; ++itr) {
             const QString& groupName = *itr;
@@ -296,39 +358,35 @@ void Core::Account::addedAccount(const QString& jid)
 
 void Core::Account::handleNewRosterItem(Core::RosterItem* contact)
 {
-    
-    QObject::connect(contact, SIGNAL(needHistory(const QString&, const QString&, const QDateTime&)), this, SLOT(onContactNeedHistory(const QString&, const QString&, const QDateTime&)));
-    QObject::connect(contact, SIGNAL(historyResponse(const std::list<Shared::Message>&)), this, SLOT(onContactHistoryResponse(const std::list<Shared::Message>&)));
-    QObject::connect(contact, SIGNAL(nameChanged(const QString&)), this, SLOT(onContactNameChanged(const QString&)));
+    QObject::connect(contact, &RosterItem::needHistory, this, &Account::onContactNeedHistory);
+    QObject::connect(contact, &RosterItem::historyResponse, this, &Account::onContactHistoryResponse);
+    QObject::connect(contact, &RosterItem::nameChanged, this, &Account::onContactNameChanged);
+    QObject::connect(contact, &RosterItem::avatarChanged, this, &Account::onContactAvatarChanged);
 }
 
 void Core::Account::handleNewContact(Core::Contact* contact)
 {
     handleNewRosterItem(contact);
-    QObject::connect(contact, SIGNAL(groupAdded(const QString&)), this, SLOT(onContactGroupAdded(const QString&)));
-    QObject::connect(contact, SIGNAL(groupRemoved(const QString&)), this, SLOT(onContactGroupRemoved(const QString&)));
-    QObject::connect(contact, SIGNAL(subscriptionStateChanged(Shared::SubscriptionState)), 
-                     this, SLOT(onContactSubscriptionStateChanged(Shared::SubscriptionState)));
+    QObject::connect(contact, &Contact::groupAdded, this, &Account::onContactGroupAdded);
+    QObject::connect(contact, &Contact::groupRemoved, this, &Account::onContactGroupRemoved);
+    QObject::connect(contact, &Contact::subscriptionStateChanged, this, &Account::onContactSubscriptionStateChanged);
 }
 
 void Core::Account::handleNewConference(Core::Conference* contact)
 {
     handleNewRosterItem(contact);
-    QObject::connect(contact, SIGNAL(nickChanged(const QString&)), this, SLOT(onMucNickNameChanged(const QString&)));
-    QObject::connect(contact, SIGNAL(subjectChanged(const QString&)), this, SLOT(onMucSubjectChanged(const QString&)));
-    QObject::connect(contact, SIGNAL(joinedChanged(bool)), this, SLOT(onMucJoinedChanged(bool)));
-    QObject::connect(contact, SIGNAL(autoJoinChanged(bool)), this, SLOT(onMucAutoJoinChanged(bool)));
-    QObject::connect(contact, SIGNAL(addParticipant(const QString&, const QMap<QString, QVariant>&)), 
-                     this, SLOT(onMucAddParticipant(const QString&, const QMap<QString, QVariant>&)));
-    QObject::connect(contact, SIGNAL(changeParticipant(const QString&, const QMap<QString, QVariant>&)), 
-                     this, SLOT(onMucChangeParticipant(const QString&, const QMap<QString, QVariant>&)));
-    QObject::connect(contact, SIGNAL(removeParticipant(const QString&)), this, SLOT(onMucRemoveParticipant(const QString&)));
+    QObject::connect(contact, &Conference::nickChanged, this, &Account::onMucNickNameChanged);
+    QObject::connect(contact, &Conference::subjectChanged, this, &Account::onMucSubjectChanged);
+    QObject::connect(contact, &Conference::joinedChanged, this, &Account::onMucJoinedChanged);
+    QObject::connect(contact, &Conference::autoJoinChanged, this, &Account::onMucAutoJoinChanged);
+    QObject::connect(contact, &Conference::addParticipant, this, &Account::onMucAddParticipant);
+    QObject::connect(contact, &Conference::changeParticipant, this, &Account::onMucChangeParticipant);
+    QObject::connect(contact, &Conference::removeParticipant, this, &Account::onMucRemoveParticipant);
 }
 
-
-void Core::Account::onPresenceReceived(const QXmppPresence& presence)
+void Core::Account::onPresenceReceived(const QXmppPresence& p_presence)
 {
-    QString id = presence.from();
+    QString id = p_presence.from();
     QStringList comps = id.split("/");
     QString jid = comps.front();
     QString resource = comps.back();
@@ -337,25 +395,75 @@ void Core::Account::onPresenceReceived(const QXmppPresence& presence)
     
     if (jid == myJid) {
         if (resource == getResource()) {
-            emit availabilityChanged(presence.availableStatusType());
+            emit availabilityChanged(p_presence.availableStatusType());
         } else {
-            qDebug() << "Received a presence for another resource of my " << name << " account, skipping";
+            if (!ownVCardRequestInProgress) {
+                switch (p_presence.vCardUpdateType()) {
+                    case QXmppPresence::VCardUpdateNone:            //this presence has nothing to do with photo
+                        break;
+                    case QXmppPresence::VCardUpdateNotReady:        //let's say the photo didn't change here
+                        break;
+                    case QXmppPresence::VCardUpdateNoPhoto:         //there is no photo, need to drop if any
+                        if (avatarType.size() > 0) {
+                            vm->requestClientVCard();
+                            ownVCardRequestInProgress = true;
+                        }
+                        break;
+                    case QXmppPresence::VCardUpdateValidPhoto:      //there is a photo, need to load
+                        if (avatarHash != p_presence.photoHash()) {
+                            vm->requestClientVCard();
+                            ownVCardRequestInProgress = true;
+                        }
+                        break;
+                }
+            }
+        }
+    } else {
+        if (pendingVCardRequests.find(jid) == pendingVCardRequests.end()) {
+            std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+            if (itr != contacts.end()) {
+                Contact* cnt = itr->second;
+                switch (p_presence.vCardUpdateType()) {
+                    case QXmppPresence::VCardUpdateNone:            //this presence has nothing to do with photo
+                        break;
+                    case QXmppPresence::VCardUpdateNotReady:        //let's say the photo didn't change here
+                        break;
+                    case QXmppPresence::VCardUpdateNoPhoto:         //there is no photo, need to drop if any
+                        if (!cnt->hasAvatar() || (cnt->hasAvatar() && !cnt->isAvatarAutoGenerated())) {
+                            cnt->setAutoGeneratedAvatar();
+                        }
+                            break;
+                    case QXmppPresence::VCardUpdateValidPhoto:      //there is a photo, need to load
+                        if (cnt->hasAvatar()) {
+                            if (cnt->isAvatarAutoGenerated()) {
+                                requestVCard(jid);
+                            } else {
+                                if (cnt->avatarHash() != p_presence.photoHash()) {
+                                    requestVCard(jid);
+                                }
+                            }
+                        } else {
+                            requestVCard(jid);
+                        }
+                        break;
+                }
+            }
         }
     }
     
-    switch (presence.type()) {
+    switch (p_presence.type()) {
         case QXmppPresence::Error:
-            qDebug() << "An error reported by presence from " << id;
+            qDebug() << "An error reported by presence from" << id << p_presence.error().text();
             break;
         case QXmppPresence::Available:{
-            QDateTime lastInteraction = presence.lastUserInteraction();
+            QDateTime lastInteraction = p_presence.lastUserInteraction();
             if (!lastInteraction.isValid()) {
                 lastInteraction = QDateTime::currentDateTime();
             }
             emit addPresence(jid, resource, {
                 {"lastActivity", lastInteraction},
-                {"availability", presence.availableStatusType()},           //TODO check and handle invisible
-                {"status", presence.statusText()}
+                {"availability", p_presence.availableStatusType()},           //TODO check and handle invisible
+                {"status", p_presence.statusText()}
             });
         }
             break;
@@ -380,7 +488,7 @@ void Core::Account::onRosterPresenceChanged(const QString& bareJid, const QStrin
 {
     //not used for now;
     qDebug() << "presence changed for " << bareJid << " resource " << resource;
-    const QXmppPresence& presence = client.rosterManager().getPresence(bareJid, resource);
+    const QXmppPresence& presence = rm->getPresence(bareJid, resource);
 }
 
 void Core::Account::setLogin(const QString& p_login)
@@ -940,8 +1048,7 @@ void Core::Account::onClientError(QXmppClient::Error err)
 void Core::Account::subscribeToContact(const QString& jid, const QString& reason)
 {
     if (state == Shared::connected) {
-        QXmppRosterManager& rm = client.rosterManager();
-        rm.subscribe(jid, reason);
+        rm->subscribe(jid, reason);
     } else {
         qDebug() << "An attempt to subscribe account " << name << " to contact " << jid << " but the account is not in the connected state, skipping";
     }
@@ -950,8 +1057,7 @@ void Core::Account::subscribeToContact(const QString& jid, const QString& reason
 void Core::Account::unsubscribeFromContact(const QString& jid, const QString& reason)
 {
     if (state == Shared::connected) {
-        QXmppRosterManager& rm = client.rosterManager();
-        rm.unsubscribe(jid, reason);
+        rm->unsubscribe(jid, reason);
     } else {
         qDebug() << "An attempt to unsubscribe account " << name << " from contact " << jid << " but the account is not in the connected state, skipping";
     }
@@ -965,8 +1071,7 @@ void Core::Account::removeContactRequest(const QString& jid)
             outOfRosterContacts.erase(itr);
             onRosterItemRemoved(jid);
         } else {
-            QXmppRosterManager& rm = client.rosterManager();
-            rm.removeItem(jid);
+            rm->removeItem(jid);
         }
     } else {
         qDebug() << "An attempt to remove contact " << jid << " from account " << name << " but the account is not in the connected state, skipping";
@@ -982,8 +1087,7 @@ void Core::Account::addContactRequest(const QString& jid, const QString& name, c
             qDebug() << "An attempt to add contact " << jid << " to account " << name << " but the account is already queued for adding, skipping";
         } else {
             queuedContacts.insert(std::make_pair(jid, ""));     //TODO need to add reason here;
-            QXmppRosterManager& rm = client.rosterManager();
-            rm.addItem(jid, name, groups);
+            rm->addItem(jid, name, groups);
         }
     } else {
         qDebug() << "An attempt to add contact " << jid << " to account " << name << " but the account is not in the connected state, skipping";
@@ -1152,4 +1256,298 @@ void Core::Account::addNewRoom(const QString& jid, const QString& nick, const QS
         {"nick", conf->getNick()},
         {"name", conf->getName()}
     });
+}
+
+void Core::Account::addContactToGroupRequest(const QString& jid, const QString& groupName)
+{
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    if (itr == contacts.end()) {
+        qDebug() << "An attempt to add non existing contact" << jid << "of account" << name << "to the group" << groupName << ", skipping";
+    } else {
+        QXmppRosterIq::Item item = rm->getRosterEntry(jid);
+        QSet<QString> groups = item.groups();
+        if (groups.find(groupName) == groups.end()) {           //TODO need to change it, I guess that sort of code is better in qxmpp lib
+            groups.insert(groupName);
+            item.setGroups(groups);
+            
+            QXmppRosterIq iq;
+            iq.setType(QXmppIq::Set);
+            iq.addItem(item);
+            client.sendPacket(iq);
+        } else {
+            qDebug() << "An attempt to add contact" << jid << "of account" << name << "to the group" << groupName << "but it's already in that group, skipping";
+        }
+    }
+}
+
+void Core::Account::removeContactFromGroupRequest(const QString& jid, const QString& groupName)
+{
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    if (itr == contacts.end()) {
+        qDebug() << "An attempt to remove non existing contact" << jid << "of account" << name << "from the group" << groupName << ", skipping";
+    } else {
+        QXmppRosterIq::Item item = rm->getRosterEntry(jid);
+        QSet<QString> groups = item.groups();
+        QSet<QString>::const_iterator gItr = groups.find(groupName);
+        if (gItr != groups.end()) {
+            groups.erase(gItr);
+            item.setGroups(groups);
+            
+            QXmppRosterIq iq;
+            iq.setType(QXmppIq::Set);
+            iq.addItem(item);
+            client.sendPacket(iq);
+        } else {
+            qDebug() << "An attempt to remove contact" << jid << "of account" << name << "from the group" << groupName << "but it's not in that group, skipping";
+        }
+    }
+}
+
+void Core::Account::renameContactRequest(const QString& jid, const QString& newName)
+{
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    if (itr == contacts.end()) {
+        qDebug() << "An attempt to rename non existing contact" << jid << "of account" << name << ", skipping";
+    } else {
+        rm->renameItem(jid, newName);
+    }
+}
+
+void Core::Account::onVCardReceived(const QXmppVCardIq& card)
+{
+    QString jid = card.from();
+    pendingVCardRequests.erase(jid);
+    RosterItem* item = 0;
+    
+    std::map<QString, Contact*>::const_iterator contItr = contacts.find(jid);
+    if (contItr == contacts.end()) {
+        std::map<QString, Conference*>::const_iterator confItr = conferences.find(jid);
+        if (confItr == conferences.end()) {
+            if (jid == getLogin() + "@" + getServer()) {
+                onOwnVCardReceived(card);
+            } else {
+                qDebug() << "received vCard" << jid << "doesn't belong to any of known contacts or conferences, skipping";
+            }
+            return;
+        } else {
+            item = confItr->second;
+        }
+    } else {
+        item = contItr->second;
+    }
+    
+    QByteArray ava = card.photo();
+    
+    if (ava.size() > 0) {
+        item->setAvatar(ava);
+    } else {
+        if (!item->hasAvatar() || !item->isAvatarAutoGenerated()) {
+            item->setAutoGeneratedAvatar();
+        }
+    }
+    
+    Shared::VCard vCard;
+    initializeVCard(vCard, card);
+    
+    if (item->hasAvatar()) {
+        if (!item->isAvatarAutoGenerated()) {
+            vCard.setAvatarType(Shared::Avatar::valid);
+        } else {
+            vCard.setAvatarType(Shared::Avatar::autocreated);
+        }
+        vCard.setAvatarPath(item->avatarPath());
+    } else {
+        vCard.setAvatarType(Shared::Avatar::empty);
+    }
+    
+    QMap<QString, QVariant> cd = {
+        {"avatarState", static_cast<quint8>(vCard.getAvatarType())},
+        {"avatarPath", vCard.getAvatarPath()}
+    };
+    emit changeContact(jid, cd);
+    emit receivedVCard(jid, vCard);
+}
+
+void Core::Account::onOwnVCardReceived(const QXmppVCardIq& card)
+{
+    QByteArray ava = card.photo();
+    bool avaChanged = false;
+    QString path = QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/" + name + "/";
+    if (ava.size() > 0) {
+        QCryptographicHash sha1(QCryptographicHash::Sha1);
+        sha1.addData(ava);
+        QString newHash(sha1.result());
+        QMimeDatabase db;
+        QMimeType newType = db.mimeTypeForData(ava);
+        if (avatarType.size() > 0) {
+            if (avatarHash != newHash) {
+                QString oldPath = path + "avatar." + avatarType;
+                QFile oldAvatar(oldPath);
+                bool oldToRemove = false;
+                if (oldAvatar.exists()) {
+                    if (oldAvatar.rename(oldPath + ".bak")) {
+                        oldToRemove = true;
+                    } else {
+                        qDebug() << "Received new avatar for account" << name << "but can't get rid of the old one, doing nothing";
+                    }
+                }
+                QFile newAvatar(path + "avatar." + newType.preferredSuffix());
+                if (newAvatar.open(QFile::WriteOnly)) {
+                    newAvatar.write(ava);
+                    newAvatar.close();
+                    avatarHash = newHash;
+                    avatarType = newType.preferredSuffix();
+                    avaChanged = true;
+                } else {
+                    qDebug() << "Received new avatar for account" << name << "but can't save it";
+                    if (oldToRemove) {
+                        qDebug() << "rolling back to the old avatar";
+                        if (!oldAvatar.rename(oldPath)) {
+                            qDebug() << "Couldn't roll back to the old avatar in account" << name;
+                        }
+                    }
+                }
+            }
+        } else {
+            QFile newAvatar(path + "avatar." + newType.preferredSuffix());
+            if (newAvatar.open(QFile::WriteOnly)) {
+                newAvatar.write(ava);
+                newAvatar.close();
+                avatarHash = newHash;
+                avatarType = newType.preferredSuffix();
+                avaChanged = true;
+            } else {
+                qDebug() << "Received new avatar for account" << name << "but can't save it";
+            }
+        }
+    } else {
+        if (avatarType.size() > 0) {
+            QFile oldAvatar(path + "avatar." + avatarType);
+            if (!oldAvatar.remove()) {
+                qDebug() << "Received vCard for account" << name << "without avatar, but can't get rid of the file, doing nothing";
+            } else {
+                avatarType = "";
+                avatarHash = "";
+                avaChanged = true;
+            }
+        }
+    }
+    
+    if (avaChanged) {
+        QMap<QString, QVariant> change;
+        if (avatarType.size() > 0) {
+            presence.setPhotoHash(avatarHash.toUtf8());
+            presence.setVCardUpdateType(QXmppPresence::VCardUpdateValidPhoto);
+            change.insert("avatarPath", path + "avatar." + avatarType);
+        } else {
+            presence.setPhotoHash("");
+            presence.setVCardUpdateType(QXmppPresence::VCardUpdateNoPhoto);
+            change.insert("avatarPath", "");
+        }
+        client.setClientPresence(presence);
+        emit changed(change);
+    }
+    
+    ownVCardRequestInProgress = false;
+    
+    Shared::VCard vCard;
+    initializeVCard(vCard, card);
+    
+    if (avatarType.size() > 0) {
+        vCard.setAvatarType(Shared::Avatar::valid);
+        vCard.setAvatarPath(path + "avatar." + avatarType);
+    } else {
+        vCard.setAvatarType(Shared::Avatar::empty);
+    }
+    
+    emit receivedVCard(getLogin() + "@" + getServer(), vCard);
+}
+
+QString Core::Account::getAvatarPath() const
+{
+    return QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/" + name + "/" + "avatar." + avatarType;
+}
+
+void Core::Account::onContactAvatarChanged(Shared::Avatar type, const QString& path)
+{
+    RosterItem* item = static_cast<RosterItem*>(sender());
+    QMap<QString, QVariant> cData({
+        {"avatarState", static_cast<uint>(type)},
+        {"avatarPath", path}
+    });
+    
+    emit changeContact(item->jid, cData);
+}
+
+void Core::Account::requestVCard(const QString& jid)
+{
+    if (pendingVCardRequests.find(jid) == pendingVCardRequests.end()) {
+        if (jid == getLogin() + "@" + getServer()) {
+            if (!ownVCardRequestInProgress) {
+                vm->requestClientVCard();
+                ownVCardRequestInProgress = true;
+            }
+        } else {
+            vm->requestVCard(jid);
+            pendingVCardRequests.insert(jid);
+        }
+    }
+}
+
+void Core::Account::uploadVCard(const Shared::VCard& card)
+{
+    QXmppVCardIq iq;
+    initializeQXmppVCard(iq, card);
+    
+    bool avatarChanged = false;
+    if (card.getAvatarType() == Shared::Avatar::empty) {
+        if (avatarType.size() > 0) {
+            avatarChanged = true;
+        }
+    } else {
+        QString newPath = card.getAvatarPath();
+        QString oldPath = getAvatarPath();
+        QByteArray data;
+        QString type;
+        if (newPath != oldPath) {
+            QFile avatar(newPath);
+            if (!avatar.open(QFile::ReadOnly)) {
+                qDebug() << "An attempt to upload new vCard to account" << name 
+                << "but it wasn't possible to read file" << newPath 
+                << "which was supposed to be new avatar, uploading old avatar";
+                if (avatarType.size() > 0) {
+                    QFile oA(oldPath);
+                    if (!oA.open(QFile::ReadOnly)) {
+                        qDebug() << "Couldn't read old avatar of account" << name << ", uploading empty avatar";
+                        avatarChanged = true;
+                    } else {
+                        data = oA.readAll();
+                    }
+                }
+            } else {
+                data = avatar.readAll();
+                avatarChanged = true;
+            }
+        } else {
+            if (avatarType.size() > 0) {
+                QFile oA(oldPath);
+                if (!oA.open(QFile::ReadOnly)) {
+                    qDebug() << "Couldn't read old avatar of account" << name << ", uploading empty avatar";
+                    avatarChanged = true;
+                } else {
+                    data = oA.readAll();
+                }
+            }
+        }
+        
+        if (data.size() > 0) {
+            QMimeDatabase db;
+            type = db.mimeTypeForData(data).name();
+            iq.setPhoto(data);
+            iq.setPhotoType(type);
+        }
+    }
+    
+    vm->setClientVCard(iq);
+    onOwnVCardReceived(iq);
 }

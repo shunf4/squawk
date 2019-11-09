@@ -32,7 +32,7 @@ Models::Group::~Group()
 void Models::Group::appendChild(Models::Item* child)
 {
     Item::appendChild(child);
-    connect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
+    connect(child, &Item::childChanged, this, &Group::refresh);
     changed(1);
     refresh();
 }
@@ -59,7 +59,7 @@ QVariant Models::Group::data(int column) const
 void Models::Group::_removeChild(int index)
 {
     Item* child = childItems[index];
-    disconnect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
+    disconnect(child, &Item::childChanged, this, &Group::refresh);
     Item::_removeChild(index);
     changed(1);
     refresh();
@@ -102,4 +102,17 @@ unsigned int Models::Group::getOnlineContacts() const
     }
     
     return amount;
+}
+
+bool Models::Group::hasContact(const QString& jid) const
+{
+    for (Models::Item* item : childItems) {
+        if (item->type == Item::contact) {
+            const Contact* cnt = static_cast<const Contact*>(item);
+            if (cnt->getJid() == jid) {
+                return true;
+            }
+        }
+    }
+    return false;
 }

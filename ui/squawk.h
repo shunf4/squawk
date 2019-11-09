@@ -34,8 +34,9 @@
 #include "widgets/newcontact.h"
 #include "widgets/joinconference.h"
 #include "models/roster.h"
+#include "widgets/vcard/vcard.h"
 
-#include "../global.h"
+#include "global.h"
 
 namespace Ui {
 class Squawk;
@@ -63,12 +64,17 @@ signals:
     void unsubscribeContact(const QString& account, const QString& jid, const QString& reason);
     void removeContactRequest(const QString& account, const QString& jid);
     void addContactRequest(const QString& account, const QString& jid, const QString& name, const QSet<QString>& groups);
+    void addContactToGroupRequest(const QString& account, const QString& jid, const QString& groupName);
+    void removeContactFromGroupRequest(const QString& account, const QString& jid, const QString& groupName);
+    void renameContactRequest(const QString& account, const QString& jid, const QString& newName);
     void setRoomJoined(const QString& account, const QString& jid, bool joined);
     void setRoomAutoJoin(const QString& account, const QString& jid, bool joined);
     void addRoomRequest(const QString& account, const QString& jid, const QString& nick, const QString& password, bool autoJoin);
     void removeRoomRequest(const QString& account, const QString& jid);
     void fileLocalPathRequest(const QString& messageId, const QString& url);
     void downloadFileRequest(const QString& messageId, const QString& url);
+    void requestVCard(const QString& account, const QString& jid);
+    void uploadVCard(const QString& account, const Shared::VCard& card);
     
 public slots:
     void newAccount(const QMap<QString, QVariant>& account);
@@ -94,6 +100,7 @@ public slots:
     void fileLocalPathResponse(const QString& messageId, const QString& path);
     void downloadFileError(const QString& messageId, const QString& error);
     void downloadFileProgress(const QString& messageId, qreal value);
+    void responseVCard(const QString& jid, const Shared::VCard& card);
     
 private:
     typedef std::map<Models::Roster::ElId, Conversation*> Conversations;
@@ -105,6 +112,7 @@ private:
     QMenu* contextMenu;
     QDBusInterface dbus;
     std::map<QString, std::set<Models::Roster::ElId>> requestedFiles;
+    std::map<QString, VCard*> vCards;
     
 protected:
     void closeEvent(QCloseEvent * event) override;
@@ -119,6 +127,9 @@ private slots:
     void onAccountsSizeChanged(unsigned int size);
     void onAccountsClosed(QObject* parent = 0);
     void onConversationClosed(QObject* parent = 0);
+    void onVCardClosed();
+    void onVCardSave(const Shared::VCard& card, const QString& account);
+    void onActivateVCard(const QString& account, const QString& jid, bool edition = false);
     void onComboboxActivated(int index);
     void onRosterItemDoubleClicked(const QModelIndex& item);
     void onConversationMessage(const Shared::Message& msg);

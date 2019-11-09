@@ -28,34 +28,23 @@
 class Image : public QLabel
 {
 public:
-    /**
-     * Default constructor
-     */
-    Image(const QString& path, QWidget* parent = nullptr);
+    Image(const QString& path, quint16 minWidth = 50, QWidget* parent = nullptr);
 
-    /**
-     * Destructor
-     */
     ~Image();
 
-    /**
-     * @todo write docs
-     *
-     * @param  TODO
-     * @return TODO
-     */
     int heightForWidth(int width) const override;
-
-    /**
-     * @todo write docs
-     *
-     * @return TODO
-     */
-    virtual bool hasHeightForWidth() const;
+    int widthForHeight(int height) const;
+    bool hasHeightForWidth() const override;
+    void setPath(const QString& path);
+    void setMinWidth(quint16 minWidth);
     
 private:
     QPixmap pixmap;
     qreal aspectRatio;
+    quint16 minWidth;
+    
+private:
+    void recalculateAspectRatio();
 };
 
 #endif // IMAGE_H

@@ -26,7 +26,7 @@ Chat::Chat(Models::Contact* p_contact, QWidget* parent):
     updateState();
     setStatus(p_contact->getStatus());
     
-    connect(contact, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onContactChanged(Models::Item*, int, int)));
+    connect(contact, &Models::Contact::childChanged, this, &Chat::onContactChanged);
     
     line->setMyName(p_contact->getAccountName());
 }
@@ -56,7 +56,7 @@ void Chat::updateState()
 {
     Shared::Availability av = contact->getAvailability();
     statusIcon->setPixmap(Shared::availabilityIcon(av, true).pixmap(40));
-    statusIcon->setToolTip(Shared::availabilityNames[av]);
+    statusIcon->setToolTip(QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1()));
 }
 
 void Chat::handleSendMessage(const QString& text)

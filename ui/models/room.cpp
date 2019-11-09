@@ -193,15 +193,15 @@ QString Models::Room::getStatusText() const
 {
     if (autoJoin) {
         if (joined) {
-            return "Subscribed";
+            return tr("Subscribed");
         } else {
-            return "Temporarily unsubscribed";
+            return tr("Temporarily unsubscribed");
         }
     } else {
         if (joined) {
-            return "Temporarily subscribed";
+            return tr("Temporarily subscribed");
         } else {
-            return "Unsubscribed";
+            return tr("Unsubscribed");
         }
     }
 }
@@ -238,7 +238,6 @@ void Models::Room::toOfflineState()
     emit childIsAboutToBeRemoved(this, 0, childItems.size());
     for (int i = 0; i < childItems.size(); ++i) {
         Item* item = childItems[i];
-        disconnect(item, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(refresh()));
         Item::_removeChild(i);
         item->deleteLater();
     }
@@ -308,4 +307,14 @@ void Models::Room::setSubject(const QString& sub)
         subject = sub;
         changed(6);
     }
+}
+
+QString Models::Room::getDisplayedName() const
+{
+    return getRoomName();
+}
+
+bool Models::Room::columnInvolvedInDisplay(int col)
+{
+    return Item::columnInvolvedInDisplay(col) && col == 1;
 }

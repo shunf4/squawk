@@ -331,9 +331,9 @@ void Core::NetworkAccess::startDownload(const QString& messageId, const QString&
     Transfer* dwn = new Transfer({{messageId}, 0, 0, true, "", 0});
     QNetworkRequest req(url);
     dwn->reply = manager->get(req);
-    connect(dwn->reply, SIGNAL(downloadProgress(qint64, qint64)), SLOT(onDownloadProgress(qint64, qint64)));
-    connect(dwn->reply, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(onDownloadError(QNetworkReply::NetworkError)));
-    connect(dwn->reply, SIGNAL(finished()), SLOT(onDownloadFinished()));
+    connect(dwn->reply, &QNetworkReply::downloadProgress, this, &NetworkAccess::onDownloadProgress);
+    connect(dwn->reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::error), this, &NetworkAccess::onDownloadError);
+    connect(dwn->reply, &QNetworkReply::finished, this, &NetworkAccess::onDownloadFinished);
     downloads.insert(std::make_pair(url, dwn));
     emit downloadFileProgress(messageId, 0);
 }

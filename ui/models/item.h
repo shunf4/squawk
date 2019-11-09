@@ -25,6 +25,8 @@
 
 #include <deque>
 
+#include "../../global.h"
+
 namespace Models {
 
 class Item : public QObject{
@@ -41,6 +43,7 @@ class Item : public QObject{
         };
         
         explicit Item(Type p_type, const QMap<QString, QVariant> &data, Item *parentItem = 0);
+        Item(const Item& other);
         ~Item();
         
     signals:
@@ -55,6 +58,7 @@ class Item : public QObject{
     public:
         virtual void appendChild(Item *child);
         virtual void removeChild(int index);
+        virtual QString getDisplayedName() const;
         QString getName() const;
         void setName(const QString& name);
         
@@ -70,13 +74,19 @@ class Item : public QObject{
         QString getAccountName() const;
         QString getAccountJid() const;
         QString getAccountResource() const;
+        Shared::ConnectionState getAccountConnectionState() const;
+        Shared::Availability getAccountAvailability() const;
         
         const Type type;
         
     protected:
         virtual void changed(int col);
         virtual void _removeChild(int index);
+        virtual bool columnInvolvedInDisplay(int col);
         const Item* getParentAccount() const;
+        
+    protected slots:
+        void onChildChanged(Models::Item* item, int row, int col);
         
     protected:
         QString name;

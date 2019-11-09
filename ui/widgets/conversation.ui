@@ -445,6 +445,9 @@
          <property name="frameShape">
           <enum>QFrame::NoFrame</enum>
          </property>
+         <property name="placeholderText">
+          <string>Type your message here...</string>
+         </property>
         </widget>
        </item>
       </layout>

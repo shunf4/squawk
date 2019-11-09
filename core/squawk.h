@@ -23,7 +23,8 @@
 #include <QString>
 #include <QVariant>
 #include <QMap>
-#include <deque>
+#include <QtGlobal>
+
 #include <deque>
 
 #include "account.h"
@@ -67,6 +68,7 @@ signals:
     void downloadFileProgress(const QString& messageId, qreal value);
     void uploadFileError(const QString& messageId, const QString& error);
     void uploadFileProgress(const QString& messageId, qreal value);
+    void responseVCard(const QString& jid, const Shared::VCard& card);
     
 public slots:
     void start();
@@ -82,7 +84,10 @@ public slots:
     void requestArchive(const QString& account, const QString& jid, int count, const QString& before);
     void subscribeContact(const QString& account, const QString& jid, const QString& reason);
     void unsubscribeContact(const QString& account, const QString& jid, const QString& reason);
+    void addContactToGroupRequest(const QString& account, const QString& jid, const QString& groupName);
+    void removeContactFromGroupRequest(const QString& account, const QString& jid, const QString& groupName);
     void removeContactRequest(const QString& account, const QString& jid);
+    void renameContactRequest(const QString& account, const QString& jid, const QString& newName);
     void addContactRequest(const QString& account, const QString& jid, const QString& name, const QSet<QString>& groups);
     void setRoomJoined(const QString& account, const QString& jid, bool joined);
     void setRoomAutoJoin(const QString& account, const QString& jid, bool joined);
@@ -90,6 +95,8 @@ public slots:
     void removeRoomRequest(const QString& account, const QString& jid);
     void fileLocalPathRequest(const QString& messageId, const QString& url);
     void downloadFileRequest(const QString& messageId, const QString& url);
+    void requestVCard(const QString& account, const QString& jid);
+    void uploadVCard(const QString& account, const Shared::VCard& card);
     
 private:
     typedef std::deque<Account*> Accounts;
@@ -106,6 +113,7 @@ private:
 private slots:
     void onAccountConnectionStateChanged(int state);
     void onAccountAvailabilityChanged(int state);
+    void onAccountChanged(const QMap<QString, QVariant>& data);
     void onAccountAddGroup(const QString& name);
     void onAccountError(const QString& text);
     void onAccountRemoveGroup(const QString& name);

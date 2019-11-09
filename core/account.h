@@ -19,7 +19,13 @@
 #ifndef CORE_ACCOUNT_H
 #define CORE_ACCOUNT_H
 
-#include <QtCore/QObject>
+#include <QObject>
+#include <QCryptographicHash>
+#include <QFile>
+#include <QMimeDatabase>
+#include <QStandardPaths>
+#include <QDir>
+
 #include <map>
 #include <set>
 
@@ -31,6 +37,8 @@
 #include <QXmppBookmarkManager.h>
 #include <QXmppBookmarkSet.h>
 #include <QXmppHttpUploadIq.h>
+#include <QXmppVCardIq.h>
+#include <QXmppVCardManager.h>
 #include "../global.h"
 #include "contact.h"
 #include "conference.h"
@@ -55,6 +63,7 @@ public:
     QString getServer() const;
     QString getPassword() const;
     QString getResource() const;
+    QString getAvatarPath() const;
     Shared::Availability getAvailability() const;
     
     void setName(const QString& p_name);
@@ -71,13 +80,19 @@ public:
     void unsubscribeFromContact(const QString& jid, const QString& reason);
     void removeContactRequest(const QString& jid);
     void addContactRequest(const QString& jid, const QString& name, const QSet<QString>& groups);
+    void addContactToGroupRequest(const QString& jid, const QString& groupName);
+    void removeContactFromGroupRequest(const QString& jid, const QString& groupName);
+    void renameContactRequest(const QString& jid, const QString& newName);
     
     void setRoomJoined(const QString& jid, bool joined);
     void setRoomAutoJoin(const QString& jid, bool joined);
     void removeRoomRequest(const QString& jid);
     void addRoomRequest(const QString& jid, const QString& nick, const QString& password, bool autoJoin);
+    void requestVCard(const QString& jid);
+    void uploadVCard(const Shared::VCard& card);
     
 signals:
+    void changed(const QMap<QString, QVariant>& data);
     void connectionStateChanged(int);
     void availabilityChanged(int);
     void addGroup(const QString& name);
@@ -97,6 +112,7 @@ signals:
     void addRoomParticipant(const QString& jid, const QString& nickName, const QMap<QString, QVariant>& data);
     void changeRoomParticipant(const QString& jid, const QString& nickName, const QMap<QString, QVariant>& data);
     void removeRoomParticipant(const QString& jid, const QString& nickName);
+    void receivedVCard(const QString& jid, const Shared::VCard& card);
     
 private:
     QString name;
@@ -110,6 +126,8 @@ private:
     QXmppMamManager* am;
     QXmppMucManager* mm;
     QXmppBookmarkManager* bm;
+    QXmppRosterManager* rm;
+    QXmppVCardManager* vm;
     std::map<QString, Contact*> contacts;
     std::map<QString, Conference*> conferences;
     unsigned int maxReconnectTimes;
@@ -117,6 +135,11 @@ private:
     
     std::map<QString, QString> queuedContacts;
     std::set<QString> outOfRosterContacts;
+    std::set<QString> pendingVCardRequests;
+    
+    QString avatarHash;
+    QString avatarType;
+    bool ownVCardRequestInProgress;
     
 private slots:
     void onClientConnected();
@@ -155,8 +178,12 @@ private slots:
     void onContactSubscriptionStateChanged(Shared::SubscriptionState state);
     void onContactHistoryResponse(const std::list<Shared::Message>& list);
     void onContactNeedHistory(const QString& before, const QString& after, const QDateTime& at);
+    void onContactAvatarChanged(Shared::Avatar, const QString& path);
     
     void onMamLog(QXmppLogger::MessageType type, const QString &msg);
+    
+    void onVCardReceived(const QXmppVCardIq& card);
+    void onOwnVCardReceived(const QXmppVCardIq& card);
   
 private:
     void addedAccount(const QString &bareJid);
@@ -176,6 +203,8 @@ private:
     
 };
 
+void initializeVCard(Shared::VCard& vCard, const QXmppVCardIq& card);
+void initializeQXmppVCard(QXmppVCardIq& card, const Shared::VCard& vCard);
 }
 
 

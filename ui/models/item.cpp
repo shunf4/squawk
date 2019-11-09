@@ -34,6 +34,15 @@ Models::Item::Item(Type p_type, const QMap<QString, QVariant> &p_data, Item *p_p
     }
 }
 
+Models::Item::Item(const Models::Item& other):
+    QObject(),
+    type(other.type),
+    name(other.name),
+    childItems(),
+    parent(nullptr)
+{
+}
+
 Models::Item::~Item()
 {
     std::deque<Item*>::const_iterator itr = childItems.begin();
@@ -55,25 +64,37 @@ void Models::Item::setName(const QString& p_name)
 void Models::Item::appendChild(Models::Item* child)
 {
     bool moving = false;
-    int oldRow = child->row();
-    int newRow = this->childCount();
+    int newRow = 0;
+    std::deque<Item*>::const_iterator before = childItems.begin();
+    while (before != childItems.end()) {
+        Item* bfr = *before;
+        if (bfr->type > child->type) {
+            break;
+        } else if (bfr->type == child->type && bfr->getDisplayedName() > child->getDisplayedName()) {
+            break;
+        }
+        newRow++;
+        before++;
+    }
+    
     if (child->parent != 0) {
+        int oldRow = child->row();
         moving = true;
         emit childIsAboutToBeMoved(child->parent, oldRow, oldRow, this, newRow);
         child->parent->_removeChild(oldRow);
     } else {
         emit childIsAboutToBeInserted(this, newRow, newRow);
     }
-    childItems.push_back(child);
+    childItems.insert(before, child);
     child->parent = this;
     
-    QObject::connect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SIGNAL(childChanged(Models::Item*, int, int)));
-    QObject::connect(child, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SIGNAL(childIsAboutToBeInserted(Item*, int, int)));
-    QObject::connect(child, SIGNAL(childInserted()), this, SIGNAL(childInserted()));
-    QObject::connect(child, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)));
-    QObject::connect(child, SIGNAL(childRemoved()), this, SIGNAL(childRemoved()));
-    QObject::connect(child, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)), this, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)));
-    QObject::connect(child, SIGNAL(childMoved()), this, SIGNAL(childMoved()));
+    QObject::connect(child, &Item::childChanged, this, &Item::childChanged);
+    QObject::connect(child, &Item::childIsAboutToBeInserted, this, &Item::childIsAboutToBeInserted);
+    QObject::connect(child, &Item::childInserted, this, &Item::childInserted);
+    QObject::connect(child, &Item::childIsAboutToBeRemoved, this, &Item::childIsAboutToBeRemoved);
+    QObject::connect(child, &Item::childRemoved, this, &Item::childRemoved);
+    QObject::connect(child, &Item::childIsAboutToBeMoved, this, &Item::childIsAboutToBeMoved);
+    QObject::connect(child, &Item::childMoved, this, &Item::childMoved);
     
     if (moving) {
         emit childMoved();
@@ -120,7 +141,7 @@ const Models::Item * Models::Item::parentItemConst() const
 
 int Models::Item::columnCount() const
 {
-    return 1;
+    return 2;
 }
 
 QString Models::Item::getName() const
@@ -147,13 +168,13 @@ void Models::Item::_removeChild(int index)
 {
     Item* child = childItems[index];
     
-    QObject::disconnect(child, SIGNAL(childChanged(Models::Item*, int, int)), this, SIGNAL(childChanged(Models::Item*, int, int)));
-    QObject::disconnect(child, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SIGNAL(childIsAboutToBeInserted(Item*, int, int)));
-    QObject::disconnect(child, SIGNAL(childInserted()), this, SIGNAL(childInserted()));
-    QObject::disconnect(child, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)));
-    QObject::disconnect(child, SIGNAL(childRemoved()), this, SIGNAL(childRemoved()));
-    QObject::disconnect(child, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)), this, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)));
-    QObject::disconnect(child, SIGNAL(childMoved()), this, SIGNAL(childMoved()));
+    QObject::disconnect(child, &Item::childChanged, this, &Item::childChanged);
+    QObject::disconnect(child, &Item::childIsAboutToBeInserted, this, &Item::childIsAboutToBeInserted);
+    QObject::disconnect(child, &Item::childInserted, this, &Item::childInserted);
+    QObject::disconnect(child, &Item::childIsAboutToBeRemoved, this, &Item::childIsAboutToBeRemoved);
+    QObject::disconnect(child, &Item::childRemoved, this, &Item::childRemoved);
+    QObject::disconnect(child, &Item::childIsAboutToBeMoved, this, &Item::childIsAboutToBeMoved);
+    QObject::disconnect(child, &Item::childMoved, this, &Item::childMoved);
     
     childItems.erase(childItems.begin() + index);
     child->parent = 0;
@@ -211,4 +232,63 @@ QString Models::Item::getAccountName() const
         return "";
     }
     return acc->getName();
+}
+
+Shared::Availability Models::Item::getAccountAvailability() const
+{
+    const Account* acc = static_cast<const Account*>(getParentAccount());
+    if (acc == 0) {
+        return Shared::offline;
+    }
+    return acc->getAvailability();
+}
+
+Shared::ConnectionState Models::Item::getAccountConnectionState() const
+{
+    const Account* acc = static_cast<const Account*>(getParentAccount());
+    if (acc == 0) {
+        return Shared::disconnected;
+    }
+    return acc->getState();
+}
+
+QString Models::Item::getDisplayedName() const
+{
+    return name;
+}
+
+void Models::Item::onChildChanged(Models::Item* item, int row, int col)
+{
+    Item* parent = item->parentItem();
+    if (parent != 0 && parent == this) {
+        if (item->columnInvolvedInDisplay(col)) {
+            int newRow = 0;
+            std::deque<Item*>::const_iterator before = childItems.begin();
+            while (before != childItems.end()) {
+                Item* bfr = *before;
+                if (bfr->type > item->type) {
+                    break;
+                } else if (bfr->type == item->type && bfr->getDisplayedName() > item->getDisplayedName()) {
+                    break;
+                }
+                newRow++;
+                before++;
+            }
+            
+            if (newRow != row || (before != childItems.end() && *before != item)) {
+                emit childIsAboutToBeMoved(this, row, row, this, newRow);
+                std::deque<Item*>::const_iterator old = childItems.begin();
+                old += row;
+                childItems.erase(old);
+                childItems.insert(before, item);
+                emit childMoved();
+            }
+        }
+    }
+    emit childChanged(item, row, col);
+}
+
+bool Models::Item::columnInvolvedInDisplay(int col)
+{
+    return col == 0;
 }

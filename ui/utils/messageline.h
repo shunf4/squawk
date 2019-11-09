@@ -25,13 +25,10 @@
 #include <QLabel>
 #include <QResizeEvent>
 #include <QIcon>
-#include <QGraphicsScene>
-#include <QGraphicsView>
-#include <QGraphicsPixmapItem>
-#include <QVariantAnimation>
 
-#include "../global.h"
+#include "../../global.h"
 #include "message.h"
+#include "progress.h"
 
 class MessageLine : public QWidget
 {
@@ -85,15 +82,8 @@ private:
     std::map<QString, QString> palNames;
     std::deque<QHBoxLayout*> views;
     bool room;
-    QGraphicsPixmapItem* busyPixmap;
-    QGraphicsScene busyScene;
-    QGraphicsView busyLabel;
-    QHBoxLayout busyLayout;
     bool busyShown;
-    QVariantAnimation rotation;
-    
-private slots:
-    void onAnimationValueChanged(const QVariant& value);
+    Progress progress;
 };
 
 #endif // MESSAGELINE_H

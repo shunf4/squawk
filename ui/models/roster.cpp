@@ -21,8 +21,6 @@
 #include <QIcon>
 #include <QFont>
 
-using namespace Models;
-
 Models::Roster::Roster(QObject* parent):
     QAbstractItemModel(parent),
     accountsModel(new Accounts()),
@@ -31,17 +29,14 @@ Models::Roster::Roster(QObject* parent):
     groups(),
     contacts()
 {
-    connect(accountsModel, 
-            SIGNAL(dataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)), 
-            this, 
-            SLOT(onAccountDataChanged(const QModelIndex&, const QModelIndex&, const QVector<int>&)));
-    connect(root, SIGNAL(childChanged(Models::Item*, int, int)), this, SLOT(onChildChanged(Models::Item*, int, int)));
-    connect(root, SIGNAL(childIsAboutToBeInserted(Item*, int, int)), this, SLOT(onChildIsAboutToBeInserted(Item*, int, int)));
-    connect(root, SIGNAL(childInserted()), this, SLOT(onChildInserted()));
-    connect(root, SIGNAL(childIsAboutToBeRemoved(Item*, int, int)), this, SLOT(onChildIsAboutToBeRemoved(Item*, int, int)));
-    connect(root, SIGNAL(childRemoved()), this, SLOT(onChildRemoved()));
-    connect(root, SIGNAL(childIsAboutToBeMoved(Item*, int, int, Item*, int)), this, SLOT(onChildIsAboutToBeMoved(Item*, int, int, Item*, int)));
-    connect(root, SIGNAL(childMoved()), this, SLOT(onChildMoved()));
+    connect(accountsModel, &Accounts::dataChanged, this, &Roster::onAccountDataChanged);
+    connect(root, &Item::childChanged, this, &Roster::onChildChanged);
+    connect(root, &Item::childIsAboutToBeInserted, this,  &Roster::onChildIsAboutToBeInserted);
+    connect(root, &Item::childInserted, this, &Roster::onChildInserted);
+    connect(root, &Item::childIsAboutToBeRemoved, this, &Roster::onChildIsAboutToBeRemoved);
+    connect(root, &Item::childRemoved, this, &Roster::onChildRemoved);
+    connect(root, &Item::childIsAboutToBeMoved, this, &Roster::onChildIsAboutToBeMoved);
+    connect(root, &Item::childMoved, this, &Roster::onChildMoved);
 }
 
 Models::Roster::~Roster()
@@ -70,6 +65,10 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
     switch (role) {
         case Qt::DisplayRole:
         {
+            if (index.column() != 0) {
+                result = "";
+                break;
+            }
             switch (item->type) {
                 case Item::group: {
                     Group* gr = static_cast<Group*>(item);
@@ -78,7 +77,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     str += gr->getName();
                     unsigned int amount = gr->getUnreadMessages();
                     if (amount > 0) {
-                        str += QString(" (") +  "New messages" + ")";
+                        str += QString(" (") +  tr("New messages") + ")";
                     }
                     
                     result = str;
@@ -93,26 +92,51 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
         case Qt::DecorationRole:
             switch (item->type) {
                 case Item::account: {
+                    quint8 col = index.column();
                     Account* acc = static_cast<Account*>(item);
-                    result = acc->getStatusIcon(false);
+                    if (col == 0) {
+                        result = acc->getStatusIcon(false);
+                    } else if (col == 1) {
+                        QString path = acc->getAvatarPath();
+                        
+                        if (path.size() > 0) {
+                            result = QIcon(path);
+                        }
+                    }
                 }
                     break;
                 case Item::contact: {
                     Contact* contact = static_cast<Contact*>(item);
-                    result = contact->getStatusIcon(false);
+                    quint8 col = index.column();
+                    if (col == 0) {
+                        result = contact->getStatusIcon(false);
+                    } else if (col == 1) {
+                        if (contact->getAvatarState() != Shared::Avatar::empty) {
+                            result = QIcon(contact->getAvatarPath());
+                        }
+                    }
                 }
                     break;
                 case Item::presence: {
+                    if (index.column() != 0) {
+                        break;
+                    }
                     Presence* presence = static_cast<Presence*>(item);
                     result = presence->getStatusIcon(false);
                 }
                     break;
                 case Item::room: {
+                    if (index.column() != 0) {
+                        break;
+                    }
                     Room* room = static_cast<Room*>(item);
                     result = room->getStatusIcon(false);
                 }
                     break;
                 case Item::participant: {
+                    if (index.column() != 0) {
+                        break;
+                    }
                     Participant* p = static_cast<Participant*>(item);
                     result = p->getStatusIcon(false);
                 }
@@ -143,7 +167,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
             switch (item->type) {
                 case Item::account: {
                     Account* acc = static_cast<Account*>(item);
-                    result = QString(Shared::availabilityNames[acc->getAvailability()]);
+                    result = QCoreApplication::translate("Global", Shared::availabilityNames[acc->getAvailability()].toLatin1());
                 }
                     break;
                 case Item::contact: {
@@ -151,22 +175,22 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     QString str("");
                     int mc = contact->getMessagesCount();
                     if (mc > 0) {
-                        str += QString("New messages: ") + std::to_string(mc).c_str() + "\n";
+                        str += QString(tr("New messages: ")) + std::to_string(mc).c_str() + "\n";
                     }
-                    str += "Jabber ID: " + contact->getJid() + "\n";
+                    str += tr("Jabber ID: ") + contact->getJid() + "\n";
                     Shared::SubscriptionState ss = contact->getState();
                     if (ss == Shared::both) {
                         Shared::Availability av = contact->getAvailability();
-                        str += "Availability: " + Shared::availabilityNames[av];
+                        str += tr("Availability: ") + QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1());
                         if (av != Shared::offline) {
                             QString s = contact->getStatus();
                             if (s.size() > 0) {
-                                str += "\nStatus: " + s;
+                                str += "\n" + tr("Status: ") + s;
                             }
                         }
-                        str += "\nSubscription: " + Shared::subscriptionStateNames[ss];
+                        str += "\n" + tr("Subscription: ") + QCoreApplication::translate("Global", Shared::subscriptionStateNames[ss].toLatin1());
                     } else {
-                        str += "Subscription: " + Shared::subscriptionStateNames[ss];
+                        str += tr("Subscription: ") + QCoreApplication::translate("Global", Shared::subscriptionStateNames[ss].toLatin1());
                     }
                     
                     result = str;
@@ -177,13 +201,13 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     QString str("");
                     int mc = contact->getMessagesCount();
                     if (mc > 0) {
-                        str += QString("New messages: ") + std::to_string(mc).c_str() + "\n";
+                        str += tr("New messages: ") + std::to_string(mc).c_str() + "\n";
                     }
                     Shared::Availability av = contact->getAvailability();
-                    str += "Availability: " + Shared::availabilityNames[av];
+                    str += tr("Availability: ") + QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1());
                     QString s = contact->getStatus();
                     if (s.size() > 0) {
-                        str += "\nStatus: " + s;
+                        str += "\n" + tr("Status: ") + s;
                     }
                     
                     result = str;
@@ -193,14 +217,18 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     Participant* p = static_cast<Participant*>(item);
                     QString str("");
                     Shared::Availability av = p->getAvailability();
-                    str += "Availability: " + Shared::availabilityNames[av] + "\n";
+                    str += tr("Availability: ") + QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1()) + "\n";
                     QString s = p->getStatus();
                     if (s.size() > 0) {
-                        str += "Status: " + s + "\n";
+                        str += tr("Status: ") + s + "\n";
                     }
                     
-                    str += "Affiliation: " + Shared::affiliationNames[static_cast<unsigned int>(p->getAffiliation())] + "\n";
-                    str += "Role: " + Shared::roleNames[static_cast<unsigned int>(p->getRole())];
+                    str += tr("Affiliation: ") + 
+                    QCoreApplication::translate("Global", 
+                                                Shared::affiliationNames[static_cast<unsigned int>(p->getAffiliation())].toLatin1()) + "\n";
+                    str += tr("Role: ") + 
+                    QCoreApplication::translate("Global", 
+                                                Shared::roleNames[static_cast<unsigned int>(p->getRole())].toLatin1());
                     
                     result = str;
                 }
@@ -210,10 +238,10 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     unsigned int count = gr->getUnreadMessages();
                     QString str("");
                     if (count > 0) {
-                        str += QString("New messages: ") + std::to_string(count).c_str() + "\n";
+                        str += tr("New messages: ") + std::to_string(count).c_str() + "\n";
                     }
-                    str += QString("Online contacts: ") + std::to_string(gr->getOnlineContacts()).c_str() + "\n";
-                    str += QString("Total contacts: ") + std::to_string(gr->childCount()).c_str();
+                    str += tr("Online contacts: ") + std::to_string(gr->getOnlineContacts()).c_str() + "\n";
+                    str += tr("Total contacts: ") + std::to_string(gr->childCount()).c_str();
                     result = str;
                 }
                     break;
@@ -222,11 +250,11 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     unsigned int count = rm->getUnreadMessagesCount();
                     QString str("");
                     if (count > 0) {
-                        str += QString("New messages: ") + std::to_string(count).c_str() + "\n";
+                        str += tr("New messages: ") + std::to_string(count).c_str() + "\n";
                     }
-                    str += QString("Subscription: ") + rm->getStatusText();
+                    str += tr("Subscription: ") + rm->getStatusText();
                     if (rm->getJoined()) {
-                        str += QString("\nMembers: ") + std::to_string(rm->childCount()).c_str();
+                        str += QString("\n") + tr("Members: ") + std::to_string(rm->childCount()).c_str();
                     }
                     result = str;
                 }
@@ -383,50 +411,52 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
 {
     Item* parent;
     Account* acc;
-    Contact* contact;
+    Contact* sample = 0;
     ElId id(account, jid);
     
     {
         std::map<QString, Account*>::iterator itr = accounts.find(account);
         if (itr == accounts.end()) {
-            qDebug() << "An attempt to add a contact " << jid << " to non existing account " << account << ", skipping";
+            qDebug() << "An attempt to add a contact" << jid << "to non existing account" << account << ", skipping";
             return;
         }
         acc = itr->second;
     }
     
-    if (group == "") {
-        std::multimap<ElId, Contact*>::iterator itr = contacts.lower_bound(id);
-        std::multimap<ElId, Contact*>::iterator eItr = contacts.upper_bound(id);
-        while (itr != eItr) {
-            if (itr->second->parentItem() == acc) {
-                qDebug() << "An attempt to add a contact " << jid << " ungrouped to non the account " << account << " for the second time, skipping";
-                return;
-            }
-            itr++;
+    for (std::multimap<ElId, Contact*>::iterator itr = contacts.lower_bound(id), eItr = contacts.upper_bound(id); itr != eItr; ++itr) {
+        sample = itr->second;                   //need to find if this contact is already added somewhere
+        break;                                  //so one iteration is enough
+    }
+    
+    if (group == "") {       //this means this contact is already added somewhere and there is no sense to add it ungrouped
+        if (sample != 0) {
+            qDebug() << "An attempt to add a contact" << jid << "to the ungrouped contact set of account" << account << "for the second time, skipping";
+            return;
+        } else {
+            parent = acc;
         }
-        parent = acc;
     } else {
         std::map<ElId, Group*>::iterator itr = groups.find({account, group});
         if (itr == groups.end()) {
-            qDebug() << "An attempt to add a contact " << jid << " to non existing group " << group << ", skipping";
-            return;
+            qDebug() << "An attempt to add a contact" << jid << "to non existing group" << group << ", adding group";
+            addGroup(account, group);
+            itr = groups.find({account, group});
         }
         
         parent = itr->second;
         
-        for (int i = 0; i < parent->childCount(); ++i) {
+        for (int i = 0; i < parent->childCount(); ++i) {        //checking if the contact is already added to that group
             Item* item = parent->child(i);
             if (item->type == Item::contact) {
                 Contact* ca = static_cast<Contact*>(item);
                 if (ca->getJid() == jid) {
-                    qDebug() << "An attempt to add a contact " << jid << " to the group " << group << " for the second time, skipping";
+                    qDebug() << "An attempt to add a contact" << jid << "to the group" << group << "for the second time, skipping";
                     return;
                 }
             }
         }
         
-        for (int i = 0; i < acc->childCount(); ++i) {
+        for (int i = 0; i < acc->childCount(); ++i) {           //checking if that contact is among ugrouped
             Item* item = acc->child(i);
             if (item->type == Item::contact) {
                 Contact* ca = static_cast<Contact*>(item);
@@ -440,7 +470,12 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
         }
         
     }
-    contact = new Contact(jid, data);
+    Contact* contact;
+    if (sample == 0) {
+        contact = new Contact(jid, data);
+    } else {
+        contact = sample->copy();
+    }
     contacts.insert(std::make_pair(id, contact));
     parent->appendChild(contact);
 }
@@ -548,36 +583,67 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
         qDebug() << "An attempt to remove contact " << jid << " from non existing group " << group << " of account " << account <<", skipping";
         return;
     }
+    Account* acc = accounts.find(account)->second;  //I assume the account is found, otherwise there will be no groups with that ElId;
     Group* gr = gItr->second;
     Contact* cont = 0;
     
-    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId);
-    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(contactId);
-    for (;cBeg != cEnd; ++cBeg) {
-        if (cBeg->second->parentItem() == gr) {
-            cont = cBeg->second;
-            contacts.erase(cBeg);
-            break;
+    unsigned int entries(0);
+    unsigned int ungroupped(0);
+    for (std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId), cEnd = contacts.upper_bound(contactId); cBeg != cEnd; ++cBeg) {
+        ++entries;
+        Contact* elem = cBeg->second;
+        if (elem->parentItem() == acc) {
+            ++ungroupped;
         }
     }
     
-    if (cont == 0) {
-        qDebug() << "An attempt to remove contact " << jid << " of account " << account << " from group " << group  <<", but there is no such contact in that group, skipping";
-        return;
-    }
-    
-    gr->removeChild(cont->row());
-    cont->deleteLater();
-    
-    if (gr->childCount() == 0) {
-        removeGroup(account, group);
+    if (ungroupped == 0 && entries == 1) {
+        for (std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId), cEnd = contacts.upper_bound(contactId); cBeg != cEnd; ++cBeg) {
+            if (cBeg->second->parentItem() == gr) {
+                cont = cBeg->second;
+                break;
+            }
+        }
+        
+        if (cont == 0) {
+            qDebug() << "An attempt to remove contact " << jid << " of account " << account << " from group " << group  <<", but there is no such contact in that group, skipping";
+            return;
+        }
+        
+        qDebug() << "An attempt to remove last instance of contact" << jid << "from the group" << group << ", contact will be moved to ungrouped contacts of" << account;
+        acc->appendChild(cont);
+        
+        if (gr->childCount() == 0) {
+            removeGroup(account, group);
+        }
+    } else {
+        for (std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId), cEnd = contacts.upper_bound(contactId); cBeg != cEnd; ++cBeg) {
+            if (cBeg->second->parentItem() == gr) {
+                cont = cBeg->second;
+                contacts.erase(cBeg);
+                break;
+            }
+        }
+        
+        if (cont == 0) {
+            qDebug() << "An attempt to remove contact" << jid << "of account" << account << "from group" << group  <<", but there is no such contact in that group, skipping";
+            return;
+        }
+        
+        gr->removeChild(cont->row());
+        cont->deleteLater();
+        
+        if (gr->childCount() == 0) {
+            removeGroup(account, group);
+        }
     }
 }
 
 void Models::Roster::onChildChanged(Models::Item* item, int row, int col)
 {
     QModelIndex index = createIndex(row, 0, item);
-    emit dataChanged(index, index);
+    QModelIndex index2 = createIndex(row, 1, item);
+    emit dataChanged(index, index2);
 }
 
 void Models::Roster::onChildIsAboutToBeInserted(Models::Item* parent, int first, int last)
@@ -738,7 +804,7 @@ QString Models::Roster::getContactName(const QString& account, const QString& ji
         if (rItr == rooms.end()) {
             qDebug() << "An attempt to get a name of non existing contact/room " << account << ":" << jid << ", skipping";
         } else {
-            name = rItr->second->getName();
+            name = rItr->second->getRoomName();
         }
     } else {
         name = cItr->second->getContactName();
@@ -843,4 +909,48 @@ void Models::Roster::removeRoomParticipant(const QString& account, const QString
     } else {
         itr->second->removeParticipant(name);
     }
+}
+
+std::deque<QString> Models::Roster::groupList(const QString& account) const
+{
+    std::deque<QString> answer;
+    for (std::pair<ElId, Group*> pair : groups) {
+        if (pair.first.account == account) {
+            answer.push_back(pair.first.name);
+        }
+    }
+    
+    return answer;
+}
+
+bool Models::Roster::groupHasContact(const QString& account, const QString& group, const QString& contact) const
+{
+    ElId grId({account, group});
+    std::map<ElId, Group*>::const_iterator gItr = groups.find(grId);
+    if (gItr == groups.end()) {
+        return false;
+    } else {
+        const Group* gr = gItr->second;
+        return gr->hasContact(contact);
+    }
+}
+
+QString Models::Roster::getContactIconPath(const QString& account, const QString& jid)
+{
+    ElId id(account, jid);
+    std::multimap<ElId, Contact*>::const_iterator cItr = contacts.find(id);
+    QString path = "";
+    if (cItr == contacts.end()) {
+        std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
+        if (rItr == rooms.end()) {
+            qDebug() << "An attempt to get an icon path of non existing contact" << account << ":" << jid << ", returning empty value";
+        } else {
+            //path = rItr->second->getRoomName();
+        }
+    } else {
+        if (cItr->second->getAvatarState() != Shared::Avatar::empty) {
+            path = cItr->second->getAvatarPath();
+        }
+    }
+    return path;
 }

@@ -29,14 +29,13 @@ Accounts::Accounts(Models::Accounts* p_model, QWidget *parent) :
 {
     m_ui->setupUi(this);
     
-    connect(m_ui->addButton, SIGNAL(clicked(bool)), this, SLOT(onAddButton(bool)));
-    connect(m_ui->editButton, SIGNAL(clicked(bool)), this, SLOT(onEditButton(bool)));
-    connect(m_ui->connectButton, SIGNAL(clicked(bool)), this, SLOT(onConnectButton(bool)));
-    connect(m_ui->deleteButton, SIGNAL(clicked(bool)), this, SLOT(onDeleteButton(bool)));
+    connect(m_ui->addButton, &QPushButton::clicked, this, &Accounts::onAddButton);
+    connect(m_ui->editButton, &QPushButton::clicked, this, &Accounts::onEditButton);
+    connect(m_ui->connectButton, &QPushButton::clicked, this, &Accounts::onConnectButton);
+    connect(m_ui->deleteButton, &QPushButton::clicked, this, &Accounts::onDeleteButton);
     m_ui->tableView->setModel(model);
-    connect(m_ui->tableView->selectionModel(), SIGNAL(selectionChanged(const QItemSelection&, const QItemSelection&)),
-            this, SLOT(onSelectionChanged(const QItemSelection&, const QItemSelection&)));
-    connect(p_model, SIGNAL(changed()), this, SLOT(updateConnectButton()));
+    connect(m_ui->tableView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &Accounts::onSelectionChanged);
+    connect(p_model, &Models::Accounts::changed, this, &Accounts::updateConnectButton);
 }
 
 Accounts::~Accounts() = default;
@@ -44,8 +43,8 @@ Accounts::~Accounts() = default;
 void Accounts::onAddButton(bool clicked)
 {
     Account* acc = new Account();
-    connect(acc, SIGNAL(accepted()), this, SLOT(onAccountAccepted()));
-    connect(acc, SIGNAL(rejected()), this, SLOT(onAccountRejected()));
+    connect(acc, &Account::accepted, this, &Accounts::onAccountAccepted);
+    connect(acc, &Account::rejected, this, &Accounts::onAccountRejected);
     acc->exec();
 }
 
@@ -84,8 +83,8 @@ void Accounts::onEditButton(bool clicked)
         {"resource", mAcc->getResource()}
     });
     acc->lockId();
-    connect(acc, SIGNAL(accepted()), this, SLOT(onAccountAccepted()));
-    connect(acc, SIGNAL(rejected()), this, SLOT(onAccountRejected()));
+    connect(acc, &Account::accepted, this, &Accounts::onAccountAccepted);
+    connect(acc, &Account::rejected, this, &Accounts::onAccountRejected);
     editing = true;
     acc->exec();
 }
@@ -120,13 +119,13 @@ void Accounts::updateConnectButton()
         }
         if (allConnected) {
             toDisconnect = true;
-            m_ui->connectButton->setText("Disconnect");
+            m_ui->connectButton->setText(tr("Disconnect"));
         } else {
             toDisconnect = false;
-            m_ui->connectButton->setText("Connect");
+            m_ui->connectButton->setText(tr("Connect"));
         }
     } else {
-        m_ui->connectButton->setText("Connect");
+        m_ui->connectButton->setText(tr("Connect"));
         toDisconnect = false;
         m_ui->connectButton->setEnabled(false);
     }

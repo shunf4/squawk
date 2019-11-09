@@ -32,6 +32,7 @@ class Presence : public Models::AbstractParticipant
 public:
     typedef std::deque<Shared::Message> Messages;
     explicit Presence(const QMap<QString, QVariant> &data, Item *parentItem = 0);
+    Presence(const Presence& other);
     ~Presence();
     
     int columnCount() const override;

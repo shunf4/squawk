@@ -20,6 +20,7 @@
 #include "ui_squawk.h"
 #include <QDebug>
 #include <QIcon>
+#include <QInputDialog>
 
 Squawk::Squawk(QWidget *parent) :
     QMainWindow(parent),
@@ -28,27 +29,35 @@ Squawk::Squawk(QWidget *parent) :
     rosterModel(),
     conversations(),
     contextMenu(new QMenu()),
-    dbus("org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", QDBusConnection::sessionBus())
+    dbus("org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", QDBusConnection::sessionBus()),
+    requestedFiles(),
+    vCards()
 {
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
     m_ui->roster->setContextMenuPolicy(Qt::CustomContextMenu);
+    m_ui->roster->setColumnWidth(1, 20);
+    m_ui->roster->setIconSize(QSize(20, 20));
+    m_ui->roster->header()->setStretchLastSection(false);
+    m_ui->roster->header()->setSectionResizeMode(0, QHeaderView::Stretch);
     
     for (unsigned int i = Shared::availabilityLowest; i < Shared::availabilityHighest + 1; ++i) {
         Shared::Availability av = static_cast<Shared::Availability>(i);
-        m_ui->comboBox->addItem(Shared::availabilityIcon(av), Shared::availabilityNames[av]);
+        m_ui->comboBox->addItem(Shared::availabilityIcon(av), QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1()));
     }
     m_ui->comboBox->setCurrentIndex(Shared::offline);
     
-    connect(m_ui->actionAccounts, SIGNAL(triggered()), this, SLOT(onAccounts()));
-    connect(m_ui->actionAddContact, SIGNAL(triggered()), this, SLOT(onNewContact()));
-    connect(m_ui->actionAddConference, SIGNAL(triggered()), this, SLOT(onNewConference()));
-    connect(m_ui->comboBox, SIGNAL(activated(int)), this, SLOT(onComboboxActivated(int)));
-    connect(m_ui->roster, SIGNAL(doubleClicked(const QModelIndex&)), this, SLOT(onRosterItemDoubleClicked(const QModelIndex&)));
-    connect(m_ui->roster, SIGNAL(customContextMenuRequested(const QPoint&)), this, SLOT(onRosterContextMenu(const QPoint&)));
+    connect(m_ui->actionAccounts, &QAction::triggered, this, &Squawk::onAccounts);
+    connect(m_ui->actionAddContact, &QAction::triggered, this, &Squawk::onNewContact);
+    connect(m_ui->actionAddConference, &QAction::triggered, this, &Squawk::onNewConference);
+    connect(m_ui->comboBox, qOverload<int>(&QComboBox::activated), this, &Squawk::onComboboxActivated);
+    connect(m_ui->roster, &QTreeView::doubleClicked, this, &Squawk::onRosterItemDoubleClicked);
+    connect(m_ui->roster, &QTreeView::customContextMenuRequested, this, &Squawk::onRosterContextMenu);
     
-    connect(rosterModel.accountsModel, SIGNAL(sizeChanged(unsigned int)), this, SLOT(onAccountsSizeChanged(unsigned int)));
+    connect(rosterModel.accountsModel, &Models::Accounts::sizeChanged, this, &Squawk::onAccountsSizeChanged);
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
+    
+    setWindowTitle(tr("Contact list"));
 }
 
 Squawk::~Squawk() {
@@ -60,12 +69,12 @@ void Squawk::onAccounts()
     if (accounts == 0) {
         accounts = new Accounts(rosterModel.accountsModel, this);
         accounts->setAttribute(Qt::WA_DeleteOnClose);
-        connect(accounts, SIGNAL(destroyed(QObject*)), this, SLOT(onAccountsClosed(QObject*)));
-        connect(accounts, SIGNAL(newAccount(const QMap<QString, QVariant>&)), this, SIGNAL(newAccountRequest(const QMap<QString, QVariant>&)));
-        connect(accounts, SIGNAL(changeAccount(const QString&, const QMap<QString, QVariant>&)), this, SIGNAL(modifyAccountRequest(const QString&, const QMap<QString, QVariant>&)));
-        connect(accounts, SIGNAL(connectAccount(const QString&)), this, SIGNAL(connectAccount(const QString&)));
-        connect(accounts, SIGNAL(disconnectAccount(const QString&)), this, SIGNAL(disconnectAccount(const QString&)));
-        connect(accounts, SIGNAL(removeAccount(const QString&)), this, SIGNAL(removeAccountRequest(const QString&)));
+        connect(accounts, &Accounts::destroyed, this, &Squawk::onAccountsClosed);
+        connect(accounts, &Accounts::newAccount, this, &Squawk::newAccountRequest);
+        connect(accounts, &Accounts::changeAccount, this, &Squawk::modifyAccountRequest);
+        connect(accounts, &Accounts::connectAccount, this, &Squawk::connectAccount);
+        connect(accounts, &Accounts::disconnectAccount, this, &Squawk::disconnectAccount);
+        connect(accounts, &Accounts::removeAccount, this, &Squawk::removeAccountRequest);
         
         accounts->show();
     } else {
@@ -90,8 +99,8 @@ void Squawk::onNewContact()
 {
     NewContact* nc = new NewContact(rosterModel.accountsModel, this);
     
-    connect(nc, SIGNAL(accepted()), this, SLOT(onNewContactAccepted()));
-    connect(nc, SIGNAL(rejected()), nc, SLOT(deleteLater()));
+    connect(nc, &NewContact::accepted, this, &Squawk::onNewContactAccepted);
+    connect(nc, &NewContact::rejected, nc, &NewContact::deleteLater);
     
     nc->exec();
 }
@@ -100,8 +109,8 @@ void Squawk::onNewConference()
 {
     JoinConference* jc = new JoinConference(rosterModel.accountsModel, this);
     
-    connect(jc, SIGNAL(accepted()), this, SLOT(onJoinConferenceAccepted()));
-    connect(jc, SIGNAL(rejected()), jc, SLOT(deleteLater()));
+    connect(jc, &JoinConference::accepted, this, &Squawk::onJoinConferenceAccepted);
+    connect(jc, &JoinConference::rejected, jc, &JoinConference::deleteLater);
     
     jc->exec();
 }
@@ -131,11 +140,18 @@ void Squawk::closeEvent(QCloseEvent* event)
     if (accounts != 0) {
         accounts->close();
     }
+    
     for (Conversations::const_iterator itr = conversations.begin(), end = conversations.end(); itr != end; ++itr) {
-        disconnect(itr->second, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
+        disconnect(itr->second, &Conversation::destroyed, this, &Squawk::onConversationClosed);
         itr->second->close();
     }
     conversations.clear();
+    
+    for (std::map<QString, VCard*>::const_iterator itr = vCards.begin(), end = vCards.end(); itr != end; ++itr) {
+        disconnect(itr->second, &VCard::destroyed, this, &Squawk::onVCardClosed);
+        itr->second->close();
+    }
+    vCards.clear();
     
     QMainWindow::closeEvent(event);
 }
@@ -283,13 +299,14 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 if (created) {
                     conv->setAttribute(Qt::WA_DeleteOnClose);
                     
-                    connect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
-                    connect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
-                    connect(conv, SIGNAL(sendMessage(const Shared::Message&, const QString&)), this, SLOT(onConversationMessage(const Shared::Message&, const QString&)));
-                    connect(conv, SIGNAL(requestArchive(const QString&)), this, SLOT(onConversationRequestArchive(const QString&)));
-                    connect(conv, SIGNAL(requestLocalFile(const QString&, const QString&)), this, SLOT(onConversationRequestLocalFile(const QString&, const QString&)));
-                    connect(conv, SIGNAL(downloadFile(const QString&, const QString&)), this, SLOT(onConversationDownloadFile(const QString&, const QString&)));
-                    connect(conv, SIGNAL(shown()), this, SLOT(onConversationShown()));
+                    connect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
+                    connect(conv, qOverload<const Shared::Message&>(&Conversation::sendMessage), this, qOverload<const Shared::Message&>(&Squawk::onConversationMessage));
+                    connect(conv, qOverload<const Shared::Message&, const QString&>(&Conversation::sendMessage), 
+                            this, qOverload<const Shared::Message&, const QString&>(&Squawk::onConversationMessage));
+                    connect(conv, &Conversation::requestArchive, this, &Squawk::onConversationRequestArchive);
+                    connect(conv, &Conversation::requestLocalFile, this, &Squawk::onConversationRequestLocalFile);
+                    connect(conv, &Conversation::downloadFile, this, &Squawk::onConversationDownloadFile);
+                    connect(conv, &Conversation::shown, this, &Squawk::onConversationShown);
                     
                     conversations.insert(std::make_pair(*id, conv));
                     
@@ -449,11 +466,16 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
 
 void Squawk::notify(const QString& account, const Shared::Message& msg)
 {
-    QString name = QString(rosterModel.getContactName(account, msg.getPenPalJid()));;
+    QString name = QString(rosterModel.getContactName(account, msg.getPenPalJid()));
+    QString path = QString(rosterModel.getContactIconPath(account, msg.getPenPalJid()));
     QVariantList args;
     args << QString(QCoreApplication::applicationName());
     args << QVariant(QVariant::UInt);   //TODO some normal id
-    args << QString("mail-message");    //TODO icon
+    if (path.size() > 0) {
+        args << path;
+    } else {
+        args << QString("mail-message");
+    }
     if (msg.getType() == Shared::Message::groupChat) {
         args << msg.getFromResource() + " from " + name;
     } else {
@@ -502,10 +524,9 @@ void Squawk::removeAccount(const QString& account)
             Conversations::const_iterator lItr = itr;
             ++itr;
             Conversation* conv = lItr->second;
-            disconnect(conv, SIGNAL(destroyed(QObject*)), this, SLOT(onConversationClosed(QObject*)));
-            disconnect(conv, SIGNAL(sendMessage(const Shared::Message&)), this, SLOT(onConversationMessage(const Shared::Message&)));
-            disconnect(conv, SIGNAL(requestArchive(const QString&)), this, SLOT(onConversationRequestArchive(const QString&)));
-            disconnect(conv, SIGNAL(shown()), this, SLOT(onConversationShown()));
+            disconnect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
+            disconnect(conv, &Conversation::requestArchive, this, &Squawk::onConversationRequestArchive);
+            disconnect(conv, &Conversation::shown, this, &Squawk::onConversationShown);
             conv->close();
             conversations.erase(lItr);
         } else {
@@ -523,6 +544,7 @@ void Squawk::onRosterContextMenu(const QPoint& point)
     
         contextMenu->clear();
         bool hasMenu = false;
+        bool active = item->getAccountConnectionState() == Shared::connected;
         switch (item->type) {
             case Models::Item::account: {
                 Models::Account* acc = static_cast<Models::Account*>(item);
@@ -530,18 +552,24 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 QString name = acc->getName();
                 
                 if (acc->getState() != Shared::disconnected) {
-                    QAction* con = contextMenu->addAction(Shared::icon("network-disconnect"), "Disconnect");
+                    QAction* con = contextMenu->addAction(Shared::icon("network-disconnect"), tr("Disconnect"));
+                    con->setEnabled(active);
                     connect(con, &QAction::triggered, [this, name]() {
                         emit disconnectAccount(name);
                     });
                 } else {
-                    QAction* con = contextMenu->addAction(Shared::icon("network-connect"), "Connect");
+                    QAction* con = contextMenu->addAction(Shared::icon("network-connect"), tr("Connect"));
                     connect(con, &QAction::triggered, [this, name]() {
                         emit connectAccount(name);
                     });
                 }
                 
-                QAction* remove = contextMenu->addAction(Shared::icon("edit-delete"), "Remove");
+                QAction* card = contextMenu->addAction(Shared::icon("user-properties"), tr("VCard"));
+                card->setEnabled(active);
+                connect(card, &QAction::triggered, std::bind(&Squawk::onActivateVCard, this, name, acc->getBareJid(), true));
+                
+                QAction* remove = contextMenu->addAction(Shared::icon("edit-delete"), tr("Remove"));
+                remove->setEnabled(active);
                 connect(remove, &QAction::triggered, [this, name]() {
                     emit removeAccount(name);
                 });
@@ -552,7 +580,8 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 Models::Contact* cnt = static_cast<Models::Contact*>(item);
                 hasMenu = true;
                 
-                QAction* dialog = contextMenu->addAction(Shared::icon("mail-message"), "Open dialog");
+                QAction* dialog = contextMenu->addAction(Shared::icon("mail-message"), tr("Open dialog"));
+                dialog->setEnabled(active);
                 connect(dialog, &QAction::triggered, [this, index]() {
                     onRosterItemDoubleClicked(index);
                 });
@@ -561,7 +590,8 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 switch (state) {
                     case Shared::both:
                     case Shared::to: {
-                        QAction* unsub = contextMenu->addAction(Shared::icon("news-unsubscribe"), "Unsubscribe");
+                        QAction* unsub = contextMenu->addAction(Shared::icon("news-unsubscribe"), tr("Unsubscribe"));
+                        unsub->setEnabled(active);
                         connect(unsub, &QAction::triggered, [this, cnt]() {
                             emit unsubscribeContact(cnt->getAccountName(), cnt->getJid(), "");
                         });
@@ -570,14 +600,74 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                     case Shared::from:
                     case Shared::unknown:
                     case Shared::none: {
-                        QAction* sub = contextMenu->addAction(Shared::icon("news-subscribe"), "Subscribe");
+                        QAction* sub = contextMenu->addAction(Shared::icon("news-subscribe"), tr("Subscribe"));
+                        sub->setEnabled(active);
                         connect(sub, &QAction::triggered, [this, cnt]() {
                             emit subscribeContact(cnt->getAccountName(), cnt->getJid(), "");
                         });
                     }    
                 }
+                QString accName = cnt->getAccountName();
+                QString cntJID = cnt->getJid();
+                QString cntName = cnt->getName();
                 
-                QAction* remove = contextMenu->addAction(Shared::icon("edit-delete"), "Remove");
+                QAction* rename = contextMenu->addAction(Shared::icon("edit-rename"), tr("Rename"));
+                rename->setEnabled(active);
+                connect(rename, &QAction::triggered, [this, cntName, accName, cntJID]() {
+                    QInputDialog* dialog = new QInputDialog(this);
+                    connect(dialog, &QDialog::accepted, [this, dialog, cntName, accName, cntJID]() {
+                        QString newName = dialog->textValue();
+                        if (newName != cntName) {
+                            emit renameContactRequest(accName, cntJID, newName);
+                        }
+                        dialog->deleteLater();
+                    });
+                    connect(dialog, &QDialog::rejected, dialog, &QObject::deleteLater);
+                    dialog->setInputMode(QInputDialog::TextInput);
+                    dialog->setLabelText(tr("Input new name for %1\nor leave it empty for the contact \nto be displayed as %1").arg(cntJID));
+                    dialog->setWindowTitle(tr("Renaming %1").arg(cntJID));
+                    dialog->setTextValue(cntName);
+                    dialog->exec();
+                });
+                
+                
+                QMenu* groupsMenu = contextMenu->addMenu(Shared::icon("group"), tr("Groups"));
+                std::deque<QString> groupList = rosterModel.groupList(accName);
+                for (QString groupName : groupList) {
+                    QAction* gr = groupsMenu->addAction(groupName);
+                    gr->setCheckable(true);
+                    gr->setChecked(rosterModel.groupHasContact(accName, groupName, cntJID));
+                    gr->setEnabled(active);
+                    connect(gr, &QAction::toggled, [this, accName, groupName, cntJID](bool checked) {
+                        if (checked) {
+                            emit addContactToGroupRequest(accName, cntJID, groupName);
+                        } else {
+                            emit removeContactFromGroupRequest(accName, cntJID, groupName);
+                        }
+                    });
+                }
+                QAction* newGroup = groupsMenu->addAction(Shared::icon("group-new"), tr("New group"));
+                newGroup->setEnabled(active);
+                connect(newGroup, &QAction::triggered, [this, accName, cntJID]() {
+                    QInputDialog* dialog = new QInputDialog(this);
+                    connect(dialog, &QDialog::accepted, [this, dialog, accName, cntJID]() {
+                        emit addContactToGroupRequest(accName, cntJID, dialog->textValue());
+                        dialog->deleteLater();
+                    });
+                    connect(dialog, &QDialog::rejected, dialog, &QObject::deleteLater);
+                    dialog->setInputMode(QInputDialog::TextInput);
+                    dialog->setLabelText(tr("New group name"));
+                    dialog->setWindowTitle(tr("Add %1 to a new group").arg(cntJID));
+                    dialog->exec();
+                });
+                
+                
+                QAction* card = contextMenu->addAction(Shared::icon("user-properties"), tr("VCard"));
+                card->setEnabled(active);
+                connect(card, &QAction::triggered, std::bind(&Squawk::onActivateVCard, this, accName, cnt->getJid(), false));
+                
+                QAction* remove = contextMenu->addAction(Shared::icon("edit-delete"), tr("Remove"));
+                remove->setEnabled(active);
                 connect(remove, &QAction::triggered, [this, cnt]() {
                     emit removeContactRequest(cnt->getAccountName(), cnt->getJid());
                 });
@@ -588,7 +678,8 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 Models::Room* room = static_cast<Models::Room*>(item);
                 hasMenu = true;
                 
-                QAction* dialog = contextMenu->addAction(Shared::icon("mail-message"), "Open conversation");
+                QAction* dialog = contextMenu->addAction(Shared::icon("mail-message"), tr("Open conversation"));
+                dialog->setEnabled(active);
                 connect(dialog, &QAction::triggered, [this, index]() {
                     onRosterItemDoubleClicked(index);
                 });
@@ -596,7 +687,8 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 
                 Models::Roster::ElId id(room->getAccountName(), room->getJid());
                 if (room->getAutoJoin()) {
-                    QAction* unsub = contextMenu->addAction(Shared::icon("news-unsubscribe"), "Unsubscribe");
+                    QAction* unsub = contextMenu->addAction(Shared::icon("news-unsubscribe"), tr("Unsubscribe"));
+                    unsub->setEnabled(active);
                     connect(unsub, &QAction::triggered, [this, id]() {
                         emit setRoomAutoJoin(id.account, id.name, false);
                         if (conversations.find(id) == conversations.end()) {    //to leave the room if it's not opened in a conversation window
@@ -604,7 +696,8 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                         }
                     });
                 } else {
-                    QAction* unsub = contextMenu->addAction(Shared::icon("news-subscribe"), "Subscribe");
+                    QAction* unsub = contextMenu->addAction(Shared::icon("news-subscribe"), tr("Subscribe"));
+                    unsub->setEnabled(active);
                     connect(unsub, &QAction::triggered, [this, id]() {
                         emit setRoomAutoJoin(id.account, id.name, true);
                         if (conversations.find(id) == conversations.end()) {    //to join the room if it's not already joined
@@ -613,7 +706,8 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                     });
                 }
                 
-                QAction* remove = contextMenu->addAction(Shared::icon("edit-delete"), "Remove");
+                QAction* remove = contextMenu->addAction(Shared::icon("edit-delete"), tr("Remove"));
+                remove->setEnabled(active);
                 connect(remove, &QAction::triggered, [this, id]() {
                     emit removeRoomRequest(id.account, id.name);
                 });
@@ -656,4 +750,62 @@ void Squawk::changeRoomParticipant(const QString& account, const QString& jid, c
 void Squawk::removeRoomParticipant(const QString& account, const QString& jid, const QString& name)
 {
     rosterModel.removeRoomParticipant(account, jid, name);
+}
+
+void Squawk::responseVCard(const QString& jid, const Shared::VCard& card)
+{
+    std::map<QString, VCard*>::const_iterator itr = vCards.find(jid);
+    if (itr != vCards.end()) {
+        itr->second->setVCard(card);
+        itr->second->hideProgress();
+    }
+}
+
+void Squawk::onVCardClosed()
+{
+    VCard* vCard = static_cast<VCard*>(sender());
+    
+    std::map<QString, VCard*>::const_iterator itr = vCards.find(vCard->getJid());
+    if (itr == vCards.end()) {
+        qDebug() << "VCard has been closed but can not be found among other opened vCards, application is most probably going to crash";
+        return;
+    }
+    vCards.erase(itr);
+}
+
+void Squawk::onActivateVCard(const QString& account, const QString& jid, bool edition)
+{
+    std::map<QString, VCard*>::const_iterator itr = vCards.find(jid);
+    VCard* card;
+    Models::Contact::Messages deque;
+    if (itr != vCards.end()) {
+        card = itr->second;
+    } else {
+        card = new VCard(jid, edition);
+        if (edition) {
+            card->setWindowTitle(tr("%1 account card").arg(account));
+        } else {
+            card->setWindowTitle(tr("%1 contact card").arg(jid));
+        }
+        card->setAttribute(Qt::WA_DeleteOnClose);
+        vCards.insert(std::make_pair(jid, card));
+        
+        connect(card, &VCard::destroyed, this, &Squawk::onVCardClosed);
+        connect(card, &VCard::saveVCard, std::bind( &Squawk::onVCardSave, this, std::placeholders::_1, account));
+    }
+    
+    card->show();
+    card->raise();
+    card->activateWindow();
+    card->showProgress(tr("Downloading vCard"));
+    
+    emit requestVCard(account, jid);
+}
+
+void Squawk::onVCardSave(const Shared::VCard& card, const QString& account)
+{
+    VCard* widget = static_cast<VCard*>(sender());
+    emit uploadVCard(account, card);
+    
+    widget->deleteLater();
 }

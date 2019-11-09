@@ -34,11 +34,14 @@ class Contact : public Item
 public:
     typedef std::deque<Shared::Message> Messages;
     Contact(const QString& p_jid, const QMap<QString, QVariant> &data, Item *parentItem = 0);
+    Contact(const Contact& other);
     ~Contact();
     
     QString getJid() const;
     Shared::Availability getAvailability() const;
     Shared::SubscriptionState getState() const;
+    Shared::Avatar getAvatarState() const;
+    QString getAvatarPath() const;
     QIcon getStatusIcon(bool big = false) const;
     
     int columnCount() const override;
@@ -57,9 +60,13 @@ public:
     unsigned int getMessagesCount() const;
     void dropMessages();
     void getMessages(Messages& container) const;
+    QString getDisplayedName() const override;
+    
+    Contact* copy() const;
     
 protected:
     void _removeChild(int index) override;
+    bool columnInvolvedInDisplay(int col) override;
     
 protected slots:
     void refresh();
@@ -70,6 +77,9 @@ protected:
     void setAvailability(unsigned int p_state);
     void setState(Shared::SubscriptionState p_state);
     void setState(unsigned int p_state);
+    void setAvatarState(Shared::Avatar p_state);
+    void setAvatarState(unsigned int p_state);
+    void setAvatarPath(const QString& path);
     void setJid(const QString p_jid);
     void setStatus(const QString& p_state);
     
@@ -77,10 +87,12 @@ private:
     QString jid;
     Shared::Availability availability;
     Shared::SubscriptionState state;
+    Shared::Avatar avatarState;
     QMap<QString, Presence*> presences;
     Messages messages;
     unsigned int childMessages;
     QString status;
+    QString avatarPath;
 };
 
 }

@@ -39,6 +39,9 @@
        <property name="toolTip">
         <string>Your account login</string>
        </property>
+       <property name="placeholderText">
+        <string>john_smith1987</string>
+       </property>
       </widget>
      </item>
      <item row="2" column="0">
@@ -52,6 +55,9 @@
       <widget class="QLineEdit" name="server">
        <property name="toolTip">
         <string>A server address of your account. Like 404.city or macaw.me</string>
+       </property>
+       <property name="placeholderText">
+        <string>macaw.me</string>
        </property>
       </widget>
      </item>
@@ -83,6 +89,9 @@
        <property name="echoMode">
         <enum>QLineEdit::Password</enum>
        </property>
+       <property name="placeholderText">
+        <string/>
+       </property>
        <property name="clearButtonEnabled">
         <bool>false</bool>
        </property>
@@ -99,6 +108,9 @@
       <widget class="QLineEdit" name="name">
        <property name="toolTip">
         <string>Just a name how would you call this account, doesn't affect anything</string>
+       </property>
+       <property name="placeholderText">
+        <string>John</string>
        </property>
       </widget>
      </item>
