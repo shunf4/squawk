@@ -23,7 +23,7 @@
 
 using namespace Core;
 
-Account::Account(const QString& p_login, const QString& p_server, const QString& p_password, const QString& p_name, QObject* parent):
+Account::Account(const QString& p_login, const QString& p_server, const QString& p_password, const QString& p_name, NetworkAccess* p_net, QObject* parent):
     QObject(parent),
     name(p_name),
     achiveQueries(),
@@ -38,15 +38,19 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     bm(new QXmppBookmarkManager()),
     rm(client.findExtension<QXmppRosterManager>()),
     vm(client.findExtension<QXmppVCardManager>()),
+    um(new QXmppUploadRequestManager()),
     contacts(),
     conferences(),
     maxReconnectTimes(0),
     reconnectTimes(0),
     queuedContacts(),
     outOfRosterContacts(),
+    pendingMessages(),
+    uploadingSlotsQueue(),
     avatarHash(),
     avatarType(),
-    ownVCardRequestInProgress(false)
+    ownVCardRequestInProgress(false),
+    network(p_net)
 {
     config.setUser(p_login);
     config.setDomain(p_server);
@@ -84,6 +88,10 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     
     QObject::connect(vm, &QXmppVCardManager::vCardReceived, this, &Account::onVCardReceived);
     //QObject::connect(&vm, &QXmppVCardManager::clientVCardReceived, this, &Account::onOwnVCardReceived); //for some reason it doesn't work, launching from common handler
+    
+    client.addExtension(um);
+    QObject::connect(um, &QXmppUploadRequestManager::slotReceived, this, &Account::onUploadSlotReceived);
+    QObject::connect(um, &QXmppUploadRequestManager::requestFailed, this, &Account::onUploadSlotRequestFailed);
     
     QString path(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
     path += "/" + name;
@@ -141,6 +149,7 @@ Account::~Account()
         delete itr->second;
     }
     
+    delete um;
     delete bm;
     delete mm;
     delete am;
@@ -622,6 +631,44 @@ void Core::Account::sendMessage(const Shared::Message& data)
         qDebug() << "An attempt to send message with not connected account " << name << ", skipping";
     }
 }
+
+void Core::Account::sendMessage(const Shared::Message& data, const QString& path)
+{
+    if (state == Shared::connected) {
+        QString url = network->getFileRemoteUrl(path);
+        if (url.size() != 0) {
+            sendMessageWithLocalUploadedFile(data, url);
+        } else {
+            if (network->isUploading(path, data.getId())) {
+                pendingMessages.emplace(data.getId(), data);
+            } else {
+                if (um->serviceFound()) {
+                    QFileInfo file(path);
+                    if (file.exists() && file.isReadable()) {
+                        uploadingSlotsQueue.emplace_back(path, data);
+                        if (uploadingSlotsQueue.size() == 1) {
+                            um->requestUploadSlot(file);
+                        }
+                    } else {
+                        qDebug() << "Requested upload slot in account" << name << "for file" << path << "but the file doesn't exist or is not readable";
+                    }
+                } else {
+                    qDebug() << "Requested upload slot in account" << name << "for file" << path << "but upload manager didn't discover any upload services";
+                }
+            }
+        }
+    } else {
+        qDebug() << "An attempt to send message with not connected account " << name << ", skipping";
+    }
+}
+
+void Core::Account::sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url)
+{
+    msg.setOutOfBandUrl(url);
+    sendMessage(msg);
+    //TODO removal/progress update
+}
+
 
 void Core::Account::onCarbonMessageReceived(const QXmppMessage& msg)
 {
@@ -1550,4 +1597,46 @@ void Core::Account::uploadVCard(const Shared::VCard& card)
     
     vm->setClientVCard(iq);
     onOwnVCardReceived(iq);
+}
+
+void Core::Account::onUploadSlotReceived(const QXmppHttpUploadSlotIq& slot)
+{
+    if (uploadingSlotsQueue.size() == 0) {
+        qDebug() << "HTTP Upload manager of account" << name << "reports about success requesting upload slot, but none was requested";
+    } else {
+        const std::pair<QString, Shared::Message>& pair = uploadingSlotsQueue.front();
+        const QString& mId = pair.second.getId();
+        network->uploadFile(mId, pair.first, slot.putUrl(), slot.getUrl(), slot.putHeaders());
+        pendingMessages.emplace(mId, pair.second);
+        uploadingSlotsQueue.pop_front();
+        
+        if (uploadingSlotsQueue.size() > 0) {
+            um->requestUploadSlot(uploadingSlotsQueue.front().first);
+        }
+    }
+}
+
+void Core::Account::onUploadSlotRequestFailed(const QXmppHttpUploadRequestIq& request)
+{
+    if (uploadingSlotsQueue.size() == 0) {
+        qDebug() << "HTTP Upload manager of account" << name << "reports about an error requesting upload slot, but none was requested";
+        qDebug() << request.error().text();
+    } else {
+        const std::pair<QString, Shared::Message>& pair = uploadingSlotsQueue.front();
+        qDebug() << "Error requesting upload slot for file" << pair.first << "in account" << name << ":" << request.error().text();
+        
+        if (uploadingSlotsQueue.size() > 0) {
+            um->requestUploadSlot(uploadingSlotsQueue.front().first);
+        }
+        uploadingSlotsQueue.pop_front();
+    }
+}
+
+void Core::Account::onFileUploaded(const QString& messageId, const QString& url)
+{
+    std::map<QString, Shared::Message>::const_iterator itr = pendingMessages.find(messageId);
+    if (itr != pendingMessages.end()) {
+        sendMessageWithLocalUploadedFile(itr->second, url);
+        pendingMessages.erase(itr);
+    }
 }

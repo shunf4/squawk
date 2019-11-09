@@ -36,12 +36,14 @@
 #include <QXmppClient.h>
 #include <QXmppBookmarkManager.h>
 #include <QXmppBookmarkSet.h>
+#include <QXmppUploadRequestManager.h>
 #include <QXmppHttpUploadIq.h>
 #include <QXmppVCardIq.h>
 #include <QXmppVCardManager.h>
-#include "../global.h"
+#include "global.h"
 #include "contact.h"
 #include "conference.h"
+#include "networkaccess.h"
 
 namespace Core
 {
@@ -50,7 +52,7 @@ class Account : public QObject
 {
     Q_OBJECT
 public:
-    Account(const QString& p_login, const QString& p_server, const QString& p_password, const QString& p_name, QObject* parent = 0);
+    Account(const QString& p_login, const QString& p_server, const QString& p_password, const QString& p_name, NetworkAccess* p_net, QObject* parent = 0);
     ~Account();
     
     void connect();
@@ -74,6 +76,7 @@ public:
     void setAvailability(Shared::Availability avail);
     QString getFullJid() const;
     void sendMessage(const Shared::Message& data);
+    void sendMessage(const Shared::Message& data, const QString& path);
     void requestArchive(const QString& jid, int count, const QString& before);
     void setReconnectTimes(unsigned int times);
     void subscribeToContact(const QString& jid, const QString& reason);
@@ -113,6 +116,7 @@ signals:
     void changeRoomParticipant(const QString& jid, const QString& nickName, const QMap<QString, QVariant>& data);
     void removeRoomParticipant(const QString& jid, const QString& nickName);
     void receivedVCard(const QString& jid, const Shared::VCard& card);
+    void uploadFile(const QFileInfo& file, const QUrl& set, const QUrl& get, QMap<QString, QString> headers);
     
 private:
     QString name;
@@ -128,6 +132,7 @@ private:
     QXmppBookmarkManager* bm;
     QXmppRosterManager* rm;
     QXmppVCardManager* vm;
+    QXmppUploadRequestManager* um;
     std::map<QString, Contact*> contacts;
     std::map<QString, Conference*> conferences;
     unsigned int maxReconnectTimes;
@@ -136,10 +141,13 @@ private:
     std::map<QString, QString> queuedContacts;
     std::set<QString> outOfRosterContacts;
     std::set<QString> pendingVCardRequests;
+    std::map<QString, Shared::Message> pendingMessages;
+    std::deque<std::pair<QString, Shared::Message>> uploadingSlotsQueue;
     
     QString avatarHash;
     QString avatarType;
     bool ownVCardRequestInProgress;
+    NetworkAccess* network;
     
 private slots:
     void onClientConnected();
@@ -184,6 +192,11 @@ private slots:
     
     void onVCardReceived(const QXmppVCardIq& card);
     void onOwnVCardReceived(const QXmppVCardIq& card);
+    
+    void onUploadSlotReceived(const QXmppHttpUploadSlotIq& slot);
+    void onUploadSlotRequestFailed(const QXmppHttpUploadRequestIq& request);
+    void onFileUploaded(const QString& messageId, const QString& url);
+    void onFileUploadError(const QString& messageId, const QString& path);
   
 private:
     void addedAccount(const QString &bareJid);
@@ -200,7 +213,7 @@ private:
     void logMessage(const QXmppMessage& msg, const QString& reason = "Message wasn't handled: ");
     void storeConferences();
     void clearConferences();
-    
+    void sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url);
 };
 
 void initializeVCard(Shared::VCard& vCard, const QXmppVCardIq& card);

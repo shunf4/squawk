@@ -121,7 +121,7 @@ void Core::NetworkAccess::onDownloadProgress(qint64 bytesReceived, qint64 bytesT
     QString url = rpl->url().toString();
     std::map<QString, Transfer*>::const_iterator itr = downloads.find(url);
     if (itr == downloads.end()) {
-        qDebug() << "an error downloading" << url << ": the request had some progress but seems like noone is waiting for it, skipping";
+        qDebug() << "an error downloading" << url << ": the request had some progress but seems like no one is waiting for it, skipping";
     } else {
         Transfer* dwn = itr->second;
         qreal received = bytesReceived;
@@ -140,7 +140,7 @@ void Core::NetworkAccess::onDownloadError(QNetworkReply::NetworkError code)
     QString url = rpl->url().toString();
     std::map<QString, Transfer*>::const_iterator itr = downloads.find(url);
     if (itr == downloads.end()) {
-        qDebug() << "an error downloading" << url << ": the request is reporting an error but seems like noone is waiting for it, skipping";
+        qDebug() << "an error downloading" << url << ": the request is reporting an error but seems like no one is waiting for it, skipping";
     } else {
         QString errorText = getErrorText(code);
         if (errorText.size() > 0) {
@@ -328,7 +328,7 @@ void Core::NetworkAccess::onDownloadFinished()
 
 void Core::NetworkAccess::startDownload(const QString& messageId, const QString& url)
 {
-    Transfer* dwn = new Transfer({{messageId}, 0, 0, true, "", 0});
+    Transfer* dwn = new Transfer({{messageId}, 0, 0, true, "", url, 0});
     QNetworkRequest req(url);
     dwn->reply = manager->get(req);
     connect(dwn->reply, &QNetworkReply::downloadProgress, this, &NetworkAccess::onDownloadProgress);
@@ -363,15 +363,16 @@ void Core::NetworkAccess::onUploadFinished()
     QString url = rpl->url().toString();
     std::map<QString, Transfer*>::const_iterator itr = uploads.find(url);
     if (itr == downloads.end()) {
-        qDebug() << "an error uploading" << url << ": the request is done but seems like noone is waiting for it, skipping";
+        qDebug() << "an error uploading" << url << ": the request is done but seems like no one is waiting for it, skipping";
     } else {
         Transfer* upl = itr->second;
         if (upl->success) {
             qDebug() << "upload success for" << url;
-            files.addRecord(url, upl->path);
+            files.addRecord(upl->url, upl->path);
         
             for (std::set<QString>::const_iterator mItr = upl->messages.begin(), end = upl->messages.end(); mItr != end; ++mItr) {
                 emit fileLocalPathResponse(*mItr, upl->path);
+                emit uploadFileComplete(*mItr, upl->url);
             }
         }
         
@@ -389,7 +390,7 @@ void Core::NetworkAccess::onUploadProgress(qint64 bytesReceived, qint64 bytesTot
     QString url = rpl->url().toString();
     std::map<QString, Transfer*>::const_iterator itr = uploads.find(url);
     if (itr == uploads.end()) {
-        qDebug() << "an error downloading" << url << ": the request had some progress but seems like noone is waiting for it, skipping";
+        qDebug() << "an error downloading" << url << ": the request had some progress but seems like no one is waiting for it, skipping";
     } else {
         Transfer* upl = itr->second;
         qreal received = bytesReceived;
@@ -404,15 +405,15 @@ void Core::NetworkAccess::onUploadProgress(qint64 bytesReceived, qint64 bytesTot
 
 void Core::NetworkAccess::startUpload(const QString& messageId, const QString& url, const QString& path)
 {
-    Transfer* upl = new Transfer({{messageId}, 0, 0, true, path, 0});
+    Transfer* upl = new Transfer({{messageId}, 0, 0, true, path, url, 0});
     QNetworkRequest req(url);
     QFile* file = new QFile(path);
     if (file->open(QIODevice::ReadOnly)) {
         upl->reply = manager->put(req, file);
         
-        connect(upl->reply, SIGNAL(uploadProgress(qint64, qint64)), SLOT(onUploadProgress(qint64, qint64)));
-        connect(upl->reply, SIGNAL(error(QNetworkReply::NetworkError)), SLOT(onUploadError(QNetworkReply::NetworkError)));
-        connect(upl->reply, SIGNAL(finished()), SLOT(onUploadFinished()));
+        connect(upl->reply, &QNetworkReply::uploadProgress, this, &NetworkAccess::onUploadProgress);
+        connect(upl->reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::error), this, &NetworkAccess::onUploadError);
+        connect(upl->reply, &QNetworkReply::finished, this, &NetworkAccess::onUploadFinished);
         uploads.insert(std::make_pair(url, upl));
         emit downloadFileProgress(messageId, 0);
     } else {
@@ -453,5 +454,38 @@ void Core::NetworkAccess::uploadFileRequest(const QString& messageId, const QStr
             qDebug() << "Error requesting file path on upload:" << e.what();
             emit uploadFileError(messageId, QString("Database error: ") + e.what());
         }
+    }
+}
+
+QString Core::NetworkAccess::getFileRemoteUrl(const QString& path)
+{
+    return "";  //TODO this is a way not to upload some file more then 1 time, here I'm supposed to return that file GET url
+}
+
+bool Core::NetworkAccess::isUploading(const QString& path, const QString& messageId)
+{
+    return false; //TODO this is a way to avoid parallel uploading of the same files by different chats
+                    //   message is is supposed to be added to the uploading messageids list 
+                    //   the result should be true if there was an uploading file with this path
+                    //   message id can be empty, then it's just to check and not to add
+}
+
+void Core::NetworkAccess::uploadFile(const QString& messageId, const QString& path, const QUrl& put, const QUrl& get, const QMap<QString, QString> headers)
+{
+    Transfer* upl = new Transfer({{messageId}, 0, 0, true, path, get.toString(), 0});
+    QNetworkRequest req(put);
+    QFile* file = new QFile(path);
+    if (file->open(QIODevice::ReadOnly)) {
+        upl->reply = manager->put(req, file);
+        
+        connect(upl->reply, &QNetworkReply::uploadProgress, this, &NetworkAccess::onUploadProgress);
+        connect(upl->reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::error), this, &NetworkAccess::onUploadError);
+        connect(upl->reply, &QNetworkReply::finished, this, &NetworkAccess::onUploadFinished);
+        uploads.insert(std::make_pair(put.toString(), upl));
+        emit downloadFileProgress(messageId, 0);
+    } else {
+        qDebug() << "couldn't upload file" << path;
+        emit uploadFileError(messageId, "Error opening file");
+        delete file;
     }
 }

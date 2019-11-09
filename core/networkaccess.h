@@ -47,12 +47,17 @@ public:
     void start();
     void stop();
     
+    QString getFileRemoteUrl(const QString& path);
+    bool isUploading(const QString& path, const QString& messageId = "");
+    void uploadFile(const QString& messageId, const QString& path, const QUrl& put, const QUrl& get, const QMap<QString, QString> headers);
+    
 signals:
     void fileLocalPathResponse(const QString& messageId, const QString& path);
     void downloadFileProgress(const QString& messageId, qreal value);
     void downloadFileError(const QString& messageId, const QString& path);
     void uploadFileProgress(const QString& messageId, qreal value);
     void uploadFileError(const QString& messageId, const QString& path);
+    void uploadFileComplete(const QString& messageId, const QString& url);
     
 public slots:
     void fileLocalPathRequest(const QString& messageId, const QString& url);
@@ -85,6 +90,7 @@ private:
         QNetworkReply* reply;
         bool success;
         QString path;
+        QString url;
         QFile* file;
     };
 };

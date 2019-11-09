@@ -106,7 +106,7 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     QSettings settings;
     unsigned int reconnects = settings.value("reconnects", 2).toUInt();
     
-    Account* acc = new Account(login, server, password, name);
+    Account* acc = new Account(login, server, password, name, &network);
     acc->setResource(resource);
     acc->setReconnectTimes(reconnects);
     accounts.push_back(acc);
@@ -285,7 +285,13 @@ void Core::Squawk::sendMessage(const QString& account, const Shared::Message& da
 
 void Core::Squawk::sendMessage(const QString& account, const Shared::Message& data, const QString& path)
 {
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug("An attempt to send a message with non existing account, skipping");
+        return;
+    }
     
+    itr->second->sendMessage(data, path);
 }
 
 void Core::Squawk::requestArchive(const QString& account, const QString& jid, int count, const QString& before)
