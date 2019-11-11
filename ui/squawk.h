@@ -100,6 +100,8 @@ public slots:
     void fileLocalPathResponse(const QString& messageId, const QString& path);
     void downloadFileError(const QString& messageId, const QString& error);
     void downloadFileProgress(const QString& messageId, qreal value);
+    void uploadFileError(const QString& messageId, const QString& error);
+    void uploadFileProgress(const QString& messageId, qreal value);
     void responseVCard(const QString& jid, const Shared::VCard& card);
     
 private:

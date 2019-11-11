@@ -131,6 +131,8 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, &Core::Squawk::fileLocalPathResponse, &w, &Squawk::fileLocalPathResponse);
     QObject::connect(squawk, &Core::Squawk::downloadFileProgress, &w, &Squawk::downloadFileProgress);
     QObject::connect(squawk, &Core::Squawk::downloadFileError, &w, &Squawk::downloadFileError);
+    QObject::connect(squawk, &Core::Squawk::uploadFileProgress, &w, &Squawk::uploadFileProgress);
+    QObject::connect(squawk, &Core::Squawk::uploadFileError, &w, &Squawk::uploadFileError);
     QObject::connect(squawk, &Core::Squawk::responseVCard, &w, &Squawk::responseVCard);
     
     coreThread->start();

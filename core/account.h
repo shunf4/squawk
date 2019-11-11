@@ -196,7 +196,7 @@ private slots:
     void onUploadSlotReceived(const QXmppHttpUploadSlotIq& slot);
     void onUploadSlotRequestFailed(const QXmppHttpUploadRequestIq& request);
     void onFileUploaded(const QString& messageId, const QString& url);
-    void onFileUploadError(const QString& messageId, const QString& path);
+    void onFileUploadError(const QString& messageId, const QString& errMsg);
   
 private:
     void addedAccount(const QString &bareJid);

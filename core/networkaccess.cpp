@@ -437,16 +437,22 @@ void Core::NetworkAccess::uploadFileRequest(const QString& messageId, const QStr
         try {
             QString ePath = files.getRecord(url);
             if (ePath == path) {
-                emit fileLocalPathResponse(messageId, path);
+                QFileInfo info(path);
+                if (info.exists() && info.isFile()) {
+                    emit fileLocalPathResponse(messageId, path);
+                } else {
+                    files.removeRecord(url);
+                    startUpload(messageId, url, path);
+                }
             } else {
-                files.changeRecord(url, path);
-            }
-            QFileInfo info(path);
-            if (info.exists() && info.isFile()) {
-                emit fileLocalPathResponse(messageId, path);
-            } else {
-                files.removeRecord(url);
-                startDownload(messageId, url);
+                QFileInfo info(path);
+                if (info.exists() && info.isFile()) {
+                    files.changeRecord(url, path);
+                    emit fileLocalPathResponse(messageId, path);
+                } else {
+                    files.removeRecord(url);
+                    startUpload(messageId, url, path);
+                }
             }
         } catch (Archive::NotFound e) {
             startUpload(messageId, url, path);
@@ -474,6 +480,9 @@ void Core::NetworkAccess::uploadFile(const QString& messageId, const QString& pa
 {
     Transfer* upl = new Transfer({{messageId}, 0, 0, true, path, get.toString(), 0});
     QNetworkRequest req(put);
+    for (QMap<QString, QString>::const_iterator itr = headers.begin(), end = headers.end(); itr != end; itr++) {
+        req.setRawHeader(itr.key().toUtf8(), itr.value().toUtf8());
+    }
     QFile* file = new QFile(path);
     if (file->open(QIODevice::ReadOnly)) {
         upl->reply = manager->put(req, file);

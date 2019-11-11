@@ -50,16 +50,21 @@ public:
     void showBusyIndicator();
     void hideBusyIndicator();
     void responseLocalFile(const QString& messageId, const QString& path);
-    void downloadError(const QString& messageId, const QString& error);
-    void responseDownloadProgress(const QString& messageId, qreal progress);
+    void fileError(const QString& messageId, const QString& error);
+    void fileProgress(const QString& messageId, qreal progress);
+    void appendMessageWithUpload(const Shared::Message& message, const QString& path);
     
 signals:
     void resize(int amount);
     void downloadFile(const QString& messageId, const QString& url);
+    void uploadFile(const Shared::Message& msg, const QString& path);
     void requestLocalFile(const QString& messageId, const QString& url);
     
 protected:
     void resizeEvent(QResizeEvent * event) override;
+    
+protected:
+    void onDownload();
     
 private:
     struct Comparator {
@@ -76,11 +81,14 @@ private:
     Order messageOrder;
     Index myMessages;
     std::map<QString, Index> palMessages;
+    std::map<QString, QString> uploadPaths;
     QVBoxLayout* layout;
     
     QString myName;
     std::map<QString, QString> palNames;
     std::deque<QHBoxLayout*> views;
+    Index uploading;
+    Index downloading;
     bool room;
     bool busyShown;
     Progress progress;

@@ -26,10 +26,13 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     messageOrder(),
     myMessages(),
     palMessages(),
+    uploadPaths(),
     layout(new QVBoxLayout(this)),
     myName(),
     palNames(),
     views(),
+    uploading(),
+    downloading(),
     room(p_room),
     busyShown(false),
     progress()
@@ -125,12 +128,25 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
         layout->insertLayout(index, message);
     }
     
-    if (msg.hasOutOfBandUrl()) {\
+    if (msg.hasOutOfBandUrl()) {
         emit requestLocalFile(msg.getId(), msg.getOutOfBandUrl());
-        connect(message, &Message::downloadFile, this, &MessageLine::downloadFile);
+        connect(message, &Message::downloadFile, this, &MessageLine::onDownload);
     }
     
     return res;
+}
+
+void MessageLine::onDownload()
+{
+    Message* msg = static_cast<Message*>(sender());
+    QString messageId = msg->getId();
+    Index::const_iterator itr = downloading.find(messageId);
+    if (itr == downloading.end()) {
+        downloading.insert(std::make_pair(messageId, msg));
+        emit downloadFile(messageId, msg->getFileUrl());
+    } else {
+        qDebug() << "An attempt to initiate download for already downloading file" << msg->getFileUrl() << ", skipping";
+    }
 }
 
 void MessageLine::setMyName(const QString& name)
@@ -192,13 +208,18 @@ void MessageLine::hideBusyIndicator()
     }
 }
 
-void MessageLine::responseDownloadProgress(const QString& messageId, qreal progress)
+void MessageLine::fileProgress(const QString& messageId, qreal progress)
 {
-    Index::const_iterator itr = messageIndex.find(messageId);
-    if (itr == messageIndex.end()) {
-        
+    Index::const_iterator itr = downloading.find(messageId);
+    if (itr == downloading.end()) {
+        Index::const_iterator itr = uploading.find(messageId);
+        if (itr == uploading.end()) {
+            //TODO may be some logging, that's not normal
+        } else {
+            itr->second->setProgress(progress, tr("Uploading..."));
+        }
     } else {
-        itr->second->setProgress(progress);
+        itr->second->setProgress(progress, tr("Downloading..."));
     }
 }
 
@@ -211,18 +232,31 @@ void MessageLine::responseLocalFile(const QString& messageId, const QString& pat
         if (path.size() > 0) {
             itr->second->showFile(path);
         } else {
-            itr->second->addDownloadDialog();
+            itr->second->addButton(QIcon::fromTheme("download"), tr("Download"), tr("Push the button to daownload the file"));
         }
     }
 }
 
-void MessageLine::downloadError(const QString& messageId, const QString& error)
+void MessageLine::fileError(const QString& messageId, const QString& error)
 {
-    Index::const_iterator itr = messageIndex.find(messageId);
-    if (itr == messageIndex.end()) {
-        
+    Index::const_iterator itr = downloading.find(messageId);
+    if (itr == downloading.end()) {
+        Index::const_iterator itr = uploading.find(messageId);
+        if (itr == uploading.end()) {
+            //TODO may be some logging, that's not normal
+        } else {
+            //itr->second->showError(error);
+            //itr->second->addDownloadDialog();
+        }
     } else {
-        itr->second->showError(error);
+        itr->second->addButton(QIcon::fromTheme("download"), tr("Download"), 
+                               tr("Error downloading file: %1\nYou can try again").arg(QCoreApplication::translate("NetworkErrors", error.toLatin1())));
     }
+}
+
+void MessageLine::appendMessageWithUpload(const Shared::Message& msg, const QString& path)
+{
+    message(msg);
+    
 }
 

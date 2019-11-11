@@ -30,9 +30,9 @@
 #include <QDesktopServices>
 #include <QUrl>
 
-#include "../../global.h"
-#include "../utils/resizer.h"
-#include "../utils/image.h"
+#include "global.h"
+#include "resizer.h"
+#include "image.h"
 
 /**
  * @todo write docs
@@ -46,14 +46,14 @@ public:
     
     void setSender(const QString& sender);
     QString getId() const;
+    QString getFileUrl() const;
     
-    void addDownloadDialog();
+    void addButton(const QIcon& icon, const QString& buttonText, const QString& comment = "");
     void showFile(const QString& path);
-    void showError(const QString& error);
-    void setProgress(qreal value);
+    void setProgress(qreal value, const QString& label = "");
     
 signals:
-    void downloadFile(const QString& messageId, const QString& url);
+    void downloadFile();
     
 private:
     Shared::Message msg;
@@ -67,15 +67,10 @@ private:
     QLabel* file;
     QProgressBar* progress;
     QLabel* fileComment;
-    QString errorText;
     bool hasDownloadButton;
     bool hasProgress;
     bool hasFile;
     bool commentAdded;
-    bool errorDownloadingFile;
-    
-private slots:
-    void onDownload();
   
 private:
     void hideDownload();

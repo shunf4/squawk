@@ -38,12 +38,10 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     file(0),
     progress(0),
     fileComment(new QLabel()),
-    errorText(""),
     hasDownloadButton(false),
     hasProgress(false),
     hasFile(false),
-    commentAdded(false),
-    errorDownloadingFile(false)
+    commentAdded(false)
 {
     body->setBackgroundRole(QPalette::AlternateBase);
     body->setAutoFillBackground(true);
@@ -101,12 +99,17 @@ QString Message::getId() const
     return msg.getId();
 }
 
+QString Message::getFileUrl() const
+{
+    return msg.getOutOfBandUrl();
+}
+
 void Message::setSender(const QString& p_sender)
 {
     sender->setText(p_sender);
 }
 
-void Message::addDownloadDialog()
+void Message::addButton(const QIcon& icon, const QString& buttonText, const QString& comment)
 {
     hideFile();
     hideProgress();
@@ -116,16 +119,14 @@ void Message::addDownloadDialog()
             text->setText("");
             text->hide();
         }
-        downloadButton = new QPushButton(QIcon::fromTheme("download"), tr("Download"));
+        downloadButton = new QPushButton(icon, buttonText);
         downloadButton->setToolTip("<a href=\"" + msg.getOutOfBandUrl() + "\">" + msg.getOutOfBandUrl() + "</a>");
-        if (errorDownloadingFile) {
+        if (comment.size() != 0) {
             fileComment->setWordWrap(true);
-            fileComment->setText(tr("Error downloading file: %1\nYou can try again").arg(QCoreApplication::translate("NetworkErrors", errorText.toLatin1())));
-        } else {
-            fileComment->setText(tr("%1 is offering you to download a file").arg(sender->text()));
+            fileComment->setText(comment);
+            fileComment->show();
         }
-        fileComment->show();
-        connect(downloadButton, &QPushButton::clicked, this, &Message::onDownload);
+        connect(downloadButton, &QPushButton::clicked, this, &Message::downloadFile);
         bodyLayout->insertWidget(2, fileComment);
         bodyLayout->insertWidget(3, downloadButton);
         hasDownloadButton = true;
@@ -133,12 +134,7 @@ void Message::addDownloadDialog()
     }
 }
 
-void Message::onDownload()
-{
-    emit downloadFile(msg.getId(), msg.getOutOfBandUrl());
-}
-
-void Message::setProgress(qreal value)
+void Message::setProgress(qreal value, const QString& label)
 {
     hideFile();
     hideDownload();
@@ -150,7 +146,9 @@ void Message::setProgress(qreal value)
         }
         progress = new QProgressBar();
         progress->setRange(0, 100);
-        fileComment->setText("Downloading...");
+        if (label.size() != 0) {
+            fileComment->setText(label);
+        }
         fileComment->show();
         bodyLayout->insertWidget(2, progress);
         bodyLayout->insertWidget(3, fileComment);
@@ -214,7 +212,6 @@ void Message::hideDownload()
         downloadButton->deleteLater();
         downloadButton = 0;
         hasDownloadButton = false;
-        errorDownloadingFile = false;
     }
 }
 
@@ -234,11 +231,4 @@ void Message::hideProgress()
         progress = 0;
         hasProgress = false;;
     }
-}
-
-void Message::showError(const QString& error)
-{
-    errorDownloadingFile = true;
-    errorText = error;
-    addDownloadDialog();
 }

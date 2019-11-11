@@ -93,6 +93,9 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     QObject::connect(um, &QXmppUploadRequestManager::slotReceived, this, &Account::onUploadSlotReceived);
     QObject::connect(um, &QXmppUploadRequestManager::requestFailed, this, &Account::onUploadSlotRequestFailed);
     
+    QObject::connect(network, &NetworkAccess::uploadFileComplete, this, &Account::onFileUploaded);
+    QObject::connect(network, &NetworkAccess::uploadFileError, this, &Account::onFileUploadError);
+    
     QString path(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
     path += "/" + name;
     QDir dir(path);
@@ -141,6 +144,9 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
 
 Account::~Account()
 {
+    QObject::disconnect(network, &NetworkAccess::uploadFileComplete, this, &Account::onFileUploaded);
+    QObject::disconnect(network, &NetworkAccess::uploadFileError, this, &Account::onFileUploadError);
+    
     for (std::map<QString, Contact*>::const_iterator itr = contacts.begin(), end = contacts.end(); itr != end; ++itr) {
         delete itr->second;
     }
@@ -1637,6 +1643,14 @@ void Core::Account::onFileUploaded(const QString& messageId, const QString& url)
     std::map<QString, Shared::Message>::const_iterator itr = pendingMessages.find(messageId);
     if (itr != pendingMessages.end()) {
         sendMessageWithLocalUploadedFile(itr->second, url);
+        pendingMessages.erase(itr);
+    }
+}
+
+void Core::Account::onFileUploadError(const QString& messageId, const QString& errMsg)
+{
+    std::map<QString, Shared::Message>::const_iterator itr = pendingMessages.find(messageId);
+    if (itr != pendingMessages.end()) {
         pendingMessages.erase(itr);
     }
 }
