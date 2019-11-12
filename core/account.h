@@ -31,6 +31,7 @@
 
 #include <QXmppRosterManager.h>
 #include <QXmppCarbonManager.h>
+#include <QXmppDiscoveryManager.h>
 #include <QXmppMamManager.h>
 #include <QXmppMucManager.h>
 #include <QXmppClient.h>
@@ -133,6 +134,7 @@ private:
     QXmppRosterManager* rm;
     QXmppVCardManager* vm;
     QXmppUploadRequestManager* um;
+    QXmppDiscoveryManager* dm;
     std::map<QString, Contact*> contacts;
     std::map<QString, Conference*> conferences;
     unsigned int maxReconnectTimes;
@@ -197,6 +199,8 @@ private slots:
     void onUploadSlotRequestFailed(const QXmppHttpUploadRequestIq& request);
     void onFileUploaded(const QString& messageId, const QString& url);
     void onFileUploadError(const QString& messageId, const QString& errMsg);
+    void onDiscoveryItemsReceived (const QXmppDiscoveryIq& items);
+    void onDiscoveryInfoReceived (const QXmppDiscoveryIq& info);
   
 private:
     void addedAccount(const QString &bareJid);

@@ -47,13 +47,16 @@ public:
     void setSender(const QString& sender);
     QString getId() const;
     QString getFileUrl() const;
+    const Shared::Message& getMessage() const;
     
-    void addButton(const QIcon& icon, const QString& buttonText, const QString& comment = "");
+    void addButton(const QIcon& icon, const QString& buttonText);
+    void showComment(const QString& comment, bool wordWrap = false);
+    void hideComment();
     void showFile(const QString& path);
-    void setProgress(qreal value, const QString& label = "");
+    void setProgress(qreal value);
     
 signals:
-    void downloadFile();
+    void buttonClicked();
     
 private:
     Shared::Message msg;
@@ -63,20 +66,19 @@ private:
     QLabel* sender;
     QLabel* text;
     QGraphicsDropShadowEffect* shadow;
-    QPushButton* downloadButton;
+    QPushButton* button;
     QLabel* file;
     QProgressBar* progress;
     QLabel* fileComment;
-    bool hasDownloadButton;
+    bool hasButton;
     bool hasProgress;
     bool hasFile;
     bool commentAdded;
   
 private:
-    void hideDownload();
+    void hideButton();
     void hideProgress();
     void hideFile();
-    void hideComment();
 };
 
 #endif // MESSAGE_H

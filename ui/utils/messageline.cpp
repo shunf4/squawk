@@ -30,7 +30,6 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     layout(new QVBoxLayout(this)),
     myName(),
     palNames(),
-    views(),
     uploading(),
     downloading(),
     room(p_room),
@@ -63,15 +62,15 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
     if (room) {
         if (msg.getFromResource() == myName) {
             sender = myName;
-            outgoing = false;
+            outgoing = true;
         } else {
             sender = msg.getFromResource();
-            outgoing = true;
+            outgoing = false;
         }
     } else {
         if (msg.getOutgoing()) {
             sender = myName;
-            outgoing = false;
+            outgoing = true;
         } else {
             QString jid = msg.getFromJid();
             std::map<QString, QString>::iterator itr = palNames.find(jid);
@@ -80,7 +79,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
             } else {
                 sender = jid;
             }
-            outgoing = true;
+            outgoing = false;
         }
     }
     
@@ -93,6 +92,8 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
         return invalid;
     }
     if (outgoing) {
+        myMessages.insert(std::make_pair(id, message));
+    } else {
         if (room) {
             
         } else {
@@ -103,8 +104,6 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
             }
             pItr->second.insert(std::make_pair(id, message));
         }
-    } else {
-        myMessages.insert(std::make_pair(id, message));
     }
     messageIndex.insert(std::make_pair(id, message));
     int index = std::distance<Order::const_iterator>(messageOrder.begin(), result.first);   //need to make with binary indexed tree
@@ -130,7 +129,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
     
     if (msg.hasOutOfBandUrl()) {
         emit requestLocalFile(msg.getId(), msg.getOutOfBandUrl());
-        connect(message, &Message::downloadFile, this, &MessageLine::onDownload);
+        connect(message, &Message::buttonClicked, this, &MessageLine::onDownload);
     }
     
     return res;
@@ -143,6 +142,8 @@ void MessageLine::onDownload()
     Index::const_iterator itr = downloading.find(messageId);
     if (itr == downloading.end()) {
         downloading.insert(std::make_pair(messageId, msg));
+        msg->setProgress(0);
+        msg->showComment(tr("Downloading..."));
         emit downloadFile(messageId, msg->getFileUrl());
     } else {
         qDebug() << "An attempt to initiate download for already downloading file" << msg->getFileUrl() << ", skipping";
@@ -210,16 +211,11 @@ void MessageLine::hideBusyIndicator()
 
 void MessageLine::fileProgress(const QString& messageId, qreal progress)
 {
-    Index::const_iterator itr = downloading.find(messageId);
-    if (itr == downloading.end()) {
-        Index::const_iterator itr = uploading.find(messageId);
-        if (itr == uploading.end()) {
-            //TODO may be some logging, that's not normal
-        } else {
-            itr->second->setProgress(progress, tr("Uploading..."));
-        }
+    Index::const_iterator itr = messageIndex.find(messageId);
+    if (itr == messageIndex.end()) {
+        //TODO may be some logging, that's not normal
     } else {
-        itr->second->setProgress(progress, tr("Downloading..."));
+        itr->second->setProgress(progress);
     }
 }
 
@@ -229,11 +225,85 @@ void MessageLine::responseLocalFile(const QString& messageId, const QString& pat
     if (itr == messageIndex.end()) {
         
     } else {
+        Index::const_iterator uItr = uploading.find(messageId);
         if (path.size() > 0) {
-            itr->second->showFile(path);
+            Index::const_iterator dItr = downloading.find(messageId);
+            if (dItr != downloading.end()) {
+                downloading.erase(dItr);
+                itr->second->showFile(path);
+            } else {
+                if (uItr != uploading.end()) {
+                    uploading.erase(uItr);
+                    std::map<QString, QString>::const_iterator muItr = uploadPaths.find(messageId);
+                    if (muItr != uploadPaths.end()) {
+                        uploadPaths.erase(muItr);
+                    }
+                    if (room) {
+                        removeMessage(messageId);
+                    } else {
+                        Shared::Message msg = itr->second->getMessage();
+                        removeMessage(messageId);
+                        msg.setCurrentTime();
+                        message(msg);
+                        itr = messageIndex.find(messageId);
+                        itr->second->showFile(path);
+                    }
+                } else {
+                    itr->second->showFile(path); //then it is already cached file
+                }
+            }
         } else {
-            itr->second->addButton(QIcon::fromTheme("download"), tr("Download"), tr("Push the button to daownload the file"));
+            if (uItr != uploading.end()) {
+                itr->second->addButton(QIcon::fromTheme("download"), tr("Download"));
+                itr->second->showComment(tr("Push the button to daownload the file"));
+            } else {
+                qDebug() << "An unhandled state for file uploading - empty path";
+            }
         }
+    }
+}
+
+void MessageLine::removeMessage(const QString& messageId)
+{
+    Index::const_iterator itr = messageIndex.find(messageId);
+    if (itr != messageIndex.end()) {
+        Message* ui = itr->second;
+        const Shared::Message& msg = ui->getMessage();
+        messageIndex.erase(itr);
+        Order::const_iterator oItr = messageOrder.find(msg.getTime());
+        if (oItr != messageOrder.end()) {
+            messageOrder.erase(oItr);
+        } else {
+            qDebug() << "An attempt to remove message from messageLine, but it wasn't found in order";
+        }
+        if (msg.getOutgoing()) {
+            Index::const_iterator mItr = myMessages.find(messageId);
+            if (mItr != myMessages.end()) {
+                myMessages.erase(mItr);
+            } else {
+                qDebug() << "Error removing message: it seems to be outgoing yet it wasn't found in outgoing messages";
+            }
+        } else {
+            if (room) {
+            
+            } else {
+                QString jid = msg.getFromJid();
+                std::map<QString, Index>::iterator pItr = palMessages.find(jid);
+                if (pItr != palMessages.end()) {
+                    Index& pMsgs = pItr->second;
+                    Index::const_iterator pmitr = pMsgs.find(messageId);
+                    if (pmitr != pMsgs.end()) {
+                        pMsgs.erase(pmitr);
+                    } else {
+                        qDebug() << "Error removing message: it seems to be incoming yet it wasn't found among messages from that penpal";
+                    }
+                }
+            }
+        }
+        ui->deleteLater();
+        qDebug() << "message" << messageId << "has been removed";
+    } else {
+        qDebug() << "An attempt to remove non existing message from messageLine";
     }
 }
 
@@ -245,18 +315,29 @@ void MessageLine::fileError(const QString& messageId, const QString& error)
         if (itr == uploading.end()) {
             //TODO may be some logging, that's not normal
         } else {
-            //itr->second->showError(error);
-            //itr->second->addDownloadDialog();
+            itr->second->showComment(tr("Error uploading file: %1\nYou can try again").arg(QCoreApplication::translate("NetworkErrors", error.toLatin1())), true);
+            itr->second->addButton(QIcon::fromTheme("upload"), tr("Upload"));
         }
     } else {
-        itr->second->addButton(QIcon::fromTheme("download"), tr("Download"), 
-                               tr("Error downloading file: %1\nYou can try again").arg(QCoreApplication::translate("NetworkErrors", error.toLatin1())));
+        itr->second->addButton(QIcon::fromTheme("download"), tr("Download"));
+        itr->second->showComment(tr("Error downloading file: %1\nYou can try again").arg(QCoreApplication::translate("NetworkErrors", error.toLatin1())), true);
     }
 }
 
 void MessageLine::appendMessageWithUpload(const Shared::Message& msg, const QString& path)
 {
     message(msg);
-    
+    QString id = msg.getId();
+    Message* ui = messageIndex.find(id)->second;
+    connect(ui, &Message::buttonClicked, this, &MessageLine::onUpload);     //this is in case of retry;
+    ui->setProgress(0);
+    ui->showComment("Uploading...");
+    uploading.insert(std::make_pair(id, ui));
+    uploadPaths.insert(std::make_pair(id, path));
+    emit uploadFile(msg, path);
 }
 
+void MessageLine::onUpload()
+{
+    //TODO retry
+}

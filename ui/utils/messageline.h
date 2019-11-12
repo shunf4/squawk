@@ -53,6 +53,7 @@ public:
     void fileError(const QString& messageId, const QString& error);
     void fileProgress(const QString& messageId, qreal progress);
     void appendMessageWithUpload(const Shared::Message& message, const QString& path);
+    void removeMessage(const QString& messageId);
     
 signals:
     void resize(int amount);
@@ -65,6 +66,7 @@ protected:
     
 protected:
     void onDownload();
+    void onUpload();
     
 private:
     struct Comparator {
@@ -86,7 +88,6 @@ private:
     
     QString myName;
     std::map<QString, QString> palNames;
-    std::deque<QHBoxLayout*> views;
     Index uploading;
     Index downloading;
     bool room;

@@ -98,10 +98,8 @@ public slots:
     void changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removeRoomParticipant(const QString& account, const QString& jid, const QString& name);
     void fileLocalPathResponse(const QString& messageId, const QString& path);
-    void downloadFileError(const QString& messageId, const QString& error);
-    void downloadFileProgress(const QString& messageId, qreal value);
-    void uploadFileError(const QString& messageId, const QString& error);
-    void uploadFileProgress(const QString& messageId, qreal value);
+    void fileError(const QString& messageId, const QString& error);
+    void fileProgress(const QString& messageId, qreal value);
     void responseVCard(const QString& jid, const Shared::VCard& card);
     
 private:

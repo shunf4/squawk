@@ -39,6 +39,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     rm(client.findExtension<QXmppRosterManager>()),
     vm(client.findExtension<QXmppVCardManager>()),
     um(new QXmppUploadRequestManager()),
+    dm(client.findExtension<QXmppDiscoveryManager>()),
     contacts(),
     conferences(),
     maxReconnectTimes(0),
@@ -92,6 +93,9 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     client.addExtension(um);
     QObject::connect(um, &QXmppUploadRequestManager::slotReceived, this, &Account::onUploadSlotReceived);
     QObject::connect(um, &QXmppUploadRequestManager::requestFailed, this, &Account::onUploadSlotRequestFailed);
+    
+    QObject::connect(dm, &QXmppDiscoveryManager::itemsReceived, this, &Account::onDiscoveryItemsReceived);
+    QObject::connect(dm, &QXmppDiscoveryManager::infoReceived, this, &Account::onDiscoveryInfoReceived);
     
     QObject::connect(network, &NetworkAccess::uploadFileComplete, this, &Account::onFileUploaded);
     QObject::connect(network, &NetworkAccess::uploadFileError, this, &Account::onFileUploadError);
@@ -196,6 +200,7 @@ void Core::Account::onClientConnected()
         reconnectTimes = maxReconnectTimes;
         state = Shared::connected;
         cm->setCarbonsEnabled(true);
+        dm->requestItems(getServer());
         emit connectionStateChanged(state);
     } else {
         qDebug() << "Something weird had happened - xmpp client reported about successful connection but account wasn't in" << state << "state";
@@ -613,6 +618,7 @@ void Core::Account::sendMessage(const Shared::Message& data)
         QXmppMessage msg(data.getFrom(), data.getTo(), data.getBody(), data.getThread());
         msg.setId(data.getId());
         msg.setType(static_cast<QXmppMessage::Type>(data.getType()));       //it is safe here, my type is compatible
+        msg.setOutOfBandUrl(data.getOutOfBandUrl());
         
         RosterItem* ri = 0;
         std::map<QString, Contact*>::const_iterator itr = contacts.find(data.getPenPalJid());
@@ -671,6 +677,9 @@ void Core::Account::sendMessage(const Shared::Message& data, const QString& path
 void Core::Account::sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url)
 {
     msg.setOutOfBandUrl(url);
+    if (msg.getBody().size() == 0) {
+        msg.setBody(url);
+    }
     sendMessage(msg);
     //TODO removal/progress update
 }
@@ -1653,4 +1662,16 @@ void Core::Account::onFileUploadError(const QString& messageId, const QString& e
     if (itr != pendingMessages.end()) {
         pendingMessages.erase(itr);
     }
+}
+
+void Core::Account::onDiscoveryItemsReceived(const QXmppDiscoveryIq& items)
+{
+    for (QXmppDiscoveryIq::Item item : items.items()) {
+        dm->requestInfo(item.jid());
+    }
+}
+
+void Core::Account::onDiscoveryInfoReceived(const QXmppDiscoveryIq& info)
+{
+
 }

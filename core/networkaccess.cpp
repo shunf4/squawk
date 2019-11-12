@@ -478,12 +478,12 @@ bool Core::NetworkAccess::isUploading(const QString& path, const QString& messag
 
 void Core::NetworkAccess::uploadFile(const QString& messageId, const QString& path, const QUrl& put, const QUrl& get, const QMap<QString, QString> headers)
 {
-    Transfer* upl = new Transfer({{messageId}, 0, 0, true, path, get.toString(), 0});
+    QFile* file = new QFile(path);
+    Transfer* upl = new Transfer({{messageId}, 0, 0, true, path, get.toString(), file});
     QNetworkRequest req(put);
     for (QMap<QString, QString>::const_iterator itr = headers.begin(), end = headers.end(); itr != end; itr++) {
         req.setRawHeader(itr.key().toUtf8(), itr.value().toUtf8());
     }
-    QFile* file = new QFile(path);
     if (file->open(QIODevice::ReadOnly)) {
         upl->reply = manager->put(req, file);
         

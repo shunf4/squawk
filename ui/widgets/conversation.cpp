@@ -66,6 +66,7 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     connect(m_ui->sendButton, &QPushButton::clicked, this, &Conversation::onEnterPressed);
     connect(line, &MessageLine::resize, this, &Conversation::onMessagesResize);
     connect(line, &MessageLine::downloadFile, this, &Conversation::downloadFile);
+    connect(line, &MessageLine::uploadFile, this, qOverload<const Shared::Message&, const QString&>(&Conversation::sendMessage));
     connect(line, &MessageLine::requestLocalFile, this, &Conversation::requestLocalFile);
     connect(m_ui->attachButton, &QPushButton::clicked, this, &Conversation::onAttach);
     
@@ -180,9 +181,32 @@ void Conversation::onEnterPressed()
 {
     QString body(m_ui->messageEditor->toPlainText());
     
-    if (body.size() > 0) {
-        m_ui->messageEditor->clear();
-        handleSendMessage(body);
+    if (filesToAttach.size() > 0) {
+        for (Badge* badge : filesToAttach) {
+            Shared::Message msg;
+            if (isMuc) {
+                msg.setType(Shared::Message::groupChat);
+            } else {
+                msg.setType(Shared::Message::chat);
+                msg.setToResource(activePalResource);
+            }
+            msg.setFromJid(myJid);
+            msg.setFromResource(myResource);
+            msg.setToJid(palJid);
+            msg.setOutgoing(true);
+            msg.generateRandomId();
+            msg.setCurrentTime();
+            if (body.size() > 0) {
+                msg.setBody(body);
+            }
+            line->appendMessageWithUpload(msg, badge->id);
+        }
+        clearAttachedFiles();
+    } else {
+        if (body.size() > 0) {
+            m_ui->messageEditor->clear();
+            handleSendMessage(body);
+        }
     }
 }
 
@@ -294,14 +318,14 @@ void Conversation::onScrollResize()
     }
 }
 
-void Conversation::responseDownloadProgress(const QString& messageId, qreal progress)
+void Conversation::responseFileProgress(const QString& messageId, qreal progress)
 {
-    line->responseDownloadProgress(messageId, progress);
+    line->fileProgress(messageId, progress);
 }
 
-void Conversation::downloadError(const QString& messageId, const QString& error)
+void Conversation::fileError(const QString& messageId, const QString& error)
 {
-    line->downloadError(messageId, error);
+    line->fileError(messageId, error);
 }
 
 void Conversation::responseLocalFile(const QString& messageId, const QString& path)

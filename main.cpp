@@ -79,6 +79,11 @@ int main(int argc, char *argv[])
     QThread* coreThread = new QThread();
     squawk->moveToThread(coreThread);
     
+    QObject::connect(coreThread, &QThread::started, squawk, &Core::Squawk::start);
+    QObject::connect(&app, &QApplication::aboutToQuit, squawk, &Core::Squawk::stop);
+    QObject::connect(squawk, &Core::Squawk::quit, coreThread, &QThread::quit);
+    QObject::connect(coreThread, &QThread::finished, squawk, &Core::Squawk::deleteLater);
+    
     QObject::connect(&w, &Squawk::newAccountRequest, squawk, &Core::Squawk::newAccountRequest);
     QObject::connect(&w, &Squawk::modifyAccountRequest, squawk, &Core::Squawk::modifyAccountRequest);
     QObject::connect(&w, &Squawk::removeAccountRequest, squawk, &Core::Squawk::removeAccountRequest);
@@ -129,10 +134,10 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, &Core::Squawk::changeRoomParticipant, &w, &Squawk::changeRoomParticipant);
     QObject::connect(squawk, &Core::Squawk::removeRoomParticipant, &w, &Squawk::removeRoomParticipant);
     QObject::connect(squawk, &Core::Squawk::fileLocalPathResponse, &w, &Squawk::fileLocalPathResponse);
-    QObject::connect(squawk, &Core::Squawk::downloadFileProgress, &w, &Squawk::downloadFileProgress);
-    QObject::connect(squawk, &Core::Squawk::downloadFileError, &w, &Squawk::downloadFileError);
-    QObject::connect(squawk, &Core::Squawk::uploadFileProgress, &w, &Squawk::uploadFileProgress);
-    QObject::connect(squawk, &Core::Squawk::uploadFileError, &w, &Squawk::uploadFileError);
+    QObject::connect(squawk, &Core::Squawk::downloadFileProgress, &w, &Squawk::fileProgress);
+    QObject::connect(squawk, &Core::Squawk::downloadFileError, &w, &Squawk::fileError);
+    QObject::connect(squawk, &Core::Squawk::uploadFileProgress, &w, &Squawk::fileProgress);
+    QObject::connect(squawk, &Core::Squawk::uploadFileError, &w, &Squawk::fileError);
     QObject::connect(squawk, &Core::Squawk::responseVCard, &w, &Squawk::responseVCard);
     
     coreThread->start();
