@@ -36,7 +36,8 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     line(new MessageLine(muc)),
     m_ui(new Ui::Conversation()),
     ker(),
-    res(),
+    scrollResizeCatcher(),
+    attachResizeCatcher(),
     vis(),
     thread(),
     statusIcon(0),
@@ -60,7 +61,8 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     statusLabel = m_ui->statusLabel;
     
     connect(&ker, &KeyEnterReceiver::enterPressed, this, &Conversation::onEnterPressed);
-    connect(&res, &Resizer::resized, this, &Conversation::onScrollResize);
+    connect(&scrollResizeCatcher, &Resizer::resized, this, &Conversation::onScrollResize);
+    connect(&attachResizeCatcher, &Resizer::resized, this, &Conversation::onAttachResize);
     connect(&vis, &VisibilityCatcher::shown, this, &Conversation::onScrollResize);
     connect(&vis, &VisibilityCatcher::hidden, this, &Conversation::onScrollResize);
     connect(m_ui->sendButton, &QPushButton::clicked, this, &Conversation::onEnterPressed);
@@ -69,6 +71,7 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     connect(line, &MessageLine::uploadFile, this, qOverload<const Shared::Message&, const QString&>(&Conversation::sendMessage));
     connect(line, &MessageLine::requestLocalFile, this, &Conversation::requestLocalFile);
     connect(m_ui->attachButton, &QPushButton::clicked, this, &Conversation::onAttach);
+    connect(m_ui->clearButton, &QPushButton::clicked, this, &Conversation::onClearButton);
     
     m_ui->messageEditor->installEventFilter(&ker);
     
@@ -78,7 +81,8 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     vs->setBackgroundRole(QPalette::Base);
     vs->setAutoFillBackground(true);
     connect(vs, &QScrollBar::valueChanged, this, &Conversation::onSliderValueChanged);
-    m_ui->scrollArea->installEventFilter(&res);
+    m_ui->scrollArea->installEventFilter(&scrollResizeCatcher);
+    m_ui->filesPanel->installEventFilter(&attachResizeCatcher);
     
     applyVisualEffects();
 }
@@ -181,6 +185,10 @@ void Conversation::onEnterPressed()
 {
     QString body(m_ui->messageEditor->toPlainText());
     
+    if (body.size() > 0) {
+        m_ui->messageEditor->clear();
+        handleSendMessage(body);
+    }
     if (filesToAttach.size() > 0) {
         for (Badge* badge : filesToAttach) {
             Shared::Message msg;
@@ -196,17 +204,9 @@ void Conversation::onEnterPressed()
             msg.setOutgoing(true);
             msg.generateRandomId();
             msg.setCurrentTime();
-            if (body.size() > 0) {
-                msg.setBody(body);
-            }
             line->appendMessageWithUpload(msg, badge->id);
         }
         clearAttachedFiles();
-    } else {
-        if (body.size() > 0) {
-            m_ui->messageEditor->clear();
-            handleSendMessage(body);
-        }
     }
 }
 
@@ -375,6 +375,30 @@ void Conversation::clearAttachedFiles()
     filesToAttach.clear();
     filesLayout->setContentsMargins(0, 0, 0, 0);
 }
+
+void Conversation::onClearButton()
+{
+    clearAttachedFiles();
+    m_ui->messageEditor->clear();
+}
+
+void Conversation::onAttachResize(const QSize& oldSize, const QSize& newSize)
+{
+    int oh = oldSize.height();
+    int nh = newSize.height();
+    
+    int d = oh - nh;
+    
+    if (d != 0) {
+        QList<int> cs = m_ui->splitter->sizes();
+        cs.first() += d;
+        cs.last() -=d;
+        
+        m_ui->splitter->setSizes(cs);
+        m_ui->scrollArea->verticalScrollBar()->setValue(m_ui->scrollArea->verticalScrollBar()->maximum());
+    }
+}
+
 
 bool VisibilityCatcher::eventFilter(QObject* obj, QEvent* event)
 {

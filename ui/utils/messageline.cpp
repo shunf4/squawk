@@ -253,8 +253,9 @@ void MessageLine::responseLocalFile(const QString& messageId, const QString& pat
                 }
             }
         } else {
-            if (uItr != uploading.end()) {
-                itr->second->addButton(QIcon::fromTheme("download"), tr("Download"));
+            if (uItr == uploading.end()) {
+                const Shared::Message& msg = itr->second->getMessage();
+                itr->second->addButton(QIcon::fromTheme("download"), tr("Download"), "<a href=\"" + msg.getOutOfBandUrl() + "\">" + msg.getOutOfBandUrl() + "</a>");
                 itr->second->showComment(tr("Push the button to daownload the file"));
             } else {
                 qDebug() << "An unhandled state for file uploading - empty path";
@@ -319,7 +320,8 @@ void MessageLine::fileError(const QString& messageId, const QString& error)
             itr->second->addButton(QIcon::fromTheme("upload"), tr("Upload"));
         }
     } else {
-        itr->second->addButton(QIcon::fromTheme("download"), tr("Download"));
+        const Shared::Message& msg = itr->second->getMessage();
+        itr->second->addButton(QIcon::fromTheme("download"), tr("Download"), "<a href=\"" + msg.getOutOfBandUrl() + "\">" + msg.getOutOfBandUrl() + "</a>");
         itr->second->showComment(tr("Error downloading file: %1\nYou can try again").arg(QCoreApplication::translate("NetworkErrors", error.toLatin1())), true);
     }
 }
@@ -331,7 +333,7 @@ void MessageLine::appendMessageWithUpload(const Shared::Message& msg, const QStr
     Message* ui = messageIndex.find(id)->second;
     connect(ui, &Message::buttonClicked, this, &MessageLine::onUpload);     //this is in case of retry;
     ui->setProgress(0);
-    ui->showComment("Uploading...");
+    ui->showComment(tr("Uploading..."));
     uploading.insert(std::make_pair(id, ui));
     uploadPaths.insert(std::make_pair(id, path));
     emit uploadFile(msg, path);

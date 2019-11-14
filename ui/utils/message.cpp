@@ -109,7 +109,7 @@ void Message::setSender(const QString& p_sender)
     sender->setText(p_sender);
 }
 
-void Message::addButton(const QIcon& icon, const QString& buttonText)
+void Message::addButton(const QIcon& icon, const QString& buttonText, const QString& tooltip)
 {
     hideFile();
     hideProgress();
@@ -120,7 +120,7 @@ void Message::addButton(const QIcon& icon, const QString& buttonText)
             text->hide();
         }
         button = new QPushButton(icon, buttonText);
-        button->setToolTip("<a href=\"" + msg.getOutOfBandUrl() + "\">" + msg.getOutOfBandUrl() + "</a>");
+        button->setToolTip(tooltip);
         connect(button, &QPushButton::clicked, this, &Message::buttonClicked);
         bodyLayout->insertWidget(2, button);
         hasButton = true;

@@ -49,7 +49,7 @@ public:
     QString getFileUrl() const;
     const Shared::Message& getMessage() const;
     
-    void addButton(const QIcon& icon, const QString& buttonText);
+    void addButton(const QIcon& icon, const QString& buttonText, const QString& tooltip = "");
     void showComment(const QString& comment, bool wordWrap = false);
     void hideComment();
     void showFile(const QString& path);

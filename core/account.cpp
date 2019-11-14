@@ -662,14 +662,17 @@ void Core::Account::sendMessage(const Shared::Message& data, const QString& path
                             um->requestUploadSlot(file);
                         }
                     } else {
+                        emit onFileUploadError(data.getId(), "Uploading file dissapeared or your system user has no permission to read it");
                         qDebug() << "Requested upload slot in account" << name << "for file" << path << "but the file doesn't exist or is not readable";
                     }
                 } else {
+                    emit onFileUploadError(data.getId(), "Your server doesn't support file upload service, or it's prohibited for your account");
                     qDebug() << "Requested upload slot in account" << name << "for file" << path << "but upload manager didn't discover any upload services";
                 }
             }
         }
     } else {
+        emit onFileUploadError(data.getId(), "Account is offline or reconnecting");
         qDebug() << "An attempt to send message with not connected account " << name << ", skipping";
     }
 }
@@ -1639,6 +1642,7 @@ void Core::Account::onUploadSlotRequestFailed(const QXmppHttpUploadRequestIq& re
     } else {
         const std::pair<QString, Shared::Message>& pair = uploadingSlotsQueue.front();
         qDebug() << "Error requesting upload slot for file" << pair.first << "in account" << name << ":" << request.error().text();
+        emit uploadFileError(pair.second.getId(), "Error requesting slot to upload file: " + request.error().text());
         
         if (uploadingSlotsQueue.size() > 0) {
             um->requestUploadSlot(uploadingSlotsQueue.front().first);

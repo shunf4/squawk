@@ -137,6 +137,8 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     
     connect(acc, &Account::receivedVCard, this, &Squawk::responseVCard);
     
+    connect(acc, &Account::uploadFileError, this, &Squawk::uploadFileError);
+    
     QMap<QString, QVariant> map = {
         {"login", login},
         {"server", server},

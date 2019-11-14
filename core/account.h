@@ -118,6 +118,7 @@ signals:
     void removeRoomParticipant(const QString& jid, const QString& nickName);
     void receivedVCard(const QString& jid, const Shared::VCard& card);
     void uploadFile(const QFileInfo& file, const QUrl& set, const QUrl& get, QMap<QString, QString> headers);
+    void uploadFileError(const QString& messageId, const QString& error);
     
 private:
     QString name;
