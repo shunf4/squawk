@@ -8,22 +8,52 @@ A compact XMPP desktop messenger
 - uuid _(usually included in some other package, for example it's ***libutil-linux*** in archlinux)_
 - lmdb
 - CMake 3.0 or higher
+- qxmpp 1.1.0 or higher
+
+### Getting
+
+The easiest way to get the Squawk is to install it from AUR (if you use Archlinux like distribution)
+
+Here is the [link](https://aur.archlinux.org/packages/squawk/) for the AUR package
+
+You can also install it from console if you use some AUR wrapper. Here what it's going to look like with *pacaur*
+
+```
+$ pacaur -S squawk
+```
 
 ### Building
 
+You can also clone the repo and build it from source
+
 Squawk requires Qt with SSL enabled. It uses CMake as build system.
 
-Squawk uses upstream version of QXmpp library so first we need to pull it
+There are two ways to build, it depends whether you have qxmpp installed in your system
+
+#### Building with system qxmpp
+
+Here is what you do
+
 ```
-git submodule update --init --recursive
+$ git clone https://git.macaw.me/blue/squawk
+$ cd squawk
+$ mkdir build
+$ cd build
+$ cmake ..
+$ cmake --build .
 ```
-Then create a folder for the build, go there and build the project using CMake
- 
+
+#### Building with bundled qxmpp
+
+Here is what you do
+
 ```
-mkdir build
-cd build
-cmake ..
-cmake --build .
+$ git clone --recurse-submodules https://git.macaw.me/blue/squawk
+$ cd squawk
+$ mkdir build
+$ cd build
+$ cmake .. -D SYSTEM_QXMPP=False
+$ cmake --build .
 ```
 
 ## License

@@ -92,6 +92,7 @@ Message::~Message()
     if (!commentAdded) {
         delete fileComment;
     }
+    delete body;
 }
 
 QString Message::getId() const

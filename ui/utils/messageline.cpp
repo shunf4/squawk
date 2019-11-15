@@ -47,7 +47,7 @@ MessageLine::~MessageLine()
     }
 }
 
-MessageLine::Position MessageLine::message(const Shared::Message& msg)
+MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forceOutgoing)
 {
     QString id = msg.getId();
     Index::iterator itr = messageIndex.find(id);
@@ -59,27 +59,32 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg)
     QString sender;
     bool outgoing;
     
-    if (room) {
-        if (msg.getFromResource() == myName) {
-            sender = myName;
-            outgoing = true;
-        } else {
-            sender = msg.getFromResource();
-            outgoing = false;
-        }
+    if (forceOutgoing) {
+        sender = myName;
+        outgoing = true;
     } else {
-        if (msg.getOutgoing()) {
-            sender = myName;
-            outgoing = true;
-        } else {
-            QString jid = msg.getFromJid();
-            std::map<QString, QString>::iterator itr = palNames.find(jid);
-            if (itr != palNames.end()) {
-                sender = itr->second;
+        if (room) {
+            if (msg.getFromResource() == myName) {
+                sender = myName;
+                outgoing = true;
             } else {
-                sender = jid;
+                sender = msg.getFromResource();
+                outgoing = false;
             }
-            outgoing = false;
+        } else {
+            if (msg.getOutgoing()) {
+                sender = myName;
+                outgoing = true;
+            } else {
+                QString jid = msg.getFromJid();
+                std::map<QString, QString>::iterator itr = palNames.find(jid);
+                if (itr != palNames.end()) {
+                    sender = itr->second;
+                } else {
+                    sender = jid;
+                }
+                outgoing = false;
+            }
         }
     }
     
@@ -328,7 +333,7 @@ void MessageLine::fileError(const QString& messageId, const QString& error)
 
 void MessageLine::appendMessageWithUpload(const Shared::Message& msg, const QString& path)
 {
-    message(msg);
+    message(msg, true);
     QString id = msg.getId();
     Message* ui = messageIndex.find(id)->second;
     connect(ui, &Message::buttonClicked, this, &MessageLine::onUpload);     //this is in case of retry;

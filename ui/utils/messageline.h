@@ -43,7 +43,7 @@ public:
     MessageLine(bool p_room, QWidget* parent = 0);
     ~MessageLine();
     
-    Position message(const Shared::Message& msg);
+    Position message(const Shared::Message& msg, bool forceOutgoing = false);
     void setMyName(const QString& name);
     void setPalName(const QString& jid, const QString& name);
     QString firstMessageId() const;
@@ -52,7 +52,7 @@ public:
     void responseLocalFile(const QString& messageId, const QString& path);
     void fileError(const QString& messageId, const QString& error);
     void fileProgress(const QString& messageId, qreal progress);
-    void appendMessageWithUpload(const Shared::Message& message, const QString& path);
+    void appendMessageWithUpload(const Shared::Message& msg, const QString& path);
     void removeMessage(const QString& messageId);
     
 signals:
