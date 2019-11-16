@@ -14,6 +14,15 @@ include_directories(.)
 find_package(Qt5Widgets CONFIG REQUIRED)
 find_package(Qt5LinguistTools)
 
+if(NOT CMAKE_BUILD_TYPE)
+  set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+message("Build type: ${CMAKE_BUILD_TYPE}")
+
+
 set(squawk_SRC
   main.cpp
   global.cpp

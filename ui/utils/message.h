@@ -30,9 +30,9 @@
 #include <QDesktopServices>
 #include <QUrl>
 
-#include "../../global.h"
-#include "../utils/resizer.h"
-#include "../utils/image.h"
+#include "global.h"
+#include "resizer.h"
+#include "image.h"
 
 /**
  * @todo write docs
@@ -46,14 +46,17 @@ public:
     
     void setSender(const QString& sender);
     QString getId() const;
+    QString getFileUrl() const;
+    const Shared::Message& getMessage() const;
     
-    void addDownloadDialog();
+    void addButton(const QIcon& icon, const QString& buttonText, const QString& tooltip = "");
+    void showComment(const QString& comment, bool wordWrap = false);
+    void hideComment();
     void showFile(const QString& path);
-    void showError(const QString& error);
     void setProgress(qreal value);
     
 signals:
-    void downloadFile(const QString& messageId, const QString& url);
+    void buttonClicked();
     
 private:
     Shared::Message msg;
@@ -63,25 +66,19 @@ private:
     QLabel* sender;
     QLabel* text;
     QGraphicsDropShadowEffect* shadow;
-    QPushButton* downloadButton;
+    QPushButton* button;
     QLabel* file;
     QProgressBar* progress;
     QLabel* fileComment;
-    QString errorText;
-    bool hasDownloadButton;
+    bool hasButton;
     bool hasProgress;
     bool hasFile;
     bool commentAdded;
-    bool errorDownloadingFile;
-    
-private slots:
-    void onDownload();
   
 private:
-    void hideDownload();
+    void hideButton();
     void hideProgress();
     void hideFile();
-    void hideComment();
 };
 
 #endif // MESSAGE_H

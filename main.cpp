@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     
     QApplication::setApplicationName("squawk");
     QApplication::setApplicationDisplayName("Squawk");
-    QApplication::setApplicationVersion("0.0.5");
+    QApplication::setApplicationVersion("0.1.1");
     
     QTranslator qtTranslator;
     qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
@@ -90,7 +90,10 @@ int main(int argc, char *argv[])
     QObject::connect(&w, &Squawk::connectAccount, squawk, &Core::Squawk::connectAccount);
     QObject::connect(&w, &Squawk::disconnectAccount, squawk, &Core::Squawk::disconnectAccount);
     QObject::connect(&w, &Squawk::changeState, squawk, &Core::Squawk::changeState);
-    QObject::connect(&w, &Squawk::sendMessage, squawk, &Core::Squawk::sendMessage);
+    QObject::connect(&w, qOverload<const QString&, const Shared::Message&>(&Squawk::sendMessage), 
+                     squawk, qOverload<const QString&, const Shared::Message&>(&Core::Squawk::sendMessage));
+    QObject::connect(&w, qOverload<const QString&, const Shared::Message&, const QString&>(&Squawk::sendMessage), 
+                     squawk, qOverload<const QString&, const Shared::Message&, const QString&>(&Core::Squawk::sendMessage));
     QObject::connect(&w, &Squawk::requestArchive, squawk, &Core::Squawk::requestArchive);
     QObject::connect(&w, &Squawk::subscribeContact, squawk, &Core::Squawk::subscribeContact);
     QObject::connect(&w, &Squawk::unsubscribeContact, squawk, &Core::Squawk::unsubscribeContact);
@@ -131,12 +134,11 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, &Core::Squawk::changeRoomParticipant, &w, &Squawk::changeRoomParticipant);
     QObject::connect(squawk, &Core::Squawk::removeRoomParticipant, &w, &Squawk::removeRoomParticipant);
     QObject::connect(squawk, &Core::Squawk::fileLocalPathResponse, &w, &Squawk::fileLocalPathResponse);
-    QObject::connect(squawk, &Core::Squawk::downloadFileProgress, &w, &Squawk::downloadFileProgress);
-    QObject::connect(squawk, &Core::Squawk::downloadFileError, &w, &Squawk::downloadFileError);
+    QObject::connect(squawk, &Core::Squawk::downloadFileProgress, &w, &Squawk::fileProgress);
+    QObject::connect(squawk, &Core::Squawk::downloadFileError, &w, &Squawk::fileError);
+    QObject::connect(squawk, &Core::Squawk::uploadFileProgress, &w, &Squawk::fileProgress);
+    QObject::connect(squawk, &Core::Squawk::uploadFileError, &w, &Squawk::fileError);
     QObject::connect(squawk, &Core::Squawk::responseVCard, &w, &Squawk::responseVCard);
-    
-    
-    //qDebug() << QStandardPaths::writableLocation(QStandardPaths::CacheLocation);
     
     coreThread->start();
 

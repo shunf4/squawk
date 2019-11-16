@@ -31,6 +31,8 @@ Core::Squawk::Squawk(QObject* parent):
     connect(&network, &NetworkAccess::fileLocalPathResponse, this, &Squawk::fileLocalPathResponse);
     connect(&network, &NetworkAccess::downloadFileProgress, this, &Squawk::downloadFileProgress);
     connect(&network, &NetworkAccess::downloadFileError, this, &Squawk::downloadFileError);
+    connect(&network, &NetworkAccess::uploadFileProgress, this, &Squawk::uploadFileProgress);
+    connect(&network, &NetworkAccess::uploadFileError, this, &Squawk::uploadFileError);
 }
 
 Core::Squawk::~Squawk()
@@ -104,7 +106,7 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     QSettings settings;
     unsigned int reconnects = settings.value("reconnects", 2).toUInt();
     
-    Account* acc = new Account(login, server, password, name);
+    Account* acc = new Account(login, server, password, name, &network);
     acc->setResource(resource);
     acc->setReconnectTimes(reconnects);
     accounts.push_back(acc);
@@ -134,6 +136,8 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     connect(acc, &Account::removeRoomParticipant, this, &Squawk::onAccountRemoveRoomPresence);
     
     connect(acc, &Account::receivedVCard, this, &Squawk::responseVCard);
+    
+    connect(acc, &Account::uploadFileError, this, &Squawk::uploadFileError);
     
     QMap<QString, QVariant> map = {
         {"login", login},
@@ -281,6 +285,17 @@ void Core::Squawk::sendMessage(const QString& account, const Shared::Message& da
     itr->second->sendMessage(data);
 }
 
+void Core::Squawk::sendMessage(const QString& account, const Shared::Message& data, const QString& path)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug("An attempt to send a message with non existing account, skipping");
+        return;
+    }
+    
+    itr->second->sendMessage(data, path);
+}
+
 void Core::Squawk::requestArchive(const QString& account, const QString& jid, int count, const QString& before)
 {
     AccountsMap::const_iterator itr = amap.find(account);
@@ -372,7 +387,6 @@ void Core::Squawk::removeAccountRequest(const QString& name)
     emit removeAccount(name);
     acc->deleteLater();
 }
-
 
 void Core::Squawk::subscribeContact(const QString& account, const QString& jid, const QString& reason)
 {

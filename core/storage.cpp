@@ -73,7 +73,7 @@ void Core::Storage::close()
 void Core::Storage::addRecord(const QString& key, const QString& value)
 {
     if (!opened) {
-        throw Archive::Closed("addElement", name.toStdString());
+        throw Archive::Closed("addRecord", name.toStdString());
     }
     const std::string& id = key.toStdString();
     const std::string& val = value.toStdString();
@@ -92,6 +92,33 @@ void Core::Storage::addRecord(const QString& key, const QString& value)
         if (rc == MDB_KEYEXIST) {
             throw Archive::Exist(name.toStdString(), id);
         } else {
+            throw Archive::Unknown(name.toStdString(), mdb_strerror(rc));
+        }
+    } else {
+        mdb_txn_commit(txn);
+    }
+}
+
+void Core::Storage::changeRecord(const QString& key, const QString& value)
+{
+    if (!opened) {
+        throw Archive::Closed("changeRecord", name.toStdString());
+    }
+    const std::string& id = key.toStdString();
+    const std::string& val = value.toStdString();
+    
+    MDB_val lmdbKey, lmdbData;
+    lmdbKey.mv_size = id.size();
+    lmdbKey.mv_data = (char*)id.c_str();
+    lmdbData.mv_size = val.size();
+    lmdbData.mv_data = (char*)val.c_str();
+    MDB_txn *txn;
+    mdb_txn_begin(environment, NULL, 0, &txn);
+    int rc;
+    rc = mdb_put(txn, base, &lmdbKey, &lmdbData, 0);
+    if (rc != 0) {
+        mdb_txn_abort(txn);
+        if (rc) {
             throw Archive::Unknown(name.toStdString(), mdb_strerror(rc));
         }
     } else {

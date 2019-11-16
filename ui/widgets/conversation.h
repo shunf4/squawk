@@ -75,11 +75,12 @@ public:
     void responseArchive(const std::list<Shared::Message> list);
     void showEvent(QShowEvent * event) override;
     void responseLocalFile(const QString& messageId, const QString& path);
-    void downloadError(const QString& messageId, const QString& error);
-    void responseDownloadProgress(const QString& messageId, qreal progress);
+    void fileError(const QString& messageId, const QString& error);
+    void responseFileProgress(const QString& messageId, qreal progress);
     
 signals:
     void sendMessage(const Shared::Message& message);
+    void sendMessage(const Shared::Message& message, const QString& path);
     void requestArchive(const QString& before);
     void shown();
     void requestLocalFile(const QString& messageId, const QString& url);
@@ -101,7 +102,9 @@ protected slots:
     void onAttach();
     void onFileSelected();
     void onScrollResize();
+    void onAttachResize(const QSize& oldSize, const QSize& newSize);
     void onBadgeClose();
+    void onClearButton();
     
 public:
     const bool isMuc;
@@ -120,7 +123,8 @@ protected:
     MessageLine* line;
     QScopedPointer<Ui::Conversation> m_ui;
     KeyEnterReceiver ker;
-    Resizer res;
+    Resizer scrollResizeCatcher;
+    Resizer attachResizeCatcher;
     VisibilityCatcher vis;
     QString thread;
     QLabel* statusIcon;

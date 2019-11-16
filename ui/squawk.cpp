@@ -300,7 +300,9 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                     conv->setAttribute(Qt::WA_DeleteOnClose);
                     
                     connect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
-                    connect(conv, &Conversation::sendMessage, this, &Squawk::onConversationMessage);
+                    connect(conv, qOverload<const Shared::Message&>(&Conversation::sendMessage), this, qOverload<const Shared::Message&>(&Squawk::onConversationMessage));
+                    connect(conv, qOverload<const Shared::Message&, const QString&>(&Conversation::sendMessage), 
+                            this, qOverload<const Shared::Message&, const QString&>(&Squawk::onConversationMessage));
                     connect(conv, &Conversation::requestArchive, this, &Squawk::onConversationRequestArchive);
                     connect(conv, &Conversation::requestLocalFile, this, &Squawk::onConversationRequestLocalFile);
                     connect(conv, &Conversation::downloadFile, this, &Squawk::onConversationDownloadFile);
@@ -367,11 +369,11 @@ void Squawk::onConversationDownloadFile(const QString& messageId, const QString&
     }
 }
 
-void Squawk::downloadFileProgress(const QString& messageId, qreal value)
+void Squawk::fileProgress(const QString& messageId, qreal value)
 {
     std::map<QString, std::set<Models::Roster::ElId>>::const_iterator itr = requestedFiles.find(messageId);
     if (itr == requestedFiles.end()) {
-        qDebug() << "downloadFileProgress in UI Squawk but there is nobody waiting for that id" << messageId << ", skipping";
+        qDebug() << "fileProgress in UI Squawk but there is nobody waiting for that id" << messageId << ", skipping";
         return;
     } else {
         const std::set<Models::Roster::ElId>& convs = itr->second;
@@ -379,17 +381,17 @@ void Squawk::downloadFileProgress(const QString& messageId, qreal value)
             const Models::Roster::ElId& id = *cItr;
             Conversations::const_iterator c = conversations.find(id);
             if (c != conversations.end()) {
-                c->second->responseDownloadProgress(messageId, value);
+                c->second->responseFileProgress(messageId, value);
             }
         }
     }
 }
 
-void Squawk::downloadFileError(const QString& messageId, const QString& error)
+void Squawk::fileError(const QString& messageId, const QString& error)
 {
     std::map<QString, std::set<Models::Roster::ElId>>::const_iterator itr = requestedFiles.find(messageId);
     if (itr == requestedFiles.end()) {
-        qDebug() << "downloadFileError in UI Squawk but there is nobody waiting for that id" << messageId << ", skipping";
+        qDebug() << "fileError in UI Squawk but there is nobody waiting for that id" << messageId << ", skipping";
         return;
     } else {
         const std::set<Models::Roster::ElId>& convs = itr->second;
@@ -397,7 +399,7 @@ void Squawk::downloadFileError(const QString& messageId, const QString& error)
             const Models::Roster::ElId& id = *cItr;
             Conversations::const_iterator c = conversations.find(id);
             if (c != conversations.end()) {
-                c->second->downloadError(messageId, error);
+                c->second->fileError(messageId, error);
             }
         }
         requestedFiles.erase(itr);
@@ -489,8 +491,16 @@ void Squawk::notify(const QString& account, const Shared::Message& msg)
 void Squawk::onConversationMessage(const Shared::Message& msg)
 {
     Conversation* conv = static_cast<Conversation*>(sender());
-    
     emit sendMessage(conv->getAccount(), msg);
+}
+
+void Squawk::onConversationMessage(const Shared::Message& msg, const QString& path)
+{
+    Conversation* conv = static_cast<Conversation*>(sender());
+    std::map<QString, std::set<Models::Roster::ElId>>::iterator itr = requestedFiles.insert(std::make_pair(msg.getId(), std::set<Models::Roster::ElId>())).first;
+    itr->second.insert(Models::Roster::ElId(conv->getAccount(), conv->getJid()));
+    
+    emit sendMessage(conv->getAccount(), msg, path);
 }
 
 void Squawk::onConversationRequestArchive(const QString& before)
@@ -518,7 +528,6 @@ void Squawk::removeAccount(const QString& account)
             ++itr;
             Conversation* conv = lItr->second;
             disconnect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
-            disconnect(conv, &Conversation::sendMessage, this, &Squawk::onConversationMessage);
             disconnect(conv, &Conversation::requestArchive, this, &Squawk::onConversationRequestArchive);
             disconnect(conv, &Conversation::shown, this, &Squawk::onConversationShown);
             conv->close();

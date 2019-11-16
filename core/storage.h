@@ -39,6 +39,7 @@ public:
     void close();
     
     void addRecord(const QString& key, const QString& value);
+    void changeRecord(const QString& key, const QString& value);
     void removeRecord(const QString& key);
     QString getRecord(const QString& key) const;
     

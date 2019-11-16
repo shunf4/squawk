@@ -27,7 +27,8 @@ QObject(parent)
 bool Resizer::eventFilter(QObject* obj, QEvent* event)
 {
     if (event->type() == QEvent::Resize) {
-        emit resized();
+        QResizeEvent* ev = static_cast<QResizeEvent*>(event);
+        emit resized(ev->oldSize(), ev->size());
     }
     
     return false;

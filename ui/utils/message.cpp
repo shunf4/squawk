@@ -34,16 +34,14 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     sender(new QLabel(p_sender)),
     text(new QLabel()),
     shadow(new QGraphicsDropShadowEffect()),
-    downloadButton(0),
+    button(0),
     file(0),
     progress(0),
     fileComment(new QLabel()),
-    errorText(""),
-    hasDownloadButton(false),
+    hasButton(false),
     hasProgress(false),
     hasFile(false),
-    commentAdded(false),
-    errorDownloadingFile(false)
+    commentAdded(false)
 {
     body->setBackgroundRole(QPalette::AlternateBase);
     body->setAutoFillBackground(true);
@@ -79,13 +77,13 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     body->setGraphicsEffect(shadow);
     
     if (outgoing) {
-        addWidget(body);
-        addStretch();
-    } else {
         sender->setAlignment(Qt::AlignRight);
         date->setAlignment(Qt::AlignRight);
         addStretch();
         addWidget(body);
+    } else {
+        addWidget(body);
+        addStretch();
     }
 }
 
@@ -94,6 +92,7 @@ Message::~Message()
     if (!commentAdded) {
         delete fileComment;
     }
+    delete body;
 }
 
 QString Message::getId() const
@@ -101,47 +100,38 @@ QString Message::getId() const
     return msg.getId();
 }
 
+QString Message::getFileUrl() const
+{
+    return msg.getOutOfBandUrl();
+}
+
 void Message::setSender(const QString& p_sender)
 {
     sender->setText(p_sender);
 }
 
-void Message::addDownloadDialog()
+void Message::addButton(const QIcon& icon, const QString& buttonText, const QString& tooltip)
 {
     hideFile();
     hideProgress();
-    if (!hasDownloadButton) {
+    if (!hasButton) {
         hideComment();
         if (msg.getBody() == msg.getOutOfBandUrl()) {
             text->setText("");
             text->hide();
         }
-        downloadButton = new QPushButton(QIcon::fromTheme("download"), tr("Download"));
-        downloadButton->setToolTip("<a href=\"" + msg.getOutOfBandUrl() + "\">" + msg.getOutOfBandUrl() + "</a>");
-        if (errorDownloadingFile) {
-            fileComment->setWordWrap(true);
-            fileComment->setText(tr("Error downloading file: %1\nYou can try again").arg(QCoreApplication::translate("NetworkErrors", errorText.toLatin1())));
-        } else {
-            fileComment->setText(tr("%1 is offering you to download a file").arg(sender->text()));
-        }
-        fileComment->show();
-        connect(downloadButton, &QPushButton::clicked, this, &Message::onDownload);
-        bodyLayout->insertWidget(2, fileComment);
-        bodyLayout->insertWidget(3, downloadButton);
-        hasDownloadButton = true;
-        commentAdded = true;
+        button = new QPushButton(icon, buttonText);
+        button->setToolTip(tooltip);
+        connect(button, &QPushButton::clicked, this, &Message::buttonClicked);
+        bodyLayout->insertWidget(2, button);
+        hasButton = true;
     }
-}
-
-void Message::onDownload()
-{
-    emit downloadFile(msg.getId(), msg.getOutOfBandUrl());
 }
 
 void Message::setProgress(qreal value)
 {
     hideFile();
-    hideDownload();
+    hideButton();
     if (!hasProgress) {
         hideComment();
         if (msg.getBody() == msg.getOutOfBandUrl()) {
@@ -150,19 +140,15 @@ void Message::setProgress(qreal value)
         }
         progress = new QProgressBar();
         progress->setRange(0, 100);
-        fileComment->setText("Downloading...");
-        fileComment->show();
         bodyLayout->insertWidget(2, progress);
-        bodyLayout->insertWidget(3, fileComment);
         hasProgress = true;
-        commentAdded = true;
     }
     progress->setValue(value * 100);
 }
 
 void Message::showFile(const QString& path)
 {
-    hideDownload();
+    hideButton();
     hideProgress();
     if (!hasFile) {
         hideComment();
@@ -175,16 +161,13 @@ void Message::showFile(const QString& path)
         QStringList parts = type.name().split("/");
         QString big = parts.front();
         QFileInfo info(path);
-        fileComment = new QLabel();
         if (big == "image") {
             file = new Image(path);
         } else {
             file = new QLabel();
             file->setPixmap(QIcon::fromTheme(type.iconName()).pixmap(50));
             file->setAlignment(Qt::AlignCenter);
-            fileComment->setText(info.fileName());
-            fileComment->setWordWrap(true);
-            fileComment->show();
+            showComment(info.fileName(), true);
         }
         file->setContextMenuPolicy(Qt::ActionsContextMenu);
         QAction* openAction = new QAction(QIcon::fromTheme("document-new-from-template"), tr("Open"), file);
@@ -193,9 +176,7 @@ void Message::showFile(const QString& path)
         });
         file->addAction(openAction);
         bodyLayout->insertWidget(2, file);
-        bodyLayout->insertWidget(3, fileComment);
         hasFile = true;
-        commentAdded = true;
     }
 }
 
@@ -208,13 +189,12 @@ void Message::hideComment()
     }
 }
 
-void Message::hideDownload()
+void Message::hideButton()
 {
-    if (hasDownloadButton) {
-        downloadButton->deleteLater();
-        downloadButton = 0;
-        hasDownloadButton = false;
-        errorDownloadingFile = false;
+    if (hasButton) {
+        button->deleteLater();
+        button = 0;
+        hasButton = false;
     }
 }
 
@@ -235,10 +215,29 @@ void Message::hideProgress()
         hasProgress = false;;
     }
 }
-
-void Message::showError(const QString& error)
+void Message::showComment(const QString& comment, bool wordWrap)
 {
-    errorDownloadingFile = true;
-    errorText = error;
-    addDownloadDialog();
+    if (!commentAdded) {
+        int index = 2;
+        if (hasFile) {
+            index++;
+        }
+        if (hasButton) {
+            index++;
+        }
+        if (hasProgress) {
+            index++;
+        }
+        bodyLayout->insertWidget(index, fileComment);
+        fileComment->show();
+        commentAdded = true;
+    }
+    fileComment->setWordWrap(wordWrap);
+    fileComment->setText(comment);
 }
+
+const Shared::Message & Message::getMessage() const
+{
+    return msg;
+}
+

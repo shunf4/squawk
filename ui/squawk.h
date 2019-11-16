@@ -58,6 +58,7 @@ signals:
     void disconnectAccount(const QString&);
     void changeState(int state);
     void sendMessage(const QString& account, const Shared::Message& data);
+    void sendMessage(const QString& account, const Shared::Message& data, const QString& path);
     void requestArchive(const QString& account, const QString& jid, int count, const QString& before);
     void subscribeContact(const QString& account, const QString& jid, const QString& reason);
     void unsubscribeContact(const QString& account, const QString& jid, const QString& reason);
@@ -97,8 +98,8 @@ public slots:
     void changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removeRoomParticipant(const QString& account, const QString& jid, const QString& name);
     void fileLocalPathResponse(const QString& messageId, const QString& path);
-    void downloadFileError(const QString& messageId, const QString& error);
-    void downloadFileProgress(const QString& messageId, qreal value);
+    void fileError(const QString& messageId, const QString& error);
+    void fileProgress(const QString& messageId, qreal value);
     void responseVCard(const QString& jid, const Shared::VCard& card);
     
 private:
@@ -132,6 +133,7 @@ private slots:
     void onComboboxActivated(int index);
     void onRosterItemDoubleClicked(const QModelIndex& item);
     void onConversationMessage(const Shared::Message& msg);
+    void onConversationMessage(const Shared::Message& msg, const QString& path);
     void onConversationRequestArchive(const QString& before);
     void onRosterContextMenu(const QPoint& point);
     void onConversationShown();

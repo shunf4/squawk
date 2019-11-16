@@ -22,6 +22,7 @@
 #include <QObject>
 #include <QWidget>
 #include <QEvent>
+#include <QResizeEvent>
 
 /**
  * @todo write docs
@@ -35,7 +36,7 @@ protected:
     bool eventFilter(QObject* obj, QEvent* event) override;
     
 signals:
-    void resized();
+    void resized(const QSize& oldSize, const QSize& newSize);
 };
 
 #endif // RESIZER_H
