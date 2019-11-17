@@ -24,6 +24,7 @@
 #include <QGraphicsDropShadowEffect>
 #include <QFileDialog>
 #include <QMimeDatabase>
+#include <unistd.h>
 
 Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, const QString pJid, const QString pRes, const QString& acc, QWidget* parent):
     QWidget(parent),
@@ -205,6 +206,7 @@ void Conversation::onEnterPressed()
             msg.generateRandomId();
             msg.setCurrentTime();
             line->appendMessageWithUpload(msg, badge->id);
+            usleep(1000);       //this is required for the messages not to have equal time when appending into messageline
         }
         clearAttachedFiles();
     }

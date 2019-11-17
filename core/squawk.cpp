@@ -51,7 +51,7 @@ void Core::Squawk::stop()
     QSettings settings;
     settings.beginGroup("core");
     settings.beginWriteArray("accounts");
-    for (int i = 0; i < accounts.size(); ++i) {
+    for (std::deque<Account*>::size_type i = 0; i < accounts.size(); ++i) {
         settings.setArrayIndex(i);
         Account* acc = accounts[i];
         settings.setValue("name", acc->getName());

@@ -322,7 +322,7 @@ void Models::Contact::getMessages(Models::Contact::Messages& container) const
 void Models::Contact::toOfflineState()
 {
     emit childIsAboutToBeRemoved(this, 0, childItems.size());
-    for (int i = 0; i < childItems.size(); ++i) {
+    for (std::deque<Item*>::size_type i = 0; i < childItems.size(); ++i) {
         Item* item = childItems[i];
         disconnect(item, &Item::childChanged, this, &Contact::refresh);
         Item::_removeChild(i);

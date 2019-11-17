@@ -145,7 +145,7 @@ QModelIndex UI::VCard::EMailsModel::addNewEmptyLine()
     return createIndex(deque.size() - 1, 0, &(deque.back()));
 }
 
-bool UI::VCard::EMailsModel::isPreferred(int row) const
+bool UI::VCard::EMailsModel::isPreferred(quint32 row) const
 {
     if (row < deque.size()) {
         return deque[row].prefered;
@@ -154,10 +154,10 @@ bool UI::VCard::EMailsModel::isPreferred(int row) const
     }
 }
 
-void UI::VCard::EMailsModel::removeLines(int index, int count)
+void UI::VCard::EMailsModel::removeLines(quint32 index, quint32 count)
 {
     if (index < deque.size()) {
-        int maxCount = deque.size() - index;
+        quint32 maxCount = deque.size() - index;
         if (count > maxCount) {
             count = maxCount;
         }
@@ -194,12 +194,12 @@ void UI::VCard::EMailsModel::setEmails(const std::deque<Shared::VCard::Email>& e
     }
 }
 
-void UI::VCard::EMailsModel::revertPreferred(int row)
+void UI::VCard::EMailsModel::revertPreferred(quint32 row)
 {
     setData(createIndex(row, 2), !isPreferred(row));
 }
 
-QString UI::VCard::EMailsModel::getEmail(int row) const
+QString UI::VCard::EMailsModel::getEmail(quint32 row) const
 {
     return deque[row].address;
 }

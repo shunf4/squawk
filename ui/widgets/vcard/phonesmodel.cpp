@@ -129,7 +129,7 @@ void UI::VCard::PhonesModel::getPhones(std::deque<Shared::VCard::Phone>& phones)
     }
 }
 
-bool UI::VCard::PhonesModel::isPreferred(int row) const
+bool UI::VCard::PhonesModel::isPreferred(quint32 row) const
 {
     if (row < deque.size()) {
         return deque[row].prefered;
@@ -138,10 +138,10 @@ bool UI::VCard::PhonesModel::isPreferred(int row) const
     }
 }
 
-void UI::VCard::PhonesModel::removeLines(int index, int count)
+void UI::VCard::PhonesModel::removeLines(quint32 index, quint32 count)
 {
     if (index < deque.size()) {
-        int maxCount = deque.size() - index;
+        quint32 maxCount = deque.size() - index;
         if (count > maxCount) {
             count = maxCount;
         }
@@ -156,7 +156,7 @@ void UI::VCard::PhonesModel::removeLines(int index, int count)
     }
 }
 
-void UI::VCard::PhonesModel::revertPreferred(int row)
+void UI::VCard::PhonesModel::revertPreferred(quint32 row)
 {
     setData(createIndex(row, 3), !isPreferred(row));
 }
@@ -216,7 +216,7 @@ void UI::VCard::PhonesModel::setPhones(const std::deque<Shared::VCard::Phone>& p
     }
 }
 
-QString UI::VCard::PhonesModel::getPhone(int row) const
+QString UI::VCard::PhonesModel::getPhone(quint32 row) const
 {
     return deque[row].number;
 }

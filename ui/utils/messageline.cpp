@@ -111,7 +111,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
         }
     }
     messageIndex.insert(std::make_pair(id, message));
-    int index = std::distance<Order::const_iterator>(messageOrder.begin(), result.first);   //need to make with binary indexed tree
+    unsigned long index = std::distance<Order::const_iterator>(messageOrder.begin(), result.first);   //need to make with binary indexed tree
     Position res = invalid;
     if (index == 0) {
         res = beggining;

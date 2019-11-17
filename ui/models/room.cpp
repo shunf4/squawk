@@ -236,7 +236,7 @@ void Models::Room::getMessages(Models::Room::Messages& container) const
 void Models::Room::toOfflineState()
 {
     emit childIsAboutToBeRemoved(this, 0, childItems.size());
-    for (int i = 0; i < childItems.size(); ++i) {
+    for (std::deque<Item*>::size_type i = 0; i < childItems.size(); ++i) {
         Item* item = childItems[i];
         Item::_removeChild(i);
         item->deleteLater();

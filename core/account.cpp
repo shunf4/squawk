@@ -1103,6 +1103,8 @@ void Core::Account::onClientError(QXmppClient::Error err)
         case QXmppClient::KeepAliveError:
             errorText = "Client keep alive error";
             break;
+        case QXmppClient::NoError:
+            break;                      //not exactly sure what to do here
     }
     
     qDebug() << errorType << errorText;
@@ -1565,11 +1567,7 @@ void Core::Account::uploadVCard(const Shared::VCard& card)
     initializeQXmppVCard(iq, card);
     
     bool avatarChanged = false;
-    if (card.getAvatarType() == Shared::Avatar::empty) {
-        if (avatarType.size() > 0) {
-            avatarChanged = true;
-        }
-    } else {
+    if (card.getAvatarType() != Shared::Avatar::empty) {
         QString newPath = card.getAvatarPath();
         QString oldPath = getAvatarPath();
         QByteArray data;
@@ -1584,7 +1582,6 @@ void Core::Account::uploadVCard(const Shared::VCard& card)
                     QFile oA(oldPath);
                     if (!oA.open(QFile::ReadOnly)) {
                         qDebug() << "Couldn't read old avatar of account" << name << ", uploading empty avatar";
-                        avatarChanged = true;
                     } else {
                         data = oA.readAll();
                     }
@@ -1598,7 +1595,6 @@ void Core::Account::uploadVCard(const Shared::VCard& card)
                 QFile oA(oldPath);
                 if (!oA.open(QFile::ReadOnly)) {
                     qDebug() << "Couldn't read old avatar of account" << name << ", uploading empty avatar";
-                    avatarChanged = true;
                 } else {
                     data = oA.readAll();
                 }
