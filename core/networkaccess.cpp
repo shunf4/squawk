@@ -53,9 +53,9 @@ void Core::NetworkAccess::fileLocalPathRequest(const QString& messageId, const Q
                 files.removeRecord(url);
                 emit fileLocalPathResponse(messageId, "");
             }
-        } catch (Archive::NotFound e) {
+        } catch (const Archive::NotFound& e) {
             emit fileLocalPathResponse(messageId, "");
-        } catch (Archive::Unknown e) {
+        } catch (const Archive::Unknown& e) {
             qDebug() << "Error requesting file path:" << e.what();
             emit fileLocalPathResponse(messageId, "");
         }
@@ -82,9 +82,9 @@ void Core::NetworkAccess::downladFileRequest(const QString& messageId, const QSt
                 files.removeRecord(url);
                 startDownload(messageId, url);
             }
-        } catch (Archive::NotFound e) {
+        } catch (const Archive::NotFound& e) {
             startDownload(messageId, url);
-        } catch (Archive::Unknown e) {
+        } catch (const Archive::Unknown& e) {
             qDebug() << "Error requesting file path:" << e.what();
             emit downloadFileError(messageId, QString("Database error: ") + e.what());
         }
@@ -454,9 +454,9 @@ void Core::NetworkAccess::uploadFileRequest(const QString& messageId, const QStr
                     startUpload(messageId, url, path);
                 }
             }
-        } catch (Archive::NotFound e) {
+        } catch (const Archive::NotFound& e) {
             startUpload(messageId, url, path);
-        } catch (Archive::Unknown e) {
+        } catch (const Archive::Unknown& e) {
             qDebug() << "Error requesting file path on upload:" << e.what();
             emit uploadFileError(messageId, QString("Database error: ") + e.what());
         }

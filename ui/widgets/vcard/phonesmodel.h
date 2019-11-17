@@ -41,16 +41,16 @@ public:
     int rowCount(const QModelIndex& parent) const override;
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::EditRole) override;
     Qt::ItemFlags flags(const QModelIndex &index) const override;
-    bool isPreferred(int row) const;
+    bool isPreferred(quint32 row) const;
     
-    void removeLines(int index, int count);
+    void removeLines(quint32 index, quint32 count);
     void setPhones(const std::deque<Shared::VCard::Phone>& phones);
     void getPhones(std::deque<Shared::VCard::Phone>& phones) const;
-    QString getPhone(int row) const;
+    QString getPhone(quint32 row) const;
     
 public slots:
     QModelIndex addNewEmptyLine();
-    void revertPreferred(int row);
+    void revertPreferred(quint32 row);
     
 private:
     bool edit;

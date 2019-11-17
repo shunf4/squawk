@@ -141,11 +141,11 @@ void Core::RosterItem::performRequest(int count, const QString& before)
                     std::list<Shared::Message> arc = archive->getBefore(requestedCount - responseCache.size(), lBefore);
                     responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
                     found = true;
-                } catch (Archive::NotFound e) {
+                } catch (const Archive::NotFound& e) {
                     requestCache.emplace_back(requestedCount, before);
                     requestedCount = -1;
                     emit needHistory(archive->oldestId(), "");
-                } catch (Archive::Empty e) {
+                } catch (const Archive::Empty& e) {
                     requestCache.emplace_back(requestedCount, before);
                     requestedCount = -1;
                     emit needHistory(archive->oldestId(), "");
@@ -171,9 +171,9 @@ void Core::RosterItem::performRequest(int count, const QString& before)
             try {
                 std::list<Shared::Message> arc = archive->getBefore(requestedCount - responseCache.size(), before);
                 responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
-            } catch (Archive::NotFound e) {
+            } catch (const Archive::NotFound& e) {
                 qDebug("requesting id hasn't been found in archive, skipping");
-            } catch (Archive::Empty e) {
+            } catch (const Archive::Empty& e) {
                 qDebug("requesting id hasn't been found in archive, skipping");
             }
             nextRequest();
@@ -254,6 +254,7 @@ void Core::RosterItem::flushMessagesToArchive(bool finished, const QString& firs
         case empty:
             wasEmpty = true;
             archiveState = end;
+            [[fallthrough]];
         case end:
             added += archive->addElements(appendCache);
             appendCache.clear();
@@ -274,9 +275,9 @@ void Core::RosterItem::flushMessagesToArchive(bool finished, const QString& firs
                     std::list<Shared::Message> arc = archive->getBefore(requestedCount - responseCache.size(), before);
                     responseCache.insert(responseCache.begin(), arc.begin(), arc.end());
                     found = true;
-                } catch (Archive::NotFound e) {
+                } catch (const Archive::NotFound& e) {
                     
-                } catch (Archive::Empty e) {
+                } catch (const Archive::Empty& e) {
                     
                 }
                 if (!found || requestedCount > responseCache.size()) {

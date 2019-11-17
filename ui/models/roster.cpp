@@ -518,7 +518,7 @@ void Models::Roster::removeGroup(const QString& account, const QString& name)
     
     if (toInsert.size() > 0) {
         Account* acc = accounts.find("account")->second;
-        for (int i = 0; i < toInsert.size(); ++i) {
+        for (std::deque<Contact*>::size_type i = 0; i < toInsert.size(); ++i) {
             Contact* cont = toInsert[i];
             acc->appendChild(cont);             //TODO optimisation
         }
