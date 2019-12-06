@@ -20,10 +20,11 @@
 #include <QMimeDatabase>
 #include <QPixmap>
 #include <QFileInfo>
+#include <QRegularExpression>
 #include "message.h"
 
-const QRegExp urlReg("(?!<img\\ssrc=\")((?:https?|ftp)://\\S+)");
-const QRegExp imgReg("((?:https?|ftp)://\\S+\\.(?:jpg|jpeg|png|svg|gif))");
+const QRegularExpression urlReg("(?<!<a\\shref=['\"])(?<!<img\\ssrc=['\"])((?:https?|ftp)://\\S+)");       //finds all hypertext references which are not wrapped in a or img tags
+const QRegularExpression imgReg("((?:https?|ftp)://\\S+\\.(?:jpg|jpeg|png|svg|gif))");
 
 Message::Message(const Shared::Message& source, bool outgoing, const QString& p_sender, QWidget* parent):
     QHBoxLayout(parent),
@@ -49,6 +50,7 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     QString bd = msg.getBody();
     //bd.replace(imgReg, "<img src=\"\\1\"/>");
     bd.replace(urlReg, "<a href=\"\\1\">\\1</a>");
+    text->setTextFormat(Qt::RichText);
     text->setText(bd);;
     text->setTextInteractionFlags(text->textInteractionFlags() | Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
     text->setWordWrap(true);

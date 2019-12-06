@@ -289,7 +289,7 @@ void Core::NetworkAccess::onDownloadFinished()
             QStringList hops = url.split("/");
             QString fileName = hops.back();
             QStringList parts = fileName.split(".");
-            path = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+            path = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/";
             QString suffix("");
             QString realName = parts.front();
             for (QStringList::const_iterator sItr = (parts.begin()++), sEnd = parts.end(); sItr != sEnd; ++sItr) {
