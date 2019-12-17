@@ -27,6 +27,8 @@ Models::Room::Room(const QString& p_jid, const QMap<QString, QVariant>& data, Mo
     jid(p_jid),
     nick(""),
     subject(""),
+    avatarState(Shared::Avatar::empty),
+    avatarPath(""),
     messages(),
     participants()
 {
@@ -48,6 +50,15 @@ Models::Room::Room(const QString& p_jid, const QMap<QString, QVariant>& data, Mo
     itr = data.find("subject");
     if (itr != data.end()) {
         setSubject(itr.value().toString());
+    }
+    
+    itr = data.find("avatarState");
+    if (itr != data.end()) {
+        setAvatarState(itr.value().toUInt());
+    }
+    itr = data.find("avatarPath");
+    if (itr != data.end()) {
+        setAvatarPath(itr.value().toString());
     }
 }
 
@@ -111,6 +122,10 @@ QVariant Models::Room::data(int column) const
             return getMessagesCount();
         case 6:
             return getSubject();
+        case 7:
+            return static_cast<quint8>(getAvatarState());
+        case 8:
+            return getAvatarPath();
         default:
             return QVariant();
     }
@@ -165,6 +180,10 @@ void Models::Room::update(const QString& field, const QVariant& value)
         setNick(value.toString());
     } else if (field == "subject") {
         setSubject(value.toString());
+    } else if (field == "avatarState") {
+        setAvatarState(value.toUInt());
+    } else if (field == "avatarPath") {
+        setAvatarPath(value.toString());
     }
 }
 
@@ -317,4 +336,40 @@ QString Models::Room::getDisplayedName() const
 bool Models::Room::columnInvolvedInDisplay(int col)
 {
     return Item::columnInvolvedInDisplay(col) && col == 1;
+}
+
+QString Models::Room::getAvatarPath() const
+{
+    return avatarPath;
+}
+
+Shared::Avatar Models::Room::getAvatarState() const
+{
+    return avatarState;
+}
+
+void Models::Room::setAvatarPath(const QString& path)
+{
+    if (avatarPath != path) {
+        avatarPath = path;
+        changed(8);
+    }
+}
+
+void Models::Room::setAvatarState(Shared::Avatar p_state)
+{
+    if (avatarState != p_state) {
+        avatarState = p_state;
+        changed(7);
+    }
+}
+
+void Models::Room::setAvatarState(unsigned int p_state)
+{
+    if (p_state <= static_cast<quint8>(Shared::Avatar::valid)) {
+        Shared::Avatar state = static_cast<Shared::Avatar>(p_state);
+        setAvatarState(state);
+    } else {
+        qDebug() << "An attempt to set invalid avatar state" << p_state << "to the room" << jid << ", skipping";
+    }
 }

@@ -21,7 +21,7 @@
 
 #include "item.h"
 #include "presence.h"
-#include "../../global.h"
+#include "global.h"
 #include <QMap>
 #include <QIcon>
 #include <deque>

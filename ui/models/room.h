@@ -21,7 +21,7 @@
 
 #include "item.h"
 #include "participant.h"
-#include "../../global.h"
+#include "global.h"
 
 namespace Models {
 
@@ -69,12 +69,17 @@ public:
     
     void toOfflineState() override;
     QString getDisplayedName() const override;
+    Shared::Avatar getAvatarState() const;
+    QString getAvatarPath() const;
     
 private:
     void handleParticipantUpdate(std::map<QString, Participant*>::const_iterator itr, const QMap<QString, QVariant>& data);
     
 protected:
     bool columnInvolvedInDisplay(int col) override;
+    void setAvatarState(Shared::Avatar p_state);
+    void setAvatarState(unsigned int p_state);
+    void setAvatarPath(const QString& path);
     
 private:
     bool autoJoin;
@@ -82,6 +87,8 @@ private:
     QString jid;
     QString nick;
     QString subject;
+    Shared::Avatar avatarState;
+    QString avatarPath;
     Messages messages;
     std::map<QString, Participant*> participants;
 

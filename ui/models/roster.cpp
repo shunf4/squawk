@@ -66,7 +66,6 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
         case Qt::DisplayRole:
         {
             if (index.column() != 0) {
-                result = "";
                 break;
             }
             switch (item->type) {
@@ -126,11 +125,17 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                 }
                     break;
                 case Item::room: {
-                    if (index.column() != 0) {
-                        break;
-                    }
+                    quint8 col = index.column();
                     Room* room = static_cast<Room*>(item);
-                    result = room->getStatusIcon(false);
+                    if (col == 0) {
+                        result = room->getStatusIcon(false);
+                    } else if (col == 1) {
+                        QString path = room->getAvatarPath();
+                        
+                        if (path.size() > 0) {
+                            result = QIcon(path);
+                        }
+                    }
                 }
                     break;
                 case Item::participant: {
@@ -179,7 +184,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     }
                     str += tr("Jabber ID: ") + contact->getJid() + "\n";
                     Shared::SubscriptionState ss = contact->getState();
-                    if (ss == Shared::both) {
+                    if (ss == Shared::both || ss == Shared::to) {
                         Shared::Availability av = contact->getAvailability();
                         str += tr("Availability: ") + QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1());
                         if (av != Shared::offline) {
@@ -252,6 +257,8 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     if (count > 0) {
                         str += tr("New messages: ") + std::to_string(count).c_str() + "\n";
                     }
+                    
+                    str += tr("Jabber ID: ") + rm->getJid() + "\n";
                     str += tr("Subscription: ") + rm->getStatusText();
                     if (rm->getJoined()) {
                         str += QString("\n") + tr("Members: ") + std::to_string(rm->childCount()).c_str();

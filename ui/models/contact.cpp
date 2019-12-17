@@ -258,7 +258,7 @@ QIcon Models::Contact::getStatusIcon(bool big) const
 {
     if (getMessagesCount() > 0) {
         return Shared::icon("mail-message", big);
-    } else if (state == Shared::both) {
+    } else if (state == Shared::both || state == Shared::to) {
         return Shared::availabilityIcon(availability, big);;
     } else {
         return Shared::subscriptionStateIcon(state, big);
