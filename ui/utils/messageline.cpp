@@ -29,6 +29,7 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     uploadPaths(),
     layout(new QVBoxLayout(this)),
     myName(),
+    myAvatarPath(),
     palNames(),
     uploading(),
     downloading(),
@@ -57,15 +58,18 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
     }
     
     QString sender;
+    QString aPath;
     bool outgoing;
     
     if (forceOutgoing) {
         sender = myName;
+        aPath = myAvatarPath;
         outgoing = true;
     } else {
         if (room) {
             if (msg.getFromResource() == myName) {
                 sender = myName;
+                aPath = myAvatarPath;
                 outgoing = true;
             } else {
                 sender = msg.getFromResource();
@@ -74,6 +78,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
         } else {
             if (msg.getOutgoing()) {
                 sender = myName;
+                aPath = myAvatarPath;
                 outgoing = true;
             } else {
                 QString jid = msg.getFromJid();
@@ -88,7 +93,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
         }
     }
     
-    Message* message = new Message(msg, outgoing, sender);
+    Message* message = new Message(msg, outgoing, sender, aPath);
     
     std::pair<Order::const_iterator, bool> result = messageOrder.insert(std::make_pair(msg.getTime(), message));
     if (!result.second) {
@@ -347,4 +352,14 @@ void MessageLine::appendMessageWithUpload(const Shared::Message& msg, const QStr
 void MessageLine::onUpload()
 {
     //TODO retry
+}
+
+void MessageLine::setMyAvatarPath(const QString& p_path)
+{
+    if (myAvatarPath != p_path) {
+        myAvatarPath = p_path;
+        for (std::pair<QString, Message*> pair : myMessages) {
+            pair.second->setAvatarPath(myAvatarPath);
+        }
+    }
 }

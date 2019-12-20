@@ -30,7 +30,7 @@ class Chat : public Conversation
 {
     Q_OBJECT
 public:
-    Chat(Models::Contact* p_contact, QWidget* parent = 0);
+    Chat(Models::Account* acc, Models::Contact* p_contact, QWidget* parent = 0);
     ~Chat();
     
     void addMessage(const Shared::Message & data) override;

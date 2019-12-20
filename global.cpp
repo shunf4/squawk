@@ -622,9 +622,24 @@ QIcon Shared::icon(const QString& name, bool big)
         const QString& prefix = QApplication::palette().window().color().lightnessF() > 0.5 ? 
             big ? db : ds:
             big ? lb : ls;
-        return QIcon::fromTheme(itr->second.first, QIcon(prefix + itr->second.second));
+        return QIcon::fromTheme(itr->second.first, QIcon(prefix + itr->second.second + ".svg"));
     } else {
         qDebug() << "Icon" << name << "not found";
         return QIcon::fromTheme(name);
     }
+}
+
+
+QString Shared::iconPath(const QString& name, bool big)
+{
+    QString result = "";
+    std::map<QString, std::pair<QString, QString>>::const_iterator itr = icons.find(name);
+    if (itr != icons.end()) {
+        const QString& prefix = QApplication::palette().window().color().lightnessF() > 0.5 ? 
+            big ? db : ds:
+            big ? lb : ls;
+        result = prefix + itr->second.second + ".svg";
+    }
+    
+    return result;
 }

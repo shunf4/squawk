@@ -961,3 +961,8 @@ QString Models::Roster::getContactIconPath(const QString& account, const QString
     }
     return path;
 }
+
+Models::Account * Models::Roster::getAccount(const QString& name)
+{
+    return accounts.find(name)->second;
+}

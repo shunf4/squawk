@@ -26,14 +26,12 @@
 #include <QMimeDatabase>
 #include <unistd.h>
 
-Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, const QString pJid, const QString pRes, const QString& acc, QWidget* parent):
+Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, const QString pRes, QWidget* parent):
     QWidget(parent),
     isMuc(muc),
-    myJid(mJid),
-    myResource(mRes),
+    account(acc),
     palJid(pJid),
     activePalResource(pRes),
-    account(acc),
     line(new MessageLine(muc)),
     m_ui(new Ui::Conversation()),
     ker(),
@@ -85,6 +83,9 @@ Conversation::Conversation(bool muc, const QString& mJid, const QString mRes, co
     m_ui->scrollArea->installEventFilter(&scrollResizeCatcher);
     m_ui->filesPanel->installEventFilter(&attachResizeCatcher);
     
+    line->setMyAvatarPath(acc->getAvatarPath());
+    line->setMyName(acc->getName());
+    
     applyVisualEffects();
 }
 
@@ -124,7 +125,7 @@ void Conversation::setName(const QString& name)
 
 QString Conversation::getAccount() const
 {
-    return account;
+    return account->getName();
 }
 
 QString Conversation::getJid() const
@@ -199,8 +200,7 @@ void Conversation::onEnterPressed()
                 msg.setType(Shared::Message::chat);
                 msg.setToResource(activePalResource);
             }
-            msg.setFromJid(myJid);
-            msg.setFromResource(myResource);
+            msg.setFrom(account->getFullJid());
             msg.setToJid(palJid);
             msg.setOutgoing(true);
             msg.generateRandomId();

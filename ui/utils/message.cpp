@@ -26,7 +26,7 @@
 const QRegularExpression urlReg("(?<!<a\\shref=['\"])(?<!<img\\ssrc=['\"])((?:https?|ftp)://\\S+)");       //finds all hypertext references which are not wrapped in a or img tags
 const QRegularExpression imgReg("((?:https?|ftp)://\\S+\\.(?:jpg|jpeg|png|svg|gif))");
 
-Message::Message(const Shared::Message& source, bool outgoing, const QString& p_sender, QWidget* parent):
+Message::Message(const Shared::Message& source, bool outgoing, const QString& p_sender, const QString& avatarPath, QWidget* parent):
     QHBoxLayout(parent),
     msg(source),
     body(new QWidget()),
@@ -39,6 +39,7 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     file(0),
     progress(0),
     fileComment(new QLabel()),
+    avatar(new Image(avatarPath.size() == 0 ? Shared::iconPath("user", true) : avatarPath, 60)),
     hasButton(false),
     hasProgress(false),
     hasFile(false),
@@ -77,13 +78,21 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     shadow->setYOffset(1);
     shadow->setColor(Qt::black);
     body->setGraphicsEffect(shadow);
+    avatar->setMaximumHeight(60);
+    avatar->setMaximumWidth(60);
+    QVBoxLayout* aLay = new QVBoxLayout();
+    aLay->addWidget(avatar);
+    aLay->addStretch();
+    
     
     if (outgoing) {
         sender->setAlignment(Qt::AlignRight);
         date->setAlignment(Qt::AlignRight);
         addStretch();
         addWidget(body);
+        addItem(aLay);
     } else {
+        addItem(aLay);
         addWidget(body);
         addStretch();
     }
@@ -95,6 +104,7 @@ Message::~Message()
         delete fileComment;
     }
     delete body;
+    delete avatar;
 }
 
 QString Message::getId() const
@@ -243,3 +253,7 @@ const Shared::Message & Message::getMessage() const
     return msg;
 }
 
+void Message::setAvatarPath(const QString& p_path)
+{
+    avatar->setPath(p_path);
+}

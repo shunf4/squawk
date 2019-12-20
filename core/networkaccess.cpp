@@ -291,15 +291,17 @@ void Core::NetworkAccess::onDownloadFinished()
             QStringList parts = fileName.split(".");
             path = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/";
             QString suffix("");
-            QString realName = parts.front();
-            for (QStringList::const_iterator sItr = (parts.begin()++), sEnd = parts.end(); sItr != sEnd; ++sItr) {
+            QStringList::const_iterator sItr = parts.begin();
+            QString realName = *sItr;
+            ++sItr;
+            for (QStringList::const_iterator sEnd = parts.end(); sItr != sEnd; ++sItr) {
                 suffix += "." + (*sItr);
             }
             QString postfix("");
             QFileInfo proposedName(path + realName + postfix + suffix);
             int counter = 0;
             while (proposedName.exists()) {
-                suffix = QString("(") + std::to_string(++counter).c_str() + ")";
+                postfix = QString("(") + std::to_string(++counter).c_str() + ")";
                 proposedName = QFileInfo(path + realName + postfix + suffix);
             }
             

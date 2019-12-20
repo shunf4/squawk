@@ -41,7 +41,7 @@ class Message : public QHBoxLayout
 {
     Q_OBJECT
 public:
-    Message(const Shared::Message& source, bool outgoing, const QString& sender, QWidget* parent = nullptr);
+    Message(const Shared::Message& source, bool outgoing, const QString& sender, const QString& avatarPath = "", QWidget* parent = nullptr);
     ~Message();
     
     void setSender(const QString& sender);
@@ -54,6 +54,7 @@ public:
     void hideComment();
     void showFile(const QString& path);
     void setProgress(qreal value);
+    void setAvatarPath(const QString& p_path);
     
 signals:
     void buttonClicked();
@@ -70,6 +71,7 @@ private:
     QLabel* file;
     QProgressBar* progress;
     QLabel* fileComment;
+    Image* avatar;
     bool hasButton;
     bool hasProgress;
     bool hasFile;

@@ -438,6 +438,7 @@ QIcon availabilityIcon(Availability av, bool big = false);
 QIcon subscriptionStateIcon(SubscriptionState ss, bool big = false);
 QIcon connectionStateIcon(ConnectionState cs, bool big = false);
 QIcon icon(const QString& name, bool big = false);
+QString iconPath(const QString& name, bool big = false);
 
 static const std::map<QString, std::pair<QString, QString>> icons = {
     {"user-online", {"user-online", "online"}},

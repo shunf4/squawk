@@ -21,6 +21,8 @@
 
 #include <QLabel>
 #include <QPixmap>
+#include <QResizeEvent>
+#include <QIcon>
 
 /**
  * @todo write docs
@@ -29,7 +31,6 @@ class Image : public QLabel
 {
 public:
     Image(const QString& path, quint16 minWidth = 50, QWidget* parent = nullptr);
-
     ~Image();
 
     int heightForWidth(int width) const override;
@@ -40,11 +41,14 @@ public:
     
 private:
     QPixmap pixmap;
+    QString path;
     qreal aspectRatio;
     quint16 minWidth;
+    bool svgMode;
     
 private:
     void recalculateAspectRatio();
+    void resizeEvent(QResizeEvent * event) override;
 };
 
 #endif // IMAGE_H

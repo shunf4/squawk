@@ -29,7 +29,7 @@ class Room : public Conversation
 {
     Q_OBJECT
 public:
-    Room(Models::Room* p_room, QWidget* parent = 0);
+    Room(Models::Account* acc, Models::Room* p_room, QWidget* parent = 0);
     ~Room();
     
     bool autoJoined() const;

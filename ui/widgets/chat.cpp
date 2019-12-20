@@ -18,8 +18,8 @@
 
 #include "chat.h"
 
-Chat::Chat(Models::Contact* p_contact, QWidget* parent):
-    Conversation(false, p_contact->getAccountJid(), p_contact->getAccountResource(), p_contact->getJid(), "", p_contact->getAccountName(), parent),
+Chat::Chat(Models::Account* acc, Models::Contact* p_contact, QWidget* parent):
+    Conversation(false, acc, p_contact->getJid(), "", parent),
     contact(p_contact)
 {
     setName(p_contact->getContactName());
@@ -27,8 +27,6 @@ Chat::Chat(Models::Contact* p_contact, QWidget* parent):
     setStatus(p_contact->getStatus());
     
     connect(contact, &Models::Contact::childChanged, this, &Chat::onContactChanged);
-    
-    line->setMyName(p_contact->getAccountName());
 }
 
 Chat::~Chat()
@@ -62,8 +60,7 @@ void Chat::updateState()
 void Chat::handleSendMessage(const QString& text)
 {
     Shared::Message msg(Shared::Message::chat);
-    msg.setFromJid(myJid);
-    msg.setFromResource(myResource);
+    msg.setFrom(account->getFullJid());
     msg.setToJid(palJid);
     msg.setToResource(activePalResource);
     msg.setBody(text);

@@ -54,6 +54,7 @@ public:
     void fileProgress(const QString& messageId, qreal progress);
     void appendMessageWithUpload(const Shared::Message& msg, const QString& path);
     void removeMessage(const QString& messageId);
+    void setMyAvatarPath(const QString& p_path);
     
 signals:
     void resize(int amount);
@@ -87,6 +88,7 @@ private:
     QVBoxLayout* layout;
     
     QString myName;
+    QString myAvatarPath;
     std::map<QString, QString> palNames;
     Index uploading;
     Index downloading;

@@ -18,8 +18,8 @@
 
 #include "room.h"
 
-Room::Room(Models::Room* p_room, QWidget* parent):
-    Conversation(true, p_room->getAccountJid(), p_room->getAccountResource(), p_room->getJid(), "", p_room->getAccountName(), parent),
+Room::Room(Models::Account* acc, Models::Room* p_room, QWidget* parent):
+    Conversation(true, acc, p_room->getJid(), "", parent),
     room(p_room)
 {
     setName(p_room->getName());
@@ -36,8 +36,7 @@ Room::~Room()
 void Room::handleSendMessage(const QString& text)
 {
     Shared::Message msg(Shared::Message::groupChat);
-    msg.setFromJid(myJid);
-    msg.setFromResource(myResource);
+    msg.setFrom(account->getFullJid());
     msg.setToJid(palJid);
     //msg.setToResource(activePalResource);
     msg.setBody(text);

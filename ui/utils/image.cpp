@@ -19,12 +19,17 @@
 #include <QDebug>
 #include "image.h"
 
-Image::Image(const QString& path, quint16 p_minWidth, QWidget* parent):
+Image::Image(const QString& p_path, quint16 p_minWidth, QWidget* parent):
     QLabel(parent),
-    pixmap(path),
+    pixmap(p_path),
+    path(p_path),
     aspectRatio(0),
-    minWidth(p_minWidth)
+    minWidth(p_minWidth),
+    svgMode(false)
 {
+    if (path.contains(".svg")) {
+        svgMode = true;
+    }
     setScaledContents(true);
     recalculateAspectRatio();
 }
@@ -55,7 +60,9 @@ void Image::recalculateAspectRatio()
     qreal height = pixmap.height();
     qreal width = pixmap.width();
     aspectRatio = width / height;
-    setPixmap(pixmap);
+    if (!svgMode) {
+        setPixmap(pixmap);
+    }
     setMinimumHeight(minWidth / aspectRatio);
     setMinimumWidth(minWidth);
 }
@@ -68,8 +75,27 @@ void Image::setMinWidth(quint16 p_minWidth)
     }
 }
 
-void Image::setPath(const QString& path)
+void Image::setPath(const QString& p_path)
 {
-    pixmap = QPixmap(path);
-    recalculateAspectRatio();
+    if (path != p_path) {
+        path = p_path;
+        if (path.contains(".svg")) {
+            svgMode = true;
+        }
+        pixmap = QPixmap(path);
+        recalculateAspectRatio();
+    }
 }
+
+void Image::resizeEvent(QResizeEvent* event)
+{
+    if (svgMode) {
+        QIcon ico;
+        QSize size = event->size();
+        ico.addFile(path, size);
+        setPixmap(ico.pixmap(size));
+    }
+    
+    QLabel::resizeEvent(event);
+}
+

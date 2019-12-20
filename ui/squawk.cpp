@@ -276,6 +276,7 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
         
         if (id != 0) {
             Conversations::const_iterator itr = conversations.find(*id);
+            Models::Account* acc = rosterModel.getAccount(id->account);
             Conversation* conv = 0;
             bool created = false;
             Models::Contact::Messages deque;
@@ -283,11 +284,11 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 conv = itr->second;
             } else if (contact != 0) {
                 created = true;
-                conv = new Chat(contact);
+                conv = new Chat(acc, contact);
                 contact->getMessages(deque);
             } else if (room != 0) {
                 created = true;
-                conv = new Room(room);
+                conv = new Room(acc, room);
                 room->getMessages(deque);
                 
                 if (!room->getJoined()) {

@@ -74,6 +74,7 @@ public:
     std::deque<QString> groupList(const QString& account) const;
     bool groupHasContact(const QString& account, const QString& group, const QString& contactJID) const;
     QString getContactIconPath(const QString& account, const QString& jid);
+    Account* getAccount(const QString& name);
     
     Accounts* accountsModel;
     

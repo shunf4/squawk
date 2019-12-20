@@ -21,8 +21,9 @@
 
 #include <QWidget>
 #include <QScopedPointer>
-#include "../../global.h"
-#include "../../order.h"
+#include "global.h"
+#include "order.h"
+#include "../models/account.h"
 #include "../utils/messageline.h"
 #include "../utils/resizer.h"
 #include "../utils/flowlayout.h"
@@ -63,7 +64,7 @@ class Conversation : public QWidget
 {
     Q_OBJECT
 public:
-    Conversation(bool muc, const QString& mJid, const QString mRes, const QString pJid, const QString pRes, const QString& acc, QWidget* parent = 0);
+    Conversation(bool muc, Models::Account* acc, const QString pJid, const QString pRes, QWidget* parent = 0);
     ~Conversation();
     
     QString getJid() const;
@@ -115,11 +116,9 @@ protected:
         keep,
         down
     };
-    QString myJid;
-    QString myResource;
+    Models::Account* account;
     QString palJid;
     QString activePalResource;
-    QString account;
     MessageLine* line;
     QScopedPointer<Ui::Conversation> m_ui;
     KeyEnterReceiver ker;
