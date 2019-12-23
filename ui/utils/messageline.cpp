@@ -27,6 +27,7 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     myMessages(),
     palMessages(),
     uploadPaths(),
+    palAvatars(),
     layout(new QVBoxLayout(this)),
     myName(),
     myAvatarPath(),
@@ -88,6 +89,12 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
                 } else {
                     sender = jid;
                 }
+                
+                std::map<QString, QString>::iterator aItr = palAvatars.find(jid);
+                if (aItr != palAvatars.end()) {
+                    aPath = aItr->second;
+                }
+                
                 outgoing = false;
             }
         }
@@ -181,6 +188,38 @@ void MessageLine::setPalName(const QString& jid, const QString& name)
     if (pItr != palMessages.end()) {
         for (Index::const_iterator itr = pItr->second.begin(), end = pItr->second.end(); itr != end; ++itr) {
             itr->second->setSender(name);
+        }
+    }
+}
+
+void MessageLine::setPalAvatar(const QString& jid, const QString& path)
+{
+    std::map<QString, QString>::iterator itr = palAvatars.find(jid);
+    if (itr == palAvatars.end()) {
+        palAvatars.insert(std::make_pair(jid, path));
+    } else {
+        itr->second = path;
+    }
+    
+    std::map<QString, Index>::iterator pItr = palMessages.find(jid);
+    if (pItr != palMessages.end()) {
+        for (Index::const_iterator itr = pItr->second.begin(), end = pItr->second.end(); itr != end; ++itr) {
+            itr->second->setAvatarPath(path);
+        }
+    }
+}
+
+void MessageLine::dropPalAvatar(const QString& jid)
+{
+    std::map<QString, QString>::iterator itr = palAvatars.find(jid);
+    if (itr != palNames.end()) {
+        palNames.erase(itr);
+        
+        std::map<QString, Index>::iterator pItr = palMessages.find(jid);
+        if (pItr != palMessages.end()) {
+            for (Index::const_iterator itr = pItr->second.begin(), end = pItr->second.end(); itr != end; ++itr) {
+                itr->second->setAvatarPath("");
+            }
         }
     }
 }

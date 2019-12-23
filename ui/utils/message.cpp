@@ -255,5 +255,9 @@ const Shared::Message & Message::getMessage() const
 
 void Message::setAvatarPath(const QString& p_path)
 {
-    avatar->setPath(p_path);
+    if (p_path.size() == 0) {
+        avatar->setPath(Shared::iconPath("user", true));
+    } else {
+        avatar->setPath(p_path);
+    }
 }

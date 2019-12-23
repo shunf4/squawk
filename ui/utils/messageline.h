@@ -55,6 +55,8 @@ public:
     void appendMessageWithUpload(const Shared::Message& msg, const QString& path);
     void removeMessage(const QString& messageId);
     void setMyAvatarPath(const QString& p_path);
+    void setPalAvatar(const QString& jid, const QString& path);
+    void dropPalAvatar(const QString& jid);
     
 signals:
     void resize(int amount);
@@ -85,6 +87,7 @@ private:
     Index myMessages;
     std::map<QString, Index> palMessages;
     std::map<QString, QString> uploadPaths;
+    std::map<QString, QString> palAvatars;
     QVBoxLayout* layout;
     
     QString myName;

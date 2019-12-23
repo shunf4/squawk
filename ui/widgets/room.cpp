@@ -25,6 +25,7 @@ Room::Room(Models::Account* acc, Models::Room* p_room, QWidget* parent):
     setName(p_room->getName());
     line->setMyName(room->getNick());
     setStatus(room->getSubject());
+    setAvatar(room->getAvatarPath());
     
     connect(room, &Models::Room::childChanged, this, &Room::onRoomChanged);
 }

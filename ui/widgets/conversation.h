@@ -78,6 +78,7 @@ public:
     void responseLocalFile(const QString& messageId, const QString& path);
     void fileError(const QString& messageId, const QString& error);
     void responseFileProgress(const QString& messageId, qreal progress);
+    virtual void setAvatar(const QString& path);
     
 signals:
     void sendMessage(const Shared::Message& message);

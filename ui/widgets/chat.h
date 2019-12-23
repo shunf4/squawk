@@ -34,6 +34,7 @@ public:
     ~Chat();
     
     void addMessage(const Shared::Message & data) override;
+    void setAvatar(const QString& path) override;
 
 protected slots:
     void onContactChanged(Models::Item* item, int row, int col);

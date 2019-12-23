@@ -25,6 +25,7 @@ Chat::Chat(Models::Account* acc, Models::Contact* p_contact, QWidget* parent):
     setName(p_contact->getContactName());
     updateState();
     setStatus(p_contact->getStatus());
+    setAvatar(p_contact->getAvatarPath());
     
     connect(contact, &Models::Contact::childChanged, this, &Chat::onContactChanged);
 }
@@ -45,6 +46,9 @@ void Chat::onContactChanged(Models::Item* item, int row, int col)
                 break;
             case 5:
                 setStatus(contact->getStatus());
+                break;
+            case 7:
+                setAvatar(contact->getAvatarPath());
                 break;
         }
     }
@@ -89,3 +93,13 @@ void Chat::setName(const QString& name)
     line->setPalName(getJid(), name);
 }
 
+void Chat::setAvatar(const QString& path)
+{
+    Conversation::setAvatar(path);
+    
+    if (path.size() == 0) {
+        line->dropPalAvatar(contact->getJid());
+    } else {
+        line->setPalAvatar(contact->getJid(), path);
+    }
+}

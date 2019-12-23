@@ -384,6 +384,11 @@ void Conversation::onClearButton()
     m_ui->messageEditor->clear();
 }
 
+void Conversation::setAvatar(const QString& path)
+{
+    m_ui->avatar->setPixmap(path.size() == 0 ? Shared::iconPath("user", true) : path);
+}
+
 void Conversation::onAttachResize(const QSize& oldSize, const QSize& newSize)
 {
     int oh = oldSize.height();
@@ -419,4 +424,3 @@ VisibilityCatcher::VisibilityCatcher(QWidget* parent):
 QObject(parent)
 {
 }
-
