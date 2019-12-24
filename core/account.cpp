@@ -1556,7 +1556,11 @@ void Core::Account::onOwnVCardReceived(const QXmppVCardIq& card)
 
 QString Core::Account::getAvatarPath() const
 {
-    return QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/" + name + "/" + "avatar." + avatarType;
+    if (avatarType.size() == 0) {
+        return "";
+    } else {
+        return QStandardPaths::writableLocation(QStandardPaths::CacheLocation) + "/" + name + "/" + "avatar." + avatarType;
+    }
 }
 
 void Core::Account::onContactAvatarChanged(Shared::Avatar type, const QString& path)

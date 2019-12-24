@@ -212,8 +212,8 @@ void MessageLine::setPalAvatar(const QString& jid, const QString& path)
 void MessageLine::dropPalAvatar(const QString& jid)
 {
     std::map<QString, QString>::iterator itr = palAvatars.find(jid);
-    if (itr != palNames.end()) {
-        palNames.erase(itr);
+    if (itr != palAvatars.end()) {
+        palAvatars.erase(itr);
         
         std::map<QString, Index>::iterator pItr = palMessages.find(jid);
         if (pItr != palMessages.end()) {

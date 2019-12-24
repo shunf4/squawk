@@ -386,7 +386,11 @@ void Conversation::onClearButton()
 
 void Conversation::setAvatar(const QString& path)
 {
-    m_ui->avatar->setPixmap(path.size() == 0 ? Shared::iconPath("user", true) : path);
+    if (path.size() == 0) {
+        m_ui->avatar->setPixmap(Shared::icon("user", true).pixmap(QSize(50, 50)));
+    } else {
+        m_ui->avatar->setPixmap(path);
+    }
 }
 
 void Conversation::onAttachResize(const QSize& oldSize, const QSize& newSize)
