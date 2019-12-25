@@ -23,6 +23,8 @@
 #include <QScopedPointer>
 #include <QCloseEvent>
 #include <QtDBus/QDBusInterface>
+#include <QSettings>
+
 #include <deque>
 #include <map>
 #include <set>
@@ -49,6 +51,9 @@ class Squawk : public QMainWindow
 public:
     explicit Squawk(QWidget *parent = nullptr);
     ~Squawk() override;
+    
+    void readSettings();
+    void writeSettings();
     
 signals:
     void newAccountRequest(const QMap<QString, QVariant>&);
@@ -101,6 +106,7 @@ public slots:
     void fileError(const QString& messageId, const QString& error);
     void fileProgress(const QString& messageId, qreal value);
     void responseVCard(const QString& jid, const Shared::VCard& card);
+    void onItemCollepsed(const QModelIndex& index);
     
 private:
     typedef std::map<Models::Roster::ElId, Conversation*> Conversations;

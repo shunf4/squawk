@@ -39,7 +39,7 @@ int main(int argc, char *argv[])
     
     QApplication::setApplicationName("squawk");
     QApplication::setApplicationDisplayName("Squawk");
-    QApplication::setApplicationVersion("0.1.1");
+    QApplication::setApplicationVersion("0.1.2");
     
     QTranslator qtTranslator;
     qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));
@@ -81,6 +81,7 @@ int main(int argc, char *argv[])
     
     QObject::connect(coreThread, &QThread::started, squawk, &Core::Squawk::start);
     QObject::connect(&app, &QApplication::aboutToQuit, squawk, &Core::Squawk::stop);
+    QObject::connect(&app, &QApplication::aboutToQuit, &w, &QMainWindow::close);
     QObject::connect(squawk, &Core::Squawk::quit, coreThread, &QThread::quit);
     QObject::connect(coreThread, &QThread::finished, squawk, &Core::Squawk::deleteLater);
     
@@ -141,9 +142,13 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, &Core::Squawk::responseVCard, &w, &Squawk::responseVCard);
     
     coreThread->start();
+    w.readSettings();
 
     int result = app.exec();
+    
+    w.writeSettings();
     coreThread->wait(500);      //TODO hate doing that but settings for some reason don't get saved to the disk
+    
     
     return result;
 }

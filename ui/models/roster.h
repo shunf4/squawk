@@ -75,6 +75,8 @@ public:
     bool groupHasContact(const QString& account, const QString& group, const QString& contactJID) const;
     QString getContactIconPath(const QString& account, const QString& jid);
     Account* getAccount(const QString& name);
+    QModelIndex getAccountIndex(const QString& name);
+    QModelIndex getGroupIndex(const QString& account, const QString& name);
     
     Accounts* accountsModel;
     

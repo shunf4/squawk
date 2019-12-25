@@ -53,6 +53,7 @@ Squawk::Squawk(QWidget *parent) :
     connect(m_ui->comboBox, qOverload<int>(&QComboBox::activated), this, &Squawk::onComboboxActivated);
     connect(m_ui->roster, &QTreeView::doubleClicked, this, &Squawk::onRosterItemDoubleClicked);
     connect(m_ui->roster, &QTreeView::customContextMenuRequested, this, &Squawk::onRosterContextMenu);
+    connect(m_ui->roster, &QTreeView::collapsed, this, &Squawk::onItemCollepsed);
     
     connect(rosterModel.accountsModel, &Models::Accounts::sizeChanged, this, &Squawk::onAccountsSizeChanged);
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
@@ -205,11 +206,40 @@ void Squawk::changeAccount(const QString& account, const QMap<QString, QVariant>
 void Squawk::addContact(const QString& account, const QString& jid, const QString& group, const QMap<QString, QVariant>& data)
 {
     rosterModel.addContact(account, jid, group, data);
+        
+    QSettings settings;
+    settings.beginGroup("ui");
+    settings.beginGroup("roster");
+    settings.beginGroup(account);
+    if (settings.value("expanded", false).toBool()) {
+        QModelIndex ind = rosterModel.getAccountIndex(account);
+        qDebug() << "expanding account " << ind.data();
+        m_ui->roster->expand(ind);
+    }
+    settings.endGroup();
+    settings.endGroup();
+    settings.endGroup();
 }
 
 void Squawk::addGroup(const QString& account, const QString& name)
 {
     rosterModel.addGroup(account, name);
+    
+    QSettings settings;
+    settings.beginGroup("ui");
+    settings.beginGroup("roster");
+    settings.beginGroup(account);
+    if (settings.value("expanded", false).toBool()) {
+        QModelIndex ind = rosterModel.getAccountIndex(account);
+        qDebug() << "expanding account " << ind.data();
+        m_ui->roster->expand(ind);
+        if (settings.value(name + "/expanded", false).toBool()) {
+            m_ui->roster->expand(rosterModel.getGroupIndex(account, name));
+        }
+    }
+    settings.endGroup();
+    settings.endGroup();
+    settings.endGroup();
 }
 
 void Squawk::removeGroup(const QString& account, const QString& name)
@@ -812,4 +842,96 @@ void Squawk::onVCardSave(const Shared::VCard& card, const QString& account)
     emit uploadVCard(account, card);
     
     widget->deleteLater();
+}
+
+void Squawk::readSettings()
+{
+    QSettings settings;
+    settings.beginGroup("ui");
+    settings.beginGroup("window");
+    if (settings.contains("geometry")) {
+        restoreGeometry(settings.value("geometry").toByteArray());
+    }
+    if (settings.contains("state")) {
+        restoreState(settings.value("state").toByteArray());
+    }
+    settings.endGroup();
+    
+    if (settings.contains("availability")) {
+        int avail = settings.value("availability").toInt();
+        m_ui->comboBox->setCurrentIndex(avail);
+        emit stateChanged(avail);
+        
+        int size = settings.beginReadArray("connectedAccounts");
+        for (int i = 0; i < size; ++i) {
+            settings.setArrayIndex(i);
+            emit connectAccount(settings.value("name").toString());     //TODO  this is actually not needed, stateChanged event already connects everything you have
+        }                                                               //      need to fix that
+        settings.endArray();
+    }
+    
+    settings.endGroup();
+}
+
+void Squawk::writeSettings()
+{
+    QSettings settings;
+    settings.beginGroup("ui");
+    settings.beginGroup("window");
+    settings.setValue("geometry", saveGeometry());
+    settings.setValue("state", saveState());
+    settings.endGroup();
+    
+    settings.setValue("availability", m_ui->comboBox->currentIndex());
+    settings.beginWriteArray("connectedAccounts");
+    int size = rosterModel.accountsModel->rowCount(QModelIndex());
+    for (int i = 0; i < size; ++i) {
+        Models::Account* acc = rosterModel.accountsModel->getAccount(i);
+        if (acc->getState() != Shared::disconnected) {
+            settings.setArrayIndex(i);
+            settings.setValue("name", acc->getName());
+        }
+    }
+    settings.endArray();
+    
+    settings.remove("roster");
+    settings.beginGroup("roster");
+    for (int i = 0; i < size; ++i) {
+        QModelIndex acc = rosterModel.index(i, 0, QModelIndex());
+        Models::Account* account = rosterModel.accountsModel->getAccount(i);
+        QString accName = account->getName();
+        settings.beginGroup(accName);
+        
+        settings.setValue("expanded", m_ui->roster->isExpanded(acc));
+        std::deque<QString> groups = rosterModel.groupList(accName);
+        for (const QString& groupName : groups) {
+            settings.beginGroup(groupName);
+            QModelIndex gIndex = rosterModel.getGroupIndex(accName, groupName);
+            settings.setValue("expanded", m_ui->roster->isExpanded(gIndex));
+            settings.endGroup();
+        }
+        
+        settings.endGroup();
+    }
+    settings.endGroup();
+    settings.endGroup();
+}
+
+void Squawk::onItemCollepsed(const QModelIndex& index)
+{
+    QSettings settings;
+    Models::Item* item = static_cast<Models::Item*>(index.internalPointer());
+    switch (item->type) {
+        case Models::Item::account:
+            settings.setValue("ui/roster/" + item->getName() + "/expanded", false);
+            break;
+        case Models::Item::group: {
+            QModelIndex accInd = rosterModel.parent(index);
+            Models::Account* account = rosterModel.accountsModel->getAccount(accInd.row());
+            settings.setValue("ui/roster/" + account->getName() + "/" + item->getName() + "/expanded", false);
+        }
+            break;
+        default:
+            break;
+    }
 }

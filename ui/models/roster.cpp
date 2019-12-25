@@ -310,9 +310,6 @@ Qt::ItemFlags Models::Roster::flags(const QModelIndex& index) const
 int Models::Roster::rowCount (const QModelIndex& parent) const
 {
     Item *parentItem;
-    if (parent.column() > 0) {
-        return 0;
-    }
     
     if (!parent.isValid()) {
         parentItem = root;
@@ -965,4 +962,30 @@ QString Models::Roster::getContactIconPath(const QString& account, const QString
 Models::Account * Models::Roster::getAccount(const QString& name)
 {
     return accounts.find(name)->second;
+}
+
+QModelIndex Models::Roster::getAccountIndex(const QString& name)
+{
+    std::map<QString, Account*>::const_iterator itr = accounts.find(name);
+    if (itr == accounts.end()) {
+        return QModelIndex();
+    } else {
+        return index(itr->second->row(), 0, QModelIndex());
+    }
+}
+
+QModelIndex Models::Roster::getGroupIndex(const QString& account, const QString& name)
+{
+    std::map<QString, Account*>::const_iterator itr = accounts.find(account);
+    if (itr == accounts.end()) {
+        return QModelIndex();
+    } else {
+        std::map<ElId, Group*>::const_iterator gItr = groups.find({account, name});
+        if (gItr == groups.end()) {
+            return QModelIndex();
+        } else {
+            QModelIndex accIndex = index(itr->second->row(), 0, QModelIndex());
+            return index(gItr->second->row(), 0, accIndex);
+        }
+    }
 }
