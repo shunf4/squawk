@@ -66,6 +66,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
         case Qt::DisplayRole:
         {
             if (index.column() != 0) {
+                result = "";
                 break;
             }
             switch (item->type) {
@@ -139,11 +140,20 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                 }
                     break;
                 case Item::participant: {
+                    quint8 col = index.column();
+                    Participant* p = static_cast<Participant*>(item);
+                    if (col == 0) {
+                        result = p->getStatusIcon(false);
+                    } else if (col == 1) {
+                        QString path = p->getAvatarPath();
+                        if (path.size() > 0) {
+                            result = QIcon(path);
+                        }
+                    }
                     if (index.column() != 0) {
                         break;
                     }
-                    Participant* p = static_cast<Participant*>(item);
-                    result = p->getStatusIcon(false);
+                    
                 }
                     break;
                 default:

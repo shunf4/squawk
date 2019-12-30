@@ -41,10 +41,20 @@ public:
     Shared::Role getRole() const;
     void setRole(Shared::Role p_role);
     void setRole(unsigned int role);
+    
+    Shared::Avatar getAvatarState() const;
+    QString getAvatarPath() const;
 
+protected:
+    void setAvatarState(Shared::Avatar p_state);
+    void setAvatarState(unsigned int p_state);
+    void setAvatarPath(const QString& path);
+    
 private:
     Shared::Affiliation affiliation;
     Shared::Role role;
+    Shared::Avatar avatarState;
+    QString avatarPath;
 };
 
 }

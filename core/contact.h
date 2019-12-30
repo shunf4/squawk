@@ -38,6 +38,7 @@ public:
     
     void setSubscriptionState(Shared::SubscriptionState state);
     Shared::SubscriptionState getSubscriptionState() const;
+    void handlePresence(const QXmppPresence & pres) override;
 
 signals:
     void groupAdded(const QString& name);

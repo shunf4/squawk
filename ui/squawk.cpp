@@ -213,7 +213,6 @@ void Squawk::addContact(const QString& account, const QString& jid, const QStrin
     settings.beginGroup(account);
     if (settings.value("expanded", false).toBool()) {
         QModelIndex ind = rosterModel.getAccountIndex(account);
-        qDebug() << "expanding account " << ind.data();
         m_ui->roster->expand(ind);
     }
     settings.endGroup();

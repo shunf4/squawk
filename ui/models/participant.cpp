@@ -34,6 +34,15 @@ Models::Participant::Participant(const QMap<QString, QVariant>& data, Models::It
     if (itr != data.end()) {
         setRole(itr.value().toUInt());
     }
+    
+    itr = data.find("avatarState");
+    if (itr != data.end()) {
+        setAvatarState(itr.value().toUInt());
+    }
+    itr = data.find("avatarPath");
+    if (itr != data.end()) {
+        setAvatarPath(itr.value().toString());
+    }
 }
 
 Models::Participant::~Participant()
@@ -42,7 +51,7 @@ Models::Participant::~Participant()
 
 int Models::Participant::columnCount() const
 {
-    return 6;
+    return 8;
 }
 
 QVariant Models::Participant::data(int column) const
@@ -52,6 +61,10 @@ QVariant Models::Participant::data(int column) const
             return static_cast<uint8_t>(affiliation);
         case 5:
             return static_cast<uint8_t>(role);
+        case 6:
+            return static_cast<quint8>(getAvatarState());
+        case 7:
+            return getAvatarPath();
         default:
             return AbstractParticipant::data(column);
     }
@@ -63,6 +76,10 @@ void Models::Participant::update(const QString& key, const QVariant& value)
         setAffiliation(value.toUInt());
     } else if (key == "role") {
         setRole(value.toUInt());
+    } else if (key == "avatarState") {
+        setAvatarState(value.toUInt());
+    } else if (key == "avatarPath") {
+        setAvatarPath(value.toString());
     } else {
         AbstractParticipant::update(key, value);
     }
@@ -111,5 +128,41 @@ void Models::Participant::setRole(unsigned int p_role)
         setRole(r);
     } else {
         qDebug() << "An attempt to set wrong role" << p_role << "to the room participant" << name;
+    }
+}
+
+QString Models::Participant::getAvatarPath() const
+{
+    return avatarPath;
+}
+
+Shared::Avatar Models::Participant::getAvatarState() const
+{
+    return avatarState;
+}
+
+void Models::Participant::setAvatarPath(const QString& path)
+{
+    if (avatarPath != path) {
+        avatarPath = path;
+        changed(7);
+    }
+}
+
+void Models::Participant::setAvatarState(Shared::Avatar p_state)
+{
+    if (avatarState != p_state) {
+        avatarState = p_state;
+        changed(6);
+    }
+}
+
+void Models::Participant::setAvatarState(unsigned int p_state)
+{
+    if (p_state <= static_cast<quint8>(Shared::Avatar::valid)) {
+        Shared::Avatar state = static_cast<Shared::Avatar>(p_state);
+        setAvatarState(state);
+    } else {
+        qDebug() << "An attempt to set invalid avatar state" << p_state << "to the room participant" << name << ", skipping";
     }
 }

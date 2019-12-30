@@ -23,7 +23,16 @@
 #include <QRegularExpression>
 #include "message.h"
 
-const QRegularExpression urlReg("(?<!<a\\shref=['\"])(?<!<img\\ssrc=['\"])((?:https?|ftp)://\\S+)");       //finds all hypertext references which are not wrapped in a or img tags
+const QRegularExpression urlReg("(?<!<a\\shref=['\"])(?<!<img\\ssrc=['\"])("
+                                "(?:https?|ftp):\\/\\/"
+                                    "\\w+"
+                                    "(?:"
+                                        "[\\w\\.\\/\\:\\;\\?\\&\\=\\@\\%\\#\\+]?"
+                                        "(?:"
+                                            "\\([\\w\\.\\/\\:\\;\\?\\&\\=\\@\\%\\#\\+]+\\)"
+                                        ")?"
+                                    ")*"
+                                ")");
 const QRegularExpression imgReg("((?:https?|ftp)://\\S+\\.(?:jpg|jpeg|png|svg|gif))");
 
 Message::Message(const Shared::Message& source, bool outgoing, const QString& p_sender, const QString& avatarPath, QWidget* parent):
