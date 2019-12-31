@@ -230,7 +230,6 @@ void Squawk::addGroup(const QString& account, const QString& name)
     settings.beginGroup(account);
     if (settings.value("expanded", false).toBool()) {
         QModelIndex ind = rosterModel.getAccountIndex(account);
-        qDebug() << "expanding account " << ind.data();
         m_ui->roster->expand(ind);
         if (settings.value(name + "/expanded", false).toBool()) {
             m_ui->roster->expand(rosterModel.getGroupIndex(account, name));
@@ -497,21 +496,28 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
 void Squawk::notify(const QString& account, const Shared::Message& msg)
 {
     QString name = QString(rosterModel.getContactName(account, msg.getPenPalJid()));
-    QString path = QString(rosterModel.getContactIconPath(account, msg.getPenPalJid()));
+    QString path = QString(rosterModel.getContactIconPath(account, msg.getPenPalJid(), msg.getPenPalResource()));
     QVariantList args;
     args << QString(QCoreApplication::applicationName());
     args << QVariant(QVariant::UInt);   //TODO some normal id
     if (path.size() > 0) {
         args << path;
     } else {
-        args << QString("mail-message");
+        args << QString("mail-message");    //TODO should here better be unknown user icon?
     }
     if (msg.getType() == Shared::Message::groupChat) {
         args << msg.getFromResource() + " from " + name;
     } else {
         args << name;
     }
-    args << QString(msg.getBody());
+    
+    QString body(msg.getBody());
+    QString oob(msg.getOutOfBandUrl());
+    if (body == oob) {
+        body = tr("Attached file");
+    }
+    
+    args << body;
     args << QStringList();
     args << QVariantMap();
     args << 3000;

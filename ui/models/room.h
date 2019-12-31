@@ -71,6 +71,12 @@ public:
     QString getDisplayedName() const override;
     Shared::Avatar getAvatarState() const;
     QString getAvatarPath() const;
+    std::map<QString, const Participant&> getParticipants() const;
+    QString getParticipantIconPath(const QString& name) const;
+    
+signals:
+    void participantJoined(const Participant& participant);
+    void participantLeft(const QString& name);
     
 private:
     void handleParticipantUpdate(std::map<QString, Participant*>::const_iterator itr, const QMap<QString, QVariant>& data);

@@ -28,6 +28,16 @@ Room::Room(Models::Account* acc, Models::Room* p_room, QWidget* parent):
     setAvatar(room->getAvatarPath());
     
     connect(room, &Models::Room::childChanged, this, &Room::onRoomChanged);
+    connect(room, &Models::Room::participantJoined, this, &Room::onParticipantJoined);
+    connect(room, &Models::Room::participantLeft, this, &Room::onParticipantLeft);
+    
+    std::map<QString, const Models::Participant&> members = room->getParticipants();
+    for (std::pair<QString, const Models::Participant&> pair : members) {
+        QString aPath = pair.second.getAvatarPath();
+        if (aPath.size() > 0) {
+            line->setPalAvatar(pair.first, aPath);
+        }
+    }
 }
 
 Room::~Room()
@@ -62,6 +72,34 @@ void Room::onRoomChanged(Models::Item* item, int row, int col)
             case 6:
                 setStatus(room->getSubject());
                 break;
+            case 8:
+                setAvatar(room->getAvatarPath());
+                break;
+        }
+    } else {
+        switch (col) {
+            case 7: {
+                Models::Participant* mem = static_cast<Models::Participant*>(item);
+                QString aPath = mem->getAvatarPath();
+                if (aPath.size() > 0) {
+                    line->setPalAvatar(mem->getName(), aPath);
+                } else {
+                    line->dropPalAvatar(mem->getName());
+                }
+            }
         }
     }
+}
+
+void Room::onParticipantJoined(const Models::Participant& participant)
+{
+    QString aPath = participant.getAvatarPath();
+    if (aPath.size() > 0) {
+        line->setPalAvatar(participant.getName(), aPath);
+    }
+}
+
+void Room::onParticipantLeft(const QString& name)
+{
+    line->dropPalAvatar(name);
 }

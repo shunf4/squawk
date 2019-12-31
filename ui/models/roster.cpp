@@ -949,7 +949,7 @@ bool Models::Roster::groupHasContact(const QString& account, const QString& grou
     }
 }
 
-QString Models::Roster::getContactIconPath(const QString& account, const QString& jid)
+QString Models::Roster::getContactIconPath(const QString& account, const QString& jid, const QString& resource)
 {
     ElId id(account, jid);
     std::multimap<ElId, Contact*>::const_iterator cItr = contacts.find(id);
@@ -959,7 +959,7 @@ QString Models::Roster::getContactIconPath(const QString& account, const QString
         if (rItr == rooms.end()) {
             qDebug() << "An attempt to get an icon path of non existing contact" << account << ":" << jid << ", returning empty value";
         } else {
-            //path = rItr->second->getRoomName();
+            path = rItr->second->getParticipantIconPath(resource);
         }
     } else {
         if (cItr->second->getAvatarState() != Shared::Avatar::empty) {

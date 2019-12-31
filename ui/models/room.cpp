@@ -276,6 +276,7 @@ void Models::Room::addParticipant(const QString& p_name, const QMap<QString, QVa
         part->setName(p_name);
         participants.insert(std::make_pair(p_name, part));
         appendChild(part);
+        emit participantJoined(*part);
     }
 }
 
@@ -299,6 +300,7 @@ void Models::Room::removeParticipant(const QString& p_name)
         participants.erase(itr);
         removeChild(p->row());
         p->deleteLater();
+        emit participantLeft(p_name);
     }
 }
 
@@ -372,4 +374,25 @@ void Models::Room::setAvatarState(unsigned int p_state)
     } else {
         qDebug() << "An attempt to set invalid avatar state" << p_state << "to the room" << jid << ", skipping";
     }
+}
+
+std::map<QString, const Models::Participant &> Models::Room::getParticipants() const
+{
+    std::map<QString, const Models::Participant&> result;
+    
+    for (std::pair<QString, Models::Participant*> pair : participants) {
+        result.emplace(pair.first, *(pair.second));
+    }
+    
+    return result;
+}
+
+QString Models::Room::getParticipantIconPath(const QString& name) const
+{
+    std::map<QString, Models::Participant*>::const_iterator itr = participants.find(name);
+    if (itr == participants.end()) {
+        return "";
+    }
+    
+    return itr->second->getAvatarPath();
 }

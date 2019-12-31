@@ -74,6 +74,10 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
                 outgoing = true;
             } else {
                 sender = msg.getFromResource();
+                std::map<QString, QString>::iterator aItr = palAvatars.find(sender);
+                if (aItr != palAvatars.end()) {
+                    aPath = aItr->second;
+                }
                 outgoing = false;
             }
         } else {
@@ -111,16 +115,18 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
     if (outgoing) {
         myMessages.insert(std::make_pair(id, message));
     } else {
+        QString senderId;
         if (room) {
-            
+            senderId = sender;
         } else {
             QString jid = msg.getFromJid();
-            std::map<QString, Index>::iterator pItr = palMessages.find(jid);
-            if (pItr == palMessages.end()) {
-                pItr = palMessages.insert(std::make_pair(jid, Index())).first;
-            }
-            pItr->second.insert(std::make_pair(id, message));
         }
+        
+        std::map<QString, Index>::iterator pItr = palMessages.find(senderId);
+        if (pItr == palMessages.end()) {
+            pItr = palMessages.insert(std::make_pair(senderId, Index())).first;
+        }
+        pItr->second.insert(std::make_pair(id, message));
     }
     messageIndex.insert(std::make_pair(id, message));
     unsigned long index = std::distance<Order::const_iterator>(messageOrder.begin(), result.first);   //need to make with binary indexed tree

@@ -36,6 +36,8 @@ public:
     
 protected slots:
     void onRoomChanged(Models::Item* item, int row, int col);
+    void onParticipantJoined(const Models::Participant& participant);
+    void onParticipantLeft(const QString& name);
     
 protected:
     void handleSendMessage(const QString & text) override;
