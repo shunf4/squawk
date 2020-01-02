@@ -34,7 +34,9 @@ Shared::Message::Message(Shared::Message::Type p_type):
     thread(),
     type(p_type),
     outgoing(false),
-    forwarded(false)
+    forwarded(false),
+    state(State::delivered),
+    edited(false)
 {
 }
 
@@ -49,7 +51,9 @@ Shared::Message::Message():
     thread(),
     type(Message::normal),
     outgoing(false),
-    forwarded(false)
+    forwarded(false),
+    state(State::delivered),
+    edited(false)
 {
 }
 
@@ -161,6 +165,16 @@ QString Shared::Message::getPenPalResource() const
     }
 }
 
+Shared::Message::State Shared::Message::getState() const
+{
+    return state;
+}
+
+bool Shared::Message::getEdited() const
+{
+    return edited;
+}
+
 void Shared::Message::setFromJid(const QString& from)
 {
     jFrom = from;
@@ -226,6 +240,16 @@ void Shared::Message::setType(Shared::Message::Type t)
     type = t;
 }
 
+void Shared::Message::setState(Shared::Message::State p_state)
+{
+    state = p_state;
+}
+
+void Shared::Message::setEdited(bool p_edited)
+{
+    edited = p_edited;
+}
+
 void Shared::Message::serialize(QDataStream& data) const
 {
     data << jFrom;
@@ -236,11 +260,12 @@ void Shared::Message::serialize(QDataStream& data) const
     data << body;
     data << time;
     data << thread;
-    quint8 t = type;
-    data << t;
+    data << (quint8)type;
     data << outgoing;
     data << forwarded;
     data << oob;
+    data << (quint8)state;
+    data << edited;
 }
 
 void Shared::Message::deserialize(QDataStream& data)
@@ -259,6 +284,10 @@ void Shared::Message::deserialize(QDataStream& data)
     data >> outgoing;
     data >> forwarded;
     data >> oob;
+    quint8 s;
+    data >> s;
+    state = static_cast<State>(s);
+    data >> edited;
 }
 
 QString Shared::generateUUID()

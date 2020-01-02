@@ -157,6 +157,14 @@ public:
         groupChat,
         headline
     };
+    
+    enum class State {
+        pending,
+        sent,
+        delivered,
+        error
+    };
+    
     Message(Type p_type);
     Message();
 
@@ -175,6 +183,8 @@ public:
     void setType(Type t);
     void setCurrentTime();
     void setOutOfBandUrl(const QString& url);
+    void setState(State p_state);
+    void setEdited(bool p_edited);
     
     QString getFrom() const;
     QString getFromJid() const;
@@ -192,6 +202,8 @@ public:
     bool hasOutOfBandUrl() const;
     bool storable() const;
     QString getOutOfBandUrl() const;
+    State getState() const;
+    bool getEdited() const;
     
     QString getPenPalJid() const;
     QString getPenPalResource() const;
@@ -213,6 +225,8 @@ private:
     bool outgoing;
     bool forwarded;
     QString oob;
+    State state;
+    bool edited;
 };
 
 class VCard {
