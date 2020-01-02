@@ -1,6 +1,10 @@
-# Sqwawk
+# Squawk - a compact XMPP desktop messenger
 
-A compact XMPP desktop messenger
+[![AUR license](https://img.shields.io/aur/license/squawk?style=flat-square)](https://git.macaw.me/blue/squawk/raw/branch/master/LICENSE.md)
+[![AUR version](https://img.shields.io/aur/version/squawk?style=flat-square)](https://aur.archlinux.org/packages/squawk/)
+[![Donations](http://img.shields.io/liberapay/patrons/macaw.me.svg?logo=liberapay?style=flat-square)](https://liberapay.com/macaw.me)
+
+![Squawk screenshot](https://macaw.me/images/squawk/0.1.2.png)
 
 ### Prerequisites
 
