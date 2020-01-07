@@ -46,6 +46,7 @@ public:
     bool addElement(const Shared::Message& message);
     unsigned int addElements(const std::list<Shared::Message>& messages);
     Shared::Message getElement(const QString& id);
+    void setMessageState(const QString& id, Shared::Message::State state);
     Shared::Message oldest();
     QString oldestId();
     Shared::Message newest();
@@ -181,6 +182,7 @@ private:
     void printOrder();
     void printKeys();
     bool dropAvatar(const std::string& resource);
+    Shared::Message getMessage(const std::string& id, MDB_txn* txn);
 };
 
 }

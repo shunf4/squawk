@@ -173,28 +173,74 @@ Shared::Message Core::Archive::getElement(const QString& id)
         throw Closed("getElement", jid.toStdString());
     }
     
-    std::string strKey = id.toStdString();
-    
-    MDB_val lmdbKey, lmdbData;
-    lmdbKey.mv_size = strKey.size();
-    lmdbKey.mv_data = (char*)strKey.c_str();
-    
     MDB_txn *txn;
-    int rc;
     mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
-    rc = mdb_get(txn, main, &lmdbKey, &lmdbData);
-    if (rc) {
-        qDebug() <<"Get error: " << mdb_strerror(rc);
+    
+    try {
+        Shared::Message msg = getMessage(id.toStdString(), txn);
         mdb_txn_abort(txn);
-        throw NotFound(id.toStdString(), jid.toStdString());
-    } else {
+        return msg;
+    } catch (...) {
+        mdb_txn_abort(txn);
+        throw;
+    }
+}
+
+Shared::Message Core::Archive::getMessage(const std::string& id, MDB_txn* txn)
+{
+    MDB_val lmdbKey, lmdbData;
+    lmdbKey.mv_size = id.size();
+    lmdbKey.mv_data = (char*)id.c_str();
+    int rc = mdb_get(txn, main, &lmdbKey, &lmdbData);
+    
+    if (rc == 0) {
         QByteArray ba((char*)lmdbData.mv_data, lmdbData.mv_size);
         QDataStream ds(&ba, QIODevice::ReadOnly);
         
         Shared::Message msg;
         msg.deserialize(ds);
-        mdb_txn_abort(txn);
+        
         return msg;
+    } else if (rc == MDB_NOTFOUND) {
+        throw NotFound(id, jid.toStdString());
+    } else {
+        throw Unknown(jid.toStdString(), mdb_strerror(rc));
+    }
+}
+
+void Core::Archive::setMessageState(const QString& id, Shared::Message::State state)
+{
+    if (!opened) {
+        throw Closed("setMessageState", jid.toStdString());
+    }
+    
+    MDB_txn *txn;
+    mdb_txn_begin(environment, NULL, 0, &txn);
+    
+    std::string strId(id.toStdString());
+    try {
+        Shared::Message msg = getMessage(strId, txn);
+        msg.setState(state);
+        
+        MDB_val lmdbKey, lmdbData;
+        QByteArray ba;
+        QDataStream ds(&ba, QIODevice::WriteOnly);
+        msg.serialize(ds);
+        lmdbKey.mv_size = strId.size();
+        lmdbKey.mv_data = (char*)strId.c_str();
+        lmdbData.mv_size = ba.size();
+        lmdbData.mv_data = (uint8_t*)ba.data();
+        int rc = mdb_put(txn, main, &lmdbKey, &lmdbData, 0);
+        if (rc == 0) {
+            rc = mdb_txn_commit(txn);
+        } else {
+            mdb_txn_abort(txn);
+            throw Unknown(jid.toStdString(), mdb_strerror(rc));
+        }
+        
+    } catch (...) {
+        mdb_txn_abort(txn);
+        throw;
     }
 }
 
@@ -344,8 +390,8 @@ std::list<Shared::Message> Core::Archive::getBefore(int count, const QString& id
     MDB_val lmdbKey, lmdbData;
     int rc;
     rc = mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
+    rc = mdb_cursor_open(txn, order, &cursor);
     if (id == "") {
-        rc = mdb_cursor_open(txn, order, &cursor);
         rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_LAST);
         if (rc) {
             qDebug() << "Error getting before" << mdb_strerror(rc) << ", id:" << id;
@@ -356,40 +402,29 @@ std::list<Shared::Message> Core::Archive::getBefore(int count, const QString& id
         }
     } else {
         std::string stdId(id.toStdString());
-        lmdbKey.mv_size = stdId.size();
-        lmdbKey.mv_data = (char*)stdId.c_str();
-        rc = mdb_get(txn, main, &lmdbKey, &lmdbData);
-        if (rc) {
-            qDebug() <<"Error getting before: no reference message" << mdb_strerror(rc) << ", id:" << id;
-            mdb_txn_abort(txn);
-            throw NotFound(stdId, jid.toStdString());
-        } else {
-            QByteArray ba((char*)lmdbData.mv_data, lmdbData.mv_size);
-            QDataStream ds(&ba, QIODevice::ReadOnly);
-            
-            Shared::Message msg;
-            msg.deserialize(ds);
+        try {
+            Shared::Message msg = getMessage(stdId, txn);
             quint64 stamp = msg.getTime().toMSecsSinceEpoch();
             lmdbKey.mv_data = (quint8*)&stamp;
             lmdbKey.mv_size = 8;
             
-            rc = mdb_cursor_open(txn, order, &cursor);
             rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_SET);
             
             if (rc) {
                 qDebug() << "Error getting before: couldn't set " << mdb_strerror(rc);
-                mdb_cursor_close(cursor);
-                mdb_txn_abort(txn);
                 throw NotFound(stdId, jid.toStdString());
             } else {
                 rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_PREV);
                 if (rc) {
                     qDebug() << "Error getting before, couldn't prev " << mdb_strerror(rc);
-                    mdb_cursor_close(cursor);
-                    mdb_txn_abort(txn);
                     throw NotFound(stdId, jid.toStdString());
                 }
             }
+            
+        } catch (...) {
+            mdb_cursor_close(cursor);
+            mdb_txn_abort(txn);
+            throw;
         }
     }
     
@@ -401,6 +436,7 @@ std::list<Shared::Message> Core::Archive::getBefore(int count, const QString& id
         if (rc) {
             qDebug() <<"Get error: " << mdb_strerror(rc);
             std::string sId((char*)lmdbData.mv_data, lmdbData.mv_size);
+            mdb_cursor_close(cursor);
             mdb_txn_abort(txn);
             throw NotFound(sId, jid.toStdString());
         } else {
@@ -687,9 +723,9 @@ bool Core::Archive::readAvatarInfo(Core::Archive::AvatarInfo& target, const QStr
         bool success = readAvatarInfo(target, res, txn);
         mdb_txn_abort(txn);
         return success;
-    } catch (const std::exception& e) {
+    } catch (...) {
         mdb_txn_abort(txn);
-        throw e;
+        throw;
     }
     
 }
