@@ -27,9 +27,9 @@ const QRegularExpression urlReg("(?<!<a\\shref=['\"])(?<!<img\\ssrc=['\"])("
                                 "(?:https?|ftp):\\/\\/"
                                     "\\w+"
                                     "(?:"
-                                        "[\\w\\.\\/\\:\\;\\?\\&\\=\\@\\%\\#\\+]?"
+                                        "[\\w\\.\\/\\:\\;\\?\\&\\=\\@\\%\\#\\+\\-]?"
                                         "(?:"
-                                            "\\([\\w\\.\\/\\:\\;\\?\\&\\=\\@\\%\\#\\+]+\\)"
+                                            "\\([\\w\\.\\/\\:\\;\\?\\&\\=\\@\\%\\#\\+\\-]+\\)"
                                         ")?"
                                     ")*"
                                 ")");
@@ -207,6 +207,7 @@ void Message::hideComment()
         bodyLayout->removeWidget(fileComment);
         fileComment->hide();
         fileComment->setWordWrap(false);
+        commentAdded = false;
     }
 }
 
