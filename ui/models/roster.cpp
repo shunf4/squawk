@@ -66,7 +66,6 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
         case Qt::DisplayRole:
         {
             if (index.column() != 0) {
-                result = "";
                 break;
             }
             switch (item->type) {

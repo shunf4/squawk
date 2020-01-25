@@ -36,7 +36,7 @@ Squawk::Squawk(QWidget *parent) :
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
     m_ui->roster->setContextMenuPolicy(Qt::CustomContextMenu);
-    m_ui->roster->setColumnWidth(1, 20);
+    m_ui->roster->setColumnWidth(1, 30);
     m_ui->roster->setIconSize(QSize(20, 20));
     m_ui->roster->header()->setStretchLastSection(false);
     m_ui->roster->header()->setSectionResizeMode(0, QHeaderView::Stretch);
