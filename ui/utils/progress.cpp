@@ -39,9 +39,9 @@ Progress::Progress(quint16 p_size, QWidget* parent):
     pixmap->setTransformationMode(Qt::SmoothTransformation);
     pixmap->setOffset(0, 0);
     
-    animation.setDuration(500);
+    animation.setDuration(1000);
     animation.setStartValue(0.0f);
-    animation.setEndValue(180.0f);
+    animation.setEndValue(360.0f);
     animation.setLoopCount(-1);
     connect(&animation, &QVariantAnimation::valueChanged, this, &Progress::onValueChanged);
     

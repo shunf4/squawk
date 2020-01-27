@@ -60,6 +60,7 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     QString bd = msg.getBody();
     //bd.replace(imgReg, "<img src=\"\\1\"/>");
     bd.replace(urlReg, "<a href=\"\\1\">\\1</a>");
+    bd.replace("\n", "<br>");
     text->setTextFormat(Qt::RichText);
     text->setText(bd);;
     text->setTextInteractionFlags(text->textInteractionFlags() | Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
