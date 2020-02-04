@@ -36,10 +36,12 @@ const QRegularExpression urlReg("(?<!<a\\shref=['\"])(?<!<img\\ssrc=['\"])("
 const QRegularExpression imgReg("((?:https?|ftp)://\\S+\\.(?:jpg|jpeg|png|svg|gif))");
 
 Message::Message(const Shared::Message& source, bool outgoing, const QString& p_sender, const QString& avatarPath, QWidget* parent):
-    QHBoxLayout(parent),
+    QWidget(parent),
     msg(source),
     body(new QWidget()),
+    statusBar(new QWidget()),
     bodyLayout(new QVBoxLayout(body)),
+    layout(new QHBoxLayout(this)),
     date(new QLabel(msg.getTime().toLocalTime().toString())),
     sender(new QLabel(p_sender)),
     text(new QLabel()),
@@ -54,15 +56,17 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     hasFile(false),
     commentAdded(false)
 {
+    setContentsMargins(0, 0, 0, 0);
+    layout->setContentsMargins(10, 5, 10, 5);
     body->setBackgroundRole(QPalette::AlternateBase);
     body->setAutoFillBackground(true);
     
     QString bd = msg.getBody();
     //bd.replace(imgReg, "<img src=\"\\1\"/>");
     bd.replace(urlReg, "<a href=\"\\1\">\\1</a>");
-    bd.replace("\n", "<br>");
+    //bd.replace("\n", "<br>");
     text->setTextFormat(Qt::RichText);
-    text->setText(bd);;
+    text->setText("<p style=\"white-space: pre-wrap;\">" + bd + "</p>");;
     text->setTextInteractionFlags(text->textInteractionFlags() | Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
     text->setWordWrap(true);
     text->setOpenExternalLinks(true);
@@ -81,7 +85,6 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     
     bodyLayout->addWidget(sender);
     bodyLayout->addWidget(text);
-    bodyLayout->addWidget(date);
     
     shadow->setBlurRadius(10);
     shadow->setXOffset(1);
@@ -90,22 +93,33 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     body->setGraphicsEffect(shadow);
     avatar->setMaximumHeight(60);
     avatar->setMaximumWidth(60);
-    QVBoxLayout* aLay = new QVBoxLayout();
-    aLay->addWidget(avatar);
-    aLay->addStretch();
     
+    statusBar->setContentsMargins(0, 0, 0, 0);
+    QHBoxLayout* statusLay = new QHBoxLayout();
+    statusLay->setContentsMargins(0, 0, 0, 0);
+    statusBar->setLayout(statusLay);
     
     if (outgoing) {
         sender->setAlignment(Qt::AlignRight);
         date->setAlignment(Qt::AlignRight);
-        addStretch();
-        addWidget(body);
-        addItem(aLay);
+        QIcon q(Shared::icon(Shared::messageStateThemeIcons[static_cast<uint8_t>(source.getState())]));
+        QLabel* statusIcon = new QLabel();
+        statusIcon->setToolTip(QCoreApplication::translate("Global", Shared::messageStateNames[static_cast<uint8_t>(source.getState())].toLatin1()));
+        statusIcon->setPixmap(q.pixmap(12, 12));
+        statusLay->addWidget(statusIcon);
+        statusLay->addWidget(date);
+        layout->addStretch();
+        layout->addWidget(body);
+        layout->addWidget(avatar);
     } else {
-        addItem(aLay);
-        addWidget(body);
-        addStretch();
+        layout->addWidget(avatar);
+        layout->addWidget(body);
+        layout->addStretch();
+        statusLay->addWidget(date);
     }
+    
+    bodyLayout->addWidget(statusBar);
+    layout->setAlignment(avatar, Qt::AlignTop);
 }
 
 Message::~Message()

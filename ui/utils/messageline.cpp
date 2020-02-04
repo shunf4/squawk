@@ -38,7 +38,10 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     busyShown(false),
     progress()
 {
+    setContentsMargins(0, 0, 0, 0);
+    layout->setContentsMargins(0, 0, 0, 0);
     setBackgroundRole(QPalette::Base);
+    layout->setSpacing(0);
     layout->addStretch();
 }
 
@@ -145,9 +148,9 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
     
         
     if (res == end) {
-        layout->addLayout(message);
+        layout->addWidget(message);
     } else {
-        layout->insertLayout(index, message);
+        layout->insertWidget(index + 1, message);
     }
     
     if (msg.hasOutOfBandUrl()) {

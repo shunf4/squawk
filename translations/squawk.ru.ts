@@ -298,6 +298,18 @@
         <source>Other</source>
         <translation>Другой</translation>
     </message>
+    <message>
+        <source>Pending</source>
+        <translation>В процессе</translation>
+    </message>
+    <message>
+        <source>Sent</source>
+        <translation>Отправлено</translation>
+    </message>
+    <message>
+        <source>Delivered</source>
+        <translation>Доставлено</translation>
+    </message>
 </context>
 <context>
     <name>JoinConference</name>

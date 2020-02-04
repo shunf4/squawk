@@ -46,7 +46,8 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     scroll(down),
     manualSliderChange(false),
     requestingHistory(false),
-    everShown(false)
+    everShown(false),
+    tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1)
 {
     m_ui->setupUi(this);
     
@@ -77,8 +78,12 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     QScrollBar* vs = m_ui->scrollArea->verticalScrollBar();
     m_ui->scrollArea->setWidget(line);
     vs->installEventFilter(&vis);
-    vs->setBackgroundRole(QPalette::Base);
-    vs->setAutoFillBackground(true);
+    
+    if (!tsb) {
+        vs->setBackgroundRole(QPalette::Base);
+        vs->setAutoFillBackground(true);
+    }
+    
     connect(vs, &QScrollBar::valueChanged, this, &Conversation::onSliderValueChanged);
     m_ui->scrollArea->installEventFilter(&scrollResizeCatcher);
     m_ui->filesPanel->installEventFilter(&attachResizeCatcher);
@@ -313,8 +318,9 @@ void Conversation::onScrollResize()
     if (everShown) {
         int size = m_ui->scrollArea->width();
         QScrollBar* bar = m_ui->scrollArea->verticalScrollBar();
-        if (bar->isVisible()) {
+        if (bar->isVisible() && !tsb) {
             size -= bar->width();
+            
         }
         line->setMaximumWidth(size);
     }

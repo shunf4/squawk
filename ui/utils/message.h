@@ -37,7 +37,7 @@
 /**
  * @todo write docs
  */
-class Message : public QHBoxLayout
+class Message : public QWidget
 {
     Q_OBJECT
 public:
@@ -62,7 +62,9 @@ signals:
 private:
     Shared::Message msg;
     QWidget* body;
+    QWidget* statusBar;
     QVBoxLayout* bodyLayout;
+    QHBoxLayout* layout;
     QLabel* date;
     QLabel* sender;
     QLabel* text;

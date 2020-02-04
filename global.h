@@ -107,6 +107,10 @@ static const std::deque<QString> subscriptionStateNames = {"None", "From", "To",
 
 static const std::deque<QString> affiliationNames = {"Unspecified", "Outcast", "Nobody", "Member", "Admin", "Owner"};
 static const std::deque<QString> roleNames = {"Unspecified", "Nobody", "Visitor", "Participant", "Moderator"};
+
+static const std::deque<QString> messageStateNames = {"Pending", "Sent", "Delivered", "Error"};
+static const std::deque<QString> messageStateThemeIcons = {"state-offline", "state-sync", "state-ok", "state-error"};
+
 QString generateUUID();
 
 static const std::vector<QColor> colorPalette = {

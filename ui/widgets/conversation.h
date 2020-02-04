@@ -135,6 +135,7 @@ protected:
     bool manualSliderChange;
     bool requestingHistory;
     bool everShown;
+    bool tsb;           //transient scroll bars
 };
 
 #endif // CONVERSATION_H
