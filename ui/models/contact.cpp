@@ -290,6 +290,27 @@ void Models::Contact::addMessage(const Shared::Message& data)
     }
 }
 
+void Models::Contact::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
+{
+
+    bool found = false;
+    for (Shared::Message& msg : messages) {
+        if (msg.getId() == id) {
+            msg.change(data);
+            found = true;
+            break;
+        }
+    }
+    if (!found) {
+        for (Presence* pr : presences) {
+            found = pr->changeMessage(id, data);
+            if (found) {
+                break;
+            }
+        }
+    }
+}
+
 unsigned int Models::Contact::getMessagesCount() const
 {
     return messages.size() + childMessages;

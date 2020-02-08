@@ -480,9 +480,9 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
         QApplication::alert(conv);
         if (conv->isMinimized()) {
             rosterModel.addMessage(account, data);
-            if (!data.getForwarded()) {
-                notify(account, data);
-            }
+        }
+        if (!conv->isVisible() && !data.getForwarded()) {
+            notify(account, data);
         }
     } else {
         rosterModel.addMessage(account, data);
@@ -490,6 +490,20 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
             QApplication::alert(this);
             notify(account, data);
         }
+    }
+}
+
+void Squawk::changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data)
+{
+    Conversations::iterator itr = conversations.find({account, jid});
+    if (itr != conversations.end()) {
+        Conversation* conv = itr->second;
+        conv->changeMessage(id, data);
+        if (conv->isMinimized()) {
+            rosterModel.changeMessage(account, jid, id, data);
+        }
+    } else {
+        rosterModel.changeMessage(account, jid, id, data);
     }
 }
 

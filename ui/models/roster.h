@@ -23,7 +23,8 @@
 #include <deque>
 #include <map>
 #include <QVector>
-#include "../../global.h"
+
+#include "global.h"
 #include "accounts.h"
 #include "item.h"
 #include "account.h"
@@ -54,6 +55,7 @@ public:
     void addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& account, const QString& jid, const QString& name);
     void addMessage(const QString& account, const Shared::Message& data);
+    void changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
     void dropMessages(const QString& account, const QString& jid);
     void addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void changeRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);

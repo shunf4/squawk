@@ -29,6 +29,7 @@
 #include <QAction>
 #include <QDesktopServices>
 #include <QUrl>
+#include <QMap>
 
 #include "global.h"
 #include "resizer.h"
@@ -46,6 +47,8 @@ public:
     
     void setSender(const QString& sender);
     QString getId() const;
+    QString getSenderJid() const;
+    QString getSenderResource() const;
     QString getFileUrl() const;
     const Shared::Message& getMessage() const;
     
@@ -55,6 +58,9 @@ public:
     void showFile(const QString& path);
     void setProgress(qreal value);
     void setAvatarPath(const QString& p_path);
+    bool change(const QMap<QString, QVariant>& data);
+    
+    bool const outgoing;
     
 signals:
     void buttonClicked();
@@ -73,11 +79,15 @@ private:
     QLabel* file;
     QProgressBar* progress;
     QLabel* fileComment;
+    QLabel* statusIcon;
+    QLabel* editedLabel;
     Image* avatar;
     bool hasButton;
     bool hasProgress;
     bool hasFile;
     bool commentAdded;
+    bool hasStatusIcon;
+    bool hasEditedLabel;
   
 private:
     void hideButton();

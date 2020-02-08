@@ -122,7 +122,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
         if (room) {
             senderId = sender;
         } else {
-            QString jid = msg.getFromJid();
+            senderId = msg.getFromJid();
         }
         
         std::map<QString, Index>::iterator pItr = palMessages.find(senderId);
@@ -159,6 +159,48 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
     }
     
     return res;
+}
+
+void MessageLine::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
+{
+    Index::const_iterator itr = messageIndex.find(id);
+    if (itr != messageIndex.end()) {
+        Message* msg = itr->second;
+        if (msg->change(data)) {                    //if ID changed (stanza in replace of another)
+            QString newId = msg->getId();           //need to updated IDs of that message in all maps
+            messageIndex.erase(itr);
+            messageIndex.insert(std::make_pair(newId, msg));
+            if (msg->outgoing) {
+                QString senderId;
+                if (room) {
+                    senderId = msg->getSenderResource();
+                } else {
+                    senderId = msg->getSenderJid();
+                }
+                
+                std::map<QString, Index>::iterator pItr = palMessages.find(senderId);
+                if (pItr != palMessages.end()) {
+                    Index::const_iterator sItr = pItr->second.find(id);
+                    if (sItr != pItr->second.end()) {
+                        pItr->second.erase(sItr);
+                        pItr->second.insert(std::make_pair(newId, msg));
+                    } else {
+                        qDebug() << "Was trying to replace message in open conversations, couldn't find it among pal's messages, probably an error"; 
+                    }
+                } else {
+                    qDebug() << "Was trying to replace message in open conversations, couldn't find pal messages, probably an error"; 
+                }
+            } else {
+                Index::const_iterator mItr = myMessages.find(id);
+                if (mItr != myMessages.end()) {
+                    myMessages.erase(mItr);
+                    myMessages.insert(std::make_pair(newId, msg));
+                } else {
+                    qDebug() << "Was trying to replace message in open conversations, couldn't find it among my messages, probably an error"; 
+                }
+            }
+        }
+    }
 }
 
 void MessageLine::onDownload()

@@ -106,7 +106,7 @@ public slots:
     void fileError(const QString& messageId, const QString& error);
     void fileProgress(const QString& messageId, qreal value);
     void responseVCard(const QString& jid, const Shared::VCard& card);
-    void onItemCollepsed(const QModelIndex& index);
+    void changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
     
 private:
     typedef std::map<Models::Roster::ElId, Conversation*> Conversations;
@@ -145,6 +145,7 @@ private slots:
     void onConversationShown();
     void onConversationRequestLocalFile(const QString& messageId, const QString& url);
     void onConversationDownloadFile(const QString& messageId, const QString& url);
+    void onItemCollepsed(const QModelIndex& index);
     
 };
 

@@ -236,6 +236,16 @@ void Models::Room::addMessage(const Shared::Message& data)
     changed(5);
 }
 
+void Models::Room::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
+{
+    for (Shared::Message& msg : messages) {
+        if (msg.getId() == id) {
+            msg.change(data);
+            break;
+        }
+    }
+}
+
 void Models::Room::dropMessages()
 {
     if (messages.size() > 0) {

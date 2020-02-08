@@ -549,14 +549,34 @@ void Models::Roster::changeContact(const QString& account, const QString& jid, c
     
     for (; cBeg != cEnd; ++cBeg) {
         for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
-            cBeg->second->update(itr.key(), itr.value());;
+            cBeg->second->update(itr.key(), itr.value());
         }
     }
     
     std::map<ElId, Room*>::iterator rItr = rooms.find(id);
     if (rItr != rooms.end()) {
         for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
-            rItr->second->update(itr.key(), itr.value());;
+            rItr->second->update(itr.key(), itr.value());
+        }
+    }
+}
+
+void Models::Roster::changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data)
+{
+    ElId elid(account, jid);
+    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(elid);
+    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(elid);
+    
+    for (; cBeg != cEnd; ++cBeg) {
+        for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
+            cBeg->second->changeMessage(id, data);
+        }
+    }
+    
+    std::map<ElId, Room*>::iterator rItr = rooms.find(elid);
+    if (rItr != rooms.end()) {
+        for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
+            rItr->second->changeMessage(id, data);
         }
     }
 }

@@ -20,6 +20,7 @@
 #define GLOBAL_H
 
 #include <QString>
+#include <QMap>
 #include <QCoreApplication>
 #include <deque>
 #include <QDateTime>
@@ -189,6 +190,7 @@ public:
     void setOutOfBandUrl(const QString& url);
     void setState(State p_state);
     void setEdited(bool p_edited);
+    bool change(const QMap<QString, QVariant>& data);
     
     QString getFrom() const;
     QString getFromJid() const;

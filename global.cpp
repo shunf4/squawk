@@ -290,6 +290,31 @@ void Shared::Message::deserialize(QDataStream& data)
     data >> edited;
 }
 
+bool Shared::Message::change(const QMap<QString, QVariant>& data)
+{
+    QMap<QString, QVariant>::const_iterator itr = data.find("state");
+    if (itr != data.end()) {
+        setState(static_cast<State>(itr.value().toUInt()));
+    }
+    
+    bool idChanged = false;
+    itr = data.find("id");
+    if (itr != data.end()) {
+        QString newId = itr.value().toString();
+        if (id != newId) {
+            setId(newId);
+            idChanged = true;
+        }
+    }
+    itr = data.find("body");
+    if (itr != data.end()) {
+        setBody(itr.value().toString());
+        setEdited(true);
+    }
+    
+    return idChanged;
+}
+
 QString Shared::generateUUID()
 {
     uuid_t uuid;

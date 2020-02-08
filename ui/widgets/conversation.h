@@ -21,13 +21,15 @@
 
 #include <QWidget>
 #include <QScopedPointer>
+#include <QMap>
+
 #include "global.h"
 #include "order.h"
-#include "../models/account.h"
-#include "../utils/messageline.h"
-#include "../utils/resizer.h"
-#include "../utils/flowlayout.h"
-#include "../utils/badge.h"
+#include "ui/models/account.h"
+#include "ui/utils/messageline.h"
+#include "ui/utils/resizer.h"
+#include "ui/utils/flowlayout.h"
+#include "ui/utils/badge.h"
 
 namespace Ui
 {
@@ -79,6 +81,7 @@ public:
     void fileError(const QString& messageId, const QString& error);
     void responseFileProgress(const QString& messageId, qreal progress);
     virtual void setAvatar(const QString& path);
+    void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     
 signals:
     void sendMessage(const Shared::Message& message);

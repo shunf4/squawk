@@ -61,6 +61,19 @@ void Models::Presence::addMessage(const Shared::Message& data)
     changed(4);
 }
 
+bool Models::Presence::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
+{
+    bool found = false;
+    for (Shared::Message& msg : messages) {
+        if (msg.getId() == id) {
+            msg.change(data);
+            found = true;
+            break;
+        }
+    }
+    return found;
+}
+
 void Models::Presence::dropMessages()
 {
     if (messages.size() > 0) {

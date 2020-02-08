@@ -57,6 +57,7 @@ public:
     QString getStatus() const;
     
     void addMessage(const Shared::Message& data);
+    void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     unsigned int getMessagesCount() const;
     void dropMessages();
     void getMessages(Messages& container) const;

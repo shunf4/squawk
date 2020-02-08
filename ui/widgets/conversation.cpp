@@ -149,6 +149,11 @@ void Conversation::addMessage(const Shared::Message& data)
     }
 }
 
+void Conversation::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
+{
+    line->changeMessage(id, data);
+}
+
 KeyEnterReceiver::KeyEnterReceiver(QObject* parent): QObject(parent), ownEvent(false) {}
 
 bool KeyEnterReceiver::eventFilter(QObject* obj, QEvent* event)

@@ -26,7 +26,7 @@
 #include <QResizeEvent>
 #include <QIcon>
 
-#include "../../global.h"
+#include "global.h"
 #include "message.h"
 #include "progress.h"
 
@@ -57,6 +57,7 @@ public:
     void setMyAvatarPath(const QString& p_path);
     void setPalAvatar(const QString& jid, const QString& path);
     void dropPalAvatar(const QString& jid);
+    void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     
 signals:
     void resize(int amount);

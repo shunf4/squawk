@@ -59,6 +59,7 @@ public:
     void update(const QString& field, const QVariant& value);
     
     void addMessage(const Shared::Message& data);
+    void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     unsigned int getMessagesCount() const;
     void dropMessages();
     void getMessages(Messages& container) const;

@@ -35,8 +35,9 @@ const QRegularExpression urlReg("(?<!<a\\shref=['\"])(?<!<img\\ssrc=['\"])("
                                 ")");
 const QRegularExpression imgReg("((?:https?|ftp)://\\S+\\.(?:jpg|jpeg|png|svg|gif))");
 
-Message::Message(const Shared::Message& source, bool outgoing, const QString& p_sender, const QString& avatarPath, QWidget* parent):
+Message::Message(const Shared::Message& source, bool p_outgoing, const QString& p_sender, const QString& avatarPath, QWidget* parent):
     QWidget(parent),
+    outgoing(p_outgoing),
     msg(source),
     body(new QWidget()),
     statusBar(new QWidget()),
@@ -50,11 +51,15 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     file(0),
     progress(0),
     fileComment(new QLabel()),
+    statusIcon(0),
+    editedLabel(0),
     avatar(new Image(avatarPath.size() == 0 ? Shared::iconPath("user", true) : avatarPath, 60)),
     hasButton(false),
     hasProgress(false),
     hasFile(false),
-    commentAdded(false)
+    commentAdded(false),
+    hasStatusIcon(false),
+    hasEditedLabel(false)
 {
     setContentsMargins(0, 0, 0, 0);
     layout->setContentsMargins(10, 5, 10, 5);
@@ -102,8 +107,8 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
     if (outgoing) {
         sender->setAlignment(Qt::AlignRight);
         date->setAlignment(Qt::AlignRight);
+        statusIcon = new QLabel();
         QIcon q(Shared::icon(Shared::messageStateThemeIcons[static_cast<uint8_t>(source.getState())]));
-        QLabel* statusIcon = new QLabel();
         statusIcon->setToolTip(QCoreApplication::translate("Global", Shared::messageStateNames[static_cast<uint8_t>(source.getState())].toLatin1()));
         statusIcon->setPixmap(q.pixmap(12, 12));
         statusLay->addWidget(statusIcon);
@@ -111,6 +116,7 @@ Message::Message(const Shared::Message& source, bool outgoing, const QString& p_
         layout->addStretch();
         layout->addWidget(body);
         layout->addWidget(avatar);
+        hasStatusIcon = true;
     } else {
         layout->addWidget(avatar);
         layout->addWidget(body);
@@ -127,13 +133,23 @@ Message::~Message()
     if (!commentAdded) {
         delete fileComment;
     }
-    delete body;
-    delete avatar;
+    //delete body;  //not sure if I should delete it here, it's probably already owned by the infrastructure and gonna die with the rest of the widget
+    //delete avatar;
 }
 
 QString Message::getId() const
 {
     return msg.getId();
+}
+
+QString Message::getSenderJid() const
+{
+    return msg.getFromJid();
+}
+
+QString Message::getSenderResource() const
+{
+    return msg.getFromResource();
 }
 
 QString Message::getFileUrl() const
@@ -285,4 +301,43 @@ void Message::setAvatarPath(const QString& p_path)
     } else {
         avatar->setPath(p_path);
     }
+}
+
+bool Message::change(const QMap<QString, QVariant>& data)
+{
+    bool idChanged = msg.change(data);
+    
+    QString bd = msg.getBody();
+    //bd.replace(imgReg, "<img src=\"\\1\"/>");
+    bd.replace(urlReg, "<a href=\"\\1\">\\1</a>");
+    text->setText(bd);
+    if (bd.size() > 0) {
+        text->show();
+    } else {
+        text->hide();
+    }
+    if (msg.getEdited()) {
+        if (!hasEditedLabel) {
+            editedLabel = new QLabel();
+            QFont eFont = editedLabel->font();
+            eFont.setItalic(true);
+            eFont.setPointSize(eFont.pointSize() - 2);
+            editedLabel->setFont(eFont);
+            hasEditedLabel = true;
+            QHBoxLayout* statusLay = static_cast<QHBoxLayout*>(statusBar->layout());
+            if (hasStatusIcon) {
+                statusLay->insertWidget(1, editedLabel);
+            } else {
+                statusLay->insertWidget(0, editedLabel);
+            }
+        }
+    }
+    if (hasStatusIcon) {
+        QIcon q(Shared::icon(Shared::messageStateThemeIcons[static_cast<uint8_t>(msg.getState())]));
+        statusIcon->setToolTip(QCoreApplication::translate("Global", Shared::messageStateNames[static_cast<uint8_t>(msg.getState())].toLatin1()));
+        statusIcon->setPixmap(q.pixmap(12, 12));
+    }
+    
+    
+    return idChanged;
 }
