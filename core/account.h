@@ -113,6 +113,7 @@ signals:
     void addPresence(const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& jid, const QString& name);
     void message(const Shared::Message& data);
+    void changeMessage(const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
     void responseArchive(const QString& jid, const std::list<Shared::Message>& list);
     void error(const QString& text);
     void addRoomParticipant(const QString& jid, const QString& nickName, const QMap<QString, QVariant>& data);
@@ -153,6 +154,7 @@ private:
     QString avatarType;
     bool ownVCardRequestInProgress;
     NetworkAccess* network;
+    std::map<QString, QString> pendingStateMessages;
     
 private slots:
     void onClientConnected();

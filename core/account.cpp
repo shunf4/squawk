@@ -51,7 +51,8 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     avatarHash(),
     avatarType(),
     ownVCardRequestInProgress(false),
-    network(p_net)
+    network(p_net),
+    pendingStateMessages()
 {
     config.setUser(p_login);
     config.setDomain(p_server);
@@ -594,7 +595,7 @@ QString Core::Account::getFullJid() const
 void Core::Account::sendMessage(const Shared::Message& data)
 {
     if (state == Shared::connected) {
-        QXmppMessage msg(data.getFrom(), data.getTo(), data.getBody(), data.getThread());
+        QXmppMessage msg(getFullJid(), data.getTo(), data.getBody(), data.getThread());
         msg.setId(data.getId());
         msg.setType(static_cast<QXmppMessage::Type>(data.getType()));       //it is safe here, my type is compatible
         msg.setOutOfBandUrl(data.getOutOfBandUrl());
@@ -611,9 +612,8 @@ void Core::Account::sendMessage(const Shared::Message& data)
         }
         
         if (ri != 0) {
-            if (!ri->isMuc()) {
-                ri->appendMessageToArchive(data);
-            }
+            ri->appendMessageToArchive(data);
+            pendingStateMessages.insert(std::make_pair(data.getId(), data.getPenPalJid()));
         }
         
         client.sendPacket(msg);
@@ -731,11 +731,17 @@ bool Core::Account::handleGroupMessage(const QXmppMessage& msg, bool outgoing, b
         } else {
             return false;
         }
-        cnt->appendMessageToArchive(sMsg);
         
-        QDateTime fiveMinsAgo = QDateTime::currentDateTime().addSecs(-300);
-        if (sMsg.getTime() > fiveMinsAgo) {     //otherwise it's considered a delayed delivery, most probably MUC history receipt
-            emit message(sMsg);
+        std::map<QString, QString>::const_iterator pItr = pendingStateMessages.find(id);
+        if (pItr != pendingStateMessages.end()) {
+            cnt->changeMessageState(id, Shared::Message::State::delivered);
+            emit changeMessage(jid, id, {{"state", static_cast<uint>(Shared::Message::State::delivered)}});
+        } else {
+            cnt->appendMessageToArchive(sMsg);
+            QDateTime minAgo = QDateTime::currentDateTime().addSecs(-60);
+            if (sMsg.getTime() > minAgo) {     //otherwise it's considered a delayed delivery, most probably MUC history receipt
+                emit message(sMsg);
+            }
         }
         
         if (!forwarded && !outgoing) {

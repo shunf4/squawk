@@ -69,6 +69,7 @@ signals:
     void uploadFileError(const QString& messageId, const QString& error);
     void uploadFileProgress(const QString& messageId, qreal value);
     void responseVCard(const QString& jid, const Shared::VCard& card);
+    void changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
     
 public slots:
     void start();
@@ -131,6 +132,7 @@ private slots:
     void onAccountAddRoomPresence(const QString& jid, const QString& nick, const QMap<QString, QVariant>& data);
     void onAccountChangeRoomPresence(const QString& jid, const QString& nick, const QMap<QString, QVariant>& data);
     void onAccountRemoveRoomPresence(const QString& jid, const QString& nick);
+    void onAccountChangeMessage(const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
 };
 
 }

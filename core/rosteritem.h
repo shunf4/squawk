@@ -72,6 +72,8 @@ public:
     virtual Shared::VCard handleResponseVCard(const QXmppVCardIq& card, const QString& resource);
     virtual void handlePresence(const QXmppPresence& pres) = 0;
     
+    void changeMessageState(const QString& id, Shared::Message::State newState);
+    
 signals:
     void nameChanged(const QString& name);
     void subscriptionStateChanged(Shared::SubscriptionState state);

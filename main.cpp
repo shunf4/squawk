@@ -127,6 +127,7 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, &Core::Squawk::removePresence, &w, &Squawk::removePresence);
     QObject::connect(squawk, &Core::Squawk::stateChanged, &w, &Squawk::stateChanged);
     QObject::connect(squawk, &Core::Squawk::accountMessage, &w, &Squawk::accountMessage);
+    QObject::connect(squawk, &Core::Squawk::changeMessage, &w, &Squawk::changeMessage);
     QObject::connect(squawk, &Core::Squawk::responseArchive, &w, &Squawk::responseArchive);
     QObject::connect(squawk, &Core::Squawk::addRoom, &w, &Squawk::addRoom);
     QObject::connect(squawk, &Core::Squawk::changeRoom, &w, &Squawk::changeRoom);

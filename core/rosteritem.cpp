@@ -221,6 +221,46 @@ void Core::RosterItem::appendMessageToArchive(const Shared::Message& msg)
     }
 }
 
+void Core::RosterItem::changeMessageState(const QString& id, Shared::Message::State newState) 
+{
+    bool found = false;
+    for (Shared::Message& msg : appendCache) {
+        if (msg.getId() == id) {
+            msg.setState(newState);
+            found = true;
+            break;
+        }
+    }
+    
+    if (!found) {
+        for (Shared::Message& msg : hisoryCache) {
+            if (msg.getId() == id) {
+                msg.setState(newState);
+                found = true;
+                break;
+            }
+        }
+    }
+    
+    if (!found) {
+        try {
+            archive->setMessageState(id, newState);
+            found = true;
+        } catch (const Archive::NotFound& e) {
+            qDebug() << "An attempt to change state to the message" << id << "but it couldn't be found";
+        }
+    }
+    
+    if (found) {
+        for (Shared::Message& msg : responseCache) {
+            if (msg.getId() == id) {
+                msg.setState(newState);
+                break;
+            }
+        }
+    }
+}
+
 void Core::RosterItem::flushMessagesToArchive(bool finished, const QString& firstId, const QString& lastId)
 {
     unsigned int added(0);

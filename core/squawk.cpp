@@ -125,6 +125,7 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     connect(acc, &Account::addPresence, this, &Squawk::onAccountAddPresence);
     connect(acc, &Account::removePresence, this, &Squawk::onAccountRemovePresence);
     connect(acc, &Account::message, this, &Squawk::onAccountMessage);
+    connect(acc, &Account::changeMessage, this, &Squawk::onAccountChangeMessage);
     connect(acc, &Account::responseArchive, this, &Squawk::onAccountResponseArchive);
 
     connect(acc, &Account::addRoom, this, &Squawk::onAccountAddRoom);
@@ -488,6 +489,14 @@ void Core::Squawk::onAccountRemoveRoomPresence(const QString& jid, const QString
     emit removeRoomParticipant(acc->getName(), jid, nick);
 }
 
+
+
+void Core::Squawk::onAccountChangeMessage(const QString& jid, const QString& id, const QMap<QString, QVariant>& data)
+{
+    Account* acc = static_cast<Account*>(sender());
+    emit changeMessage(acc->getName(), jid, id, data);
+}
+
 void Core::Squawk::removeRoomRequest(const QString& account, const QString& jid)
 {
     AccountsMap::const_iterator itr = amap.find(account);
@@ -567,3 +576,4 @@ void Core::Squawk::uploadVCard(const QString& account, const Shared::VCard& card
     }
     itr->second->uploadVCard(card);
 }
+

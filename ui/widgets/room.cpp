@@ -47,13 +47,16 @@ Room::~Room()
 void Room::handleSendMessage(const QString& text)
 {
     Shared::Message msg(Shared::Message::groupChat);
-    msg.setFrom(account->getFullJid());
+    msg.setFromJid(room->getJid());
+    msg.setFromResource(room->getNick());
     msg.setToJid(palJid);
     //msg.setToResource(activePalResource);
     msg.setBody(text);
     msg.setOutgoing(true);
     msg.generateRandomId();
     msg.setCurrentTime();
+    msg.setState(Shared::Message::State::pending);
+    addMessage(msg);
     emit sendMessage(msg);
 }
 
