@@ -190,6 +190,7 @@ public:
     void setOutOfBandUrl(const QString& url);
     void setState(State p_state);
     void setEdited(bool p_edited);
+    void setErrorText(const QString& err);
     bool change(const QMap<QString, QVariant>& data);
     
     QString getFrom() const;
@@ -210,6 +211,7 @@ public:
     QString getOutOfBandUrl() const;
     State getState() const;
     bool getEdited() const;
+    QString getErrorText() const;
     
     QString getPenPalJid() const;
     QString getPenPalResource() const;
@@ -233,6 +235,7 @@ private:
     QString oob;
     State state;
     bool edited;
+    QString errorText;
 };
 
 class VCard {

@@ -147,6 +147,11 @@ QString Shared::Message::getToResource() const
     return rTo;
 }
 
+QString Shared::Message::getErrorText() const
+{
+    return errorText;
+}
+
 QString Shared::Message::getPenPalJid() const
 {
     if (outgoing) {
@@ -193,6 +198,13 @@ void Shared::Message::setToJid(const QString& to)
 void Shared::Message::setToResource(const QString& to)
 {
     rTo = to;
+}
+
+void Shared::Message::setErrorText(const QString& err)
+{
+    if (state == State::error) {
+        errorText = err;
+    }
 }
 
 bool Shared::Message::getOutgoing() const
@@ -243,6 +255,10 @@ void Shared::Message::setType(Shared::Message::Type t)
 void Shared::Message::setState(Shared::Message::State p_state)
 {
     state = p_state;
+    
+    if (state != State::error) {
+        errorText = "";
+    }
 }
 
 void Shared::Message::setEdited(bool p_edited)
@@ -266,6 +282,9 @@ void Shared::Message::serialize(QDataStream& data) const
     data << oob;
     data << (quint8)state;
     data << edited;
+    if (state == State::error) {
+        data << errorText;
+    }
 }
 
 void Shared::Message::deserialize(QDataStream& data)
@@ -288,6 +307,9 @@ void Shared::Message::deserialize(QDataStream& data)
     data >> s;
     state = static_cast<State>(s);
     data >> edited;
+    if (state == State::error) {
+        data >> errorText;
+    }
 }
 
 bool Shared::Message::change(const QMap<QString, QVariant>& data)
@@ -295,6 +317,13 @@ bool Shared::Message::change(const QMap<QString, QVariant>& data)
     QMap<QString, QVariant>::const_iterator itr = data.find("state");
     if (itr != data.end()) {
         setState(static_cast<State>(itr.value().toUInt()));
+    }
+    
+    if (state == State::error) {
+        itr = data.find("errorText");
+        if (itr != data.end()) {
+            setErrorText(itr.value().toString());
+        }
     }
     
     bool idChanged = false;

@@ -223,6 +223,7 @@ private:
     void storeConferences();
     void clearConferences();
     void sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url);
+    RosterItem* getRosterItem(const QString& jid);
 };
 
 void initializeVCard(Shared::VCard& vCard, const QXmppVCardIq& card);

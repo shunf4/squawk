@@ -93,6 +93,7 @@ private:
     void hideButton();
     void hideProgress();
     void hideFile();
+    void setState();
 };
 
 #endif // MESSAGE_H

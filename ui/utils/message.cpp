@@ -108,9 +108,7 @@ Message::Message(const Shared::Message& source, bool p_outgoing, const QString& 
         sender->setAlignment(Qt::AlignRight);
         date->setAlignment(Qt::AlignRight);
         statusIcon = new QLabel();
-        QIcon q(Shared::icon(Shared::messageStateThemeIcons[static_cast<uint8_t>(source.getState())]));
-        statusIcon->setToolTip(QCoreApplication::translate("Global", Shared::messageStateNames[static_cast<uint8_t>(source.getState())].toLatin1()));
-        statusIcon->setPixmap(q.pixmap(12, 12));
+        setState();
         statusLay->addWidget(statusIcon);
         statusLay->addWidget(date);
         layout->addStretch();
@@ -333,11 +331,25 @@ bool Message::change(const QMap<QString, QVariant>& data)
         }
     }
     if (hasStatusIcon) {
-        QIcon q(Shared::icon(Shared::messageStateThemeIcons[static_cast<uint8_t>(msg.getState())]));
-        statusIcon->setToolTip(QCoreApplication::translate("Global", Shared::messageStateNames[static_cast<uint8_t>(msg.getState())].toLatin1()));
-        statusIcon->setPixmap(q.pixmap(12, 12));
+        setState();
     }
     
     
     return idChanged;
 }
+
+void Message::setState()
+{
+    Shared::Message::State state = msg.getState();
+    QIcon q(Shared::icon(Shared::messageStateThemeIcons[static_cast<uint8_t>(state)]));
+    QString tt = QCoreApplication::translate("Global", Shared::messageStateNames[static_cast<uint8_t>(state)].toLatin1());
+    if (state == Shared::Message::State::error) {
+        QString errText = msg.getErrorText();
+        if (errText.size() > 0) {
+            tt += ": " + errText;
+        }
+    }
+    statusIcon->setToolTip(tt);
+    statusIcon->setPixmap(q.pixmap(12, 12));
+}
+

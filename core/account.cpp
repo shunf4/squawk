@@ -554,8 +554,26 @@ void Core::Account::onMessageReceived(const QXmppMessage& msg)
         case QXmppMessage::GroupChat:
             handled = handleGroupMessage(msg);
             break;
-        case QXmppMessage::Error:
-            qDebug() << "received a message with type \"Error\", not sure what to do with it now, skipping";
+        case QXmppMessage::Error: {
+                QString id = msg.id();
+                std::map<QString, QString>::const_iterator itr = pendingStateMessages.find(id);
+                if (itr != pendingStateMessages.end()) {
+                    QString jid = itr->second;
+                    RosterItem* cnt = getRosterItem(jid);
+                    if (cnt != 0) {
+                        cnt->changeMessageState(id, Shared::Message::State::error);
+                    }
+                    ;
+                    emit changeMessage(jid, id, {
+                        {"state", static_cast<uint>(Shared::Message::State::error)},
+                        {"errorText", msg.error().text()}
+                    });
+                    pendingStateMessages.erase(itr);
+                    handled = true;
+                } else {
+                    qDebug() << "received a message with type \"Error\", not sure what to do with it now, skipping";
+                }
+            }
             break;
         case QXmppMessage::Headline:
             qDebug() << "received a message with type \"Headline\", not sure what to do with it now, skipping";
@@ -735,12 +753,15 @@ bool Core::Account::handleGroupMessage(const QXmppMessage& msg, bool outgoing, b
         std::map<QString, QString>::const_iterator pItr = pendingStateMessages.find(id);
         if (pItr != pendingStateMessages.end()) {
             cnt->changeMessageState(id, Shared::Message::State::delivered);
+            pendingStateMessages.erase(pItr);
             emit changeMessage(jid, id, {{"state", static_cast<uint>(Shared::Message::State::delivered)}});
         } else {
             cnt->appendMessageToArchive(sMsg);
             QDateTime minAgo = QDateTime::currentDateTime().addSecs(-60);
             if (sMsg.getTime() > minAgo) {     //otherwise it's considered a delayed delivery, most probably MUC history receipt
                 emit message(sMsg);
+            } else {
+                //qDebug() << "Delayed delivery: ";
             }
         }
         
@@ -761,7 +782,12 @@ bool Core::Account::handleGroupMessage(const QXmppMessage& msg, bool outgoing, b
 void Core::Account::initializeMessage(Shared::Message& target, const QXmppMessage& source, bool outgoing, bool forwarded, bool guessing) const
 {
     const QDateTime& time(source.stamp());
-    target.setId(source.id());
+    QString id = source.id();
+    if (id.size() == 0) {
+        target.generateRandomId();
+    } else {
+        target.setId(id);
+    }
     target.setFrom(source.from());
     target.setTo(source.to());
     target.setBody(source.body());
@@ -787,17 +813,7 @@ void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMess
     if (msg.id().size() > 0 && (msg.body().size() > 0 || msg.outOfBandUrl().size() > 0)) {
         std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
         QString jid = itr->second;
-        RosterItem* item = 0;
-        std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
-
-        if (citr != contacts.end()) {
-            item = citr->second;
-        } else {
-            std::map<QString, Conference*>::const_iterator coitr = conferences.find(jid);
-            if (coitr != conferences.end()) {
-                item = coitr->second;
-            }
-        }
+        RosterItem* item = getRosterItem(jid);
         
         Shared::Message sMsg(Shared::Message::chat);
         initializeMessage(sMsg, msg, false, true, true);
@@ -808,21 +824,27 @@ void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMess
     //handleChatMessage(msg, false, true, true);
 }
 
+Core::RosterItem * Core::Account::getRosterItem(const QString& jid)
+{
+    RosterItem* item = 0;
+    std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
+    if (citr != contacts.end()) {
+        item = citr->second;
+    } else {
+        std::map<QString, Conference*>::const_iterator coitr = conferences.find(jid);
+        if (coitr != conferences.end()) {
+            item = coitr->second;
+        }
+    }
+    
+    return item;
+}
+
+
 void Core::Account::requestArchive(const QString& jid, int count, const QString& before)
 {
     qDebug() << "An archive request for " << jid << ", before " << before;
-    RosterItem* contact = 0;
-    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
-    bool gr = false;
-    if (itr != contacts.end()) {
-        contact = itr->second;
-    } else {
-        std::map<QString, Conference*>::const_iterator citr = conferences.find(jid);
-        if (citr != conferences.end()) {
-            contact = citr->second;
-            gr = true;
-        }
-    }
+    RosterItem* contact = getRosterItem(jid);
     
     if (contact == 0) {
         qDebug() << "An attempt to request archive for" << jid << "in account" << name << ", but the contact with such id wasn't found, skipping";
@@ -834,7 +856,7 @@ void Core::Account::requestArchive(const QString& jid, int count, const QString&
         QXmppMessage msg(getFullJid(), jid, "", "");
         QString last = Shared::generateUUID();
         msg.setId(last);
-        if (gr) {
+        if (contact->isMuc()) {
             msg.setType(QXmppMessage::GroupChat);
         } else {
             msg.setType(QXmppMessage::Chat);
@@ -883,18 +905,9 @@ void Core::Account::onMamResultsReceived(const QString& queryId, const QXmppResu
 {
     std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
     QString jid = itr->second;
-    RosterItem* ri = 0;
-    
     achiveQueries.erase(itr);
-    std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
-    if (citr != contacts.end()) {
-        ri = citr->second;
-    } else {
-        std::map<QString, Conference*>::const_iterator coitr = conferences.find(jid);
-        if (coitr != conferences.end()) {
-            ri = coitr->second;
-        }
-    }
+    
+    RosterItem* ri = getRosterItem(jid);
     
     if (ri != 0) {
         qDebug() << "Flushing messages for" << jid;
@@ -1392,23 +1405,15 @@ void Core::Account::onVCardReceived(const QXmppVCardIq& card)
         resource = comps.back();
     }
     pendingVCardRequests.erase(id);
-    RosterItem* item = 0;
+    RosterItem* item = getRosterItem(jid);
     
-    std::map<QString, Contact*>::const_iterator contItr = contacts.find(jid);
-    if (contItr == contacts.end()) {
-        std::map<QString, Conference*>::const_iterator confItr = conferences.find(jid);
-        if (confItr == conferences.end()) {
-            if (jid == getLogin() + "@" + getServer()) {
-                onOwnVCardReceived(card);
-            } else {
-                qDebug() << "received vCard" << jid << "doesn't belong to any of known contacts or conferences, skipping";
-            }
-            return;
+    if (item == 0) {
+        if (jid == getLogin() + "@" + getServer()) {
+            onOwnVCardReceived(card);
         } else {
-            item = confItr->second;
+            qDebug() << "received vCard" << jid << "doesn't belong to any of known contacts or conferences, skipping";
         }
-    } else {
-        item = contItr->second;
+        return;
     }
     
     Shared::VCard vCard = item->handleResponseVCard(card, resource);
