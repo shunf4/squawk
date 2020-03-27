@@ -71,6 +71,7 @@ void Chat::handleSendMessage(const QString& text)
     msg.setOutgoing(true);
     msg.generateRandomId();
     msg.setCurrentTime();
+    msg.setState(Shared::Message::State::pending);
     addMessage(msg);
     emit sendMessage(msg);
 }

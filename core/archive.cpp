@@ -208,7 +208,7 @@ Shared::Message Core::Archive::getMessage(const std::string& id, MDB_txn* txn)
     }
 }
 
-void Core::Archive::setMessageState(const QString& id, Shared::Message::State state)
+void Core::Archive::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
 {
     if (!opened) {
         throw Closed("setMessageState", jid.toStdString());
@@ -220,21 +220,42 @@ void Core::Archive::setMessageState(const QString& id, Shared::Message::State st
     std::string strId(id.toStdString());
     try {
         Shared::Message msg = getMessage(strId, txn);
-        msg.setState(state);
+        QDateTime oTime = msg.getTime();
+        bool idChange = msg.change(data);
         
         MDB_val lmdbKey, lmdbData;
         QByteArray ba;
         QDataStream ds(&ba, QIODevice::WriteOnly);
         msg.serialize(ds);
+        
         lmdbKey.mv_size = strId.size();
         lmdbKey.mv_data = (char*)strId.c_str();
+        int rc;
+        if (idChange) {
+            rc = mdb_del(txn, main, &lmdbKey, &lmdbData);
+            if (rc == 0) {
+                strId = msg.getId().toStdString();
+                lmdbKey.mv_size = strId.size();
+                lmdbKey.mv_data = (char*)strId.c_str();
+                
+                
+                quint64 stamp = oTime.toMSecsSinceEpoch();
+                lmdbData.mv_data = (quint8*)&stamp;
+                lmdbData.mv_size = 8;
+                rc = mdb_put(txn, order, &lmdbData, &lmdbKey, 0);
+                if (rc != 0) {
+                    throw Unknown(jid.toStdString(), mdb_strerror(rc));
+                }
+            } else {
+                throw Unknown(jid.toStdString(), mdb_strerror(rc));
+            }
+        }
         lmdbData.mv_size = ba.size();
         lmdbData.mv_data = (uint8_t*)ba.data();
-        int rc = mdb_put(txn, main, &lmdbKey, &lmdbData, 0);
+        rc = mdb_put(txn, main, &lmdbKey, &lmdbData, 0);
         if (rc == 0) {
             rc = mdb_txn_commit(txn);
         } else {
-            mdb_txn_abort(txn);
             throw Unknown(jid.toStdString(), mdb_strerror(rc));
         }
         

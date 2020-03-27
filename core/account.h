@@ -41,6 +41,8 @@
 #include <QXmppHttpUploadIq.h>
 #include <QXmppVCardIq.h>
 #include <QXmppVCardManager.h>
+#include <QXmppMessageReceiptManager.h>
+
 #include "global.h"
 #include "contact.h"
 #include "conference.h"
@@ -76,7 +78,7 @@ public:
     void setResource(const QString& p_resource);
     void setAvailability(Shared::Availability avail);
     QString getFullJid() const;
-    void sendMessage(const Shared::Message& data);
+    void sendMessage(Shared::Message data);
     void sendMessage(const Shared::Message& data, const QString& path);
     void requestArchive(const QString& jid, int count, const QString& before);
     void setReconnectTimes(unsigned int times);
@@ -139,6 +141,7 @@ private:
     QXmppVCardManager* vm;
     QXmppUploadRequestManager* um;
     QXmppDiscoveryManager* dm;
+    QXmppMessageReceiptManager* rcpm;
     std::map<QString, Contact*> contacts;
     std::map<QString, Conference*> conferences;
     unsigned int maxReconnectTimes;
@@ -206,6 +209,8 @@ private slots:
     void onFileUploadError(const QString& messageId, const QString& errMsg);
     void onDiscoveryItemsReceived (const QXmppDiscoveryIq& items);
     void onDiscoveryInfoReceived (const QXmppDiscoveryIq& info);
+    
+    void onReceiptReceived(const QString& jid, const QString &id);
   
 private:
     void addedAccount(const QString &bareJid);

@@ -24,9 +24,9 @@
 #include <QMimeDatabase>
 #include <QMimeType>
 
-#include "../global.h"
+#include "global.h"
+#include "exception.h"
 #include <lmdb.h>
-#include "../exception.h"
 #include <list>
 
 namespace Core {
@@ -46,7 +46,7 @@ public:
     bool addElement(const Shared::Message& message);
     unsigned int addElements(const std::list<Shared::Message>& messages);
     Shared::Message getElement(const QString& id);
-    void setMessageState(const QString& id, Shared::Message::State state);
+    void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     Shared::Message oldest();
     QString oldestId();
     Shared::Message newest();

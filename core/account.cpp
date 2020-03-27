@@ -40,6 +40,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     vm(client.findExtension<QXmppVCardManager>()),
     um(new QXmppUploadRequestManager()),
     dm(client.findExtension<QXmppDiscoveryManager>()),
+    rcpm(new QXmppMessageReceiptManager()),
     contacts(),
     conferences(),
     maxReconnectTimes(0),
@@ -58,6 +59,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     config.setDomain(p_server);
     config.setPassword(p_password);
     config.setAutoAcceptSubscriptions(true);
+    config.setAutoReconnectionEnabled(false);
     
     QObject::connect(&client, &QXmppClient::connected, this, &Account::onClientConnected);
     QObject::connect(&client, &QXmppClient::disconnected, this, &Account::onClientDisconnected);
@@ -100,6 +102,10 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     
     QObject::connect(network, &NetworkAccess::uploadFileComplete, this, &Account::onFileUploaded);
     QObject::connect(network, &NetworkAccess::uploadFileError, this, &Account::onFileUploadError);
+    
+    client.addExtension(rcpm);
+    QObject::connect(rcpm, &QXmppMessageReceiptManager::messageDelivered, this, &Account::onReceiptReceived);
+    
     
     QString path(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
     path += "/" + name;
@@ -160,6 +166,8 @@ Account::~Account()
         delete itr->second;
     }
     
+    delete rcpm;
+    delete dm;
     delete um;
     delete bm;
     delete mm;
@@ -200,8 +208,8 @@ void Core::Account::onClientConnected()
     if (state == Shared::connecting) {
         reconnectTimes = maxReconnectTimes;
         state = Shared::connected;
-        cm->setCarbonsEnabled(true);
         dm->requestItems(getServer());
+        dm->requestInfo(getServer());
         emit connectionStateChanged(state);
     } else {
         qDebug() << "Something weird had happened - xmpp client reported about successful connection but account wasn't in" << state << "state";
@@ -560,14 +568,15 @@ void Core::Account::onMessageReceived(const QXmppMessage& msg)
                 if (itr != pendingStateMessages.end()) {
                     QString jid = itr->second;
                     RosterItem* cnt = getRosterItem(jid);
-                    if (cnt != 0) {
-                        cnt->changeMessageState(id, Shared::Message::State::error);
-                    }
-                    ;
-                    emit changeMessage(jid, id, {
+                    QMap<QString, QVariant> cData = {
                         {"state", static_cast<uint>(Shared::Message::State::error)},
                         {"errorText", msg.error().text()}
-                    });
+                    };
+                    if (cnt != 0) {
+                        cnt->changeMessage(id, cData);
+                    }
+                    ;
+                    emit changeMessage(jid, id, cData);
                     pendingStateMessages.erase(itr);
                     handled = true;
                 } else {
@@ -610,35 +619,43 @@ QString Core::Account::getFullJid() const
     return getLogin() + "@" + getServer() + "/" + getResource();
 }
 
-void Core::Account::sendMessage(const Shared::Message& data)
+void Core::Account::sendMessage(Shared::Message data)
 {
+    QString jid = data.getPenPalJid();
+    QString id = data.getId();
+    RosterItem* ri = getRosterItem(jid);
     if (state == Shared::connected) {
         QXmppMessage msg(getFullJid(), data.getTo(), data.getBody(), data.getThread());
-        msg.setId(data.getId());
+        msg.setId(id);
         msg.setType(static_cast<QXmppMessage::Type>(data.getType()));       //it is safe here, my type is compatible
         msg.setOutOfBandUrl(data.getOutOfBandUrl());
+        msg.setReceiptRequested(true);
         
-        RosterItem* ri = 0;
-        std::map<QString, Contact*>::const_iterator itr = contacts.find(data.getPenPalJid());
-        if (itr != contacts.end()) {
-            ri = itr->second;
+        bool sent = client.sendPacket(msg);
+        
+        if (sent) {
+            data.setState(Shared::Message::State::sent);
         } else {
-            std::map<QString, Conference*>::const_iterator ritr = conferences.find(data.getPenPalJid());
-            if (ritr != conferences.end()) {
-                ri = ritr->second;
-            }
+            data.setState(Shared::Message::State::error);
+            data.setErrorText("Couldn't send message via QXMPP library check out logs");
         }
         
         if (ri != 0) {
             ri->appendMessageToArchive(data);
-            pendingStateMessages.insert(std::make_pair(data.getId(), data.getPenPalJid()));
+            if (sent) {
+                pendingStateMessages.insert(std::make_pair(id, jid));
+            }
         }
         
-        client.sendPacket(msg);
-        
     } else {
-        qDebug() << "An attempt to send message with not connected account " << name << ", skipping";
+        data.setState(Shared::Message::State::error);
+        data.setErrorText("You are is offline or reconnecting");
     }
+    
+    emit changeMessage(jid, id, {
+        {"state", static_cast<uint>(data.getState())},
+        {"errorText", data.getErrorText()}
+    });
 }
 
 void Core::Account::sendMessage(const Shared::Message& data, const QString& path)
@@ -659,7 +676,7 @@ void Core::Account::sendMessage(const Shared::Message& data, const QString& path
                             um->requestUploadSlot(file);
                         }
                     } else {
-                        emit onFileUploadError(data.getId(), "Uploading file dissapeared or your system user has no permission to read it");
+                        emit onFileUploadError(data.getId(), "Uploading file no longer exists or your system user has no permission to read it");
                         qDebug() << "Requested upload slot in account" << name << "for file" << path << "but the file doesn't exist or is not readable";
                     }
                 } else {
@@ -717,17 +734,16 @@ bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bo
             }));
             handleNewContact(cnt);
         }
+        if (outgoing) {
+            if (forwarded) {
+                sMsg.setState(Shared::Message::State::sent);
+            }
+        } else {
+            sMsg.setState(Shared::Message::State::delivered);
+        }
         cnt->appendMessageToArchive(sMsg);
         
         emit message(sMsg);
-        
-        if (!forwarded && !outgoing) {
-            if (msg.isReceiptRequested() && id.size() > 0) {
-                QXmppMessage receipt(getFullJid(), msg.from(), "");
-                receipt.setReceiptId(id);
-                client.sendPacket(receipt);
-            }
-        }
         
         return true;
     }
@@ -752,9 +768,10 @@ bool Core::Account::handleGroupMessage(const QXmppMessage& msg, bool outgoing, b
         
         std::map<QString, QString>::const_iterator pItr = pendingStateMessages.find(id);
         if (pItr != pendingStateMessages.end()) {
-            cnt->changeMessageState(id, Shared::Message::State::delivered);
+            QMap<QString, QVariant> cData = {{"state", static_cast<uint>(Shared::Message::State::delivered)}};
+            cnt->changeMessage(id, cData);
             pendingStateMessages.erase(pItr);
-            emit changeMessage(jid, id, {{"state", static_cast<uint>(Shared::Message::State::delivered)}});
+            emit changeMessage(jid, id, cData);
         } else {
             cnt->appendMessageToArchive(sMsg);
             QDateTime minAgo = QDateTime::currentDateTime().addSecs(-60);
@@ -762,14 +779,6 @@ bool Core::Account::handleGroupMessage(const QXmppMessage& msg, bool outgoing, b
                 emit message(sMsg);
             } else {
                 //qDebug() << "Delayed delivery: ";
-            }
-        }
-        
-        if (!forwarded && !outgoing) {
-            if (msg.isReceiptRequested() && id.size() > 0) {
-                QXmppMessage receipt(getFullJid(), msg.from(), "");
-                receipt.setReceiptId(id);
-                client.sendPacket(receipt);
             }
         }
         
@@ -1658,11 +1667,32 @@ void Core::Account::onFileUploadError(const QString& messageId, const QString& e
 void Core::Account::onDiscoveryItemsReceived(const QXmppDiscoveryIq& items)
 {
     for (QXmppDiscoveryIq::Item item : items.items()) {
-        dm->requestInfo(item.jid());
+        if (item.jid() != getServer()) {
+            dm->requestInfo(item.jid());
+        }
     }
 }
 
 void Core::Account::onDiscoveryInfoReceived(const QXmppDiscoveryIq& info)
 {
-
+    if (info.from() == getServer()) {
+        if (info.features().contains("urn:xmpp:carbons:2")) {
+            cm->setCarbonsEnabled(true);
+        }
+    }
 }
+
+void Core::Account::onReceiptReceived(const QString& jid, const QString& id)
+{
+    std::map<QString, QString>::const_iterator itr = pendingStateMessages.find(id);
+    if (itr != pendingStateMessages.end()) {
+        QMap<QString, QVariant> cData = {{"state", static_cast<uint>(Shared::Message::State::delivered)}};
+        RosterItem* ri = getRosterItem(itr->second);
+        if (ri != 0) {
+            ri->changeMessage(id, cData);
+        }
+        pendingStateMessages.erase(itr);
+        emit changeMessage(itr->second, id, cData);
+    }
+}
+

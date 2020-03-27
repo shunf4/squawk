@@ -221,12 +221,12 @@ void Core::RosterItem::appendMessageToArchive(const Shared::Message& msg)
     }
 }
 
-void Core::RosterItem::changeMessageState(const QString& id, Shared::Message::State newState) 
+void Core::RosterItem::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
 {
     bool found = false;
     for (Shared::Message& msg : appendCache) {
         if (msg.getId() == id) {
-            msg.setState(newState);
+            msg.change(data);
             found = true;
             break;
         }
@@ -235,7 +235,7 @@ void Core::RosterItem::changeMessageState(const QString& id, Shared::Message::St
     if (!found) {
         for (Shared::Message& msg : hisoryCache) {
             if (msg.getId() == id) {
-                msg.setState(newState);
+                msg.change(data);
                 found = true;
                 break;
             }
@@ -244,7 +244,7 @@ void Core::RosterItem::changeMessageState(const QString& id, Shared::Message::St
     
     if (!found) {
         try {
-            archive->setMessageState(id, newState);
+            archive->changeMessage(id, data);
             found = true;
         } catch (const Archive::NotFound& e) {
             qDebug() << "An attempt to change state to the message" << id << "but it couldn't be found";
@@ -254,7 +254,7 @@ void Core::RosterItem::changeMessageState(const QString& id, Shared::Message::St
     if (found) {
         for (Shared::Message& msg : responseCache) {
             if (msg.getId() == id) {
-                msg.setState(newState);
+                msg.change(data);
                 break;
             }
         }
