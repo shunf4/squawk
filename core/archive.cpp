@@ -267,8 +267,7 @@ void Core::Archive::changeMessage(const QString& id, const QMap<QString, QVarian
 
 Shared::Message Core::Archive::newest()
 {
-    QString id = newestId();
-    return getElement(id);
+    return edge(true);
 }
 
 QString Core::Archive::newestId()
@@ -276,25 +275,8 @@ QString Core::Archive::newestId()
     if (!opened) {
         throw Closed("newestId", jid.toStdString());
     }
-    MDB_txn *txn;
-    int rc;
-    rc = mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
-    MDB_cursor* cursor;
-    rc = mdb_cursor_open(txn, order, &cursor);
-    MDB_val lmdbKey, lmdbData;
-    
-    rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_LAST);
-    if (rc) {
-        qDebug() << "Error geting newestId " << mdb_strerror(rc);
-        mdb_cursor_close(cursor);
-        mdb_txn_abort(txn);
-        throw Empty(jid.toStdString());
-    } else {
-        std::string sId((char*)lmdbData.mv_data, lmdbData.mv_size);
-        mdb_cursor_close(cursor);
-        mdb_txn_abort(txn);
-        return sId.c_str();
-    }
+    Shared::Message msg = newest();
+    return msg.getId();
 }
 
 QString Core::Archive::oldestId()
@@ -302,30 +284,79 @@ QString Core::Archive::oldestId()
     if (!opened) {
         throw Closed("oldestId", jid.toStdString());
     }
+    Shared::Message msg = oldest();
+    return msg.getId();
+}
+
+Shared::Message Core::Archive::oldest() 
+{
+    return edge(false);
+}
+
+Shared::Message Core::Archive::edge(bool end)
+{
+    QString name;
+    MDB_cursor_op begin;
+    MDB_cursor_op iteration;
+    if (end) {
+        name = "newest";
+        begin = MDB_LAST;
+        iteration = MDB_PREV;
+    } else {
+        name = "oldest";
+        begin = MDB_FIRST;
+        iteration = MDB_NEXT;
+    }
+    
+    
+    if (!opened) {
+        throw Closed(name.toStdString(), jid.toStdString());
+    }
+    
     MDB_txn *txn;
+    MDB_cursor* cursor;
+    MDB_val lmdbKey, lmdbData;
     int rc;
     rc = mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
-    MDB_cursor* cursor;
     rc = mdb_cursor_open(txn, order, &cursor);
-    MDB_val lmdbKey, lmdbData;
+    rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, begin);
     
-    rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_FIRST);
+    Shared::Message msg = getStoredMessage(txn, cursor, iteration, &lmdbKey, &lmdbData, rc);
+    
+    mdb_cursor_close(cursor);
+    mdb_txn_abort(txn);
+    
     if (rc) {
-        qDebug() << "Error geting oldestId " << mdb_strerror(rc);
-        mdb_cursor_close(cursor);
-        mdb_txn_abort(txn);
+        qDebug() << "Error geting" << name << "message" << mdb_strerror(rc);
         throw Empty(jid.toStdString());
     } else {
-        std::string sId((char*)lmdbData.mv_data, lmdbData.mv_size);
-        mdb_cursor_close(cursor);
-        mdb_txn_abort(txn);
-        return sId.c_str();
+        return msg;
     }
 }
 
-Shared::Message Core::Archive::oldest()
+Shared::Message Core::Archive::getStoredMessage(MDB_txn *txn, MDB_cursor* cursor, MDB_cursor_op op, MDB_val* key, MDB_val* value, int& rc)
 {
-    return getElement(oldestId());
+    Shared::Message msg;
+    std::string sId;
+    while (true) {
+        if (rc) {
+            break;
+        }
+        sId = std::string((char*)value->mv_data, value->mv_size);
+        
+        try {
+            msg = getMessage(sId, txn);
+            if (msg.serverStored()) {
+                break;
+            } else {
+                rc = mdb_cursor_get(cursor, key, value, op);
+            }
+        } catch (...) {
+            break;
+        }
+    }
+    
+    return msg;
 }
 
 unsigned int Core::Archive::addElements(const std::list<Shared::Message>& messages)

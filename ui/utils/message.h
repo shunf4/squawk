@@ -94,6 +94,7 @@ private:
     void hideProgress();
     void hideFile();
     void setState();
+    void setEdited();
 };
 
 #endif // MESSAGE_H

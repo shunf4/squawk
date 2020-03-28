@@ -216,6 +216,9 @@ public:
     QString getPenPalJid() const;
     QString getPenPalResource() const;
     void generateRandomId();
+    bool serverStored() const;
+    QDateTime getLastModified() const;
+    QString getOriginalBody() const;
     
     void serialize(QDataStream& data) const;
     void deserialize(QDataStream& data);
@@ -236,6 +239,8 @@ private:
     State state;
     bool edited;
     QString errorText;
+    QString originalMessage;
+    QDateTime lastModified;
 };
 
 class VCard {

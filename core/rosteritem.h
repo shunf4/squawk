@@ -61,6 +61,7 @@ public:
     bool isMuc() const;
     
     void addMessageToArchive(const Shared::Message& msg);
+    void correctMessageInArchive(const QString& originalId, const Shared::Message& msg);
     void appendMessageToArchive(const Shared::Message& msg);
     void flushMessagesToArchive(bool finished, const QString& firstId, const QString& lastId);
     void requestHistory(int count, const QString& before);
@@ -72,7 +73,7 @@ public:
     virtual Shared::VCard handleResponseVCard(const QXmppVCardIq& card, const QString& resource);
     virtual void handlePresence(const QXmppPresence& pres) = 0;
     
-    void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
+    bool changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     
 signals:
     void nameChanged(const QString& name);
@@ -98,6 +99,7 @@ protected:
     std::list<Shared::Message> appendCache;
     std::list<Shared::Message> responseCache;
     std::list<std::pair<int, QString>> requestCache;
+    std::map<QString, Shared::Message> toCorrect;
     bool muc;
 
 private:

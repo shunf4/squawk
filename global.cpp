@@ -53,7 +53,10 @@ Shared::Message::Message():
     outgoing(false),
     forwarded(false),
     state(State::delivered),
-    edited(false)
+    edited(false),
+    errorText(),
+    originalMessage(),
+    lastModified()
 {
 }
 
@@ -242,6 +245,16 @@ void Shared::Message::setThread(const QString& p_body)
     thread = p_body;
 }
 
+QDateTime Shared::Message::getLastModified() const
+{
+    return lastModified;
+}
+
+QString Shared::Message::getOriginalBody() const
+{
+    return originalMessage;
+}
+
 Shared::Message::Type Shared::Message::getType() const
 {
     return type;
@@ -259,6 +272,11 @@ void Shared::Message::setState(Shared::Message::State p_state)
     if (state != State::error) {
         errorText = "";
     }
+}
+
+bool Shared::Message::serverStored() const
+{
+    return state == State::delivered || state == State::sent;
 }
 
 void Shared::Message::setEdited(bool p_edited)
@@ -285,6 +303,10 @@ void Shared::Message::serialize(QDataStream& data) const
     if (state == State::error) {
         data << errorText;
     }
+    if (edited) {
+        data << originalMessage;
+        data << lastModified;
+    }
 }
 
 void Shared::Message::deserialize(QDataStream& data)
@@ -309,6 +331,10 @@ void Shared::Message::deserialize(QDataStream& data)
     data >> edited;
     if (state == State::error) {
         data >> errorText;
+    }
+    if (edited) {
+        data >> originalMessage;
+        data >> lastModified;
     }
 }
 
@@ -337,8 +363,19 @@ bool Shared::Message::change(const QMap<QString, QVariant>& data)
     }
     itr = data.find("body");
     if (itr != data.end()) {
-        setBody(itr.value().toString());
-        setEdited(true);
+        QMap<QString, QVariant>::const_iterator dItr = data.find("stamp");
+        QDateTime correctionDate;
+        if (dItr != data.end()) {
+            correctionDate = dItr.value().toDateTime();
+        } else {
+            correctionDate = QDateTime::currentDateTime();      //in case there is no information about time of this correction it's applied
+        }
+        if (!edited || lastModified < correctionDate) {
+            originalMessage = body;
+            lastModified = correctionDate;
+            setBody(itr.value().toString());
+            setEdited(true);
+        }
     }
     
     return idChanged;

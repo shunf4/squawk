@@ -121,6 +121,9 @@ Message::Message(const Shared::Message& source, bool p_outgoing, const QString& 
         layout->addStretch();
         statusLay->addWidget(date);
     }
+    if (msg.getEdited()) {
+        setEdited();
+    }
     
     bodyLayout->addWidget(statusBar);
     layout->setAlignment(avatar, Qt::AlignTop);
@@ -315,20 +318,7 @@ bool Message::change(const QMap<QString, QVariant>& data)
         text->hide();
     }
     if (msg.getEdited()) {
-        if (!hasEditedLabel) {
-            editedLabel = new QLabel();
-            QFont eFont = editedLabel->font();
-            eFont.setItalic(true);
-            eFont.setPointSize(eFont.pointSize() - 2);
-            editedLabel->setFont(eFont);
-            hasEditedLabel = true;
-            QHBoxLayout* statusLay = static_cast<QHBoxLayout*>(statusBar->layout());
-            if (hasStatusIcon) {
-                statusLay->insertWidget(1, editedLabel);
-            } else {
-                statusLay->insertWidget(0, editedLabel);
-            }
-        }
+        setEdited();
     }
     if (hasStatusIcon) {
         setState();
@@ -336,6 +326,20 @@ bool Message::change(const QMap<QString, QVariant>& data)
     
     
     return idChanged;
+}
+
+void Message::setEdited()
+{
+    if (!hasEditedLabel) {
+        editedLabel = new QLabel();
+        hasEditedLabel = true;
+        QIcon q(Shared::icon("edit-rename"));
+        editedLabel->setPixmap(q.pixmap(12, 12));
+        QHBoxLayout* statusLay = static_cast<QHBoxLayout*>(statusBar->layout());
+        statusLay->insertWidget(1, editedLabel);
+    }
+    editedLabel->setToolTip("Last time edited: " + msg.getLastModified().toLocalTime().toString() 
+    + "\nOriginal message: " + msg.getOriginalBody());
 }
 
 void Message::setState()

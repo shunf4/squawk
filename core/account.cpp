@@ -716,7 +716,6 @@ bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bo
 {
     const QString& body(msg.body());
     if (body.size() != 0) {
-        const QString& id(msg.id());
         Shared::Message sMsg(Shared::Message::chat);
         initializeMessage(sMsg, msg, outgoing, forwarded, guessing);
         QString jid = sMsg.getPenPalJid();
@@ -741,9 +740,18 @@ bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bo
         } else {
             sMsg.setState(Shared::Message::State::delivered);
         }
-        cnt->appendMessageToArchive(sMsg);
-        
-        emit message(sMsg);
+        QString oId = msg.replaceId();
+        if (oId.size() > 0) {
+            QMap<QString, QVariant> cData = {
+                {"body", sMsg.getBody()},
+                {"stamp", sMsg.getTime()}
+            };
+            cnt->correctMessageInArchive(oId, sMsg);
+            emit changeMessage(jid, oId, cData);
+        } else {
+            cnt->appendMessageToArchive(sMsg);
+            emit message(sMsg);
+        }
         
         return true;
     }
@@ -773,12 +781,22 @@ bool Core::Account::handleGroupMessage(const QXmppMessage& msg, bool outgoing, b
             pendingStateMessages.erase(pItr);
             emit changeMessage(jid, id, cData);
         } else {
-            cnt->appendMessageToArchive(sMsg);
-            QDateTime minAgo = QDateTime::currentDateTime().addSecs(-60);
-            if (sMsg.getTime() > minAgo) {     //otherwise it's considered a delayed delivery, most probably MUC history receipt
-                emit message(sMsg);
+            QString oId = msg.replaceId();
+            if (oId.size() > 0) {
+                QMap<QString, QVariant> cData = {
+                    {"body", sMsg.getBody()},
+                    {"stamp", sMsg.getTime()}
+                };
+                cnt->correctMessageInArchive(oId, sMsg);
+                emit changeMessage(jid, oId, cData);
             } else {
-                //qDebug() << "Delayed delivery: ";
+                cnt->appendMessageToArchive(sMsg);
+                QDateTime minAgo = QDateTime::currentDateTime().addSecs(-60);
+                if (sMsg.getTime() > minAgo) {     //otherwise it's considered a delayed delivery, most probably MUC history receipt
+                    emit message(sMsg);
+                } else {
+                    //qDebug() << "Delayed delivery: ";
+                }
             }
         }
         
@@ -824,10 +842,16 @@ void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMess
         QString jid = itr->second;
         RosterItem* item = getRosterItem(jid);
         
-        Shared::Message sMsg(Shared::Message::chat);
+        Shared::Message sMsg(static_cast<Shared::Message::Type>(msg.type()));
         initializeMessage(sMsg, msg, false, true, true);
+        sMsg.setState(Shared::Message::State::sent);
         
-        item->addMessageToArchive(sMsg);
+        QString oId = msg.replaceId();
+        if (oId.size() > 0) {
+            item->correctMessageInArchive(oId, sMsg);
+        } else {
+            item->addMessageToArchive(sMsg);
+        }
     } 
     
     //handleChatMessage(msg, false, true, true);

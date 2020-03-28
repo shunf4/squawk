@@ -183,6 +183,8 @@ private:
     void printKeys();
     bool dropAvatar(const std::string& resource);
     Shared::Message getMessage(const std::string& id, MDB_txn* txn);
+    Shared::Message getStoredMessage(MDB_txn *txn, MDB_cursor* cursor, MDB_cursor_op op, MDB_val* key, MDB_val* value, int& rc);
+    Shared::Message edge(bool end);
 };
 
 }

@@ -35,6 +35,7 @@ Core::RosterItem::RosterItem(const QString& pJid, const QString& pAccount, QObje
     appendCache(),
     responseCache(),
     requestCache(),
+    toCorrect(),
     muc(false)
 {
     archive->open(account);
@@ -75,6 +76,36 @@ void Core::RosterItem::addMessageToArchive(const Shared::Message& msg)
 {
     if (msg.storable()) {
         hisoryCache.push_back(msg);
+        std::map<QString, Shared::Message>::iterator itr = toCorrect.find(msg.getId());
+        if (itr != toCorrect.end()) {
+            hisoryCache.back().change({
+                {"body", itr->second.getBody()},
+                {"stamp", itr->second.getTime()}
+            });
+            toCorrect.erase(itr);
+        }
+    }
+}
+
+void Core::RosterItem::correctMessageInArchive(const QString& originalId, const Shared::Message& msg)
+{
+    if (msg.storable()) {
+        QDateTime thisTime = msg.getTime();
+        std::map<QString, Shared::Message>::iterator itr = toCorrect.find(originalId);
+        if (itr != toCorrect.end()) {
+            if (itr->second.getTime() < thisTime) {
+                itr->second = msg;
+            }
+            return;
+        }
+        
+        bool found = changeMessage(originalId, {
+            {"body", msg.getBody()},
+            {"stamp", thisTime}
+        });
+        if (!found) {
+            toCorrect.insert(std::make_pair(originalId, msg));
+        }
     }
 }
 
@@ -221,7 +252,7 @@ void Core::RosterItem::appendMessageToArchive(const Shared::Message& msg)
     }
 }
 
-void Core::RosterItem::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
+bool Core::RosterItem::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
 {
     bool found = false;
     for (Shared::Message& msg : appendCache) {
@@ -259,6 +290,8 @@ void Core::RosterItem::changeMessage(const QString& id, const QMap<QString, QVar
             }
         }
     }
+    
+    return found;
 }
 
 void Core::RosterItem::flushMessagesToArchive(bool finished, const QString& firstId, const QString& lastId)
