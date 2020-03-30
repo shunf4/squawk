@@ -59,6 +59,9 @@ Squawk::Squawk(QWidget *parent) :
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
     
     setWindowTitle(tr("Contact list"));
+    if (testAttribute(Qt::WA_TranslucentBackground)) {
+        m_ui->roster->viewport()->setAutoFillBackground(false);
+    }
 }
 
 Squawk::~Squawk() {

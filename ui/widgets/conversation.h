@@ -107,9 +107,9 @@ protected slots:
     void onAttach();
     void onFileSelected();
     void onScrollResize();
-    void onAttachResize(const QSize& oldSize, const QSize& newSize);
     void onBadgeClose();
     void onClearButton();
+    void onTextEditDocSizeChanged(const QSizeF& size);
     
 public:
     const bool isMuc;
@@ -127,7 +127,6 @@ protected:
     QScopedPointer<Ui::Conversation> m_ui;
     KeyEnterReceiver ker;
     Resizer scrollResizeCatcher;
-    Resizer attachResizeCatcher;
     VisibilityCatcher vis;
     QString thread;
     QLabel* statusIcon;

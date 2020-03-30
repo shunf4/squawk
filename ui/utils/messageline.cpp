@@ -40,7 +40,6 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
 {
     setContentsMargins(0, 0, 0, 0);
     layout->setContentsMargins(0, 0, 0, 0);
-    setBackgroundRole(QPalette::Base);
     layout->setSpacing(0);
     layout->addStretch();
 }

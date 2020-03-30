@@ -32,6 +32,7 @@ set(squawkUI_SRC
   utils/badge.cpp
   utils/progress.cpp
   utils/comboboxdelegate.cpp
+  utils/dropshadoweffect.cpp
 )
 
 # Tell CMake to create the helloworld executable

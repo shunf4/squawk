@@ -140,7 +140,7 @@ void Core::Conference::onRoomParticipantAdded(const QString& p_name)
         QXmppPresence pres = room->participantPresence(p_name);
         QDateTime lastInteraction = pres.lastUserInteraction();
         if (!lastInteraction.isValid()) {
-            lastInteraction = QDateTime::currentDateTime();
+            lastInteraction = QDateTime::currentDateTimeUtc();
         }
         QXmppMucItem mi = pres.mucItem();
         Archive::AvatarInfo info;
@@ -181,7 +181,7 @@ void Core::Conference::onRoomParticipantChanged(const QString& p_name)
         QXmppPresence pres = room->participantPresence(p_name);
         QDateTime lastInteraction = pres.lastUserInteraction();
         if (!lastInteraction.isValid()) {
-            lastInteraction = QDateTime::currentDateTime();
+            lastInteraction = QDateTime::currentDateTimeUtc();
         }
         QXmppMucItem mi = pres.mucItem();
         handlePresence(pres);

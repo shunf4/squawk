@@ -18,13 +18,15 @@
 
 #include "conversation.h"
 #include "ui_conversation.h"
+#include "ui/utils/dropshadoweffect.h"
+
 #include <QDebug>
 #include <QScrollBar>
 #include <QTimer>
-#include <QGraphicsDropShadowEffect>
 #include <QFileDialog>
 #include <QMimeDatabase>
 #include <unistd.h>
+#include <QAbstractTextDocumentLayout>
 
 Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, const QString pRes, QWidget* parent):
     QWidget(parent),
@@ -36,7 +38,6 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     m_ui(new Ui::Conversation()),
     ker(),
     scrollResizeCatcher(),
-    attachResizeCatcher(),
     vis(),
     thread(),
     statusIcon(0),
@@ -54,15 +55,11 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     filesLayout = new FlowLayout(m_ui->filesPanel, 0);
     m_ui->filesPanel->setLayout(filesLayout);
     
-    m_ui->splitter->setSizes({300, 0});
-    m_ui->splitter->setStretchFactor(1, 0);
-    
     statusIcon = m_ui->statusIcon;
     statusLabel = m_ui->statusLabel;
     
     connect(&ker, &KeyEnterReceiver::enterPressed, this, &Conversation::onEnterPressed);
     connect(&scrollResizeCatcher, &Resizer::resized, this, &Conversation::onScrollResize);
-    connect(&attachResizeCatcher, &Resizer::resized, this, &Conversation::onAttachResize);
     connect(&vis, &VisibilityCatcher::shown, this, &Conversation::onScrollResize);
     connect(&vis, &VisibilityCatcher::hidden, this, &Conversation::onScrollResize);
     connect(m_ui->sendButton, &QPushButton::clicked, this, &Conversation::onEnterPressed);
@@ -72,6 +69,8 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     connect(line, &MessageLine::requestLocalFile, this, &Conversation::requestLocalFile);
     connect(m_ui->attachButton, &QPushButton::clicked, this, &Conversation::onAttach);
     connect(m_ui->clearButton, &QPushButton::clicked, this, &Conversation::onClearButton);
+    connect(m_ui->messageEditor->document()->documentLayout(), &QAbstractTextDocumentLayout::documentSizeChanged, 
+            this, &Conversation::onTextEditDocSizeChanged);
     
     m_ui->messageEditor->installEventFilter(&ker);
     
@@ -79,14 +78,13 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     m_ui->scrollArea->setWidget(line);
     vs->installEventFilter(&vis);
     
-    if (!tsb) {
-        vs->setBackgroundRole(QPalette::Base);
-        vs->setAutoFillBackground(true);
+    if (testAttribute(Qt::WA_TranslucentBackground)) {
+        m_ui->scrollArea->setAutoFillBackground(false);
+        m_ui->scrollArea->viewport()->setAutoFillBackground(false);
     }
     
     connect(vs, &QScrollBar::valueChanged, this, &Conversation::onSliderValueChanged);
     m_ui->scrollArea->installEventFilter(&scrollResizeCatcher);
-    m_ui->filesPanel->installEventFilter(&attachResizeCatcher);
     
     line->setMyAvatarPath(acc->getAvatarPath());
     line->setMyName(acc->getName());
@@ -100,26 +98,12 @@ Conversation::~Conversation()
 
 void Conversation::applyVisualEffects()
 {
-    QGraphicsDropShadowEffect *e1 = new QGraphicsDropShadowEffect;
+    DropShadowEffect *e1 = new DropShadowEffect;
     e1->setBlurRadius(10);
-    e1->setXOffset(0);
-    e1->setYOffset(-2);
     e1->setColor(Qt::black);
-    m_ui->bl->setGraphicsEffect(e1);
-    
-    QGraphicsDropShadowEffect *e2 = new QGraphicsDropShadowEffect;
-    e2->setBlurRadius(7);
-    e2->setXOffset(0);
-    e2->setYOffset(2);
-    e2->setColor(Qt::black);
-    m_ui->ul->setGraphicsEffect(e2);
-    
-    QGraphicsDropShadowEffect *e3 = new QGraphicsDropShadowEffect;
-    e3->setBlurRadius(10);
-    e3->setXOffset(0);
-    e3->setYOffset(2);
-    e3->setColor(Qt::black);
-    m_ui->ut->setGraphicsEffect(e3);
+    e1->setThickness(1);
+    e1->setFrame(true, false, true, false);
+    m_ui->scrollArea->setGraphicsEffect(e1);
 }
 
 void Conversation::setName(const QString& name)
@@ -404,21 +388,9 @@ void Conversation::setAvatar(const QString& path)
     }
 }
 
-void Conversation::onAttachResize(const QSize& oldSize, const QSize& newSize)
+void Conversation::onTextEditDocSizeChanged(const QSizeF& size)
 {
-    int oh = oldSize.height();
-    int nh = newSize.height();
-    
-    int d = oh - nh;
-    
-    if (d != 0) {
-        QList<int> cs = m_ui->splitter->sizes();
-        cs.first() += d;
-        cs.last() -=d;
-        
-        m_ui->splitter->setSizes(cs);
-        m_ui->scrollArea->verticalScrollBar()->setValue(m_ui->scrollArea->verticalScrollBar()->maximum());
-    }
+    m_ui->messageEditor->setMaximumHeight(int(size.height()));
 }
 
 
@@ -439,3 +411,4 @@ VisibilityCatcher::VisibilityCatcher(QWidget* parent):
 QObject(parent)
 {
 }
+

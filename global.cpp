@@ -368,7 +368,7 @@ bool Shared::Message::change(const QMap<QString, QVariant>& data)
         if (dItr != data.end()) {
             correctionDate = dItr.value().toDateTime();
         } else {
-            correctionDate = QDateTime::currentDateTime();      //in case there is no information about time of this correction it's applied
+            correctionDate = QDateTime::currentDateTimeUtc();      //in case there is no information about time of this correction it's applied
         }
         if (!edited || lastModified < correctionDate) {
             originalMessage = body;
@@ -393,7 +393,7 @@ QString Shared::generateUUID()
 
 void Shared::Message::setCurrentTime()
 {
-    time = QDateTime::currentDateTime();
+    time = QDateTime::currentDateTimeUtc();
 }
 
 QString Shared::Message::getOutOfBandUrl() const
@@ -457,7 +457,7 @@ Shared::VCard::VCard():
     birthday(),
     photoType(Avatar::empty),
     photoPath(),
-    receivingTime(QDateTime::currentDateTime()),
+    receivingTime(QDateTime::currentDateTimeUtc()),
     emails(),
     phones(),
     addresses()

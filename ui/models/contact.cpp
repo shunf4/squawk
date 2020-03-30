@@ -277,7 +277,7 @@ void Models::Contact::addMessage(const Shared::Message& data)
             Presence* pr = new Presence({});
             pr->setName(res);
             pr->setAvailability(Shared::invisible);
-            pr->setLastActivity(QDateTime::currentDateTime());
+            pr->setLastActivity(QDateTime::currentDateTimeUtc());
             presences.insert(res, pr);
             appendChild(pr);
             pr->addMessage(data);

@@ -466,7 +466,7 @@ void Core::Account::onPresenceReceived(const QXmppPresence& p_presence)
         case QXmppPresence::Available:{
             QDateTime lastInteraction = p_presence.lastUserInteraction();
             if (!lastInteraction.isValid()) {
-                lastInteraction = QDateTime::currentDateTime();
+                lastInteraction = QDateTime::currentDateTimeUtc();
             }
             emit addPresence(jid, resource, {
                 {"lastActivity", lastInteraction},
@@ -791,7 +791,7 @@ bool Core::Account::handleGroupMessage(const QXmppMessage& msg, bool outgoing, b
                 emit changeMessage(jid, oId, cData);
             } else {
                 cnt->appendMessageToArchive(sMsg);
-                QDateTime minAgo = QDateTime::currentDateTime().addSecs(-60);
+                QDateTime minAgo = QDateTime::currentDateTimeUtc().addSecs(-60);
                 if (sMsg.getTime() > minAgo) {     //otherwise it's considered a delayed delivery, most probably MUC history receipt
                     emit message(sMsg);
                 } else {
