@@ -78,9 +78,11 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     m_ui->scrollArea->setWidget(line);
     vs->installEventFilter(&vis);
     
+    line->setAutoFillBackground(false);
     if (testAttribute(Qt::WA_TranslucentBackground)) {
         m_ui->scrollArea->setAutoFillBackground(false);
-        m_ui->scrollArea->viewport()->setAutoFillBackground(false);
+    } else {
+        m_ui->scrollArea->setBackgroundRole(QPalette::Base);
     }
     
     connect(vs, &QScrollBar::valueChanged, this, &Conversation::onSliderValueChanged);
