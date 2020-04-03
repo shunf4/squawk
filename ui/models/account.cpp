@@ -27,8 +27,8 @@ Models::Account::Account(const QMap<QString, QVariant>& data, Models::Item* pare
     resource(data.value("resource").toString()),
     error(data.value("error").toString()),
     avatarPath(data.value("avatarPath").toString()),
-    state(Shared::disconnected),
-    availability(Shared::offline)
+    state(Shared::ConnectionState::disconnected),
+    availability(Shared::Availability::offline)
 {
     QMap<QString, QVariant>::const_iterator sItr = data.find("state");
     if (sItr != data.end()) {
@@ -49,7 +49,7 @@ void Models::Account::setState(Shared::ConnectionState p_state)
     if (state != p_state) {
         state = p_state;
         changed(2);
-        if (state == Shared::disconnected) {
+        if (state == Shared::ConnectionState::disconnected) {
             toOfflineState();
         }
     }
@@ -57,22 +57,12 @@ void Models::Account::setState(Shared::ConnectionState p_state)
 
 void Models::Account::setAvailability(unsigned int p_state)
 {
-    if (p_state <= Shared::availabilityHighest) {
-        Shared::Availability state = static_cast<Shared::Availability>(p_state);
-        setAvailability(state);
-    } else {
-        qDebug() << "An attempt to set invalid availability " << p_state << " to the account " << name;
-    }
+    setAvailability(Shared::Global::fromInt<Shared::Availability>(p_state));
 }
 
 void Models::Account::setState(unsigned int p_state)
 {
-    if (p_state <= Shared::subscriptionStateHighest) {
-        Shared::ConnectionState state = static_cast<Shared::ConnectionState>(p_state);
-        setState(state);
-    } else {
-        qDebug() << "An attempt to set invalid subscription state " << p_state << " to the account " << name;
-    }
+    setState(Shared::Global::fromInt<Shared::ConnectionState>(p_state));
 }
 
 Shared::Availability Models::Account::getAvailability() const
@@ -90,10 +80,10 @@ void Models::Account::setAvailability(Shared::Availability p_avail)
 
 QIcon Models::Account::getStatusIcon(bool big) const
 {
-    if (state == Shared::connected) {
+    if (state == Shared::ConnectionState::connected) {
         return Shared::availabilityIcon(availability, big);
-    } else if (state == Shared::disconnected) {
-        return Shared::availabilityIcon(Shared::offline, big);
+    } else if (state == Shared::ConnectionState::disconnected) {
+        return Shared::availabilityIcon(Shared::Availability::offline, big);
     } else {
         return Shared::connectionStateIcon(state);
     }
@@ -152,7 +142,7 @@ QVariant Models::Account::data(int column) const
         case 1:
             return server;
         case 2:
-            return QCoreApplication::translate("Global", Shared::connectionStateNames[state].toLatin1());
+            return Shared::Global::getName(state);
         case 3:
             return error;
         case 4:
@@ -160,7 +150,7 @@ QVariant Models::Account::data(int column) const
         case 5:
             return password;
         case 6:
-            return QCoreApplication::translate("Global", Shared::availabilityNames[availability].toLatin1());
+            return Shared::Global::getName(availability);
         case 7:
             return resource;
         case 8:
@@ -226,7 +216,7 @@ void Models::Account::setError(const QString& p_resource)
 
 void Models::Account::toOfflineState()
 {
-    setAvailability(Shared::offline);
+    setAvailability(Shared::Availability::offline);
     Item::toOfflineState();
 }
 

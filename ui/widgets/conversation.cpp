@@ -19,6 +19,7 @@
 #include "conversation.h"
 #include "ui_conversation.h"
 #include "ui/utils/dropshadoweffect.h"
+#include "shared/icons.h"
 
 #include <QDebug>
 #include <QScrollBar>
@@ -27,6 +28,7 @@
 #include <QMimeDatabase>
 #include <unistd.h>
 #include <QAbstractTextDocumentLayout>
+#include <QCoreApplication>
 
 Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, const QString pRes, QWidget* parent):
     QWidget(parent),

@@ -26,7 +26,7 @@
 #include <QResizeEvent>
 #include <QIcon>
 
-#include "global.h"
+#include "shared/message.h"
 #include "message.h"
 #include "progress.h"
 

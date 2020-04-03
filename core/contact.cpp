@@ -22,7 +22,7 @@
 Core::Contact::Contact(const QString& pJid, const QString& account, QObject* parent):
     RosterItem(pJid, account, parent),
     groups(),
-    subscriptionState(Shared::unknown)
+    subscriptionState(Shared::SubscriptionState::unknown)
 {
 }
 

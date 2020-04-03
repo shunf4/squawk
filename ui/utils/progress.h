@@ -27,8 +27,6 @@
 #include <QVariantAnimation>
 #include <QGridLayout>
 
-#include "../../global.h"
-
 /**
  * @todo write docs
  */

@@ -24,7 +24,8 @@
 #include <map>
 #include <QVector>
 
-#include "global.h"
+#include "shared/message.h"
+#include "shared/global.h"
 #include "accounts.h"
 #include "item.h"
 #include "account.h"

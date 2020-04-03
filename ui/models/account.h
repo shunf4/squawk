@@ -19,7 +19,10 @@
 #ifndef MODELS_ACCOUNT_H
 #define MODELS_ACCOUNT_H
 
-#include "../../global.h"
+#include "shared/enums.h"
+#include "shared/utils.h"
+#include "shared/icons.h"
+#include "shared/global.h"
 #include "item.h"
 #include <QVariant>
 #include <QIcon>

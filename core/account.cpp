@@ -30,7 +30,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     client(),
     config(),
     presence(),
-    state(Shared::disconnected),
+    state(Shared::ConnectionState::disconnected),
     groups(),
     cm(new QXmppCarbonManager()),
     am(new QXmppMamManager()),
@@ -182,9 +182,9 @@ Shared::ConnectionState Core::Account::getState() const
 
 void Core::Account::connect()
 {
-    if (state == Shared::disconnected) {
+    if (state == Shared::ConnectionState::disconnected) {
         reconnectTimes = maxReconnectTimes;
-        state = Shared::connecting;
+        state = Shared::ConnectionState::connecting;
         client.connectToServer(config, presence);
         emit connectionStateChanged(state);
     } else {
@@ -195,19 +195,19 @@ void Core::Account::connect()
 void Core::Account::disconnect()
 {
     reconnectTimes = 0;
-    if (state != Shared::disconnected) {
+    if (state != Shared::ConnectionState::disconnected) {
         clearConferences();
         client.disconnectFromServer();
-        state = Shared::disconnected;
+        state = Shared::ConnectionState::disconnected;
         emit connectionStateChanged(state);
     }
 }
 
 void Core::Account::onClientConnected()
 {
-    if (state == Shared::connecting) {
+    if (state == Shared::ConnectionState::connecting) {
         reconnectTimes = maxReconnectTimes;
-        state = Shared::connected;
+        state = Shared::ConnectionState::connected;
         dm->requestItems(getServer());
         dm->requestInfo(getServer());
         emit connectionStateChanged(state);
@@ -219,16 +219,16 @@ void Core::Account::onClientConnected()
 void Core::Account::onClientDisconnected()
 {
     clearConferences();
-    if (state != Shared::disconnected) {
+    if (state != Shared::ConnectionState::disconnected) {
         if (reconnectTimes > 0) {
             qDebug() << "Account" << name << "is reconnecting for" << reconnectTimes << "more times";
             --reconnectTimes;
-            state = Shared::connecting;
+            state = Shared::ConnectionState::connecting;
             client.connectToServer(config, presence);
             emit connectionStateChanged(state);
         } else {
             qDebug() << "Account" << name << "has been disconnected";
-            state = Shared::disconnected;
+            state = Shared::ConnectionState::disconnected;
             emit connectionStateChanged(state);
         }
     } else {
@@ -238,7 +238,7 @@ void Core::Account::onClientDisconnected()
 
 void Core::Account::reconnect()
 {
-    if (state == Shared::connected) {
+    if (state == Shared::ConnectionState::connected) {
         ++reconnectTimes;
         client.disconnectFromServer();
     } else {
@@ -281,7 +281,7 @@ void Core::Account::onRosterReceived()
 void Core::Account::setReconnectTimes(unsigned int times)
 {
     maxReconnectTimes = times;
-    if (state == Shared::connected) {
+    if (state == Shared::ConnectionState::connected) {
         reconnectTimes = times;
     }
 }
@@ -355,7 +355,7 @@ void Core::Account::addedAccount(const QString& jid)
     if (newContact) {
         QMap<QString, QVariant> cData({
             {"name", re.name()},
-            {"state", state}
+            {"state", QVariant::fromValue(state)}
         });
         
         Archive::AvatarInfo info;
@@ -427,7 +427,7 @@ void Core::Account::onPresenceReceived(const QXmppPresence& p_presence)
     
     if (jid == myJid) {
         if (resource == getResource()) {
-            emit availabilityChanged(p_presence.availableStatusType());
+            emit availabilityChanged(static_cast<Shared::Availability>(p_presence.availableStatusType()));
         } else {
             if (!ownVCardRequestInProgress) {
                 switch (p_presence.vCardUpdateType()) {
@@ -521,21 +521,25 @@ void Core::Account::setServer(const QString& p_server)
 
 Shared::Availability Core::Account::getAvailability() const
 {
-    if (state == Shared::connected) {
+    if (state == Shared::ConnectionState::connected) {
         QXmppPresence::AvailableStatusType pres = presence.availableStatusType();
         return static_cast<Shared::Availability>(pres);         //they are compatible;
     } else {
-        return Shared::offline;
+        return Shared::Availability::offline;
     }
 }
 
 void Core::Account::setAvailability(Shared::Availability avail)
 {
-    QXmppPresence::AvailableStatusType pres = static_cast<QXmppPresence::AvailableStatusType>(avail);
-    
-    presence.setAvailableStatusType(pres);
-    if (state != Shared::disconnected) {        //TODO not sure how to do here - changing state may cause connection or disconnection
-        client.setClientPresence(presence);
+    if (avail == Shared::Availability::offline) {
+        disconnect();               //TODO not sure how to do here - changing state may cause connection or disconnection
+    } else {
+        QXmppPresence::AvailableStatusType pres = static_cast<QXmppPresence::AvailableStatusType>(avail);
+        
+        presence.setAvailableStatusType(pres);
+        if (state != Shared::ConnectionState::disconnected) {
+            client.setClientPresence(presence);
+        }
     }
 }
 
@@ -624,7 +628,7 @@ void Core::Account::sendMessage(Shared::Message data)
     QString jid = data.getPenPalJid();
     QString id = data.getId();
     RosterItem* ri = getRosterItem(jid);
-    if (state == Shared::connected) {
+    if (state == Shared::ConnectionState::connected) {
         QXmppMessage msg(getFullJid(), data.getTo(), data.getBody(), data.getThread());
         msg.setId(id);
         msg.setType(static_cast<QXmppMessage::Type>(data.getType()));       //it is safe here, my type is compatible
@@ -660,7 +664,7 @@ void Core::Account::sendMessage(Shared::Message data)
 
 void Core::Account::sendMessage(const Shared::Message& data, const QString& path)
 {
-    if (state == Shared::connected) {
+    if (state == Shared::ConnectionState::connected) {
         QString url = network->getFileRemoteUrl(path);
         if (url.size() != 0) {
             sendMessageWithLocalUploadedFile(data, url);
@@ -727,9 +731,9 @@ bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bo
             cnt = new Contact(jid, name);
             contacts.insert(std::make_pair(jid, cnt));
             outOfRosterContacts.insert(jid);
-            cnt->setSubscriptionState(Shared::unknown);
+            cnt->setSubscriptionState(Shared::SubscriptionState::unknown);
             emit addContact(jid, "", QMap<QString, QVariant>({
-                {"state", Shared::unknown}
+                {"state", QVariant::fromValue(Shared::SubscriptionState::unknown)}
             }));
             handleNewContact(cnt);
         }
@@ -963,7 +967,7 @@ void Core::Account::onContactGroupAdded(const QString& group)
     
     QMap<QString, QVariant> cData({
         {"name", contact->getName()},
-        {"state", contact->getSubscriptionState()}
+        {"state", QVariant::fromValue(contact->getSubscriptionState())}
     });
     addToGroup(contact->jid, group);
     emit addContact(contact->jid, group, cData);
@@ -993,7 +997,7 @@ void Core::Account::onContactSubscriptionStateChanged(Shared::SubscriptionState 
 {
     Contact* contact = static_cast<Contact*>(sender());
     QMap<QString, QVariant> cData({
-        {"state", cstate},
+        {"state", QVariant::fromValue(cstate)},
     });
     emit changeContact(contact->jid, cData);
 }
@@ -1031,7 +1035,7 @@ Shared::SubscriptionState Core::Account::castSubscriptionState(QXmppRosterIq::It
 {
     Shared::SubscriptionState state;
     if (qs == QXmppRosterIq::Item::NotSet) {
-        state = Shared::unknown;
+        state = Shared::SubscriptionState::unknown;
     } else {
         state = static_cast<Shared::SubscriptionState>(qs);
     }
@@ -1145,7 +1149,7 @@ void Core::Account::onClientError(QXmppClient::Error err)
 
 void Core::Account::subscribeToContact(const QString& jid, const QString& reason)
 {
-    if (state == Shared::connected) {
+    if (state == Shared::ConnectionState::connected) {
         rm->subscribe(jid, reason);
     } else {
         qDebug() << "An attempt to subscribe account " << name << " to contact " << jid << " but the account is not in the connected state, skipping";
@@ -1154,7 +1158,7 @@ void Core::Account::subscribeToContact(const QString& jid, const QString& reason
 
 void Core::Account::unsubscribeFromContact(const QString& jid, const QString& reason)
 {
-    if (state == Shared::connected) {
+    if (state == Shared::ConnectionState::connected) {
         rm->unsubscribe(jid, reason);
     } else {
         qDebug() << "An attempt to unsubscribe account " << name << " from contact " << jid << " but the account is not in the connected state, skipping";
@@ -1163,7 +1167,7 @@ void Core::Account::unsubscribeFromContact(const QString& jid, const QString& re
 
 void Core::Account::removeContactRequest(const QString& jid)
 {
-    if (state == Shared::connected) {
+    if (state == Shared::ConnectionState::connected) {
         std::set<QString>::const_iterator itr = outOfRosterContacts.find(jid);
         if (itr != outOfRosterContacts.end()) {
             outOfRosterContacts.erase(itr);
@@ -1179,7 +1183,7 @@ void Core::Account::removeContactRequest(const QString& jid)
 
 void Core::Account::addContactRequest(const QString& jid, const QString& name, const QSet<QString>& groups)
 {
-    if (state == Shared::connected) {
+    if (state == Shared::ConnectionState::connected) {
         std::map<QString, QString>::const_iterator itr = queuedContacts.find(jid);
         if (itr != queuedContacts.end()) {
             qDebug() << "An attempt to add contact " << jid << " to account " << name << " but the account is already queued for adding, skipping";

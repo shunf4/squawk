@@ -41,11 +41,11 @@ Squawk::Squawk(QWidget *parent) :
     m_ui->roster->header()->setStretchLastSection(false);
     m_ui->roster->header()->setSectionResizeMode(0, QHeaderView::Stretch);
     
-    for (unsigned int i = Shared::availabilityLowest; i < Shared::availabilityHighest + 1; ++i) {
+    for (int i = static_cast<int>(Shared::availabilityLowest); i < static_cast<int>(Shared::availabilityHighest) + 1; ++i) {
         Shared::Availability av = static_cast<Shared::Availability>(i);
-        m_ui->comboBox->addItem(Shared::availabilityIcon(av), QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1()));
+        m_ui->comboBox->addItem(Shared::availabilityIcon(av), Shared::Global::getName(av));
     }
-    m_ui->comboBox->setCurrentIndex(Shared::offline);
+    m_ui->comboBox->setCurrentIndex(static_cast<int>(Shared::Availability::offline));
     
     connect(m_ui->actionAccounts, &QAction::triggered, this, &Squawk::onAccounts);
     connect(m_ui->actionAddContact, &QAction::triggered, this, &Squawk::onNewContact);
@@ -173,25 +173,26 @@ void Squawk::newAccount(const QMap<QString, QVariant>& account)
 
 void Squawk::onComboboxActivated(int index)
 {
-    if (index != Shared::offline) {
+    Shared::Availability av = Shared::Global::fromInt<Shared::Availability>(index);
+    if (av != Shared::Availability::offline) {
         int size = rosterModel.accountsModel->rowCount(QModelIndex());
         if (size > 0) {
-            emit changeState(index);
+            emit changeState(av);
             for (int i = 0; i < size; ++i) {
                 Models::Account* acc = rosterModel.accountsModel->getAccount(i);
-                if (acc->getState() == Shared::disconnected) {
+                if (acc->getState() == Shared::ConnectionState::disconnected) {
                     emit connectAccount(acc->getName());
                 }
             }
         } else {
-            m_ui->comboBox->setCurrentIndex(Shared::offline);
+            m_ui->comboBox->setCurrentIndex(static_cast<int>(Shared::Availability::offline));
         }
     } else {
-        emit changeState(index);
+        emit changeState(av);
         int size = rosterModel.accountsModel->rowCount(QModelIndex());
         for (int i = 0; i != size; ++i) {
             Models::Account* acc = rosterModel.accountsModel->getAccount(i);
-            if (acc->getState() != Shared::disconnected) {
+            if (acc->getState() != Shared::ConnectionState::disconnected) {
                 emit disconnectAccount(acc->getName());
             }
         }
@@ -273,9 +274,9 @@ void Squawk::removePresence(const QString& account, const QString& jid, const QS
     rosterModel.removePresence(account, jid, name);
 }
 
-void Squawk::stateChanged(int state)
+void Squawk::stateChanged(Shared::Availability state)
 {
-    m_ui->comboBox->setCurrentIndex(state);
+    m_ui->comboBox->setCurrentIndex(static_cast<int>(state));
 }
 
 void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
@@ -600,14 +601,14 @@ void Squawk::onRosterContextMenu(const QPoint& point)
     
         contextMenu->clear();
         bool hasMenu = false;
-        bool active = item->getAccountConnectionState() == Shared::connected;
+        bool active = item->getAccountConnectionState() == Shared::ConnectionState::connected;
         switch (item->type) {
             case Models::Item::account: {
                 Models::Account* acc = static_cast<Models::Account*>(item);
                 hasMenu = true;
                 QString name = acc->getName();
                 
-                if (acc->getState() != Shared::disconnected) {
+                if (acc->getState() != Shared::ConnectionState::disconnected) {
                     QAction* con = contextMenu->addAction(Shared::icon("network-disconnect"), tr("Disconnect"));
                     con->setEnabled(active);
                     connect(con, &QAction::triggered, [this, name]() {
@@ -644,8 +645,8 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                 
                 Shared::SubscriptionState state = cnt->getState();
                 switch (state) {
-                    case Shared::both:
-                    case Shared::to: {
+                    case Shared::SubscriptionState::both:
+                    case Shared::SubscriptionState::to: {
                         QAction* unsub = contextMenu->addAction(Shared::icon("news-unsubscribe"), tr("Unsubscribe"));
                         unsub->setEnabled(active);
                         connect(unsub, &QAction::triggered, [this, cnt]() {
@@ -653,9 +654,9 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                         });
                     }
                     break;
-                    case Shared::from:
-                    case Shared::unknown:
-                    case Shared::none: {
+                    case Shared::SubscriptionState::from:
+                    case Shared::SubscriptionState::unknown:
+                    case Shared::SubscriptionState::none: {
                         QAction* sub = contextMenu->addAction(Shared::icon("news-subscribe"), tr("Subscribe"));
                         sub->setEnabled(active);
                         connect(sub, &QAction::triggered, [this, cnt]() {
@@ -882,7 +883,7 @@ void Squawk::readSettings()
     if (settings.contains("availability")) {
         int avail = settings.value("availability").toInt();
         m_ui->comboBox->setCurrentIndex(avail);
-        emit stateChanged(avail);
+        emit stateChanged(Shared::Global::fromInt<Shared::Availability>(avail));
         
         int size = settings.beginReadArray("connectedAccounts");
         for (int i = 0; i < size; ++i) {
@@ -909,7 +910,7 @@ void Squawk::writeSettings()
     int size = rosterModel.accountsModel->rowCount(QModelIndex());
     for (int i = 0; i < size; ++i) {
         Models::Account* acc = rosterModel.accountsModel->getAccount(i);
-        if (acc->getState() != Shared::disconnected) {
+        if (acc->getState() != Shared::ConnectionState::disconnected) {
             settings.setArrayIndex(i);
             settings.setValue("name", acc->getName());
         }

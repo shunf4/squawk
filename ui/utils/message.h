@@ -31,7 +31,9 @@
 #include <QUrl>
 #include <QMap>
 
-#include "global.h"
+#include "shared/message.h"
+#include "shared/icons.h"
+#include "shared/global.h"
 #include "resizer.h"
 #include "image.h"
 

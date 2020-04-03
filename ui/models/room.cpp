@@ -17,6 +17,8 @@
  */
 
 #include "room.h"
+#include "shared/icons.h"
+
 #include <QIcon>
 #include <QDebug>
 
@@ -194,15 +196,15 @@ QIcon Models::Room::getStatusIcon(bool big) const
     } else {
         if (autoJoin) {
             if (joined) {
-                return Shared::connectionStateIcon(Shared::connected, big);
+                return Shared::connectionStateIcon(Shared::ConnectionState::connected, big);
             } else {
-                return Shared::connectionStateIcon(Shared::disconnected, big);
+                return Shared::connectionStateIcon(Shared::ConnectionState::disconnected, big);
             }
         } else {
             if (joined) {
-                return Shared::connectionStateIcon(Shared::connecting, big);
+                return Shared::connectionStateIcon(Shared::ConnectionState::connecting, big);
             } else {
-                return Shared::connectionStateIcon(Shared::error, big);
+                return Shared::connectionStateIcon(Shared::ConnectionState::error, big);
             }
         }
     }

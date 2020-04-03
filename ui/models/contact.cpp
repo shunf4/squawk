@@ -23,8 +23,8 @@
 Models::Contact::Contact(const QString& p_jid ,const QMap<QString, QVariant> &data, Item *parentItem):
     Item(Item::contact, data, parentItem),
     jid(p_jid),
-    availability(Shared::offline),
-    state(Shared::none),
+    availability(Shared::Availability::offline),
+    state(Shared::SubscriptionState::none),
     avatarState(Shared::Avatar::empty),
     presences(),
     messages(),
@@ -66,22 +66,12 @@ void Models::Contact::setJid(const QString p_jid)
 
 void Models::Contact::setAvailability(unsigned int p_state)
 {
-    if (p_state <= Shared::availabilityHighest) {
-        Shared::Availability state = static_cast<Shared::Availability>(p_state);
-        setAvailability(state);
-    } else {
-        qDebug() << "An attempt to set invalid availability " << p_state << " to the contact " << jid;
-    }
+    setAvailability(Shared::Global::fromInt<Shared::Availability>(p_state));
 }
 
 void Models::Contact::setState(unsigned int p_state)
 {
-    if (p_state <= Shared::subscriptionStateHighest) {
-        Shared::SubscriptionState state = static_cast<Shared::SubscriptionState>(p_state);
-        setState(state);
-    } else {
-        qDebug() << "An attempt to set invalid subscription state " << p_state << " to the contact " << jid;
-    }
+    setState(Shared::Global::fromInt<Shared::SubscriptionState>(p_state));
 }
 
 Shared::Availability Models::Contact::getAvailability() const
@@ -123,15 +113,15 @@ QVariant Models::Contact::data(int column) const
         case 1:
             return jid;
         case 2:
-            return state;
+            return QVariant::fromValue(state);
         case 3:
-            return availability;
+            return QVariant::fromValue(availability);
         case 4:
             return getMessagesCount();
         case 5:
             return getStatus();
         case 6:
-            return static_cast<quint8>(getAvatarState());
+            return QVariant::fromValue(getAvatarState());
         case 7:
             return getAvatarPath();
         default:
@@ -216,7 +206,7 @@ void Models::Contact::refresh()
         setAvailability(presence->getAvailability());
         setStatus(presence->getStatus());
     } else {
-        setAvailability(Shared::offline);
+        setAvailability(Shared::Availability::offline);
         setStatus("");
     }
     
@@ -258,7 +248,7 @@ QIcon Models::Contact::getStatusIcon(bool big) const
 {
     if (getMessagesCount() > 0) {
         return Shared::icon("mail-message", big);
-    } else if (state == Shared::both || state == Shared::to) {
+    } else if (state == Shared::SubscriptionState::both || state == Shared::SubscriptionState::to) {
         return Shared::availabilityIcon(availability, big);;
     } else {
         return Shared::subscriptionStateIcon(state, big);
@@ -276,7 +266,7 @@ void Models::Contact::addMessage(const Shared::Message& data)
             // the only issue is to find out when the sender is gone offline
             Presence* pr = new Presence({});
             pr->setName(res);
-            pr->setAvailability(Shared::invisible);
+            pr->setAvailability(Shared::Availability::invisible);
             pr->setLastActivity(QDateTime::currentDateTimeUtc());
             presences.insert(res, pr);
             appendChild(pr);

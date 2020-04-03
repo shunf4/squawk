@@ -96,7 +96,7 @@ unsigned int Models::Group::getOnlineContacts() const
     
     for (std::deque<Models::Item*>::const_iterator itr = childItems.begin(), end = childItems.end(); itr != end; ++itr) {
         Models::Contact* cnt = static_cast<Models::Contact*>(*itr);
-        if (cnt->getAvailability() != Shared::offline) {
+        if (cnt->getAvailability() != Shared::Availability::offline) {
             ++amount;
         }
     }

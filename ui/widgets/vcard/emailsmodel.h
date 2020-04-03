@@ -24,7 +24,7 @@
 
 #include <deque>
 
-#include "global.h"
+#include "shared/vcard.h"
 
 namespace UI {
 namespace VCard {

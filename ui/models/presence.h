@@ -20,7 +20,9 @@
 #define MODELS_PRESENCE_H
 
 #include "abstractparticipant.h"
-#include "../../global.h"
+#include "shared/enums.h"
+#include "shared/message.h"
+
 #include <QDateTime>
 #include <QIcon>
 

@@ -18,6 +18,8 @@
 
 #include "progress.h"
 
+#include "shared/icons.h"
+
 Progress::Progress(quint16 p_size, QWidget* parent):
     QWidget(parent),
     pixmap(new QGraphicsPixmapItem(Shared::icon("view-refresh", true).pixmap(p_size))),

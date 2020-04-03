@@ -25,9 +25,25 @@ message("Build type: ${CMAKE_BUILD_TYPE}")
 
 set(squawk_SRC
   main.cpp
-  global.cpp
   exception.cpp
   signalcatcher.cpp
+  shared/global.cpp
+  shared/utils.cpp
+  shared/message.cpp
+  shared/vcard.cpp
+  shared/icons.cpp
+)
+
+set(squawk_HEAD
+  exception.h
+  signalcatcher.h
+  shared.h
+  shared/enums.h
+  shared/message.h
+  shared/global.h
+  shared/utils.h
+  shared/vcard.h
+  shared/icons.h
 )
 
 configure_file(resources/images/logo.svg squawk.svg COPYONLY)
@@ -46,7 +62,7 @@ add_custom_target(translations ALL DEPENDS ${QM_FILES})
 
 qt5_add_resources(RCC resources/resources.qrc)
 
-add_executable(squawk ${squawk_SRC} ${RCC})
+add_executable(squawk ${squawk_SRC} ${squawk_HEAD} ${RCC})
 target_link_libraries(squawk Qt5::Widgets)
 
 option(SYSTEM_QXMPP "Use system qxmpp lib" ON) 

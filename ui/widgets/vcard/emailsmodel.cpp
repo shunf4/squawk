@@ -18,6 +18,9 @@
 
 #include "emailsmodel.h"
 
+#include "shared/icons.h"
+#include <QCoreApplication>
+
 UI::VCard::EMailsModel::EMailsModel(bool p_edit, QObject* parent):
     QAbstractTableModel(parent),
     edit(p_edit),

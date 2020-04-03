@@ -18,6 +18,9 @@
 
 #include "phonesmodel.h"
 
+#include "shared/icons.h"
+#include <QCoreApplication>
+
 UI::VCard::PhonesModel::PhonesModel(bool p_edit, QObject* parent):
     QAbstractTableModel(parent),
     edit(p_edit),

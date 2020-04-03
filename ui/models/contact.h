@@ -21,7 +21,11 @@
 
 #include "item.h"
 #include "presence.h"
-#include "global.h"
+#include "shared/enums.h"
+#include "shared/message.h"
+#include "shared/icons.h"
+#include "shared/global.h"
+
 #include <QMap>
 #include <QIcon>
 #include <deque>

@@ -238,7 +238,7 @@ Shared::Availability Models::Item::getAccountAvailability() const
 {
     const Account* acc = static_cast<const Account*>(getParentAccount());
     if (acc == 0) {
-        return Shared::offline;
+        return Shared::Availability::offline;
     }
     return acc->getAvailability();
 }
@@ -247,7 +247,7 @@ Shared::ConnectionState Models::Item::getAccountConnectionState() const
 {
     const Account* acc = static_cast<const Account*>(getParentAccount());
     if (acc == 0) {
-        return Shared::disconnected;
+        return Shared::ConnectionState::disconnected;
     }
     return acc->getState();
 }

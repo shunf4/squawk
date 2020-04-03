@@ -18,7 +18,7 @@
 
 #include "vcard.h"
 #include "ui_vcard.h"
-
+#include "shared/icons.h"
 #include <QDebug>
 
 #include <algorithm>

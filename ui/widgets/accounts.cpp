@@ -115,7 +115,7 @@ void Accounts::updateConnectButton()
         bool allConnected = true;
         for (int i = 0; i < selectionSize && allConnected; ++i) {
             const Models::Account* mAcc = model->getAccount(sm->selectedRows().at(i).row());
-            allConnected = mAcc->getState() == Shared::connected;
+            allConnected = mAcc->getState() == Shared::ConnectionState::connected;
         }
         if (allConnected) {
             toDisconnect = true;

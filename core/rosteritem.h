@@ -31,7 +31,9 @@
 #include <QXmppVCardIq.h>
 #include <QXmppPresence.h>
 
-#include "../global.h"
+#include "shared/enums.h"
+#include "shared/message.h"
+#include "shared/vcard.h"
 #include "archive.h"
 
 namespace Core {

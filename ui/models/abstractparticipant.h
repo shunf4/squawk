@@ -21,8 +21,12 @@
 
 
 #include "item.h"
-#include "../../global.h"
+#include "shared/enums.h"
+#include "shared/icons.h"
+#include "shared/global.h"
+
 #include <QIcon>
+#include <QDateTime>
 
 namespace Models {
 

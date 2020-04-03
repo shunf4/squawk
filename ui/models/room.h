@@ -21,7 +21,8 @@
 
 #include "item.h"
 #include "participant.h"
-#include "global.h"
+#include "shared/enums.h"
+#include "shared/message.h"
 
 namespace Models {
 

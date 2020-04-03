@@ -43,7 +43,7 @@
 #include <QXmppVCardManager.h>
 #include <QXmppMessageReceiptManager.h>
 
-#include "global.h"
+#include "shared.h"
 #include "contact.h"
 #include "conference.h"
 #include "networkaccess.h"
@@ -101,8 +101,8 @@ public slots:
     
 signals:
     void changed(const QMap<QString, QVariant>& data);
-    void connectionStateChanged(int);
-    void availabilityChanged(int);
+    void connectionStateChanged(Shared::ConnectionState);
+    void availabilityChanged(Shared::Availability);
     void addGroup(const QString& name);
     void removeGroup(const QString& name);
     void addRoom(const QString& jid, const QMap<QString, QVariant>& data);

@@ -58,7 +58,7 @@ void Chat::updateState()
 {
     Shared::Availability av = contact->getAvailability();
     statusIcon->setPixmap(Shared::availabilityIcon(av, true).pixmap(40));
-    statusIcon->setToolTip(QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1()));
+    statusIcon->setToolTip(Shared::Global::getName(av));
 }
 
 void Chat::handleSendMessage(const QString& text)

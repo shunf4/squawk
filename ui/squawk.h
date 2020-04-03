@@ -38,7 +38,7 @@
 #include "models/roster.h"
 #include "widgets/vcard/vcard.h"
 
-#include "global.h"
+#include "shared.h"
 
 namespace Ui {
 class Squawk;
@@ -61,7 +61,7 @@ signals:
     void removeAccountRequest(const QString&);
     void connectAccount(const QString&);
     void disconnectAccount(const QString&);
-    void changeState(int state);
+    void changeState(Shared::Availability state);
     void sendMessage(const QString& account, const Shared::Message& data);
     void sendMessage(const QString& account, const Shared::Message& data, const QString& path);
     void requestArchive(const QString& account, const QString& jid, int count, const QString& before);
@@ -93,7 +93,7 @@ public slots:
     void changeContact(const QString& account, const QString& jid, const QMap<QString, QVariant>& data);
     void addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& account, const QString& jid, const QString& name);
-    void stateChanged(int state);
+    void stateChanged(Shared::Availability state);
     void accountMessage(const QString& account, const Shared::Message& data);
     void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list);
     void addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);

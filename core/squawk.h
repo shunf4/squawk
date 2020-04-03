@@ -28,7 +28,9 @@
 #include <deque>
 
 #include "account.h"
-#include "../global.h"
+#include "shared/enums.h"
+#include "shared/message.h"
+#include "shared/global.h"
 #include "networkaccess.h"
 
 namespace Core
@@ -54,7 +56,7 @@ signals:
     void changeContact(const QString& account, const QString& jid, const QMap<QString, QVariant>& data);
     void addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& account, const QString& jid, const QString& name);
-    void stateChanged(int state);
+    void stateChanged(Shared::Availability state);
     void accountMessage(const QString& account, const Shared::Message& data);
     void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list);
     void addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
@@ -79,7 +81,7 @@ public slots:
     void removeAccountRequest(const QString& name);
     void connectAccount(const QString& account);
     void disconnectAccount(const QString& account);
-    void changeState(int state);
+    void changeState(Shared::Availability state);
     void sendMessage(const QString& account, const Shared::Message& data);
     void sendMessage(const QString& account, const Shared::Message& data, const QString& path);
     void requestArchive(const QString& account, const QString& jid, int count, const QString& before);
@@ -112,8 +114,8 @@ private:
     void addAccount(const QString& login, const QString& server, const QString& password, const QString& name, const QString& resource);
     
 private slots:
-    void onAccountConnectionStateChanged(int state);
-    void onAccountAvailabilityChanged(int state);
+    void onAccountConnectionStateChanged(Shared::ConnectionState state);
+    void onAccountAvailabilityChanged(Shared::Availability state);
     void onAccountChanged(const QMap<QString, QVariant>& data);
     void onAccountAddGroup(const QString& name);
     void onAccountError(const QString& text);

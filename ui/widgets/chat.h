@@ -20,7 +20,9 @@
 #define CHAT_H
 
 #include "conversation.h"
-#include "../models/contact.h"
+#include "ui/models/contact.h"
+#include "shared/icons.h"
+#include "shared/global.h"
 
 namespace Ui
 {

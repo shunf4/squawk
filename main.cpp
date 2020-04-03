@@ -19,6 +19,7 @@
 #include "ui/squawk.h"
 #include "core/squawk.h"
 #include "signalcatcher.h"
+#include "shared/global.h"
 #include <QtWidgets/QApplication>
 #include <QtCore/QThread>
 #include <QtCore/QObject>
@@ -33,6 +34,8 @@ int main(int argc, char *argv[])
     qRegisterMetaType<Shared::VCard>("Shared::VCard");
     qRegisterMetaType<std::list<Shared::Message>>("std::list<Shared::Message>");
     qRegisterMetaType<QSet<QString>>("QSet<QString>");
+    qRegisterMetaType<Shared::ConnectionState>("Shared::ConnectionState");
+    qRegisterMetaType<Shared::Availability>("Shared::Availability");
     
     QApplication app(argc, argv);
     SignalCatcher sc(&app);
@@ -71,6 +74,8 @@ int main(int argc, char *argv[])
     icon.addFile(":images/logo.svg", QSize(256, 256));
     icon.addFile(":images/logo.svg", QSize(512, 512));
     QApplication::setWindowIcon(icon);
+    
+    new Shared::Global();        //translates enums
     
     Squawk w;
     w.show();

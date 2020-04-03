@@ -22,7 +22,7 @@ using namespace Models;
 
 Models::AbstractParticipant::AbstractParticipant(Models::Item::Type p_type, const QMap<QString, QVariant>& data, Models::Item* parentItem):
     Item(p_type, data, parentItem),
-    availability(Shared::offline),
+    availability(Shared::Availability::offline),
     lastActivity(data.value("lastActivity").toDateTime()),
     status(data.value("status").toString())
 {
@@ -58,7 +58,7 @@ QVariant Models::AbstractParticipant::data(int column) const
         case 1:
             return lastActivity;
         case 2:
-            return availability;
+            return QVariant::fromValue(availability);
         case 3:
             return status;
         default:
@@ -91,14 +91,8 @@ void Models::AbstractParticipant::setAvailability(Shared::Availability p_avail)
 
 void Models::AbstractParticipant::setAvailability(unsigned int avail)
 {
-    if (avail <= Shared::availabilityHighest) {
-        Shared::Availability state = static_cast<Shared::Availability>(avail);
-        setAvailability(state);
-    } else {
-        qDebug("An attempt to set wrong state to the contact");
-    }
+    setAvailability(Shared::Global::fromInt<Shared::Availability>(avail));
 }
-
 
 void Models::AbstractParticipant::setLastActivity(const QDateTime& p_time)
 {

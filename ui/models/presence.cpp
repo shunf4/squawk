@@ -17,6 +17,7 @@
  */
 
 #include "presence.h"
+#include "shared/icons.h"
 
 Models::Presence::Presence(const QMap<QString, QVariant>& data, Item* parentItem):
     AbstractParticipant(Item::presence, data, parentItem),

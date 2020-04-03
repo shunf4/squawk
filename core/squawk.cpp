@@ -146,8 +146,8 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
         {"name", name},
         {"password", password},
         {"resource", resource},
-        {"state", Shared::disconnected},
-        {"offline", Shared::offline},
+        {"state", QVariant::fromValue(Shared::ConnectionState::disconnected)},
+        {"offline", QVariant::fromValue(Shared::Availability::offline)},
         {"error", ""},
         {"avatarPath", acc->getAvatarPath()}
     };
@@ -155,14 +155,11 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     emit newAccount(map);
 }
 
-void Core::Squawk::changeState(int p_state)
+void Core::Squawk::changeState(Shared::Availability p_state)
 {
-    Shared::Availability avail;
-    if (p_state < Shared::availabilityLowest && p_state > Shared::availabilityHighest) {
-        qDebug("An attempt to set invalid availability to Squawk core, skipping");
+    if (state != p_state) {
+        state = p_state;
     }
-    avail = static_cast<Shared::Availability>(p_state);
-    state = avail;
     
     for (std::deque<Account*>::iterator itr = accounts.begin(), end = accounts.end(); itr != end; ++itr) {
         (*itr)->setAvailability(state);
@@ -190,20 +187,20 @@ void Core::Squawk::disconnectAccount(const QString& account)
     itr->second->disconnect();
 }
 
-void Core::Squawk::onAccountConnectionStateChanged(int state)
+void Core::Squawk::onAccountConnectionStateChanged(Shared::ConnectionState p_state)
 {
     Account* acc = static_cast<Account*>(sender());
-    emit changeAccount(acc->getName(), {{"state", state}});
+    emit changeAccount(acc->getName(), {{"state", QVariant::fromValue(p_state)}});
     
-    if (state == Shared::disconnected) {
+    if (p_state == Shared::ConnectionState::disconnected) {
         bool equals = true;
         for (Accounts::const_iterator itr = accounts.begin(), end = accounts.end(); itr != end; itr++) {
-            if ((*itr)->getState() != Shared::disconnected) {
+            if ((*itr)->getState() != Shared::ConnectionState::disconnected) {
                 equals = false;
             }
         }
-        if (equals) {
-            state = Shared::offline;
+        if (equals && state != Shared::Availability::offline) {
+            state = Shared::Availability::offline;
             emit stateChanged(state);
         }
     }
@@ -257,10 +254,10 @@ void Core::Squawk::onAccountRemovePresence(const QString& jid, const QString& na
     emit removePresence(acc->getName(), jid, name);
 }
 
-void Core::Squawk::onAccountAvailabilityChanged(int state)
+void Core::Squawk::onAccountAvailabilityChanged(Shared::Availability state)
 {
     Account* acc = static_cast<Account*>(sender());
-    emit changeAccount(acc->getName(), {{"availability", state}});
+    emit changeAccount(acc->getName(), {{"availability", QVariant::fromValue(state)}});
 }
 
 void Core::Squawk::onAccountChanged(const QMap<QString, QVariant>& data)
@@ -324,7 +321,7 @@ void Core::Squawk::modifyAccountRequest(const QString& name, const QMap<QString,
     Core::Account* acc = itr->second;
     Shared::ConnectionState st = acc->getState();
     
-    if (st != Shared::disconnected) {
+    if (st != Shared::ConnectionState::disconnected) {
         acc->reconnect();
     }
     
@@ -367,7 +364,7 @@ void Core::Squawk::removeAccountRequest(const QString& name)
     }
     
     Account* acc = itr->second;
-    if (acc->getState() != Shared::disconnected) {
+    if (acc->getState() != Shared::ConnectionState::disconnected) {
         acc->disconnect();
     }
     

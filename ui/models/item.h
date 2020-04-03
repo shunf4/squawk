@@ -25,7 +25,7 @@
 
 #include <deque>
 
-#include "../../global.h"
+#include "shared/enums.h"
 
 namespace Models {
 

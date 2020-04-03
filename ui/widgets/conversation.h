@@ -23,7 +23,7 @@
 #include <QScopedPointer>
 #include <QMap>
 
-#include "global.h"
+#include "shared/message.h"
 #include "order.h"
 #include "ui/models/account.h"
 #include "ui/utils/messageline.h"

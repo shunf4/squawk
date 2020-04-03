@@ -16,12 +16,12 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "message.h"
 #include <QDebug>
 #include <QMimeDatabase>
 #include <QPixmap>
 #include <QFileInfo>
 #include <QRegularExpression>
-#include "message.h"
 
 const QRegularExpression urlReg("(?<!<a\\shref=['\"])(?<!<img\\ssrc=['\"])("
                                 "(?:https?|ftp):\\/\\/"
@@ -346,7 +346,7 @@ void Message::setState()
 {
     Shared::Message::State state = msg.getState();
     QIcon q(Shared::icon(Shared::messageStateThemeIcons[static_cast<uint8_t>(state)]));
-    QString tt = QCoreApplication::translate("Global", Shared::messageStateNames[static_cast<uint8_t>(state)].toLatin1());
+    QString tt = Shared::Global::getName(state);
     if (state == Shared::Message::State::error) {
         QString errText = msg.getErrorText();
         if (errText.size() > 0) {

@@ -181,7 +181,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
             switch (item->type) {
                 case Item::account: {
                     Account* acc = static_cast<Account*>(item);
-                    result = QCoreApplication::translate("Global", Shared::availabilityNames[acc->getAvailability()].toLatin1());
+                    result = Shared::Global::getName(acc->getAvailability());
                 }
                     break;
                 case Item::contact: {
@@ -193,18 +193,18 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     }
                     str += tr("Jabber ID: ") + contact->getJid() + "\n";
                     Shared::SubscriptionState ss = contact->getState();
-                    if (ss == Shared::both || ss == Shared::to) {
+                    if (ss == Shared::SubscriptionState::both || ss == Shared::SubscriptionState::to) {
                         Shared::Availability av = contact->getAvailability();
-                        str += tr("Availability: ") + QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1());
-                        if (av != Shared::offline) {
+                        str += tr("Availability: ") + Shared::Global::getName(av);
+                        if (av != Shared::Availability::offline) {
                             QString s = contact->getStatus();
                             if (s.size() > 0) {
                                 str += "\n" + tr("Status: ") + s;
                             }
                         }
-                        str += "\n" + tr("Subscription: ") + QCoreApplication::translate("Global", Shared::subscriptionStateNames[ss].toLatin1());
+                        str += "\n" + tr("Subscription: ") + Shared::Global::getName(ss);
                     } else {
-                        str += tr("Subscription: ") + QCoreApplication::translate("Global", Shared::subscriptionStateNames[ss].toLatin1());
+                        str += tr("Subscription: ") + Shared::Global::getName(ss);
                     }
                     
                     result = str;
@@ -218,7 +218,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                         str += tr("New messages: ") + std::to_string(mc).c_str() + "\n";
                     }
                     Shared::Availability av = contact->getAvailability();
-                    str += tr("Availability: ") + QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1());
+                    str += tr("Availability: ") + Shared::Global::getName(av);
                     QString s = contact->getStatus();
                     if (s.size() > 0) {
                         str += "\n" + tr("Status: ") + s;
@@ -231,18 +231,14 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     Participant* p = static_cast<Participant*>(item);
                     QString str("");
                     Shared::Availability av = p->getAvailability();
-                    str += tr("Availability: ") + QCoreApplication::translate("Global", Shared::availabilityNames[av].toLatin1()) + "\n";
+                    str += tr("Availability: ") + Shared::Global::getName(av) + "\n";
                     QString s = p->getStatus();
                     if (s.size() > 0) {
                         str += tr("Status: ") + s + "\n";
                     }
                     
-                    str += tr("Affiliation: ") + 
-                    QCoreApplication::translate("Global", 
-                                                Shared::affiliationNames[static_cast<unsigned int>(p->getAffiliation())].toLatin1()) + "\n";
-                    str += tr("Role: ") + 
-                    QCoreApplication::translate("Global", 
-                                                Shared::roleNames[static_cast<unsigned int>(p->getRole())].toLatin1());
+                    str += tr("Affiliation: ") + Shared::Global::getName(p->getAffiliation()) + "\n";
+                    str += tr("Role: ") + Shared::Global::getName(p->getRole());
                     
                     result = str;
                 }

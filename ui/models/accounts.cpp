@@ -17,7 +17,7 @@
  */
 
 #include "accounts.h"
-#include "../../global.h"
+#include "shared/icons.h"
 
 #include <QIcon>
 #include <QDebug>

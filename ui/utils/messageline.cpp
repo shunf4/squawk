@@ -18,6 +18,7 @@
 
 #include "messageline.h"
 #include <QDebug>
+#include <QCoreApplication>
 #include <cmath>
 
 MessageLine::MessageLine(bool p_room, QWidget* parent):

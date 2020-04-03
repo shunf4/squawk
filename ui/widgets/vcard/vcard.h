@@ -36,7 +36,7 @@
 
 #include <set>
 
-#include "global.h"
+#include "shared/vcard.h"
 #include "emailsmodel.h"
 #include "phonesmodel.h"
 #include "ui/utils/progress.h"
