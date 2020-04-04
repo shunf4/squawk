@@ -146,9 +146,9 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, &Core::Squawk::uploadFileProgress, &w, &Squawk::fileProgress);
     QObject::connect(squawk, &Core::Squawk::uploadFileError, &w, &Squawk::fileError);
     QObject::connect(squawk, &Core::Squawk::responseVCard, &w, &Squawk::responseVCard);
+    QObject::connect(squawk, &Core::Squawk::ready, &w, &Squawk::readSettings);
     
     coreThread->start();
-    w.readSettings();
 
     int result = app.exec();
     

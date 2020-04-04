@@ -26,7 +26,8 @@ Core::Squawk::Squawk(QObject* parent):
     QObject(parent),
     accounts(),
     amap(),
-    network()
+    network(),
+    waitingForAccounts(0)
 {
     connect(&network, &NetworkAccess::fileLocalPathResponse, this, &Squawk::fileLocalPathResponse);
     connect(&network, &NetworkAccess::downloadFileProgress, this, &Squawk::downloadFileProgress);
@@ -72,21 +73,7 @@ void Core::Squawk::start()
 {
     qDebug("Starting squawk core..");
     
-    QSettings settings;
-    settings.beginGroup("core");
-    int size = settings.beginReadArray("accounts");
-    for (int i = 0; i < size; ++i) {
-        settings.setArrayIndex(i);
-        addAccount(
-            settings.value("login").toString(), 
-            settings.value("server").toString(), 
-            settings.value("password").toString(), 
-            settings.value("name").toString(), 
-            settings.value("resource").toString()
-        );
-    }
-    settings.endArray();
-    settings.endGroup();
+    readSettings();
     network.start();
 }
 
@@ -98,10 +85,17 @@ void Core::Squawk::newAccountRequest(const QMap<QString, QVariant>& map)
     QString password = map.value("password").toString();
     QString resource = map.value("resource").toString();
     
-    addAccount(login, server, password, name, resource);
+    addAccount(login, server, password, name, resource, Shared::AccountPassword::plain);
 }
 
-void Core::Squawk::addAccount(const QString& login, const QString& server, const QString& password, const QString& name, const QString& resource)
+void Core::Squawk::addAccount(
+    const QString& login, 
+    const QString& server, 
+    const QString& password, 
+    const QString& name, 
+    const QString& resource,                          
+    Shared::AccountPassword passwordType
+)
 {
     QSettings settings;
     unsigned int reconnects = settings.value("reconnects", 2).toUInt();
@@ -109,6 +103,7 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     Account* acc = new Account(login, server, password, name, &network);
     acc->setResource(resource);
     acc->setReconnectTimes(reconnects);
+    acc->setPasswordType(passwordType);
     accounts.push_back(acc);
     amap.insert(std::make_pair(name, acc));
     
@@ -119,8 +114,10 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     connect(acc, &Account::addContact, this, &Squawk::onAccountAddContact);
     connect(acc, &Account::addGroup, this, &Squawk::onAccountAddGroup);
     connect(acc, &Account::removeGroup, this, &Squawk::onAccountRemoveGroup);
-    connect(acc, qOverload<const QString&, const QString&>(&Account::removeContact), this, qOverload<const QString&, const QString&>(&Squawk::onAccountRemoveContact));
-    connect(acc, qOverload<const QString&>(&Account::removeContact), this, qOverload<const QString&>(&Squawk::onAccountRemoveContact));
+    connect(acc, qOverload<const QString&, const QString&>(&Account::removeContact), 
+            this, qOverload<const QString&, const QString&>(&Squawk::onAccountRemoveContact));
+    connect(acc, qOverload<const QString&>(&Account::removeContact), 
+            this, qOverload<const QString&>(&Squawk::onAccountRemoveContact));
     connect(acc, &Account::changeContact, this, &Squawk::onAccountChangeContact);
     connect(acc, &Account::addPresence, this, &Squawk::onAccountAddPresence);
     connect(acc, &Account::removePresence, this, &Squawk::onAccountRemovePresence);
@@ -149,7 +146,8 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
         {"state", QVariant::fromValue(Shared::ConnectionState::disconnected)},
         {"offline", QVariant::fromValue(Shared::Availability::offline)},
         {"error", ""},
-        {"avatarPath", acc->getAvatarPath()}
+        {"avatarPath", acc->getAvatarPath()},
+        {"passwordType", QVariant::fromValue(passwordType)}
     };
     
     emit newAccount(map);
@@ -486,8 +484,6 @@ void Core::Squawk::onAccountRemoveRoomPresence(const QString& jid, const QString
     emit removeRoomParticipant(acc->getName(), jid, nick);
 }
 
-
-
 void Core::Squawk::onAccountChangeMessage(const QString& jid, const QString& id, const QMap<QString, QVariant>& data)
 {
     Account* acc = static_cast<Account*>(sender());
@@ -574,3 +570,49 @@ void Core::Squawk::uploadVCard(const QString& account, const Shared::VCard& card
     itr->second->uploadVCard(card);
 }
 
+void Core::Squawk::readSettings()
+{
+    QSettings settings;
+    settings.beginGroup("core");
+    int size = settings.beginReadArray("accounts");
+    waitingForAccounts = size;
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+        parseAccount(
+            settings.value("login").toString(), 
+            settings.value("server").toString(), 
+            settings.value("password", "").toString(), 
+            settings.value("name").toString(), 
+            settings.value("resource").toString(),
+            Shared::Global::fromInt<Shared::AccountPassword>(settings.value("passwordType", static_cast<int>(Shared::AccountPassword::plain)).toInt())
+        );
+    }
+    settings.endArray();
+    settings.endGroup();
+}
+
+void Core::Squawk::accountReady()
+{
+    --waitingForAccounts;
+    
+    if (waitingForAccounts == 0) {
+        emit ready();
+    }
+}
+
+void Core::Squawk::parseAccount(
+    const QString& login, 
+    const QString& server, 
+    const QString& password, 
+    const QString& name, 
+    const QString& resource, 
+    Shared::AccountPassword passwordType
+)
+{
+    switch (passwordType) {
+        case Shared::AccountPassword::plain:
+            addAccount(login, server, password, name, resource, passwordType);
+            accountReady();
+            break;
+    }
+}

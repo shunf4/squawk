@@ -52,7 +52,6 @@ public:
     explicit Squawk(QWidget *parent = nullptr);
     ~Squawk() override;
     
-    void readSettings();
     void writeSettings();
     
 signals:
@@ -82,6 +81,7 @@ signals:
     void uploadVCard(const QString& account, const Shared::VCard& card);
     
 public slots:
+    void readSettings();
     void newAccount(const QMap<QString, QVariant>& account);
     void changeAccount(const QString& account, const QMap<QString, QVariant>& data);
     void removeAccount(const QString& account);

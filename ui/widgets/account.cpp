@@ -19,10 +19,17 @@
 #include "account.h"
 #include "ui_account.h"
 
-Account::Account()
-    : m_ui ( new Ui::Account )
+Account::Account(): 
+    QDialog(),
+    m_ui(new Ui::Account)
 {
-    m_ui->setupUi ( this );
+    m_ui->setupUi (this);
+    
+    for (int i = static_cast<int>(Shared::AccountPasswordLowest); i < static_cast<int>(Shared::AccountPasswordHighest) + 1; ++i) {
+        Shared::AccountPassword ap = static_cast<Shared::AccountPassword>(i);
+        m_ui->passwordType->addItem(Shared::Global::getName(ap));
+    }
+    m_ui->passwordType->setCurrentIndex(static_cast<int>(Shared::AccountPassword::plain));
 }
 
 Account::~Account()
@@ -37,6 +44,7 @@ QMap<QString, QVariant> Account::value() const
     map["server"] = m_ui->server->text();
     map["name"] = m_ui->name->text();
     map["resource"] = m_ui->resource->text();
+    map["passwordType"] = m_ui->passwordType->currentIndex();
     
     return map;
 }
@@ -53,4 +61,5 @@ void Account::setData(const QMap<QString, QVariant>& data)
     m_ui->server->setText(data.value("server").toString());
     m_ui->name->setText(data.value("name").toString());
     m_ui->resource->setText(data.value("resource").toString());
+    m_ui->passwordType->setCurrentIndex(data.value("passwordType").toInt());
 }

@@ -19,11 +19,13 @@
 #ifndef ACCOUNT_H
 #define ACCOUNT_H
 
-#include <QScopedPointer>
 #include <QDialog>
+#include <QScopedPointer>
 #include <QMap>
 #include <QString>
 #include <QVariant>
+
+#include "shared/global.h"
 
 namespace Ui
 {

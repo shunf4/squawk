@@ -45,6 +45,7 @@ public:
 
 signals:
     void quit();
+    void ready();
     void newAccount(const QMap<QString, QVariant>&);
     void changeAccount(const QString& account, const QMap<QString, QVariant>& data);
     void removeAccount(const QString& account);
@@ -109,11 +110,18 @@ private:
     AccountsMap amap;
     Shared::Availability state;
     NetworkAccess network;
-    
-private:
-    void addAccount(const QString& login, const QString& server, const QString& password, const QString& name, const QString& resource);
+    uint8_t waitingForAccounts;
     
 private slots:
+    void addAccount(
+        const QString& login, 
+        const QString& server, 
+        const QString& password, 
+        const QString& name, 
+        const QString& resource, 
+        Shared::AccountPassword passwordType
+    );
+    
     void onAccountConnectionStateChanged(Shared::ConnectionState state);
     void onAccountAvailabilityChanged(Shared::Availability state);
     void onAccountChanged(const QMap<QString, QVariant>& data);
@@ -135,6 +143,18 @@ private slots:
     void onAccountChangeRoomPresence(const QString& jid, const QString& nick, const QMap<QString, QVariant>& data);
     void onAccountRemoveRoomPresence(const QString& jid, const QString& nick);
     void onAccountChangeMessage(const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
+    
+private:
+    void readSettings();
+    void accountReady();
+    void parseAccount(
+        const QString& login, 
+        const QString& server, 
+        const QString& password, 
+        const QString& name, 
+        const QString& resource, 
+        Shared::AccountPassword passwordType
+    );
 };
 
 }

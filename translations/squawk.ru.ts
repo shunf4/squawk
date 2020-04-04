@@ -65,6 +65,10 @@
         <translatorcomment>Ресурс по умолчанию</translatorcomment>
         <translation>QXmpp</translation>
     </message>
+    <message>
+        <source>Password storage</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Accounts</name>
@@ -269,6 +273,22 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Delivered</source>
         <translation>Доставлено</translation>
+    </message>
+    <message>
+        <source>Plain</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Jammed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>KWallet</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Always Ask</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

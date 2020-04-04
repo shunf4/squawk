@@ -19,11 +19,11 @@
 #ifndef MODELS_ACCOUNT_H
 #define MODELS_ACCOUNT_H
 
+#include "item.h"
 #include "shared/enums.h"
 #include "shared/utils.h"
 #include "shared/icons.h"
 #include "shared/global.h"
-#include "item.h"
 #include <QVariant>
 #include <QIcon>
 
@@ -60,6 +60,10 @@ namespace Models {
         void setAvailability(unsigned int p_avail);
         Shared::Availability getAvailability() const;
         
+        void setPasswordType(Shared::AccountPassword pt);
+        void setPasswordType(unsigned int pt);
+        Shared::AccountPassword getPasswordType() const;
+        
         QIcon getStatusIcon(bool big = false) const;
         
         QVariant data(int column) const override;
@@ -79,6 +83,7 @@ namespace Models {
         QString avatarPath;
         Shared::ConnectionState state;
         Shared::Availability availability;
+        Shared::AccountPassword passwordType;
         
     protected slots:
         void toOfflineState() override;

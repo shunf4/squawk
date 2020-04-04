@@ -55,7 +55,13 @@ class Account : public QObject
 {
     Q_OBJECT
 public:
-    Account(const QString& p_login, const QString& p_server, const QString& p_password, const QString& p_name, NetworkAccess* p_net, QObject* parent = 0);
+    Account(
+        const QString& p_login, 
+        const QString& p_server, 
+        const QString& p_password, 
+        const QString& p_name, 
+        NetworkAccess* p_net, 
+        QObject* parent = 0);
     ~Account();
     
     void connect();
@@ -70,6 +76,7 @@ public:
     QString getResource() const;
     QString getAvatarPath() const;
     Shared::Availability getAvailability() const;
+    Shared::AccountPassword getPasswordType() const;
     
     void setName(const QString& p_name);
     void setLogin(const QString& p_login);
@@ -77,6 +84,7 @@ public:
     void setPassword(const QString& p_password);
     void setResource(const QString& p_resource);
     void setAvailability(Shared::Availability avail);
+    void setPasswordType(Shared::AccountPassword pt);
     QString getFullJid() const;
     void sendMessage(Shared::Message data);
     void sendMessage(const Shared::Message& data, const QString& path);
@@ -158,6 +166,7 @@ private:
     bool ownVCardRequestInProgress;
     NetworkAccess* network;
     std::map<QString, QString> pendingStateMessages;
+    Shared::AccountPassword passwordType;
     
 private slots:
     void onClientConnected();

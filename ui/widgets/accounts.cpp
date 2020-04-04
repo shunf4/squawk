@@ -22,6 +22,7 @@
 #include <QDebug>
 
 Accounts::Accounts(Models::Accounts* p_model, QWidget *parent) :
+    QWidget(parent),
     m_ui(new Ui::Accounts),
     model(p_model),
     editing(false),
@@ -40,7 +41,7 @@ Accounts::Accounts(Models::Accounts* p_model, QWidget *parent) :
 
 Accounts::~Accounts() = default;
 
-void Accounts::onAddButton(bool clicked)
+void Accounts::onAddButton()
 {
     Account* acc = new Account();
     connect(acc, &Account::accepted, this, &Accounts::onAccountAccepted);
@@ -70,7 +71,7 @@ void Accounts::onAccountRejected()
     editing = false;
 }
 
-void Accounts::onEditButton(bool clicked)
+void Accounts::onEditButton()
 {
     Account* acc = new Account();
     
@@ -80,7 +81,8 @@ void Accounts::onEditButton(bool clicked)
         {"password", mAcc->getPassword()},
         {"server", mAcc->getServer()},
         {"name", mAcc->getName()},
-        {"resource", mAcc->getResource()}
+        {"resource", mAcc->getResource()},
+        {"passwordType", QVariant::fromValue(mAcc->getPasswordType())}
     });
     acc->lockId();
     connect(acc, &Account::accepted, this, &Accounts::onAccountAccepted);
@@ -89,7 +91,7 @@ void Accounts::onEditButton(bool clicked)
     acc->exec();
 }
 
-void Accounts::onSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected)
+void Accounts::onSelectionChanged()
 {
     int selectionSize = m_ui->tableView->selectionModel()->selection().size();
     if (selectionSize == 0) {
@@ -131,7 +133,7 @@ void Accounts::updateConnectButton()
     }
 }
 
-void Accounts::onConnectButton(bool clicked)
+void Accounts::onConnectButton()
 {
     QItemSelectionModel* sm = m_ui->tableView->selectionModel();
     int selectionSize = sm->selection().size();
@@ -145,7 +147,7 @@ void Accounts::onConnectButton(bool clicked)
     }
 }
 
-void Accounts::onDeleteButton(bool clicked)
+void Accounts::onDeleteButton()
 {
     QItemSelectionModel* sm = m_ui->tableView->selectionModel();
     int selectionSize = sm->selection().size();

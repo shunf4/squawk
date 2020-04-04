@@ -53,7 +53,8 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     avatarType(),
     ownVCardRequestInProgress(false),
     network(p_net),
-    pendingStateMessages()
+    pendingStateMessages(),
+    passwordType(Shared::AccountPassword::plain)
 {
     config.setUser(p_login);
     config.setDomain(p_server);
@@ -266,6 +267,11 @@ QString Core::Account::getServer() const
     return config.domain();
 }
 
+Shared::AccountPassword Core::Account::getPasswordType() const
+{
+    return passwordType;
+}
+
 void Core::Account::onRosterReceived()
 {
     vm->requestClientVCard();         //TODO need to make sure server actually supports vCards
@@ -294,6 +300,11 @@ void Core::Account::onRosterItemAdded(const QString& bareJid)
         rm->subscribe(bareJid, itr->second);
         queuedContacts.erase(itr);
     }
+}
+
+void Core::Account::setPasswordType(Shared::AccountPassword pt)
+{
+    passwordType = pt;
 }
 
 void Core::Account::onRosterItemChanged(const QString& bareJid)

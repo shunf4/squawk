@@ -21,6 +21,7 @@
 
 #include "enums.h"
 #include "message.h"
+#include "exception.h"
 
 #include <map>
 
@@ -42,6 +43,7 @@ namespace Shared {
         static QString getName(Affiliation af);
         static QString getName(Role rl);
         static QString getName(Message::State rl);
+        static QString getName(AccountPassword ap);
         
         const std::deque<QString> availability;
         const std::deque<QString> connectionState;
@@ -49,12 +51,26 @@ namespace Shared {
         const std::deque<QString> affiliation;
         const std::deque<QString> role;
         const std::deque<QString> messageState;
+        const std::deque<QString> accountPassword;
         
         template<typename T>
         static T fromInt(int src);
         
         template<typename T>
         static T fromInt(unsigned int src);
+        
+        class EnumOutOfRange: 
+        public Utils::Exception
+        {
+        public:
+            EnumOutOfRange(const std::string& p_name):Exception(), name(p_name) {}
+            
+            std::string getMessage() const{
+                return "An attempt to get enum " + name + " from integer out of range of that enum";
+            }
+        private:
+            std::string name;
+        };
         
     private:
         static Global* instance;

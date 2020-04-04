@@ -41,7 +41,7 @@ Squawk::Squawk(QWidget *parent) :
     m_ui->roster->header()->setStretchLastSection(false);
     m_ui->roster->header()->setSectionResizeMode(0, QHeaderView::Stretch);
     
-    for (int i = static_cast<int>(Shared::availabilityLowest); i < static_cast<int>(Shared::availabilityHighest) + 1; ++i) {
+    for (int i = static_cast<int>(Shared::AvailabilityLowest); i < static_cast<int>(Shared::AvailabilityHighest) + 1; ++i) {
         Shared::Availability av = static_cast<Shared::Availability>(i);
         m_ui->comboBox->addItem(Shared::availabilityIcon(av), Shared::Global::getName(av));
     }
@@ -71,7 +71,7 @@ Squawk::~Squawk() {
 void Squawk::onAccounts()
 {
     if (accounts == 0) {
-        accounts = new Accounts(rosterModel.accountsModel, this);
+        accounts = new Accounts(rosterModel.accountsModel);
         accounts->setAttribute(Qt::WA_DeleteOnClose);
         connect(accounts, &Accounts::destroyed, this, &Squawk::onAccountsClosed);
         connect(accounts, &Accounts::newAccount, this, &Squawk::newAccountRequest);

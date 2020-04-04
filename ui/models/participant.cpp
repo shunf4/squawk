@@ -58,11 +58,11 @@ QVariant Models::Participant::data(int column) const
 {
     switch (column) {
         case 4:
-            return static_cast<uint8_t>(affiliation);
+            return QVariant::fromValue(affiliation);
         case 5:
-            return static_cast<uint8_t>(role);
+            return QVariant::fromValue(role);
         case 6:
-            return static_cast<quint8>(getAvatarState());
+            return QVariant::fromValue(getAvatarState());
         case 7:
             return getAvatarPath();
         default:
@@ -100,12 +100,7 @@ void Models::Participant::setAffiliation(Shared::Affiliation p_aff)
 
 void Models::Participant::setAffiliation(unsigned int aff)
 {
-    if (aff <= static_cast<uint8_t>(Shared::affiliationHighest)) {
-        Shared::Affiliation affil = static_cast<Shared::Affiliation>(aff);
-        setAffiliation(affil);
-    } else {
-        qDebug() << "An attempt to set wrong affiliation" << aff << "to the room participant" << name;
-    }
+    setAffiliation(Shared::Global::fromInt<Shared::Affiliation>(aff));
 }
 
 Shared::Role Models::Participant::getRole() const
@@ -123,12 +118,7 @@ void Models::Participant::setRole(Shared::Role p_role)
 
 void Models::Participant::setRole(unsigned int p_role)
 {
-    if (p_role <= static_cast<uint8_t>(Shared::roleHighest)) {
-        Shared::Role r = static_cast<Shared::Role>(p_role);
-        setRole(r);
-    } else {
-        qDebug() << "An attempt to set wrong role" << p_role << "to the room participant" << name;
-    }
+    setRole(Shared::Global::fromInt<Shared::Role>(p_role));
 }
 
 QString Models::Participant::getAvatarPath() const
@@ -158,11 +148,4 @@ void Models::Participant::setAvatarState(Shared::Avatar p_state)
 }
 
 void Models::Participant::setAvatarState(unsigned int p_state)
-{
-    if (p_state <= static_cast<quint8>(Shared::Avatar::valid)) {
-        Shared::Avatar state = static_cast<Shared::Avatar>(p_state);
-        setAvatarState(state);
-    } else {
-        qDebug() << "An attempt to set invalid avatar state" << p_state << "to the room participant" << name << ", skipping";
-    }
-}
+{setAvatarState(Shared::Global::fromInt<Shared::Avatar>(p_state));}
