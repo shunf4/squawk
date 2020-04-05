@@ -501,7 +501,6 @@ Shared::VCard Core::RosterItem::handleResponseVCard(const QXmppVCardIq& card, co
         path = avatarPath(resource) + ".png";
     }
     
-    
     vCard.setAvatarType(type);
     vCard.setAvatarPath(path);
     
