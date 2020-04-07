@@ -74,6 +74,8 @@ endif()
 add_subdirectory(ui)
 add_subdirectory(core)
 
+add_subdirectory(external/simpleCrypt)
+
 target_link_libraries(squawk squawkUI)
 target_link_libraries(squawk squawkCORE)
 target_link_libraries(squawk uuid)

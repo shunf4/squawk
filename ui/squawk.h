@@ -24,6 +24,7 @@
 #include <QCloseEvent>
 #include <QtDBus/QDBusInterface>
 #include <QSettings>
+#include <QInputDialog>
 
 #include <deque>
 #include <map>
@@ -79,6 +80,7 @@ signals:
     void downloadFileRequest(const QString& messageId, const QString& url);
     void requestVCard(const QString& account, const QString& jid);
     void uploadVCard(const QString& account, const Shared::VCard& card);
+    void responsePassword(const QString& account, const QString& password);
     
 public slots:
     void readSettings();
@@ -107,6 +109,7 @@ public slots:
     void fileProgress(const QString& messageId, qreal value);
     void responseVCard(const QString& jid, const Shared::VCard& card);
     void changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
+    void requestPassword(const QString& account);
     
 private:
     typedef std::map<Models::Roster::ElId, Conversation*> Conversations;
@@ -119,6 +122,8 @@ private:
     QDBusInterface dbus;
     std::map<QString, std::set<Models::Roster::ElId>> requestedFiles;
     std::map<QString, VCard*> vCards;
+    std::deque<QString> requestedAccountsForPasswords;
+    QInputDialog* prompt;
     
 protected:
     void closeEvent(QCloseEvent * event) override;
@@ -146,7 +151,12 @@ private slots:
     void onConversationRequestLocalFile(const QString& messageId, const QString& url);
     void onConversationDownloadFile(const QString& messageId, const QString& url);
     void onItemCollepsed(const QModelIndex& index);
+    void onPasswordPromptAccepted();
+    void onPasswordPromptRejected();
     
+private:
+    void checkNextAccountForPassword();
+    void onPasswordPromptDone();
 };
 
 #endif // SQUAWK_H

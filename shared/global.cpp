@@ -69,8 +69,8 @@ Shared::Global::Global():
     accountPassword({
         tr("Plain"),
         tr("Jammed"),
-        tr("KWallet"),
-        tr("Always Ask")
+        tr("Always Ask"),
+        tr("KWallet")
     })
 {
     if (instance != 0) {

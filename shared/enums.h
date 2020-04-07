@@ -110,11 +110,11 @@ static const std::deque<QString> messageStateThemeIcons = {"state-offline", "sta
 enum class AccountPassword {
     plain,
     jammed,
-    kwallet,
-    alwaysAsk
+    alwaysAsk,
+    kwallet
 };
 Q_ENUM_NS(AccountPassword)
-static const AccountPassword AccountPasswordHighest = AccountPassword::alwaysAsk;
+static const AccountPassword AccountPasswordHighest = AccountPassword::kwallet;
 static const AccountPassword AccountPasswordLowest = AccountPassword::plain;
 
 }

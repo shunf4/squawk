@@ -32,6 +32,7 @@
 #include "shared/message.h"
 #include "shared/global.h"
 #include "networkaccess.h"
+#include "external/simpleCrypt/simplecrypt.h"
 
 namespace Core
 {
@@ -73,6 +74,7 @@ signals:
     void uploadFileProgress(const QString& messageId, qreal value);
     void responseVCard(const QString& jid, const Shared::VCard& card);
     void changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
+    void requestPassword(const QString& account);
     
 public slots:
     void start();
@@ -101,6 +103,7 @@ public slots:
     void downloadFileRequest(const QString& messageId, const QString& url);
     void requestVCard(const QString& account, const QString& jid);
     void uploadVCard(const QString& account, const Shared::VCard& card);
+    void responsePassword(const QString& account, const QString& password);
     
 private:
     typedef std::deque<Account*> Accounts;
@@ -155,6 +158,8 @@ private:
         const QString& resource, 
         Shared::AccountPassword passwordType
     );
+    
+    static const quint64 passwordHash = 0x08d054225ac4871d;
 };
 
 }

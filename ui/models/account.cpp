@@ -39,6 +39,10 @@ Models::Account::Account(const QMap<QString, QVariant>& data, Models::Item* pare
     if (aItr != data.end()) {
         setAvailability(aItr.value().toUInt());
     }
+    QMap<QString, QVariant>::const_iterator pItr = data.find("passwordType");
+    if (pItr != data.end()) {
+        setPasswordType(pItr.value().toUInt());
+    }
 }
 
 Models::Account::~Account()

@@ -20,7 +20,6 @@
 #include "ui_squawk.h"
 #include <QDebug>
 #include <QIcon>
-#include <QInputDialog>
 
 Squawk::Squawk(QWidget *parent) :
     QMainWindow(parent),
@@ -31,7 +30,9 @@ Squawk::Squawk(QWidget *parent) :
     contextMenu(new QMenu()),
     dbus("org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", QDBusConnection::sessionBus()),
     requestedFiles(),
-    vCards()
+    vCards(),
+    requestedAccountsForPasswords(),
+    prompt(0)
 {
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
@@ -62,6 +63,18 @@ Squawk::Squawk(QWidget *parent) :
     if (testAttribute(Qt::WA_TranslucentBackground)) {
         m_ui->roster->viewport()->setAutoFillBackground(false);
     }
+    
+    QSettings settings;
+    settings.beginGroup("ui");
+    settings.beginGroup("window");
+    if (settings.contains("geometry")) {
+        restoreGeometry(settings.value("geometry").toByteArray());
+    }
+    if (settings.contains("state")) {
+        restoreState(settings.value("state").toByteArray());
+    }
+    settings.endGroup();
+    settings.endGroup();
 }
 
 Squawk::~Squawk() {
@@ -871,14 +884,6 @@ void Squawk::readSettings()
 {
     QSettings settings;
     settings.beginGroup("ui");
-    settings.beginGroup("window");
-    if (settings.contains("geometry")) {
-        restoreGeometry(settings.value("geometry").toByteArray());
-    }
-    if (settings.contains("state")) {
-        restoreState(settings.value("state").toByteArray());
-    }
-    settings.endGroup();
     
     if (settings.contains("availability")) {
         int avail = settings.value("availability").toInt();
@@ -957,4 +962,49 @@ void Squawk::onItemCollepsed(const QModelIndex& index)
         default:
             break;
     }
+}
+
+void Squawk::requestPassword(const QString& account)
+{
+    requestedAccountsForPasswords.push_back(account);
+    checkNextAccountForPassword();
+}
+
+void Squawk::checkNextAccountForPassword()
+{
+    if (prompt == 0 && requestedAccountsForPasswords.size() > 0) {
+        prompt = new QInputDialog(this);
+        QString accName = requestedAccountsForPasswords.front();
+        connect(prompt, &QDialog::accepted, this, &Squawk::onPasswordPromptAccepted);
+        connect(prompt, &QDialog::rejected, this, &Squawk::onPasswordPromptRejected);
+        prompt->setInputMode(QInputDialog::TextInput);
+        prompt->setTextEchoMode(QLineEdit::Password);
+        prompt->setLabelText(tr("Input the password for account %1").arg(accName));
+        prompt->setWindowTitle(tr("Password for account %1").arg(accName));
+        prompt->setTextValue("");
+        prompt->exec();
+    }
+}
+
+void Squawk::onPasswordPromptAccepted()
+{
+    emit responsePassword(requestedAccountsForPasswords.front(), prompt->textValue());
+    onPasswordPromptDone();
+}
+
+void Squawk::onPasswordPromptDone()
+{
+    prompt->deleteLater();
+    prompt = 0;
+    requestedAccountsForPasswords.pop_front();
+    checkNextAccountForPassword();
+}
+
+void Squawk::onPasswordPromptRejected()
+{
+    //for now it's the same on reject and on accept, but one day I'm gonna make 
+    //"Asking for the password again on the authentication failure" feature
+    //and here I'll be able to break the circle of password requests
+    emit responsePassword(requestedAccountsForPasswords.front(), prompt->textValue());
+    onPasswordPromptDone();
 }

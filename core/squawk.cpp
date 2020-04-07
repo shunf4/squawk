@@ -52,14 +52,31 @@ void Core::Squawk::stop()
     QSettings settings;
     settings.beginGroup("core");
     settings.beginWriteArray("accounts");
+    SimpleCrypt crypto(passwordHash);
     for (std::deque<Account*>::size_type i = 0; i < accounts.size(); ++i) {
         settings.setArrayIndex(i);
         Account* acc = accounts[i];
+        
+        Shared::AccountPassword ap = acc->getPasswordType();
+        QString password;
+        
+        switch (ap) {
+            case Shared::AccountPassword::plain:
+                password = acc->getPassword();
+                break;
+            case Shared::AccountPassword::jammed:
+                password = crypto.encryptToString(acc->getPassword());
+                break;
+            default:
+                break;
+        }
+        
         settings.setValue("name", acc->getName());
         settings.setValue("server", acc->getServer());
         settings.setValue("login", acc->getLogin());
-        settings.setValue("password", acc->getPassword());
+        settings.setValue("password", password);
         settings.setValue("resource", acc->getResource());
+        settings.setValue("passwordType", static_cast<int>(ap));
     }
     settings.endArray();
     settings.endGroup();
@@ -318,12 +335,37 @@ void Core::Squawk::modifyAccountRequest(const QString& name, const QMap<QString,
     
     Core::Account* acc = itr->second;
     Shared::ConnectionState st = acc->getState();
+    QMap<QString, QVariant>::const_iterator mItr;
+    bool needToReconnect = false;
     
-    if (st != Shared::ConnectionState::disconnected) {
+    mItr = map.find("login");
+    if (mItr != map.end()) {
+        needToReconnect = acc->getLogin() != mItr->toString();
+    }
+    
+    if (!needToReconnect) {
+        mItr = map.find("password");
+        if (mItr != map.end()) {
+            needToReconnect = acc->getPassword() != mItr->toString();
+        }
+    }
+    if (!needToReconnect) {
+        mItr = map.find("server");
+        if (mItr != map.end()) {
+            needToReconnect = acc->getServer() != mItr->toString();
+        }
+    }
+    if (!needToReconnect) {
+        mItr = map.find("resource");
+        if (mItr != map.end()) {
+            needToReconnect = acc->getResource() != mItr->toString();
+        }
+    }
+    
+    if (needToReconnect && st != Shared::ConnectionState::disconnected) {
         acc->reconnect();
     }
     
-    QMap<QString, QVariant>::const_iterator mItr;
     mItr = map.find("login");
     if (mItr != map.end()) {
         acc->setLogin(mItr->toString());
@@ -342,6 +384,11 @@ void Core::Squawk::modifyAccountRequest(const QString& name, const QMap<QString,
     mItr = map.find("server");
     if (mItr != map.end()) {
         acc->setServer(mItr->toString());
+    }
+    
+    mItr = map.find("passwordType");
+    if (mItr != map.end()) {
+        acc->setPasswordType(Shared::Global::fromInt<Shared::AccountPassword>(mItr->toInt()));
     }
     
     emit changeAccount(name, map);
@@ -570,6 +617,17 @@ void Core::Squawk::uploadVCard(const QString& account, const Shared::VCard& card
     itr->second->uploadVCard(card);
 }
 
+void Core::Squawk::responsePassword(const QString& account, const QString& password)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to set password to non existing account" << account << ", skipping";
+        return;
+    }
+    itr->second->setPassword(password);
+    accountReady();
+}
+
 void Core::Squawk::readSettings()
 {
     QSettings settings;
@@ -613,6 +671,17 @@ void Core::Squawk::parseAccount(
         case Shared::AccountPassword::plain:
             addAccount(login, server, password, name, resource, passwordType);
             accountReady();
+            break;
+        case Shared::AccountPassword::jammed: {
+            SimpleCrypt crypto(passwordHash);
+            QString decrypted = crypto.decryptToString(password);
+            addAccount(login, server, decrypted, name, resource, passwordType);
+            accountReady();
+        }
+            break;
+        case Shared::AccountPassword::alwaysAsk: 
+            addAccount(login, server, QString(), name, resource, passwordType);
+            emit requestPassword(name);
             break;
     }
 }

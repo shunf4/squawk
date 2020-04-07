@@ -116,6 +116,7 @@ int main(int argc, char *argv[])
     QObject::connect(&w, &Squawk::renameContactRequest, squawk, &Core::Squawk::renameContactRequest);
     QObject::connect(&w, &Squawk::requestVCard, squawk, &Core::Squawk::requestVCard);
     QObject::connect(&w, &Squawk::uploadVCard, squawk, &Core::Squawk::uploadVCard);
+    QObject::connect(&w, &Squawk::responsePassword, squawk, &Core::Squawk::responsePassword);
     
     QObject::connect(squawk, &Core::Squawk::newAccount, &w, &Squawk::newAccount);
     QObject::connect(squawk, &Core::Squawk::addContact, &w, &Squawk::addContact);
@@ -146,6 +147,7 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, &Core::Squawk::uploadFileProgress, &w, &Squawk::fileProgress);
     QObject::connect(squawk, &Core::Squawk::uploadFileError, &w, &Squawk::fileError);
     QObject::connect(squawk, &Core::Squawk::responseVCard, &w, &Squawk::responseVCard);
+    QObject::connect(squawk, &Core::Squawk::requestPassword, &w, &Squawk::requestPassword);
     QObject::connect(squawk, &Core::Squawk::ready, &w, &Squawk::readSettings);
     
     coreThread->start();
