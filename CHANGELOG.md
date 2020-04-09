@@ -1,7 +1,6 @@
 # Changelog
 
 ## Squawk 0.1.4 (UNRELEASED)
-------------------------------
 ### New features
 - several ways to manage your account password:
   - store it in plain text with the config (like it always was)
@@ -14,7 +13,6 @@
 
 
 ## Squawk 0.1.3 (Mar 31, 2020)
-------------------------------
 ### New features
 - delivery states for the messages
 - delivery receipts now work for real
@@ -32,7 +30,6 @@
 
 
 ## Squawk 0.1.2 (Dec 25, 2019)
-------------------------------
 ### New features
 - icons in roster for conferences
 - pal avatar in dialog window
@@ -50,7 +47,6 @@
 
 
 ## Squawk 0.1.1 (Nov 16, 2019)
-------------------------------
 A lot of bug fixes, memory leaks fixes
 ### New features
 - exchange files via HTTP File Upload
@@ -60,7 +56,6 @@ A lot of bug fixes, memory leaks fixes
 
 
 ## Squawk 0.0.5 (Oct 10, 2019)
-------------------------------
 ### Features
 - chat directly
 - have multiple accounts

@@ -34,6 +34,8 @@
 #include "networkaccess.h"
 #include "external/simpleCrypt/simplecrypt.h"
 
+#include "passwordStorageEngines/kwallet.h"
+
 namespace Core
 {
 class Squawk : public QObject
@@ -114,6 +116,7 @@ private:
     Shared::Availability state;
     NetworkAccess network;
     uint8_t waitingForAccounts;
+    PSE::KWallet kwallet;
     
 private slots:
     void addAccount(
@@ -146,6 +149,10 @@ private slots:
     void onAccountChangeRoomPresence(const QString& jid, const QString& nick, const QMap<QString, QVariant>& data);
     void onAccountRemoveRoomPresence(const QString& jid, const QString& nick);
     void onAccountChangeMessage(const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
+    
+    void onWalletOpened(bool success);
+    void onWalletResponsePassword(const QString& login, const QString& password);
+    void onWalletRejectPassword(const QString& login);
     
 private:
     void readSettings();
