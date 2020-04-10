@@ -45,6 +45,8 @@ namespace Shared {
         static QString getName(Message::State rl);
         static QString getName(AccountPassword ap);
         
+        static QString getDescription(AccountPassword ap);
+        
         const std::deque<QString> availability;
         const std::deque<QString> connectionState;
         const std::deque<QString> subscriptionState;
@@ -52,6 +54,11 @@ namespace Shared {
         const std::deque<QString> role;
         const std::deque<QString> messageState;
         const std::deque<QString> accountPassword;
+        
+        const std::deque<QString> accountPasswordDescription;
+        
+        static bool supported(const QString& pluginName);
+        static void setSupported(const QString& pluginName, bool support);
         
         template<typename T>
         static T fromInt(int src);
@@ -74,6 +81,8 @@ namespace Shared {
         
     private:
         static Global* instance;
+        
+        std::map<QString, bool> pluginSupport;
     };
 }
 

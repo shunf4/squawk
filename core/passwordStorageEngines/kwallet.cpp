@@ -28,7 +28,7 @@ Core::PSE::KWallet::CreateFolder Core::PSE::KWallet::createFolder = 0;
 Core::PSE::KWallet::SetFolder Core::PSE::KWallet::setFolder = 0;
 
 Core::PSE::KWallet::SupportState Core::PSE::KWallet::sState = Core::PSE::KWallet::initial;
-QLibrary Core::PSE::KWallet::lib("./libkwalletWrapper.so");
+QLibrary Core::PSE::KWallet::lib("kwalletWrapper");
 
 Core::PSE::KWallet::KWallet():
     QObject(),
@@ -40,6 +40,11 @@ Core::PSE::KWallet::KWallet():
 {
     if (sState == initial) {
         lib.load();
+        
+        if (!lib.isLoaded()) {      //fallback from the build directory
+            lib.setFileName("./core/passwordStorageEngines/libkwalletWrapper.so");
+            lib.load();
+        }
         
         if (lib.isLoaded()) {
             openWallet = (OpenWallet) lib.resolve("openWallet");

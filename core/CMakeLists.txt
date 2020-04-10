@@ -20,13 +20,13 @@ set(squawkCORE_SRC
     adapterFuctions.cpp
 )
 
+add_subdirectory(passwordStorageEngines)
+
 # Tell CMake to create the helloworld executable
 add_library(squawkCORE ${squawkCORE_SRC})
 
-add_subdirectory(passwordStorageEngines)
 
 if(SYSTEM_QXMPP)
-    find_package(QXmpp CONFIG REQUIRED)
     get_target_property(QXMPP_INTERFACE_INCLUDE_DIRECTORIES QXmpp::QXmpp INTERFACE_INCLUDE_DIRECTORIES)
     target_include_directories(squawkCORE PUBLIC ${QXMPP_INTERFACE_INCLUDE_DIRECTORIES})
 endif()
@@ -39,4 +39,6 @@ target_link_libraries(squawkCORE Qt5::Xml)
 target_link_libraries(squawkCORE qxmpp)
 target_link_libraries(squawkCORE lmdb)
 target_link_libraries(squawkCORE simpleCrypt)
-target_link_libraries(squawkCORE kwalletPSE)
+if (WITH_KWALLET)
+    target_link_libraries(squawkCORE kwalletPSE)
+endif()

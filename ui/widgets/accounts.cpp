@@ -37,6 +37,7 @@ Accounts::Accounts(Models::Accounts* p_model, QWidget *parent) :
     m_ui->tableView->setModel(model);
     connect(m_ui->tableView->selectionModel(), &QItemSelectionModel::selectionChanged, this, &Accounts::onSelectionChanged);
     connect(p_model, &Models::Accounts::changed, this, &Accounts::updateConnectButton);
+    connect(m_ui->tableView, &QTableView::doubleClicked, this, &Accounts::onEditButton);
 }
 
 Accounts::~Accounts() = default;

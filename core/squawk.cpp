@@ -27,8 +27,10 @@ Core::Squawk::Squawk(QObject* parent):
     accounts(),
     amap(),
     network(),
-    waitingForAccounts(0),
-    kwallet()
+    waitingForAccounts(0)
+#ifdef WITH_KWALLET
+    ,kwallet()
+#endif
 {
     connect(&network, &NetworkAccess::fileLocalPathResponse, this, &Squawk::fileLocalPathResponse);
     connect(&network, &NetworkAccess::downloadFileProgress, this, &Squawk::downloadFileProgress);
@@ -36,13 +38,15 @@ Core::Squawk::Squawk(QObject* parent):
     connect(&network, &NetworkAccess::uploadFileProgress, this, &Squawk::uploadFileProgress);
     connect(&network, &NetworkAccess::uploadFileError, this, &Squawk::uploadFileError);
     
-    
+#ifdef WITH_KWALLET
     if (kwallet.supportState() == PSE::KWallet::success) {
-        qDebug() << "KWallet support detected";
         connect(&kwallet, &PSE::KWallet::opened, this, &Squawk::onWalletOpened);
         connect(&kwallet, &PSE::KWallet::rejectPassword, this, &Squawk::onWalletRejectPassword);
         connect(&kwallet, &PSE::KWallet::responsePassword, this, &Squawk::onWalletResponsePassword);
+        
+        Shared::Global::setSupported("KWallet", true);
     }
+#endif
 }
 
 Core::Squawk::~Squawk()
@@ -236,9 +240,11 @@ void Core::Squawk::onAccountConnectionStateChanged(Shared::ConnectionState p_sta
             }
             break;
         case Shared::ConnectionState::connected:
+#ifdef WITH_KWALLET
             if (acc->getPasswordType() == Shared::AccountPassword::kwallet && kwallet.supportState() == PSE::KWallet::success) {
                 kwallet.requestWritePassword(acc->getName(), acc->getPassword(), true);
             }
+#endif
             break;
         default:
             break;
@@ -415,12 +421,14 @@ void Core::Squawk::modifyAccountRequest(const QString& name, const QMap<QString,
         acc->setPasswordType(Shared::Global::fromInt<Shared::AccountPassword>(mItr->toInt()));
     }
     
+#ifdef WITH_KWALLET
     if (acc->getPasswordType() == Shared::AccountPassword::kwallet 
         && kwallet.supportState() == PSE::KWallet::success 
         && !needToReconnect
     ) {
         kwallet.requestWritePassword(acc->getName(), acc->getPassword(), true);
     }
+#endif
     
     emit changeAccount(name, map);
 }
@@ -716,11 +724,15 @@ void Core::Squawk::parseAccount(
             break;
         case Shared::AccountPassword::kwallet: {
             addAccount(login, server, QString(), name, resource, passwordType);
+#ifdef WITH_KWALLET
             if (kwallet.supportState() == PSE::KWallet::success) {
                 kwallet.requestReadPassword(name);
             } else {
+#endif
                 emit requestPassword(name);
+#ifdef WITH_KWALLET
             }
+#endif
         }
     }
 }

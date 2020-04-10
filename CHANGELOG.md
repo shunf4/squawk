@@ -6,6 +6,7 @@
   - store it in plain text with the config (like it always was)
   - store it in config jammed (local hashing with the constant seed, not secure at all but might look like it is)
   - ask the account password on each program launch
+  - store it in KWallet which is dynamically loaded
   
 ### Bug fixes
 - never updating MUC avatars now update

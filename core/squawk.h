@@ -34,7 +34,9 @@
 #include "networkaccess.h"
 #include "external/simpleCrypt/simplecrypt.h"
 
+#ifdef WITH_KWALLET
 #include "passwordStorageEngines/kwallet.h"
+#endif
 
 namespace Core
 {
@@ -116,7 +118,10 @@ private:
     Shared::Availability state;
     NetworkAccess network;
     uint8_t waitingForAccounts;
+
+#ifdef WITH_KWALLET
     PSE::KWallet kwallet;
+#endif
     
 private slots:
     void addAccount(

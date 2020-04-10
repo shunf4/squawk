@@ -67,7 +67,7 @@
     </message>
     <message>
         <source>Password storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Хранение пароля</translation>
     </message>
 </context>
 <context>
@@ -123,172 +123,199 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Global</name>
     <message>
-        <source>Disconnected</source>
-        <translation>Отключен</translation>
-    </message>
-    <message>
-        <source>Connecting</source>
-        <translation>Подключается</translation>
-    </message>
-    <message>
-        <source>Connected</source>
-        <translation>Подключен</translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <translation>Ошибка</translation>
-    </message>
-    <message>
         <source>Online</source>
+        <comment>Availability</comment>
         <translation>В сети</translation>
     </message>
     <message>
         <source>Away</source>
+        <comment>Availability</comment>
         <translation>Отошел</translation>
     </message>
     <message>
-        <source>Busy</source>
-        <translation>Занят</translation>
-    </message>
-    <message>
         <source>Absent</source>
+        <comment>Availability</comment>
         <translation>Недоступен</translation>
     </message>
     <message>
+        <source>Busy</source>
+        <comment>Availability</comment>
+        <translation>Занят</translation>
+    </message>
+    <message>
         <source>Chatty</source>
+        <comment>Availability</comment>
         <translation>Готов поболтать</translation>
     </message>
     <message>
         <source>Invisible</source>
+        <comment>Availability</comment>
         <translation>Невидимый</translation>
     </message>
     <message>
         <source>Offline</source>
+        <comment>Availability</comment>
         <translation>Отключен</translation>
     </message>
     <message>
+        <source>Disconnected</source>
+        <comment>ConnectionState</comment>
+        <translation>Отключен</translation>
+    </message>
+    <message>
+        <source>Connecting</source>
+        <comment>ConnectionState</comment>
+        <translation>Подключается</translation>
+    </message>
+    <message>
+        <source>Connected</source>
+        <comment>ConnectionState</comment>
+        <translation>Подключен</translation>
+    </message>
+    <message>
+        <source>Error</source>
+        <comment>ConnectionState</comment>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
         <source>None</source>
+        <comment>SubscriptionState</comment>
         <translation>Нет</translation>
     </message>
     <message>
         <source>From</source>
+        <comment>SubscriptionState</comment>
         <translation>Входящая</translation>
     </message>
     <message>
         <source>To</source>
+        <comment>SubscriptionState</comment>
         <translation>Исходящая</translation>
     </message>
     <message>
         <source>Both</source>
+        <comment>SubscriptionState</comment>
         <translation>Взаимная</translation>
     </message>
     <message>
         <source>Unknown</source>
+        <comment>SubscriptionState</comment>
         <translation>Неизвестно</translation>
     </message>
     <message>
         <source>Unspecified</source>
+        <comment>Affiliation</comment>
         <translation>Не назначено</translation>
     </message>
     <message>
         <source>Outcast</source>
+        <comment>Affiliation</comment>
         <translation>Изгой</translation>
     </message>
     <message>
         <source>Nobody</source>
+        <comment>Affiliation</comment>
         <translation>Никто</translation>
     </message>
     <message>
         <source>Member</source>
+        <comment>Affiliation</comment>
         <translation>Участник</translation>
     </message>
     <message>
         <source>Admin</source>
+        <comment>Affiliation</comment>
         <translation>Администратор</translation>
     </message>
     <message>
         <source>Owner</source>
+        <comment>Affiliation</comment>
         <translation>Владелец</translation>
     </message>
     <message>
+        <source>Unspecified</source>
+        <comment>Role</comment>
+        <translation>Не назначено</translation>
+    </message>
+    <message>
+        <source>Nobody</source>
+        <comment>Role</comment>
+        <translation>Никто</translation>
+    </message>
+    <message>
         <source>Visitor</source>
+        <comment>Role</comment>
         <translation>Гость</translation>
     </message>
     <message>
         <source>Participant</source>
+        <comment>Role</comment>
         <translation>Участник</translation>
     </message>
     <message>
         <source>Moderator</source>
+        <comment>Role</comment>
         <translation>Модератор</translation>
     </message>
     <message>
-        <source>Not specified</source>
-        <translation type="vanished">Не указан</translation>
-    </message>
-    <message>
-        <source>Personal</source>
-        <translation type="vanished">Личный</translation>
-    </message>
-    <message>
-        <source>Business</source>
-        <translation type="vanished">Рабочий</translation>
-    </message>
-    <message>
-        <source>Fax</source>
-        <translation type="vanished">Факс</translation>
-    </message>
-    <message>
-        <source>Pager</source>
-        <translation type="vanished">Пэйджер</translation>
-    </message>
-    <message>
-        <source>Voice</source>
-        <translation type="vanished">Стационарный</translation>
-    </message>
-    <message>
-        <source>Cell</source>
-        <translation type="vanished">Мобильный</translation>
-    </message>
-    <message>
-        <source>Video</source>
-        <translation type="vanished">Видеофон</translation>
-    </message>
-    <message>
-        <source>Modem</source>
-        <translation type="vanished">Модем</translation>
-    </message>
-    <message>
-        <source>Other</source>
-        <translation type="vanished">Другой</translation>
-    </message>
-    <message>
         <source>Pending</source>
-        <translation>В процессе</translation>
+        <comment>MessageState</comment>
+        <translation>В процессе отправки</translation>
     </message>
     <message>
         <source>Sent</source>
+        <comment>MessageState</comment>
         <translation>Отправлено</translation>
     </message>
     <message>
         <source>Delivered</source>
+        <comment>MessageState</comment>
         <translation>Доставлено</translation>
     </message>
     <message>
+        <source>Error</source>
+        <comment>MessageState</comment>
+        <translation>Ошибка</translation>
+    </message>
+    <message>
         <source>Plain</source>
-        <translation type="unfinished"></translation>
+        <comment>AccountPassword</comment>
+        <translation>Открытый текст</translation>
     </message>
     <message>
         <source>Jammed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>KWallet</source>
-        <translation type="unfinished"></translation>
+        <comment>AccountPassword</comment>
+        <translation>Обфусцированный</translation>
     </message>
     <message>
         <source>Always Ask</source>
-        <translation type="unfinished"></translation>
+        <comment>AccountPassword</comment>
+        <translation>Всегда спрашивать</translation>
+    </message>
+    <message>
+        <source>KWallet</source>
+        <comment>AccountPassword</comment>
+        <translation>KWallet</translation>
+    </message>
+    <message>
+        <source>Your password is going to be stored in config file but jammed with constant encryption key you can find in program source code. It might look like encryption but it&apos;s not</source>
+        <comment>AccountPasswordDescription</comment>
+        <translation>Ваш пароль будет храниться в обфусцированном виде в конфигурационном файле. Обфускация производится с помощью постоянного числа, которое можно найти в исходном коде программы. Это может и выглядит как шифрование но им не является</translation>
+    </message>
+    <message>
+        <source>Squawk is going to query you for the password on every start of the program</source>
+        <comment>AccountPasswordDescription</comment>
+        <translation>Squawk будет спрашивать пароль от этой учетной записи каждый раз при запуске</translation>
+    </message>
+    <message>
+        <source>Your password is going to be stored in config file in plain text</source>
+        <comment>AccountPasswordDescription</comment>
+        <translation>Ваш пароль будет храниться в конфигурационном файле открытым текстром</translation>
+    </message>
+    <message>
+        <source>Your password is going to be stored in KDE wallet storage (KWallet). You&apos;re going to be queried for permissions</source>
+        <comment>AccountPasswordDescription</comment>
+        <translation>Ваш пароль будет храниться в бумажнике KDE (KWallet). В первый раз программа попросит разрешения для доступа к бумажнику</translation>
     </message>
 </context>
 <context>
@@ -338,10 +365,6 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>Message</name>
     <message>
-        <source>Download</source>
-        <translation type="vanished">Скачать</translation>
-    </message>
-    <message>
         <source>Open</source>
         <translation>Открыть</translation>
     </message>
@@ -381,25 +404,6 @@ You can try again</source>
     <message>
         <source>Uploading...</source>
         <translation>Загружается...</translation>
-    </message>
-</context>
-<context>
-    <name>Models::Accounts</name>
-    <message>
-        <source>Name</source>
-        <translation type="vanished">Имя</translation>
-    </message>
-    <message>
-        <source>Server</source>
-        <translation type="vanished">Сервер</translation>
-    </message>
-    <message>
-        <source>State</source>
-        <translation type="vanished">Состояние</translation>
-    </message>
-    <message>
-        <source>Error</source>
-        <translation type="vanished">Ошибка</translation>
     </message>
 </context>
 <context>
@@ -624,6 +628,14 @@ to be displayed as %1</source>
     <message>
         <source>Attached file</source>
         <translation>Прикрепленный файл</translation>
+    </message>
+    <message>
+        <source>Input the password for account %1</source>
+        <translation>Введите пароль для учетной записи %1</translation>
+    </message>
+    <message>
+        <source>Password for account %1</source>
+        <translation>Пароль для учетной записи %1</translation>
     </message>
 </context>
 <context>

@@ -23,13 +23,21 @@ Account::Account():
     QDialog(),
     m_ui(new Ui::Account)
 {
-    m_ui->setupUi (this);
+    m_ui->setupUi(this);
+    
+    connect(m_ui->passwordType, qOverload<int>(&QComboBox::currentIndexChanged), this, &Account::onComboboxChange);
     
     for (int i = static_cast<int>(Shared::AccountPasswordLowest); i < static_cast<int>(Shared::AccountPasswordHighest) + 1; ++i) {
         Shared::AccountPassword ap = static_cast<Shared::AccountPassword>(i);
         m_ui->passwordType->addItem(Shared::Global::getName(ap));
     }
     m_ui->passwordType->setCurrentIndex(static_cast<int>(Shared::AccountPassword::plain));
+    
+    if (!Shared::Global::supported("KWallet")) {
+        QStandardItemModel *model = static_cast<QStandardItemModel*>(m_ui->passwordType->model());
+        QStandardItem *item = model->item(static_cast<int>(Shared::AccountPassword::kwallet));
+        item->setFlags(item->flags() & ~Qt::ItemIsEnabled);
+    }
 }
 
 Account::~Account()
@@ -62,4 +70,10 @@ void Account::setData(const QMap<QString, QVariant>& data)
     m_ui->name->setText(data.value("name").toString());
     m_ui->resource->setText(data.value("resource").toString());
     m_ui->passwordType->setCurrentIndex(data.value("passwordType").toInt());
+}
+
+void Account::onComboboxChange(int index)
+{
+    QString description = Shared::Global::getDescription(Shared::Global::fromInt<Shared::AccountPassword>(index));
+    m_ui->comment->setText(description);
 }

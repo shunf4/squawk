@@ -24,53 +24,62 @@ Shared::Global* Shared::Global::instance = 0;
 
 Shared::Global::Global():
     availability({
-        tr("Online"), 
-        tr("Away"), 
-        tr("Absent"), 
-        tr("Busy"), 
-        tr("Chatty"), 
-        tr("Invisible"), 
-        tr("Offline")
+        tr("Online", "Availability"), 
+        tr("Away", "Availability"), 
+        tr("Absent", "Availability"), 
+        tr("Busy", "Availability"), 
+        tr("Chatty", "Availability"), 
+        tr("Invisible", "Availability"), 
+        tr("Offline", "Availability")
     }),
     connectionState({
-        tr("Disconnected"), 
-        tr("Connecting"), 
-        tr("Connected"), 
-        tr("Error")
+        tr("Disconnected", "ConnectionState"), 
+        tr("Connecting", "ConnectionState"), 
+        tr("Connected", "ConnectionState"), 
+        tr("Error", "ConnectionState")
     }),
     subscriptionState({
-        tr("None"), 
-        tr("From"), 
-        tr("To"), 
-        tr("Both"), 
-        tr("Unknown")
+        tr("None", "SubscriptionState"), 
+        tr("From", "SubscriptionState"), 
+        tr("To", "SubscriptionState"), 
+        tr("Both", "SubscriptionState"), 
+        tr("Unknown", "SubscriptionState")
     }),
     affiliation({
-        tr("Unspecified"), 
-        tr("Outcast"), 
-        tr("Nobody"), 
-        tr("Member"), 
-        tr("Admin"), 
-        tr("Owner")
+        tr("Unspecified", "Affiliation"), 
+        tr("Outcast", "Affiliation"), 
+        tr("Nobody", "Affiliation"), 
+        tr("Member", "Affiliation"), 
+        tr("Admin", "Affiliation"), 
+        tr("Owner", "Affiliation")
     }),
     role({
-        tr("Unspecified"), 
-        tr("Nobody"), 
-        tr("Visitor"),
-        tr("Participant"), 
-        tr("Moderator")
+        tr("Unspecified", "Role"), 
+        tr("Nobody", "Role"), 
+        tr("Visitor", "Role"),
+        tr("Participant", "Role"), 
+        tr("Moderator", "Role")
     }),
     messageState({
-        tr("Pending"), 
-        tr("Sent"), 
-        tr("Delivered"), 
-        tr("Error")
+        tr("Pending", "MessageState"), 
+        tr("Sent", "MessageState"), 
+        tr("Delivered", "MessageState"), 
+        tr("Error", "MessageState")
     }),
     accountPassword({
-        tr("Plain"),
-        tr("Jammed"),
-        tr("Always Ask"),
-        tr("KWallet")
+        tr("Plain", "AccountPassword"),
+        tr("Jammed", "AccountPassword"),
+        tr("Always Ask", "AccountPassword"),
+        tr("KWallet", "AccountPassword")
+    }),
+    accountPasswordDescription({
+        tr("Your password is going to be stored in config file in plain text", "AccountPasswordDescription"),
+        tr("Your password is going to be stored in config file but jammed with constant encryption key you can find in program source code. It might look like encryption but it's not", "AccountPasswordDescription"),
+        tr("Squawk is going to query you for the password on every start of the program", "AccountPasswordDescription"),
+        tr("Your password is going to be stored in KDE wallet storage (KWallet). You're going to be queried for permissions", "AccountPasswordDescription")
+    }),
+    pluginSupport({
+        {"KWallet", false}
     })
 {
     if (instance != 0) {
@@ -118,6 +127,28 @@ QString Shared::Global::getName(Shared::SubscriptionState ss)
 QString Shared::Global::getName(Shared::AccountPassword ap)
 {
     return instance->accountPassword[static_cast<int>(ap)];
+}
+
+void Shared::Global::setSupported(const QString& pluginName, bool support)
+{
+    std::map<QString, bool>::iterator itr = instance->pluginSupport.find(pluginName);
+    if (itr != instance->pluginSupport.end()) {
+        itr->second = support;
+    }
+}
+
+bool Shared::Global::supported(const QString& pluginName)
+{
+    std::map<QString, bool>::iterator itr = instance->pluginSupport.find(pluginName);
+    if (itr != instance->pluginSupport.end()) {
+        return itr->second;
+    }
+    return false;
+}
+
+QString Shared::Global::getDescription(Shared::AccountPassword ap)
+{
+    return instance->accountPasswordDescription[static_cast<int>(ap)];
 }
 
 #define FROM_INT_INPL(Enum)                                                                 \
