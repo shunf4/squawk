@@ -428,6 +428,12 @@ void MessageLine::fileError(const QString& messageId, const QString& error)
 
 void MessageLine::appendMessageWithUpload(const Shared::Message& msg, const QString& path)
 {
+    appendMessageWithUploadNoSiganl(msg, path);
+    emit uploadFile(msg, path);
+}
+
+void MessageLine::appendMessageWithUploadNoSiganl(const Shared::Message& msg, const QString& path)
+{
     message(msg, true);
     QString id = msg.getId();
     Message* ui = messageIndex.find(id)->second;
@@ -436,8 +442,8 @@ void MessageLine::appendMessageWithUpload(const Shared::Message& msg, const QStr
     ui->showComment(tr("Uploading..."));
     uploading.insert(std::make_pair(id, ui));
     uploadPaths.insert(std::make_pair(id, path));
-    emit uploadFile(msg, path);
 }
+
 
 void MessageLine::onUpload()
 {

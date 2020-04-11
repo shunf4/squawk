@@ -109,6 +109,8 @@ public:
         const QString name;
         
         bool operator < (const ElId& other) const;
+        bool operator == (const ElId& other) const;
+        bool operator != (const ElId& other) const;
     };
 };
 

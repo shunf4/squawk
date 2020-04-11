@@ -1,7 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 project(pse)
 
-
 if (WITH_KWALLET) 
     set(CMAKE_AUTOMOC ON)
 
@@ -36,7 +35,3 @@ if (WITH_KWALLET)
 
     install(TARGETS kwalletWrapper DESTINATION ${CMAKE_INSTALL_LIBDIR})
 endif()
-
-
-
-

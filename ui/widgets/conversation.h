@@ -26,6 +26,7 @@
 #include "shared/message.h"
 #include "order.h"
 #include "ui/models/account.h"
+#include "ui/models/roster.h"
 #include "ui/utils/messageline.h"
 #include "ui/utils/resizer.h"
 #include "ui/utils/flowlayout.h"
@@ -72,6 +73,7 @@ public:
     QString getJid() const;
     QString getAccount() const;
     QString getPalResource() const;
+    Models::Roster::ElId getId() const;
     virtual void addMessage(const Shared::Message& data);
     
     void setPalResource(const QString& res);
@@ -82,6 +84,8 @@ public:
     void responseFileProgress(const QString& messageId, qreal progress);
     virtual void setAvatar(const QString& path);
     void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
+    void setFeedFrames(bool top, bool right, bool bottom, bool left);
+    virtual void appendMessageWithUpload(const Shared::Message& data, const QString& path);
     
 signals:
     void sendMessage(const Shared::Message& message);

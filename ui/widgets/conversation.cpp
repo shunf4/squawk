@@ -210,6 +210,11 @@ void Conversation::onEnterPressed()
     }
 }
 
+void Conversation::appendMessageWithUpload(const Shared::Message& data, const QString& path)
+{
+    line->appendMessageWithUploadNoSiganl(data, path);
+}
+
 void Conversation::onMessagesResize(int amount)
 {
     manualSliderChange = true;
@@ -334,6 +339,11 @@ void Conversation::responseLocalFile(const QString& messageId, const QString& pa
     line->responseLocalFile(messageId, path);
 }
 
+Models::Roster::ElId Conversation::getId() const
+{
+    return {getAccount(), getJid()};
+}
+
 void Conversation::addAttachedFile(const QString& path)
 {
     QMimeDatabase db;
@@ -397,6 +407,10 @@ void Conversation::onTextEditDocSizeChanged(const QSizeF& size)
     m_ui->messageEditor->setMaximumHeight(int(size.height()));
 }
 
+void Conversation::setFeedFrames(bool top, bool right, bool bottom, bool left)
+{
+    static_cast<DropShadowEffect*>(m_ui->scrollArea->graphicsEffect())->setFrame(top, right, bottom, left);
+}
 
 bool VisibilityCatcher::eventFilter(QObject* obj, QEvent* event)
 {

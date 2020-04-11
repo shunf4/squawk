@@ -67,9 +67,6 @@ Here is the list of keys you can pass to configuration phase of `cmake ..`.
 - `SYSTEM_QXMPP` - `True` tries to link against `qxmpp` installed in the system, `False` builds bundled `qxmpp` library (default is `True`)
 - `WITH_KWALLET` - `True` builds the `KWallet` capability module if `KWallet` is installed and if not goes to `False`. `False` disables `KWallet` support (default is `True`)
 
-
-Each key is supposed to be passed like that 
-
 ## License
 
 This project is licensed under the GPLv3 License - see the [LICENSE.md](LICENSE.md) file for details

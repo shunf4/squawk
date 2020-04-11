@@ -386,6 +386,16 @@ bool Models::Roster::ElId::operator <(const Models::Roster::ElId& other) const
     }
 }
 
+bool Models::Roster::ElId::operator!=(const Models::Roster::ElId& other) const
+{
+    return !(operator == (other));
+}
+
+bool Models::Roster::ElId::operator==(const Models::Roster::ElId& other) const
+{
+    return (account == other.account) && (name == other.name);
+}
+
 void Models::Roster::onAccountDataChanged(const QModelIndex& tl, const QModelIndex& br, const QVector<int>& roles)
 {
     if (tl.column() == 0) {

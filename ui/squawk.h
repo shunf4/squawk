@@ -124,6 +124,7 @@ private:
     std::map<QString, VCard*> vCards;
     std::deque<QString> requestedAccountsForPasswords;
     QInputDialog* prompt;
+    Conversation* currentConversation;
     
 protected:
     void closeEvent(QCloseEvent * event) override;
@@ -153,10 +154,12 @@ private slots:
     void onItemCollepsed(const QModelIndex& index);
     void onPasswordPromptAccepted();
     void onPasswordPromptRejected();
+    void onRosterSelectionChanged(const QModelIndex& current, const QModelIndex& previous);
     
 private:
     void checkNextAccountForPassword();
     void onPasswordPromptDone();
+    void subscribeConversation(Conversation* conv);
 };
 
 #endif // SQUAWK_H

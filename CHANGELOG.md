@@ -2,6 +2,7 @@
 
 ## Squawk 0.1.4 (UNRELEASED)
 ### New features
+- message line now is in the same window with roster (new window dialog is still able to opened on double click)
 - several ways to manage your account password:
   - store it in plain text with the config (like it always was)
   - store it in config jammed (local hashing with the constant seed, not secure at all but might look like it is)

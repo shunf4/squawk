@@ -53,6 +53,7 @@ public:
     void fileError(const QString& messageId, const QString& error);
     void fileProgress(const QString& messageId, qreal progress);
     void appendMessageWithUpload(const Shared::Message& msg, const QString& path);
+    void appendMessageWithUploadNoSiganl(const Shared::Message& msg, const QString& path);
     void removeMessage(const QString& messageId);
     void setMyAvatarPath(const QString& p_path);
     void setPalAvatar(const QString& jid, const QString& path);
