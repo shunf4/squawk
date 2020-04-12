@@ -33,7 +33,8 @@ Squawk::Squawk(QWidget *parent) :
     vCards(),
     requestedAccountsForPasswords(),
     prompt(0),
-    currentConversation(0)
+    currentConversation(0),
+    restoreSelection()
 {
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
@@ -53,12 +54,13 @@ Squawk::Squawk(QWidget *parent) :
     connect(m_ui->actionAddContact, &QAction::triggered, this, &Squawk::onNewContact);
     connect(m_ui->actionAddConference, &QAction::triggered, this, &Squawk::onNewConference);
     connect(m_ui->comboBox, qOverload<int>(&QComboBox::activated), this, &Squawk::onComboboxActivated);
-    connect(m_ui->roster, &QTreeView::doubleClicked, this, &Squawk::onRosterItemDoubleClicked);
+    //connect(m_ui->roster, &QTreeView::doubleClicked, this, &Squawk::onRosterItemDoubleClicked);
     connect(m_ui->roster, &QTreeView::customContextMenuRequested, this, &Squawk::onRosterContextMenu);
     connect(m_ui->roster, &QTreeView::collapsed, this, &Squawk::onItemCollepsed);
     connect(m_ui->roster->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &Squawk::onRosterSelectionChanged);
     
     connect(rosterModel.accountsModel, &Models::Accounts::sizeChanged, this, &Squawk::onAccountsSizeChanged);
+    connect(contextMenu, &QMenu::aboutToHide, this, &Squawk::onContextAboutToHide);
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
     
     setWindowTitle(tr("Contact list"));
@@ -1094,13 +1096,19 @@ void Squawk::subscribeConversation(Conversation* conv)
 }
 
 void Squawk::onRosterSelectionChanged(const QModelIndex& current, const QModelIndex& previous)
-{
+{   
+    if (restoreSelection.isValid() && restoreSelection == current) {
+        restoreSelection = QModelIndex();
+        return;
+    }
+    
     if (current.isValid()) {
         Models::Item* node = static_cast<Models::Item*>(current.internalPointer());
         Models::Contact* contact = 0;
         Models::Room* room = 0;
         QString res;
         Models::Roster::ElId* id = 0;
+        bool hasContext = true;
         switch (node->type) {
             case Models::Item::contact:
                 contact = static_cast<Models::Contact*>(node);
@@ -1110,21 +1118,38 @@ void Squawk::onRosterSelectionChanged(const QModelIndex& current, const QModelIn
                 contact = static_cast<Models::Contact*>(node->parentItem());
                 id = new Models::Roster::ElId(contact->getAccountName(), contact->getJid());
                 res = node->getName();
+                hasContext = false;
                 break;
             case Models::Item::room:
                 room = static_cast<Models::Room*>(node);
                 id = new Models::Roster::ElId(room->getAccountName(), room->getJid());
                 break;
+            case Models::Item::participant:
+                room = static_cast<Models::Room*>(node->parentItem());
+                id = new Models::Roster::ElId(room->getAccountName(), room->getJid());
+                hasContext = false;
+                break;
+            case Models::Item::group:
+                hasContext = false;
             default:
                 break;
         }
         
+        if (hasContext && QGuiApplication::mouseButtons() & Qt::RightButton) {
+            if (id != 0) {
+                delete id;
+            }
+            restoreSelection = previous;
+            return;
+        }
+        
         if (id != 0) {
             if (currentConversation != 0) {
-                if (currentConversation->getJid() == id->name) {
+                if (currentConversation->getId() == *id) {
                     if (contact != 0) {
                         currentConversation->setPalResource(res);
                     }
+                    return;
                 } else {
                     currentConversation->deleteLater();
                 }
@@ -1168,5 +1193,16 @@ void Squawk::onRosterSelectionChanged(const QModelIndex& current, const QModelIn
                 m_ui->filler->show();
             }
         }
+    } else {
+        if (currentConversation != 0) {
+            currentConversation->deleteLater();
+            currentConversation = 0;
+            m_ui->filler->show();
+        }
     }
+}
+
+void Squawk::onContextAboutToHide()
+{
+    m_ui->roster->selectionModel()->setCurrentIndex(restoreSelection, QItemSelectionModel::ClearAndSelect);
 }

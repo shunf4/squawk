@@ -31,6 +31,8 @@
 #include "ui/utils/resizer.h"
 #include "ui/utils/flowlayout.h"
 #include "ui/utils/badge.h"
+#include "shared/icons.h"
+#include "shared/utils.h"
 
 namespace Ui
 {

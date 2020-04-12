@@ -125,6 +125,7 @@ private:
     std::deque<QString> requestedAccountsForPasswords;
     QInputDialog* prompt;
     Conversation* currentConversation;
+    QModelIndex restoreSelection;
     
 protected:
     void closeEvent(QCloseEvent * event) override;
@@ -155,6 +156,7 @@ private slots:
     void onPasswordPromptAccepted();
     void onPasswordPromptRejected();
     void onRosterSelectionChanged(const QModelIndex& current, const QModelIndex& previous);
+    void onContextAboutToHide();
     
 private:
     void checkNextAccountForPassword();

@@ -21,6 +21,7 @@
 
 #include <QString>
 #include <QColor>
+#include <QRegularExpression>
 
 #include <uuid/uuid.h>
 #include <vector>
@@ -28,6 +29,7 @@
 namespace Shared {
 
 QString generateUUID();
+QString processMessageBody(const QString& msg);
 
 static const std::vector<QColor> colorPalette = {
     QColor(244, 27, 63),

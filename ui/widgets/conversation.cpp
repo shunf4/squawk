@@ -19,7 +19,6 @@
 #include "conversation.h"
 #include "ui_conversation.h"
 #include "ui/utils/dropshadoweffect.h"
-#include "shared/icons.h"
 
 #include <QDebug>
 #include <QScrollBar>
@@ -308,7 +307,7 @@ void Conversation::onFileSelected()
 
 void Conversation::setStatus(const QString& status)
 {
-    statusLabel->setText(status);
+    statusLabel->setText(Shared::processMessageBody(status));
 }
 
 void Conversation::onScrollResize()
