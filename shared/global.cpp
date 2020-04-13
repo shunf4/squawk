@@ -21,6 +21,7 @@
 #include "enums.h"
 
 Shared::Global* Shared::Global::instance = 0;
+const std::set<QString> Shared::Global::supportedImagesExts = {"png", "jpg", "webp", "jpeg", "gif", "svg"};
 
 Shared::Global::Global():
     availability({

@@ -24,6 +24,8 @@
 #include "exception.h"
 
 #include <map>
+#include <set>
+#include <deque>
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -59,6 +61,8 @@ namespace Shared {
         
         static bool supported(const QString& pluginName);
         static void setSupported(const QString& pluginName, bool support);
+        
+        static const std::set<QString> supportedImagesExts;
         
         template<typename T>
         static T fromInt(int src);

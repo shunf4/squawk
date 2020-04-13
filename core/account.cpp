@@ -1063,6 +1063,7 @@ void Core::Account::onContactHistoryResponse(const std::list<Shared::Message>& l
 
 void Core::Account::onClientError(QXmppClient::Error err)
 {
+    qDebug() << "Error";
     QString errorText;
     QString errorType;
     switch (err) {
@@ -1139,6 +1140,9 @@ void Core::Account::onClientError(QXmppClient::Error err)
                     break;
                 case QXmppStanza::Error::UnexpectedRequest:
                     errorText = "Unexpected request";
+                    break;
+                case QXmppStanza::Error::PolicyViolation:
+                    errorText = "Policy violation";
                     break;
             }
          
@@ -1367,7 +1371,8 @@ void Core::Account::addNewRoom(const QString& jid, const QString& nick, const QS
         {"autoJoin", conf->getAutoJoin()},
         {"joined", conf->getJoined()},
         {"nick", conf->getNick()},
-        {"name", conf->getName()}
+        {"name", conf->getName()},
+        {"avatars", conf->getAllAvatars()}
     };
     
     Archive::AvatarInfo info;

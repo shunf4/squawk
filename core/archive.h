@@ -56,9 +56,10 @@ public:
     std::list<Shared::Message> getBefore(int count, const QString& id);
     bool isFromTheBeginning();
     void setFromTheBeginning(bool is);
-    bool setAvatar(const QByteArray& data, bool generated = false, const QString& resource = "");
+    bool setAvatar(const QByteArray& data, AvatarInfo& info, bool generated = false, const QString& resource = "");
     AvatarInfo getAvatarInfo(const QString& resource = "") const;
     bool readAvatarInfo(AvatarInfo& target, const QString& resource = "") const;
+    void readAllResourcesAvatars(std::map<QString, AvatarInfo>& data) const;
     
 public:
     const QString jid;

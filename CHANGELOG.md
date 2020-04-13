@@ -14,6 +14,7 @@
 - going offline related segfault fix
 - statuses now behave better: they wrap if they don't fit, you can select them, you can follow links from there
 - messages and statuses don't loose content if you use < ore > symbols
+- now avatars of those who are not in the MUC right now but was also display next to the message
 
 
 ## Squawk 0.1.3 (Mar 31, 2020)

@@ -75,6 +75,7 @@ public:
     QString getAvatarPath() const;
     std::map<QString, const Participant&> getParticipants() const;
     QString getParticipantIconPath(const QString& name) const;
+    std::map<QString, QString> getExParticipantAvatars() const;
     
 signals:
     void participantJoined(const Participant& participant);
@@ -99,6 +100,7 @@ private:
     QString avatarPath;
     Messages messages;
     std::map<QString, Participant*> participants;
+    std::map<QString, QString> exParticipantAvatars;
 
 };
 

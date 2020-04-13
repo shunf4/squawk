@@ -29,6 +29,7 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     palMessages(),
     uploadPaths(),
     palAvatars(),
+    exPalAvatars(),
     layout(new QVBoxLayout(this)),
     myName(),
     myAvatarPath(),
@@ -80,6 +81,11 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
                 std::map<QString, QString>::iterator aItr = palAvatars.find(sender);
                 if (aItr != palAvatars.end()) {
                     aPath = aItr->second;
+                } else {
+                    aItr = exPalAvatars.find(sender);
+                    if (aItr != exPalAvatars.end()) {
+                        aPath = aItr->second;
+                    }
                 }
                 outgoing = false;
             }
@@ -248,6 +254,11 @@ void MessageLine::setPalAvatar(const QString& jid, const QString& path)
     std::map<QString, QString>::iterator itr = palAvatars.find(jid);
     if (itr == palAvatars.end()) {
         palAvatars.insert(std::make_pair(jid, path));
+        
+        std::map<QString, QString>::const_iterator eitr = exPalAvatars.find(jid);
+        if (eitr != exPalAvatars.end()) {
+            exPalAvatars.erase(eitr);
+        }
     } else {
         itr->second = path;
     }
@@ -265,13 +276,33 @@ void MessageLine::dropPalAvatar(const QString& jid)
     std::map<QString, QString>::iterator itr = palAvatars.find(jid);
     if (itr != palAvatars.end()) {
         palAvatars.erase(itr);
-        
-        std::map<QString, Index>::iterator pItr = palMessages.find(jid);
-        if (pItr != palMessages.end()) {
-            for (Index::const_iterator itr = pItr->second.begin(), end = pItr->second.end(); itr != end; ++itr) {
-                itr->second->setAvatarPath("");
-            }
+    }
+    
+    std::map<QString, QString>::const_iterator eitr = exPalAvatars.find(jid);
+    if (eitr != exPalAvatars.end()) {
+        exPalAvatars.erase(eitr);
+    }
+    
+    std::map<QString, Index>::iterator pItr = palMessages.find(jid);
+    if (pItr != palMessages.end()) {
+        for (Index::const_iterator itr = pItr->second.begin(), end = pItr->second.end(); itr != end; ++itr) {
+            itr->second->setAvatarPath("");
         }
+    }
+}
+
+void MessageLine::movePalAvatarToEx(const QString& name)
+{
+    std::map<QString, QString>::iterator itr = palAvatars.find(name);
+    if (itr != palAvatars.end()) {
+        std::map<QString, QString>::iterator eitr = exPalAvatars.find(name);
+        if (eitr != exPalAvatars.end()) {
+            eitr->second = itr->second;
+        } else {
+            exPalAvatars.insert(std::make_pair(name, itr->second));
+        }
+        
+        palAvatars.erase(itr);
     }
 }
 
@@ -456,6 +487,22 @@ void MessageLine::setMyAvatarPath(const QString& p_path)
         myAvatarPath = p_path;
         for (std::pair<QString, Message*> pair : myMessages) {
             pair.second->setAvatarPath(myAvatarPath);
+        }
+    }
+}
+
+void MessageLine::setExPalAvatars(const std::map<QString, QString>& data)
+{
+    exPalAvatars = data;
+    
+    for (const std::pair<QString, Index>& pair : palMessages) {
+        if (palAvatars.find(pair.first) == palAvatars.end()) {
+            std::map<QString, QString>::const_iterator eitr = exPalAvatars.find(pair.first);
+            if (eitr != exPalAvatars.end()) {
+                for (const std::pair<QString, Message*>& mp : pair.second) {
+                    mp.second->setAvatarPath(eitr->second);
+                }
+            }
         }
     }
 }

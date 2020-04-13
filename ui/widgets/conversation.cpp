@@ -92,6 +92,16 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     line->setMyAvatarPath(acc->getAvatarPath());
     line->setMyName(acc->getName());
     
+    QFont nf = m_ui->nameLabel->font();
+    nf.setBold(true);
+    nf.setPointSize(nf.pointSize() + 2);
+    m_ui->nameLabel->setFont(nf);
+    
+    QFont sf = statusLabel->font();
+    sf.setItalic(true);
+    sf.setPointSize(sf.pointSize() - 2);
+    statusLabel->setFont(sf);
+    
     applyVisualEffects();
 }
 
