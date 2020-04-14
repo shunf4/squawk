@@ -46,13 +46,13 @@ signals:
     void removeAccount(const QString&);
     
 private slots:
-    void onAddButton(bool clicked = 0);
-    void onEditButton(bool clicked = 0);
-    void onConnectButton(bool clicked = 0);
-    void onDeleteButton(bool clicked = 0);
+    void onAddButton();
+    void onEditButton();
+    void onConnectButton();
+    void onDeleteButton();
     void onAccountAccepted();
     void onAccountRejected();
-    void onSelectionChanged(const QItemSelection& selected, const QItemSelection& deselected);
+    void onSelectionChanged();
     void updateConnectButton();
     
 private:

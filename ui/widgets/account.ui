@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>395</width>
-    <height>272</height>
+    <width>438</width>
+    <height>342</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -114,20 +114,46 @@
        </property>
       </widget>
      </item>
-     <item row="4" column="0">
+     <item row="6" column="0">
       <widget class="QLabel" name="label_5">
        <property name="text">
         <string>Resource</string>
        </property>
       </widget>
      </item>
-     <item row="4" column="1">
+     <item row="6" column="1">
       <widget class="QLineEdit" name="resource">
        <property name="toolTip">
         <string>A resource name like &quot;Home&quot; or &quot;Work&quot;</string>
        </property>
        <property name="text">
         <string>QXmpp</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="0">
+      <widget class="QLabel" name="label_6">
+       <property name="text">
+        <string>Password storage</string>
+       </property>
+      </widget>
+     </item>
+     <item row="4" column="1">
+      <widget class="QComboBox" name="passwordType"/>
+     </item>
+     <item row="5" column="1">
+      <widget class="QLabel" name="comment">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string/>
+       </property>
+       <property name="wordWrap">
+        <bool>true</bool>
        </property>
       </widget>
      </item>

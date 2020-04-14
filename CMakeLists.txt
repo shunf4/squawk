@@ -62,17 +62,43 @@ add_custom_target(translations ALL DEPENDS ${QM_FILES})
 
 qt5_add_resources(RCC resources/resources.qrc)
 
-add_executable(squawk ${squawk_SRC} ${squawk_HEAD} ${RCC})
-target_link_libraries(squawk Qt5::Widgets)
-
 option(SYSTEM_QXMPP "Use system qxmpp lib" ON) 
+option(WITH_KWALLET "Build KWallet support module" ON) 
+
+if (SYSTEM_QXMPP) 
+    find_package(QXmpp CONFIG)
+    
+    if (NOT QXmpp_FOUND)
+        set(SYSTEM_QXMPP OFF)
+        message("QXmpp package wasn't found, trying to build with bundled QXmpp")
+    else()
+        message("Building with system QXmpp")
+    endif()
+endif()
 
 if(NOT SYSTEM_QXMPP)
     add_subdirectory(external/qxmpp)
 endif()
 
+if (WITH_KWALLET)
+    find_package(KF5Wallet CONFIG)
+    
+    if (NOT KF5Wallet_FOUND)
+        set(WITH_KWALLET OFF)
+        message("KWallet package wasn't found, KWallet support module wouldn't be built")
+    else()
+        add_definitions(-DWITH_KWALLET)
+        message("Building with support of KWallet")
+    endif()
+endif()
+
+add_executable(squawk ${squawk_SRC} ${squawk_HEAD} ${RCC})
+target_link_libraries(squawk Qt5::Widgets)
+
 add_subdirectory(ui)
 add_subdirectory(core)
+
+add_subdirectory(external/simpleCrypt)
 
 target_link_libraries(squawk squawkUI)
 target_link_libraries(squawk squawkCORE)
@@ -83,9 +109,9 @@ add_dependencies(${CMAKE_PROJECT_NAME} translations)
 # Install the executable
 install(TARGETS squawk DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(FILES ${QM_FILES} DESTINATION ${CMAKE_INSTALL_DATADIR}/squawk/l10n)
-install(FILES squawk.svg DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
-install(FILES squawk48.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/48x48/apps RENAME squawk.png)
-install(FILES squawk64.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/64x64/apps RENAME squawk.png)
-install(FILES squawk128.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/128x128/apps RENAME squawk.png)
-install(FILES squawk256.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps RENAME squawk.png)
-install(FILES squawk.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/squawk.svg DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/scalable/apps)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/squawk48.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/48x48/apps RENAME squawk.png)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/squawk64.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/64x64/apps RENAME squawk.png)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/squawk128.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/128x128/apps RENAME squawk.png)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/squawk256.png DESTINATION ${CMAKE_INSTALL_DATADIR}/icons/hicolor/256x256/apps RENAME squawk.png)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/squawk.desktop DESTINATION ${CMAKE_INSTALL_DATADIR}/applications)

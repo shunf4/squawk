@@ -20,7 +20,6 @@
 #include "ui_squawk.h"
 #include <QDebug>
 #include <QIcon>
-#include <QInputDialog>
 
 Squawk::Squawk(QWidget *parent) :
     QMainWindow(parent),
@@ -31,7 +30,12 @@ Squawk::Squawk(QWidget *parent) :
     contextMenu(new QMenu()),
     dbus("org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", QDBusConnection::sessionBus()),
     requestedFiles(),
-    vCards()
+    vCards(),
+    requestedAccountsForPasswords(),
+    prompt(0),
+    currentConversation(0),
+    restoreSelection(),
+    needToRestore(false)
 {
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
@@ -41,7 +45,7 @@ Squawk::Squawk(QWidget *parent) :
     m_ui->roster->header()->setStretchLastSection(false);
     m_ui->roster->header()->setSectionResizeMode(0, QHeaderView::Stretch);
     
-    for (int i = static_cast<int>(Shared::availabilityLowest); i < static_cast<int>(Shared::availabilityHighest) + 1; ++i) {
+    for (int i = static_cast<int>(Shared::AvailabilityLowest); i < static_cast<int>(Shared::AvailabilityHighest) + 1; ++i) {
         Shared::Availability av = static_cast<Shared::Availability>(i);
         m_ui->comboBox->addItem(Shared::availabilityIcon(av), Shared::Global::getName(av));
     }
@@ -51,17 +55,35 @@ Squawk::Squawk(QWidget *parent) :
     connect(m_ui->actionAddContact, &QAction::triggered, this, &Squawk::onNewContact);
     connect(m_ui->actionAddConference, &QAction::triggered, this, &Squawk::onNewConference);
     connect(m_ui->comboBox, qOverload<int>(&QComboBox::activated), this, &Squawk::onComboboxActivated);
-    connect(m_ui->roster, &QTreeView::doubleClicked, this, &Squawk::onRosterItemDoubleClicked);
+    //connect(m_ui->roster, &QTreeView::doubleClicked, this, &Squawk::onRosterItemDoubleClicked);
     connect(m_ui->roster, &QTreeView::customContextMenuRequested, this, &Squawk::onRosterContextMenu);
     connect(m_ui->roster, &QTreeView::collapsed, this, &Squawk::onItemCollepsed);
+    connect(m_ui->roster->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &Squawk::onRosterSelectionChanged);
     
     connect(rosterModel.accountsModel, &Models::Accounts::sizeChanged, this, &Squawk::onAccountsSizeChanged);
+    connect(contextMenu, &QMenu::aboutToHide, this, &Squawk::onContextAboutToHide);
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
     
     setWindowTitle(tr("Contact list"));
     if (testAttribute(Qt::WA_TranslucentBackground)) {
         m_ui->roster->viewport()->setAutoFillBackground(false);
     }
+    
+    QSettings settings;
+    settings.beginGroup("ui");
+    settings.beginGroup("window");
+    if (settings.contains("geometry")) {
+        restoreGeometry(settings.value("geometry").toByteArray());
+    }
+    if (settings.contains("state")) {
+        restoreState(settings.value("state").toByteArray());
+    }
+    settings.endGroup();
+    
+    if (settings.contains("splitter")) {
+        m_ui->splitter->restoreState(settings.value("splitter").toByteArray());
+    }
+    settings.endGroup();
 }
 
 Squawk::~Squawk() {
@@ -71,7 +93,7 @@ Squawk::~Squawk() {
 void Squawk::onAccounts()
 {
     if (accounts == 0) {
-        accounts = new Accounts(rosterModel.accountsModel, this);
+        accounts = new Accounts(rosterModel.accountsModel);
         accounts->setAttribute(Qt::WA_DeleteOnClose);
         connect(accounts, &Accounts::destroyed, this, &Squawk::onAccountsClosed);
         connect(accounts, &Accounts::newAccount, this, &Squawk::newAccountRequest);
@@ -331,16 +353,7 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
             if (conv != 0) {
                 if (created) {
                     conv->setAttribute(Qt::WA_DeleteOnClose);
-                    
-                    connect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
-                    connect(conv, qOverload<const Shared::Message&>(&Conversation::sendMessage), this, qOverload<const Shared::Message&>(&Squawk::onConversationMessage));
-                    connect(conv, qOverload<const Shared::Message&, const QString&>(&Conversation::sendMessage), 
-                            this, qOverload<const Shared::Message&, const QString&>(&Squawk::onConversationMessage));
-                    connect(conv, &Conversation::requestArchive, this, &Squawk::onConversationRequestArchive);
-                    connect(conv, &Conversation::requestLocalFile, this, &Squawk::onConversationRequestLocalFile);
-                    connect(conv, &Conversation::downloadFile, this, &Squawk::onConversationDownloadFile);
-                    connect(conv, &Conversation::shown, this, &Squawk::onConversationShown);
-                    
+                    subscribeConversation(conv);
                     conversations.insert(std::make_pair(*id, conv));
                     
                     if (created) {
@@ -359,6 +372,7 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                 }
             }
             
+            delete id;
         }
     }
 }
@@ -374,9 +388,8 @@ void Squawk::onConversationClosed(QObject* parent)
     Conversation* conv = static_cast<Conversation*>(sender());
     Models::Roster::ElId id(conv->getAccount(), conv->getJid());
     Conversations::const_iterator itr = conversations.find(id);
-    if (itr == conversations.end()) {
-        qDebug() << "Conversation has been closed but can not be found among other opened conversations, application is most probably going to crash";
-        return;
+    if (itr != conversations.end()) {
+        conversations.erase(itr);
     }
     if (conv->isMuc) {
         Room* room = static_cast<Room*>(conv);
@@ -384,7 +397,6 @@ void Squawk::onConversationClosed(QObject* parent)
             emit setRoomJoined(id.account, id.name, false);
         }
     }
-    conversations.erase(itr);
 }
 
 void Squawk::onConversationDownloadFile(const QString& messageId, const QString& url)
@@ -416,6 +428,9 @@ void Squawk::fileProgress(const QString& messageId, qreal value)
             if (c != conversations.end()) {
                 c->second->responseFileProgress(messageId, value);
             }
+            if (currentConversation != 0 && currentConversation->getId() == id) {
+                currentConversation->responseFileProgress(messageId, value);
+            }
         }
     }
 }
@@ -433,6 +448,9 @@ void Squawk::fileError(const QString& messageId, const QString& error)
             Conversations::const_iterator c = conversations.find(id);
             if (c != conversations.end()) {
                 c->second->fileError(messageId, error);
+            }
+            if (currentConversation != 0 && currentConversation->getId() == id) {
+                currentConversation->fileError(messageId, error);
             }
         }
         requestedFiles.erase(itr);
@@ -452,6 +470,9 @@ void Squawk::fileLocalPathResponse(const QString& messageId, const QString& path
             Conversations::const_iterator c = conversations.find(id);
             if (c != conversations.end()) {
                 c->second->responseLocalFile(messageId, path);
+            }
+            if (currentConversation != 0 && currentConversation->getId() == id) {
+                currentConversation->responseLocalFile(messageId, path);
             }
         }
         
@@ -477,18 +498,33 @@ void Squawk::onConversationRequestLocalFile(const QString& messageId, const QStr
 void Squawk::accountMessage(const QString& account, const Shared::Message& data)
 {
     const QString& from = data.getPenPalJid();
-    Conversations::iterator itr = conversations.find({account, from});
+    Models::Roster::ElId id({account, from});
+    Conversations::iterator itr = conversations.find(id);
+    bool found = false;
+    
+    if (currentConversation != 0 && currentConversation->getId() == id) {
+        currentConversation->addMessage(data);
+        QApplication::alert(this);
+        if (!isVisible() && !data.getForwarded()) {
+            notify(account, data);
+        }
+        found = true;
+    }
+    
     if (itr != conversations.end()) {
         Conversation* conv = itr->second;
         conv->addMessage(data);
         QApplication::alert(conv);
-        if (conv->isMinimized()) {
+        if (!found && conv->isMinimized()) {
             rosterModel.addMessage(account, data);
         }
         if (!conv->isVisible() && !data.getForwarded()) {
             notify(account, data);
         }
-    } else {
+        found = true;
+    }
+    
+    if (!found) {
         rosterModel.addMessage(account, data);
         if (!data.getForwarded()) {
             QApplication::alert(this);
@@ -499,14 +535,26 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
 
 void Squawk::changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data)
 {
-    Conversations::iterator itr = conversations.find({account, jid});
+    Models::Roster::ElId eid({account, jid});
+    bool found = false;
+    
+    if (currentConversation != 0 && currentConversation->getId() == eid) {
+        currentConversation->changeMessage(id, data);
+        QApplication::alert(this);
+        found = true;
+    }
+    
+    Conversations::iterator itr = conversations.find(eid);
     if (itr != conversations.end()) {
         Conversation* conv = itr->second;
         conv->changeMessage(id, data);
-        if (conv->isMinimized()) {
+        if (!found && conv->isMinimized()) {
             rosterModel.changeMessage(account, jid, id, data);
         }
-    } else {
+        found = true;
+    } 
+    
+    if (!found) {
         rosterModel.changeMessage(account, jid, id, data);
     }
 }
@@ -546,13 +594,37 @@ void Squawk::onConversationMessage(const Shared::Message& msg)
 {
     Conversation* conv = static_cast<Conversation*>(sender());
     emit sendMessage(conv->getAccount(), msg);
+    Models::Roster::ElId id = conv->getId();
+    
+    if (currentConversation != 0 && currentConversation->getId() == id) {
+        if (conv == currentConversation) {
+            Conversations::iterator itr = conversations.find(id);
+            if (itr != conversations.end()) {
+                itr->second->addMessage(msg);
+            }
+        } else {
+            currentConversation->addMessage(msg);
+        }
+    }
 }
 
 void Squawk::onConversationMessage(const Shared::Message& msg, const QString& path)
 {
     Conversation* conv = static_cast<Conversation*>(sender());
+    Models::Roster::ElId id = conv->getId();
     std::map<QString, std::set<Models::Roster::ElId>>::iterator itr = requestedFiles.insert(std::make_pair(msg.getId(), std::set<Models::Roster::ElId>())).first;
-    itr->second.insert(Models::Roster::ElId(conv->getAccount(), conv->getJid()));
+    itr->second.insert(id);
+    
+    if (currentConversation != 0 && currentConversation->getId() == id) {
+        if (conv == currentConversation) {
+            Conversations::iterator itr = conversations.find(id);
+            if (itr != conversations.end()) {
+                itr->second->appendMessageWithUpload(msg, path);
+            }
+        } else {
+            currentConversation->appendMessageWithUpload(msg, path);
+        }
+    }
     
     emit sendMessage(conv->getAccount(), msg, path);
 }
@@ -566,6 +638,10 @@ void Squawk::onConversationRequestArchive(const QString& before)
 void Squawk::responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list)
 {
     Models::Roster::ElId id(account, jid);
+    
+    if (currentConversation != 0 && currentConversation->getId() == id) {
+        currentConversation->responseArchive(list);
+    }
     
     Conversations::const_iterator itr = conversations.find(id);
     if (itr != conversations.end()) {
@@ -590,6 +666,13 @@ void Squawk::removeAccount(const QString& account)
             ++itr;
         }
     }
+    
+    if (currentConversation != 0 && currentConversation->getAccount() == account) {
+        currentConversation->deleteLater();
+        currentConversation = 0;
+        m_ui->filler->show();
+    }
+    
     rosterModel.removeAccount(account);
 }
 
@@ -748,7 +831,9 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                     unsub->setEnabled(active);
                     connect(unsub, &QAction::triggered, [this, id]() {
                         emit setRoomAutoJoin(id.account, id.name, false);
-                        if (conversations.find(id) == conversations.end()) {    //to leave the room if it's not opened in a conversation window
+                        if (conversations.find(id) == conversations.end()
+                            && (currentConversation == 0 || currentConversation->getId() != id)
+                        ) {    //to leave the room if it's not opened in a conversation window
                             emit setRoomJoined(id.account, id.name, false);
                         }
                     });
@@ -757,7 +842,9 @@ void Squawk::onRosterContextMenu(const QPoint& point)
                     unsub->setEnabled(active);
                     connect(unsub, &QAction::triggered, [this, id]() {
                         emit setRoomAutoJoin(id.account, id.name, true);
-                        if (conversations.find(id) == conversations.end()) {    //to join the room if it's not already joined
+                        if (conversations.find(id) == conversations.end()
+                            && (currentConversation == 0 || currentConversation->getId() != id)
+                        ) {    //to join the room if it's not already joined
                             emit setRoomJoined(id.account, id.name, true);
                         }
                     });
@@ -871,14 +958,6 @@ void Squawk::readSettings()
 {
     QSettings settings;
     settings.beginGroup("ui");
-    settings.beginGroup("window");
-    if (settings.contains("geometry")) {
-        restoreGeometry(settings.value("geometry").toByteArray());
-    }
-    if (settings.contains("state")) {
-        restoreState(settings.value("state").toByteArray());
-    }
-    settings.endGroup();
     
     if (settings.contains("availability")) {
         int avail = settings.value("availability").toInt();
@@ -892,7 +971,6 @@ void Squawk::readSettings()
         }                                                               //      need to fix that
         settings.endArray();
     }
-    
     settings.endGroup();
 }
 
@@ -904,6 +982,8 @@ void Squawk::writeSettings()
     settings.setValue("geometry", saveGeometry());
     settings.setValue("state", saveState());
     settings.endGroup();
+    
+    settings.setValue("splitter", m_ui->splitter->saveState());
     
     settings.setValue("availability", m_ui->comboBox->currentIndex());
     settings.beginWriteArray("connectedAccounts");
@@ -956,5 +1036,178 @@ void Squawk::onItemCollepsed(const QModelIndex& index)
             break;
         default:
             break;
+    }
+}
+
+void Squawk::requestPassword(const QString& account)
+{
+    requestedAccountsForPasswords.push_back(account);
+    checkNextAccountForPassword();
+}
+
+void Squawk::checkNextAccountForPassword()
+{
+    if (prompt == 0 && requestedAccountsForPasswords.size() > 0) {
+        prompt = new QInputDialog(this);
+        QString accName = requestedAccountsForPasswords.front();
+        connect(prompt, &QDialog::accepted, this, &Squawk::onPasswordPromptAccepted);
+        connect(prompt, &QDialog::rejected, this, &Squawk::onPasswordPromptRejected);
+        prompt->setInputMode(QInputDialog::TextInput);
+        prompt->setTextEchoMode(QLineEdit::Password);
+        prompt->setLabelText(tr("Input the password for account %1").arg(accName));
+        prompt->setWindowTitle(tr("Password for account %1").arg(accName));
+        prompt->setTextValue("");
+        prompt->exec();
+    }
+}
+
+void Squawk::onPasswordPromptAccepted()
+{
+    emit responsePassword(requestedAccountsForPasswords.front(), prompt->textValue());
+    onPasswordPromptDone();
+}
+
+void Squawk::onPasswordPromptDone()
+{
+    prompt->deleteLater();
+    prompt = 0;
+    requestedAccountsForPasswords.pop_front();
+    checkNextAccountForPassword();
+}
+
+void Squawk::onPasswordPromptRejected()
+{
+    //for now it's the same on reject and on accept, but one day I'm gonna make 
+    //"Asking for the password again on the authentication failure" feature
+    //and here I'll be able to break the circle of password requests
+    emit responsePassword(requestedAccountsForPasswords.front(), prompt->textValue());
+    onPasswordPromptDone();
+}
+
+void Squawk::subscribeConversation(Conversation* conv)
+{
+    connect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
+    connect(conv, qOverload<const Shared::Message&>(&Conversation::sendMessage), this, qOverload<const Shared::Message&>(&Squawk::onConversationMessage));
+    connect(conv, qOverload<const Shared::Message&, const QString&>(&Conversation::sendMessage), 
+            this, qOverload<const Shared::Message&, const QString&>(&Squawk::onConversationMessage));
+    connect(conv, &Conversation::requestArchive, this, &Squawk::onConversationRequestArchive);
+    connect(conv, &Conversation::requestLocalFile, this, &Squawk::onConversationRequestLocalFile);
+    connect(conv, &Conversation::downloadFile, this, &Squawk::onConversationDownloadFile);
+    connect(conv, &Conversation::shown, this, &Squawk::onConversationShown);
+}
+
+void Squawk::onRosterSelectionChanged(const QModelIndex& current, const QModelIndex& previous)
+{   
+    if (restoreSelection.isValid() && restoreSelection == current) {
+        restoreSelection = QModelIndex();
+        return;
+    }
+    
+    if (current.isValid()) {
+        Models::Item* node = static_cast<Models::Item*>(current.internalPointer());
+        Models::Contact* contact = 0;
+        Models::Room* room = 0;
+        QString res;
+        Models::Roster::ElId* id = 0;
+        bool hasContext = true;
+        switch (node->type) {
+            case Models::Item::contact:
+                contact = static_cast<Models::Contact*>(node);
+                id = new Models::Roster::ElId(contact->getAccountName(), contact->getJid());
+                break;
+            case Models::Item::presence:
+                contact = static_cast<Models::Contact*>(node->parentItem());
+                id = new Models::Roster::ElId(contact->getAccountName(), contact->getJid());
+                res = node->getName();
+                hasContext = false;
+                break;
+            case Models::Item::room:
+                room = static_cast<Models::Room*>(node);
+                id = new Models::Roster::ElId(room->getAccountName(), room->getJid());
+                break;
+            case Models::Item::participant:
+                room = static_cast<Models::Room*>(node->parentItem());
+                id = new Models::Roster::ElId(room->getAccountName(), room->getJid());
+                hasContext = false;
+                break;
+            case Models::Item::group:
+                hasContext = false;
+            default:
+                break;
+        }
+        
+        if (hasContext && QGuiApplication::mouseButtons() & Qt::RightButton) {
+            if (id != 0) {
+                delete id;
+            }
+            needToRestore = true;
+            restoreSelection = previous;
+            return;
+        }
+        
+        if (id != 0) {
+            if (currentConversation != 0) {
+                if (currentConversation->getId() == *id) {
+                    if (contact != 0) {
+                        currentConversation->setPalResource(res);
+                    }
+                    return;
+                } else {
+                    currentConversation->deleteLater();
+                }
+            } else {
+                m_ui->filler->hide();
+            }
+            
+            Models::Account* acc = rosterModel.getAccount(id->account);
+            Models::Contact::Messages deque;
+            if (contact != 0) {
+                currentConversation = new Chat(acc, contact);
+                contact->getMessages(deque);
+            } else if (room != 0) {
+                currentConversation = new Room(acc, room);
+                room->getMessages(deque);
+                
+                if (!room->getJoined()) {
+                    emit setRoomJoined(id->account, id->name, true);
+                }
+            }
+            if (!testAttribute(Qt::WA_TranslucentBackground)) {
+                currentConversation->setFeedFrames(true, false, true, true);
+            }
+            
+            subscribeConversation(currentConversation);
+            for (Models::Contact::Messages::const_iterator itr = deque.begin(), end = deque.end(); itr != end; ++itr) {
+                currentConversation->addMessage(*itr);
+            }
+            
+            if (res.size() > 0) {
+                currentConversation->setPalResource(res);
+            }
+            
+            m_ui->splitter->insertWidget(1, currentConversation);
+            
+            delete id;
+        } else {
+            if (currentConversation != 0) {
+                currentConversation->deleteLater();
+                currentConversation = 0;
+                m_ui->filler->show();
+            }
+        }
+    } else {
+        if (currentConversation != 0) {
+            currentConversation->deleteLater();
+            currentConversation = 0;
+            m_ui->filler->show();
+        }
+    }
+}
+
+void Squawk::onContextAboutToHide()
+{
+    if (needToRestore) {
+        needToRestore = false;
+        m_ui->roster->selectionModel()->setCurrentIndex(restoreSelection, QItemSelectionModel::ClearAndSelect);
     }
 }

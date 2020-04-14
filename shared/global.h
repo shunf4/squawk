@@ -21,8 +21,11 @@
 
 #include "enums.h"
 #include "message.h"
+#include "exception.h"
 
 #include <map>
+#include <set>
+#include <deque>
 
 #include <QCoreApplication>
 #include <QDebug>
@@ -42,6 +45,9 @@ namespace Shared {
         static QString getName(Affiliation af);
         static QString getName(Role rl);
         static QString getName(Message::State rl);
+        static QString getName(AccountPassword ap);
+        
+        static QString getDescription(AccountPassword ap);
         
         const std::deque<QString> availability;
         const std::deque<QString> connectionState;
@@ -49,6 +55,14 @@ namespace Shared {
         const std::deque<QString> affiliation;
         const std::deque<QString> role;
         const std::deque<QString> messageState;
+        const std::deque<QString> accountPassword;
+        
+        const std::deque<QString> accountPasswordDescription;
+        
+        static bool supported(const QString& pluginName);
+        static void setSupported(const QString& pluginName, bool support);
+        
+        static const std::set<QString> supportedImagesExts;
         
         template<typename T>
         static T fromInt(int src);
@@ -56,8 +70,23 @@ namespace Shared {
         template<typename T>
         static T fromInt(unsigned int src);
         
+        class EnumOutOfRange: 
+        public Utils::Exception
+        {
+        public:
+            EnumOutOfRange(const std::string& p_name):Exception(), name(p_name) {}
+            
+            std::string getMessage() const{
+                return "An attempt to get enum " + name + " from integer out of range of that enum";
+            }
+        private:
+            std::string name;
+        };
+        
     private:
         static Global* instance;
+        
+        std::map<QString, bool> pluginSupport;
     };
 }
 

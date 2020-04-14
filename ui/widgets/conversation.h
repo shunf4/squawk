@@ -22,14 +22,19 @@
 #include <QWidget>
 #include <QScopedPointer>
 #include <QMap>
+#include <QMimeData>
+#include <QFileInfo>
 
 #include "shared/message.h"
 #include "order.h"
 #include "ui/models/account.h"
+#include "ui/models/roster.h"
 #include "ui/utils/messageline.h"
 #include "ui/utils/resizer.h"
 #include "ui/utils/flowlayout.h"
 #include "ui/utils/badge.h"
+#include "shared/icons.h"
+#include "shared/utils.h"
 
 namespace Ui
 {
@@ -72,6 +77,7 @@ public:
     QString getJid() const;
     QString getAccount() const;
     QString getPalResource() const;
+    Models::Roster::ElId getId() const;
     virtual void addMessage(const Shared::Message& data);
     
     void setPalResource(const QString& res);
@@ -82,6 +88,8 @@ public:
     void responseFileProgress(const QString& messageId, qreal progress);
     virtual void setAvatar(const QString& path);
     void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
+    void setFeedFrames(bool top, bool right, bool bottom, bool left);
+    virtual void appendMessageWithUpload(const Shared::Message& data, const QString& path);
     
 signals:
     void sendMessage(const Shared::Message& message);
@@ -99,6 +107,9 @@ protected:
     void addAttachedFile(const QString& path);
     void removeAttachedFile(Badge* badge);
     void clearAttachedFiles();
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    void dragLeaveEvent(QDragLeaveEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
     
 protected slots:
     void onEnterPressed();
@@ -132,6 +143,7 @@ protected:
     QLabel* statusIcon;
     QLabel* statusLabel;
     FlowLayout* filesLayout;
+    QWidget* overlay;
     W::Order<Badge*, Badge::Comparator> filesToAttach;
     Scroll scroll;
     bool manualSliderChange;

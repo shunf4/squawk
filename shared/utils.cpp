@@ -27,3 +27,22 @@ QString Shared::generateUUID()
     uuid_unparse_lower(uuid, uuid_str);
     return uuid_str;
 }
+
+
+static const QRegularExpression urlReg("(?<!<a\\shref=['\"])(?<!<img\\ssrc=['\"])("
+                                "(?:https?|ftp):\\/\\/"
+                                    "\\w+"
+                                    "(?:"
+                                        "[\\w\\.\\,\\/\\:\\;\\?\\&\\=\\@\\%\\#\\+\\-]?"
+                                        "(?:"
+                                            "\\([\\w\\.\\,\\/\\:\\;\\?\\&\\=\\@\\%\\#\\+\\-]+\\)"
+                                        ")?"
+                                    ")*"
+                                ")");
+
+QString Shared::processMessageBody(const QString& msg)
+{
+    QString processed = msg.toHtmlEscaped();
+    processed.replace(urlReg, "<a href=\"\\1\">\\1</a>");
+    return "<p style=\"white-space: pre-wrap;\">" + processed + "</p>";
+}

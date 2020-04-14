@@ -35,8 +35,8 @@ enum class ConnectionState {
 };
 Q_ENUM_NS(ConnectionState)
 static const std::deque<QString> connectionStateThemeIcons = {"state-offline", "state-sync", "state-ok", "state-error"};
-static const ConnectionState connectionStateHighest = ConnectionState::error;
-static const ConnectionState connectionStateLowest = ConnectionState::disconnected;
+static const ConnectionState ConnectionStateHighest = ConnectionState::error;
+static const ConnectionState ConnectionStateLowest = ConnectionState::disconnected;
 
 enum class Availability {
     online,
@@ -48,8 +48,8 @@ enum class Availability {
     offline
 };
 Q_ENUM_NS(Availability)
-static const Availability availabilityHighest = Availability::offline;
-static const Availability availabilityLowest = Availability::online;
+static const Availability AvailabilityHighest = Availability::offline;
+static const Availability AvailabilityLowest = Availability::online;
 static const std::deque<QString> availabilityThemeIcons = {
     "user-online",
     "user-away",
@@ -59,7 +59,6 @@ static const std::deque<QString> availabilityThemeIcons = {
     "user-invisible",
     "user-offline"
 };
-static const std::deque<QString> availabilityNames = {"Online", "Away", "Absent", "Busy", "Chatty", "Invisible", "Offline"};
 
 enum class SubscriptionState {
     none,
@@ -69,10 +68,9 @@ enum class SubscriptionState {
     unknown
 };
 Q_ENUM_NS(SubscriptionState)
-static const SubscriptionState subscriptionStateHighest = SubscriptionState::unknown;
-static const SubscriptionState subscriptionStateLowest = SubscriptionState::none;
+static const SubscriptionState SubscriptionStateHighest = SubscriptionState::unknown;
+static const SubscriptionState SubscriptionStateLowest = SubscriptionState::none;
 static const std::deque<QString> subscriptionStateThemeIcons = {"edit-none", "arrow-down-double", "arrow-up-double", "dialog-ok", "question"};
-static const std::deque<QString> subscriptionStateNames = {"None", "From", "To", "Both", "Unknown"};
 
 enum class Affiliation {
     unspecified, 
@@ -83,9 +81,8 @@ enum class Affiliation {
     owner 
 };
 Q_ENUM_NS(Affiliation)
-static const Affiliation affiliationHighest = Affiliation::owner;
-static const Affiliation affiliationLowest = Affiliation::unspecified;
-static const std::deque<QString> affiliationNames = {"Unspecified", "Outcast", "Nobody", "Member", "Admin", "Owner"};
+static const Affiliation AffiliationHighest = Affiliation::owner;
+static const Affiliation AffiliationLowest = Affiliation::unspecified;
 
 enum class Role { 
     unspecified, 
@@ -95,9 +92,8 @@ enum class Role {
     moderator 
 };
 Q_ENUM_NS(Role)
-static const Role roleHighest = Role::moderator;
-static const Role roleLowest = Role::unspecified;
-static const std::deque<QString> roleNames = {"Unspecified", "Nobody", "Visitor", "Participant", "Moderator"};
+static const Role RoleHighest = Role::moderator;
+static const Role RoleLowest = Role::unspecified;
 
 enum class Avatar {
     empty,
@@ -105,10 +101,21 @@ enum class Avatar {
     valid
 };
 Q_ENUM_NS(Avatar)
+static const Avatar AvatarHighest = Avatar::valid; 
+static const Avatar AvatarLowest = Avatar::empty; 
 
 
-static const std::deque<QString> messageStateNames = {"Pending", "Sent", "Delivered", "Error"};
 static const std::deque<QString> messageStateThemeIcons = {"state-offline", "state-sync", "state-ok", "state-error"};
+
+enum class AccountPassword {
+    plain,
+    jammed,
+    alwaysAsk,
+    kwallet
+};
+Q_ENUM_NS(AccountPassword)
+static const AccountPassword AccountPasswordHighest = AccountPassword::kwallet;
+static const AccountPassword AccountPasswordLowest = AccountPassword::plain;
 
 }
 #endif // SHARED_ENUMS_H

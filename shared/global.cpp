@@ -21,50 +21,66 @@
 #include "enums.h"
 
 Shared::Global* Shared::Global::instance = 0;
+const std::set<QString> Shared::Global::supportedImagesExts = {"png", "jpg", "webp", "jpeg", "gif", "svg"};
 
 Shared::Global::Global():
     availability({
-        tr("Online"), 
-        tr("Away"), 
-        tr("Absent"), 
-        tr("Busy"), 
-        tr("Chatty"), 
-        tr("Invisible"), 
-        tr("Offline")
+        tr("Online", "Availability"), 
+        tr("Away", "Availability"), 
+        tr("Absent", "Availability"), 
+        tr("Busy", "Availability"), 
+        tr("Chatty", "Availability"), 
+        tr("Invisible", "Availability"), 
+        tr("Offline", "Availability")
     }),
     connectionState({
-        tr("Disconnected"), 
-        tr("Connecting"), 
-        tr("Connected"), 
-        tr("Error")
+        tr("Disconnected", "ConnectionState"), 
+        tr("Connecting", "ConnectionState"), 
+        tr("Connected", "ConnectionState"), 
+        tr("Error", "ConnectionState")
     }),
     subscriptionState({
-        tr("None"), 
-        tr("From"), 
-        tr("To"), 
-        tr("Both"), 
-        tr("Unknown")
+        tr("None", "SubscriptionState"), 
+        tr("From", "SubscriptionState"), 
+        tr("To", "SubscriptionState"), 
+        tr("Both", "SubscriptionState"), 
+        tr("Unknown", "SubscriptionState")
     }),
     affiliation({
-        tr("Unspecified"), 
-        tr("Outcast"), 
-        tr("Nobody"), 
-        tr("Member"), 
-        tr("Admin"), 
-        tr("Owner")
+        tr("Unspecified", "Affiliation"), 
+        tr("Outcast", "Affiliation"), 
+        tr("Nobody", "Affiliation"), 
+        tr("Member", "Affiliation"), 
+        tr("Admin", "Affiliation"), 
+        tr("Owner", "Affiliation")
     }),
     role({
-        tr("Unspecified"), 
-        tr("Nobody"), 
-        tr("Visitor"),
-        tr("Participant"), 
-        tr("Moderator")
+        tr("Unspecified", "Role"), 
+        tr("Nobody", "Role"), 
+        tr("Visitor", "Role"),
+        tr("Participant", "Role"), 
+        tr("Moderator", "Role")
     }),
     messageState({
-        tr("Pending"), 
-        tr("Sent"), 
-        tr("Delivered"), 
-        tr("Error")
+        tr("Pending", "MessageState"), 
+        tr("Sent", "MessageState"), 
+        tr("Delivered", "MessageState"), 
+        tr("Error", "MessageState")
+    }),
+    accountPassword({
+        tr("Plain", "AccountPassword"),
+        tr("Jammed", "AccountPassword"),
+        tr("Always Ask", "AccountPassword"),
+        tr("KWallet", "AccountPassword")
+    }),
+    accountPasswordDescription({
+        tr("Your password is going to be stored in config file in plain text", "AccountPasswordDescription"),
+        tr("Your password is going to be stored in config file but jammed with constant encryption key you can find in program source code. It might look like encryption but it's not", "AccountPasswordDescription"),
+        tr("Squawk is going to query you for the password on every start of the program", "AccountPasswordDescription"),
+        tr("Your password is going to be stored in KDE wallet storage (KWallet). You're going to be queried for permissions", "AccountPasswordDescription")
+    }),
+    pluginSupport({
+        {"KWallet", false}
     })
 {
     if (instance != 0) {
@@ -81,90 +97,78 @@ Shared::Global * Shared::Global::getInstance()
 
 QString Shared::Global::getName(Message::State rl)
 {
-    return instance->messageState[int(rl)];
+    return instance->messageState[static_cast<int>(rl)];
 }
 
 QString Shared::Global::getName(Shared::Affiliation af)
 {
-    return instance->affiliation[int(af)];
+    return instance->affiliation[static_cast<int>(af)];
 }
 
 QString Shared::Global::getName(Shared::Availability av)
 {
-    return instance->availability[int(av)];
+    return instance->availability[static_cast<int>(av)];
 }
 
 QString Shared::Global::getName(Shared::ConnectionState cs)
 {
-    return instance->connectionState[int(cs)];
+    return instance->connectionState[static_cast<int>(cs)];
 }
 
 QString Shared::Global::getName(Shared::Role rl)
 {
-    return instance->role[int(rl)];
+    return instance->role[static_cast<int>(rl)];
 }
 
 QString Shared::Global::getName(Shared::SubscriptionState ss)
 {
-    return instance->subscriptionState[int(ss)];
+    return instance->subscriptionState[static_cast<int>(ss)];
 }
 
-template<> 
-Shared::Availability Shared::Global::fromInt(int src)
+QString Shared::Global::getName(Shared::AccountPassword ap)
 {
-    if (src < static_cast<int>(Shared::availabilityLowest) && src > static_cast<int>(Shared::availabilityHighest)) {
-        qDebug("An attempt to set invalid availability to Squawk core, skipping");
-    }
-    
-    return static_cast<Shared::Availability>(src);
+    return instance->accountPassword[static_cast<int>(ap)];
 }
 
-template<> 
-Shared::Availability Shared::Global::fromInt(unsigned int src)
+void Shared::Global::setSupported(const QString& pluginName, bool support)
 {
-    if (src < static_cast<int>(Shared::availabilityLowest) && src > static_cast<int>(Shared::availabilityHighest)) {
-        qDebug("An attempt to set invalid availability to Squawk core, skipping");
+    std::map<QString, bool>::iterator itr = instance->pluginSupport.find(pluginName);
+    if (itr != instance->pluginSupport.end()) {
+        itr->second = support;
     }
-    
-    return static_cast<Shared::Availability>(src);
 }
 
-template<> 
-Shared::ConnectionState Shared::Global::fromInt(int src)
+bool Shared::Global::supported(const QString& pluginName)
 {
-    if (src < static_cast<int>(Shared::connectionStateLowest) && src > static_cast<int>(Shared::connectionStateHighest)) {
-        qDebug("An attempt to set invalid availability to Squawk core, skipping");
+    std::map<QString, bool>::iterator itr = instance->pluginSupport.find(pluginName);
+    if (itr != instance->pluginSupport.end()) {
+        return itr->second;
     }
-    
-    return static_cast<Shared::ConnectionState>(src);
+    return false;
 }
 
-template<> 
-Shared::ConnectionState Shared::Global::fromInt(unsigned int src)
+QString Shared::Global::getDescription(Shared::AccountPassword ap)
 {
-    if (src < static_cast<int>(Shared::connectionStateLowest) && src > static_cast<int>(Shared::connectionStateHighest)) {
-        qDebug("An attempt to set invalid availability to Squawk core, skipping");
-    }
-    
-    return static_cast<Shared::ConnectionState>(src);
+    return instance->accountPasswordDescription[static_cast<int>(ap)];
 }
 
-template<> 
-Shared::SubscriptionState Shared::Global::fromInt(int src)
-{
-    if (src < static_cast<int>(Shared::subscriptionStateLowest) && src > static_cast<int>(Shared::subscriptionStateHighest)) {
-        qDebug("An attempt to set invalid availability to Squawk core, skipping");
-    }
-    
-    return static_cast<Shared::SubscriptionState>(src);
-}
+#define FROM_INT_INPL(Enum)                                                                 \
+template<>                                                                                  \
+Enum Shared::Global::fromInt(int src)                                                       \
+{                                                                                           \
+    if (src < static_cast<int>(Enum##Lowest) && src > static_cast<int>(Enum##Highest)) {    \
+        throw EnumOutOfRange(#Enum);                                                        \
+    }                                                                                       \
+    return static_cast<Enum>(src);                                                          \
+}                                                                                           \
+template<>                                                                                  \
+Enum Shared::Global::fromInt(unsigned int src) {return fromInt<Enum>(static_cast<int>(src));}
 
-template<> 
-Shared::SubscriptionState Shared::Global::fromInt(unsigned int src)
-{
-    if (src < static_cast<int>(Shared::subscriptionStateLowest) && src > static_cast<int>(Shared::subscriptionStateHighest)) {
-        qDebug("An attempt to set invalid availability to Squawk core, skipping");
-    }
-    
-    return static_cast<Shared::SubscriptionState>(src);
-}
+FROM_INT_INPL(Shared::Message::State)
+FROM_INT_INPL(Shared::Affiliation)
+FROM_INT_INPL(Shared::ConnectionState)
+FROM_INT_INPL(Shared::Role)
+FROM_INT_INPL(Shared::SubscriptionState)
+FROM_INT_INPL(Shared::AccountPassword)
+FROM_INT_INPL(Shared::Avatar)
+FROM_INT_INPL(Shared::Availability)

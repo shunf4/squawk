@@ -19,7 +19,6 @@
 #include "conversation.h"
 #include "ui_conversation.h"
 #include "ui/utils/dropshadoweffect.h"
-#include "shared/icons.h"
 
 #include <QDebug>
 #include <QScrollBar>
@@ -45,6 +44,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     statusIcon(0),
     statusLabel(0),
     filesLayout(0),
+    overlay(new QWidget()),
     filesToAttach(),
     scroll(down),
     manualSliderChange(false),
@@ -92,6 +92,27 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     
     line->setMyAvatarPath(acc->getAvatarPath());
     line->setMyName(acc->getName());
+    
+    QGridLayout* gr = static_cast<QGridLayout*>(layout());
+    QLabel* progressLabel = new QLabel(tr("Drop files here to attach them to your message"));
+    gr->addWidget(overlay, 0, 0, 2, 1);
+    QVBoxLayout* nl = new QVBoxLayout();
+    QGraphicsOpacityEffect* opacity = new QGraphicsOpacityEffect();
+    opacity->setOpacity(0.8);
+    overlay->setLayout(nl);
+    overlay->setBackgroundRole(QPalette::Base);
+    overlay->setAutoFillBackground(true);
+    overlay->setGraphicsEffect(opacity);
+    progressLabel->setAlignment(Qt::AlignCenter);
+    QFont pf = progressLabel->font();
+    pf.setBold(true);
+    pf.setPointSize(26);
+    progressLabel->setWordWrap(true);
+    progressLabel->setFont(pf);
+    nl->addStretch();
+    nl->addWidget(progressLabel);
+    nl->addStretch();
+    overlay->hide();
     
     applyVisualEffects();
 }
@@ -210,6 +231,11 @@ void Conversation::onEnterPressed()
     }
 }
 
+void Conversation::appendMessageWithUpload(const Shared::Message& data, const QString& path)
+{
+    line->appendMessageWithUploadNoSiganl(data, path);
+}
+
 void Conversation::onMessagesResize(int amount)
 {
     manualSliderChange = true;
@@ -303,7 +329,7 @@ void Conversation::onFileSelected()
 
 void Conversation::setStatus(const QString& status)
 {
-    statusLabel->setText(status);
+    statusLabel->setText(Shared::processMessageBody(status));
 }
 
 void Conversation::onScrollResize()
@@ -334,6 +360,11 @@ void Conversation::responseLocalFile(const QString& messageId, const QString& pa
     line->responseLocalFile(messageId, path);
 }
 
+Models::Roster::ElId Conversation::getId() const
+{
+    return {getAccount(), getJid()};
+}
+
 void Conversation::addAttachedFile(const QString& path)
 {
     QMimeDatabase db;
@@ -343,10 +374,16 @@ void Conversation::addAttachedFile(const QString& path)
     Badge* badge = new Badge(path, info.fileName(), QIcon::fromTheme(type.iconName()));
     
     connect(badge, &Badge::close, this, &Conversation::onBadgeClose);
-    filesToAttach.push_back(badge);                                                         //TODO neet to check if there are any duplicated ids
-    filesLayout->addWidget(badge);
-    if (filesLayout->count() == 1) {
-        filesLayout->setContentsMargins(3, 3, 3, 3);
+    try {
+        filesToAttach.push_back(badge);
+        filesLayout->addWidget(badge);
+        if (filesLayout->count() == 1) {
+            filesLayout->setContentsMargins(3, 3, 3, 3);
+        }
+    } catch (const W::Order<Badge*, Badge::Comparator>::Duplicates& e) {
+        delete badge;
+    } catch (...) {
+        throw;
     }
 }
 
@@ -397,6 +434,57 @@ void Conversation::onTextEditDocSizeChanged(const QSizeF& size)
     m_ui->messageEditor->setMaximumHeight(int(size.height()));
 }
 
+void Conversation::setFeedFrames(bool top, bool right, bool bottom, bool left)
+{
+    static_cast<DropShadowEffect*>(m_ui->scrollArea->graphicsEffect())->setFrame(top, right, bottom, left);
+}
+
+void Conversation::dragEnterEvent(QDragEnterEvent* event)
+{
+    bool accept = false;
+    if (event->mimeData()->hasUrls()) {
+        QList<QUrl> list = event->mimeData()->urls();
+        for (const QUrl& url : list) {
+            if (url.isLocalFile()) {
+                QFileInfo info(url.toLocalFile());
+                if (info.isReadable() && info.isFile()) {
+                    accept = true;
+                    break;
+                }
+            }
+        }
+    }
+    if (accept) {
+        event->acceptProposedAction();
+        overlay->show();
+    }
+}
+
+void Conversation::dragLeaveEvent(QDragLeaveEvent* event)
+{
+    overlay->hide();
+}
+
+void Conversation::dropEvent(QDropEvent* event)
+{
+    bool accept = false;
+    if (event->mimeData()->hasUrls()) {
+        QList<QUrl> list = event->mimeData()->urls();
+        for (const QUrl& url : list) {
+            if (url.isLocalFile()) {
+                QFileInfo info(url.toLocalFile());
+                if (info.isReadable() && info.isFile()) {
+                    addAttachedFile(info.canonicalFilePath());
+                    accept = true;
+                }
+            }
+        }
+    }
+    if (accept) {
+        event->acceptProposedAction();
+    }
+    overlay->hide();
+}
 
 bool VisibilityCatcher::eventFilter(QObject* obj, QEvent* event)
 {

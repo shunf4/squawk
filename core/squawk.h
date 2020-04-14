@@ -32,6 +32,11 @@
 #include "shared/message.h"
 #include "shared/global.h"
 #include "networkaccess.h"
+#include "external/simpleCrypt/simplecrypt.h"
+
+#ifdef WITH_KWALLET
+#include "passwordStorageEngines/kwallet.h"
+#endif
 
 namespace Core
 {
@@ -45,6 +50,7 @@ public:
 
 signals:
     void quit();
+    void ready();
     void newAccount(const QMap<QString, QVariant>&);
     void changeAccount(const QString& account, const QMap<QString, QVariant>& data);
     void removeAccount(const QString& account);
@@ -72,6 +78,7 @@ signals:
     void uploadFileProgress(const QString& messageId, qreal value);
     void responseVCard(const QString& jid, const Shared::VCard& card);
     void changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
+    void requestPassword(const QString& account);
     
 public slots:
     void start();
@@ -100,6 +107,7 @@ public slots:
     void downloadFileRequest(const QString& messageId, const QString& url);
     void requestVCard(const QString& account, const QString& jid);
     void uploadVCard(const QString& account, const Shared::VCard& card);
+    void responsePassword(const QString& account, const QString& password);
     
 private:
     typedef std::deque<Account*> Accounts;
@@ -109,11 +117,22 @@ private:
     AccountsMap amap;
     Shared::Availability state;
     NetworkAccess network;
-    
-private:
-    void addAccount(const QString& login, const QString& server, const QString& password, const QString& name, const QString& resource);
+    uint8_t waitingForAccounts;
+
+#ifdef WITH_KWALLET
+    PSE::KWallet kwallet;
+#endif
     
 private slots:
+    void addAccount(
+        const QString& login, 
+        const QString& server, 
+        const QString& password, 
+        const QString& name, 
+        const QString& resource, 
+        Shared::AccountPassword passwordType
+    );
+    
     void onAccountConnectionStateChanged(Shared::ConnectionState state);
     void onAccountAvailabilityChanged(Shared::Availability state);
     void onAccountChanged(const QMap<QString, QVariant>& data);
@@ -135,6 +154,24 @@ private slots:
     void onAccountChangeRoomPresence(const QString& jid, const QString& nick, const QMap<QString, QVariant>& data);
     void onAccountRemoveRoomPresence(const QString& jid, const QString& nick);
     void onAccountChangeMessage(const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
+    
+    void onWalletOpened(bool success);
+    void onWalletResponsePassword(const QString& login, const QString& password);
+    void onWalletRejectPassword(const QString& login);
+    
+private:
+    void readSettings();
+    void accountReady();
+    void parseAccount(
+        const QString& login, 
+        const QString& server, 
+        const QString& password, 
+        const QString& name, 
+        const QString& resource, 
+        Shared::AccountPassword passwordType
+    );
+    
+    static const quint64 passwordHash = 0x08d054225ac4871d;
 };
 
 }

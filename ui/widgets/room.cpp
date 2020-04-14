@@ -38,6 +38,8 @@ Room::Room(Models::Account* acc, Models::Room* p_room, QWidget* parent):
             line->setPalAvatar(pair.first, aPath);
         }
     }
+    
+    line->setExPalAvatars(room->getExParticipantAvatars());
 }
 
 Room::~Room()
@@ -104,5 +106,5 @@ void Room::onParticipantJoined(const Models::Participant& participant)
 
 void Room::onParticipantLeft(const QString& name)
 {
-    line->dropPalAvatar(name);
+    line->movePalAvatarToEx(name);
 }

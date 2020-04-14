@@ -26,13 +26,27 @@ Core::Squawk::Squawk(QObject* parent):
     QObject(parent),
     accounts(),
     amap(),
-    network()
+    network(),
+    waitingForAccounts(0)
+#ifdef WITH_KWALLET
+    ,kwallet()
+#endif
 {
     connect(&network, &NetworkAccess::fileLocalPathResponse, this, &Squawk::fileLocalPathResponse);
     connect(&network, &NetworkAccess::downloadFileProgress, this, &Squawk::downloadFileProgress);
     connect(&network, &NetworkAccess::downloadFileError, this, &Squawk::downloadFileError);
     connect(&network, &NetworkAccess::uploadFileProgress, this, &Squawk::uploadFileProgress);
     connect(&network, &NetworkAccess::uploadFileError, this, &Squawk::uploadFileError);
+    
+#ifdef WITH_KWALLET
+    if (kwallet.supportState() == PSE::KWallet::success) {
+        connect(&kwallet, &PSE::KWallet::opened, this, &Squawk::onWalletOpened);
+        connect(&kwallet, &PSE::KWallet::rejectPassword, this, &Squawk::onWalletRejectPassword);
+        connect(&kwallet, &PSE::KWallet::responsePassword, this, &Squawk::onWalletResponsePassword);
+        
+        Shared::Global::setSupported("KWallet", true);
+    }
+#endif
 }
 
 Core::Squawk::~Squawk()
@@ -44,6 +58,11 @@ Core::Squawk::~Squawk()
     }
 }
 
+void Core::Squawk::onWalletOpened(bool success)
+{
+    qDebug() << "KWallet opened: " << success;
+}
+
 void Core::Squawk::stop()
 {
     qDebug("Stopping squawk core..");
@@ -51,14 +70,31 @@ void Core::Squawk::stop()
     QSettings settings;
     settings.beginGroup("core");
     settings.beginWriteArray("accounts");
+    SimpleCrypt crypto(passwordHash);
     for (std::deque<Account*>::size_type i = 0; i < accounts.size(); ++i) {
         settings.setArrayIndex(i);
         Account* acc = accounts[i];
+        
+        Shared::AccountPassword ap = acc->getPasswordType();
+        QString password;
+        
+        switch (ap) {
+            case Shared::AccountPassword::plain:
+                password = acc->getPassword();
+                break;
+            case Shared::AccountPassword::jammed:
+                password = crypto.encryptToString(acc->getPassword());
+                break;
+            default:
+                break;
+        }
+        
         settings.setValue("name", acc->getName());
         settings.setValue("server", acc->getServer());
         settings.setValue("login", acc->getLogin());
-        settings.setValue("password", acc->getPassword());
+        settings.setValue("password", password);
         settings.setValue("resource", acc->getResource());
+        settings.setValue("passwordType", static_cast<int>(ap));
     }
     settings.endArray();
     settings.endGroup();
@@ -72,21 +108,7 @@ void Core::Squawk::start()
 {
     qDebug("Starting squawk core..");
     
-    QSettings settings;
-    settings.beginGroup("core");
-    int size = settings.beginReadArray("accounts");
-    for (int i = 0; i < size; ++i) {
-        settings.setArrayIndex(i);
-        addAccount(
-            settings.value("login").toString(), 
-            settings.value("server").toString(), 
-            settings.value("password").toString(), 
-            settings.value("name").toString(), 
-            settings.value("resource").toString()
-        );
-    }
-    settings.endArray();
-    settings.endGroup();
+    readSettings();
     network.start();
 }
 
@@ -98,10 +120,17 @@ void Core::Squawk::newAccountRequest(const QMap<QString, QVariant>& map)
     QString password = map.value("password").toString();
     QString resource = map.value("resource").toString();
     
-    addAccount(login, server, password, name, resource);
+    addAccount(login, server, password, name, resource, Shared::AccountPassword::plain);
 }
 
-void Core::Squawk::addAccount(const QString& login, const QString& server, const QString& password, const QString& name, const QString& resource)
+void Core::Squawk::addAccount(
+    const QString& login, 
+    const QString& server, 
+    const QString& password, 
+    const QString& name, 
+    const QString& resource,                          
+    Shared::AccountPassword passwordType
+)
 {
     QSettings settings;
     unsigned int reconnects = settings.value("reconnects", 2).toUInt();
@@ -109,6 +138,7 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     Account* acc = new Account(login, server, password, name, &network);
     acc->setResource(resource);
     acc->setReconnectTimes(reconnects);
+    acc->setPasswordType(passwordType);
     accounts.push_back(acc);
     amap.insert(std::make_pair(name, acc));
     
@@ -119,8 +149,10 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
     connect(acc, &Account::addContact, this, &Squawk::onAccountAddContact);
     connect(acc, &Account::addGroup, this, &Squawk::onAccountAddGroup);
     connect(acc, &Account::removeGroup, this, &Squawk::onAccountRemoveGroup);
-    connect(acc, qOverload<const QString&, const QString&>(&Account::removeContact), this, qOverload<const QString&, const QString&>(&Squawk::onAccountRemoveContact));
-    connect(acc, qOverload<const QString&>(&Account::removeContact), this, qOverload<const QString&>(&Squawk::onAccountRemoveContact));
+    connect(acc, qOverload<const QString&, const QString&>(&Account::removeContact), 
+            this, qOverload<const QString&, const QString&>(&Squawk::onAccountRemoveContact));
+    connect(acc, qOverload<const QString&>(&Account::removeContact), 
+            this, qOverload<const QString&>(&Squawk::onAccountRemoveContact));
     connect(acc, &Account::changeContact, this, &Squawk::onAccountChangeContact);
     connect(acc, &Account::addPresence, this, &Squawk::onAccountAddPresence);
     connect(acc, &Account::removePresence, this, &Squawk::onAccountRemovePresence);
@@ -149,7 +181,8 @@ void Core::Squawk::addAccount(const QString& login, const QString& server, const
         {"state", QVariant::fromValue(Shared::ConnectionState::disconnected)},
         {"offline", QVariant::fromValue(Shared::Availability::offline)},
         {"error", ""},
-        {"avatarPath", acc->getAvatarPath()}
+        {"avatarPath", acc->getAvatarPath()},
+        {"passwordType", QVariant::fromValue(passwordType)}
     };
     
     emit newAccount(map);
@@ -192,17 +225,29 @@ void Core::Squawk::onAccountConnectionStateChanged(Shared::ConnectionState p_sta
     Account* acc = static_cast<Account*>(sender());
     emit changeAccount(acc->getName(), {{"state", QVariant::fromValue(p_state)}});
     
-    if (p_state == Shared::ConnectionState::disconnected) {
-        bool equals = true;
-        for (Accounts::const_iterator itr = accounts.begin(), end = accounts.end(); itr != end; itr++) {
-            if ((*itr)->getState() != Shared::ConnectionState::disconnected) {
-                equals = false;
+    switch (p_state) {
+        case Shared::ConnectionState::disconnected: {
+                bool equals = true;
+                for (Accounts::const_iterator itr = accounts.begin(), end = accounts.end(); itr != end; itr++) {
+                    if ((*itr)->getState() != Shared::ConnectionState::disconnected) {
+                        equals = false;
+                    }
+                }
+                if (equals && state != Shared::Availability::offline) {
+                    state = Shared::Availability::offline;
+                    emit stateChanged(state);
+                }
             }
-        }
-        if (equals && state != Shared::Availability::offline) {
-            state = Shared::Availability::offline;
-            emit stateChanged(state);
-        }
+            break;
+        case Shared::ConnectionState::connected:
+#ifdef WITH_KWALLET
+            if (acc->getPasswordType() == Shared::AccountPassword::kwallet && kwallet.supportState() == PSE::KWallet::success) {
+                kwallet.requestWritePassword(acc->getName(), acc->getPassword(), true);
+            }
+#endif
+            break;
+        default:
+            break;
     }
 }
 
@@ -320,12 +365,37 @@ void Core::Squawk::modifyAccountRequest(const QString& name, const QMap<QString,
     
     Core::Account* acc = itr->second;
     Shared::ConnectionState st = acc->getState();
+    QMap<QString, QVariant>::const_iterator mItr;
+    bool needToReconnect = false;
     
-    if (st != Shared::ConnectionState::disconnected) {
+    mItr = map.find("login");
+    if (mItr != map.end()) {
+        needToReconnect = acc->getLogin() != mItr->toString();
+    }
+    
+    if (!needToReconnect) {
+        mItr = map.find("password");
+        if (mItr != map.end()) {
+            needToReconnect = acc->getPassword() != mItr->toString();
+        }
+    }
+    if (!needToReconnect) {
+        mItr = map.find("server");
+        if (mItr != map.end()) {
+            needToReconnect = acc->getServer() != mItr->toString();
+        }
+    }
+    if (!needToReconnect) {
+        mItr = map.find("resource");
+        if (mItr != map.end()) {
+            needToReconnect = acc->getResource() != mItr->toString();
+        }
+    }
+    
+    if (needToReconnect && st != Shared::ConnectionState::disconnected) {
         acc->reconnect();
     }
     
-    QMap<QString, QVariant>::const_iterator mItr;
     mItr = map.find("login");
     if (mItr != map.end()) {
         acc->setLogin(mItr->toString());
@@ -345,6 +415,20 @@ void Core::Squawk::modifyAccountRequest(const QString& name, const QMap<QString,
     if (mItr != map.end()) {
         acc->setServer(mItr->toString());
     }
+    
+    mItr = map.find("passwordType");
+    if (mItr != map.end()) {
+        acc->setPasswordType(Shared::Global::fromInt<Shared::AccountPassword>(mItr->toInt()));
+    }
+    
+#ifdef WITH_KWALLET
+    if (acc->getPasswordType() == Shared::AccountPassword::kwallet 
+        && kwallet.supportState() == PSE::KWallet::success 
+        && !needToReconnect
+    ) {
+        kwallet.requestWritePassword(acc->getName(), acc->getPassword(), true);
+    }
+#endif
     
     emit changeAccount(name, map);
 }
@@ -486,8 +570,6 @@ void Core::Squawk::onAccountRemoveRoomPresence(const QString& jid, const QString
     emit removeRoomParticipant(acc->getName(), jid, nick);
 }
 
-
-
 void Core::Squawk::onAccountChangeMessage(const QString& jid, const QString& id, const QMap<QString, QVariant>& data)
 {
     Account* acc = static_cast<Account*>(sender());
@@ -574,3 +656,99 @@ void Core::Squawk::uploadVCard(const QString& account, const Shared::VCard& card
     itr->second->uploadVCard(card);
 }
 
+void Core::Squawk::responsePassword(const QString& account, const QString& password)
+{
+    AccountsMap::const_iterator itr = amap.find(account);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to set password to non existing account" << account << ", skipping";
+        return;
+    }
+    itr->second->setPassword(password);
+    accountReady();
+}
+
+void Core::Squawk::readSettings()
+{
+    QSettings settings;
+    settings.beginGroup("core");
+    int size = settings.beginReadArray("accounts");
+    waitingForAccounts = size;
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+        parseAccount(
+            settings.value("login").toString(), 
+            settings.value("server").toString(), 
+            settings.value("password", "").toString(), 
+            settings.value("name").toString(), 
+            settings.value("resource").toString(),
+            Shared::Global::fromInt<Shared::AccountPassword>(settings.value("passwordType", static_cast<int>(Shared::AccountPassword::plain)).toInt())
+        );
+    }
+    settings.endArray();
+    settings.endGroup();
+}
+
+void Core::Squawk::accountReady()
+{
+    --waitingForAccounts;
+    
+    if (waitingForAccounts == 0) {
+        emit ready();
+    }
+}
+
+void Core::Squawk::parseAccount(
+    const QString& login, 
+    const QString& server, 
+    const QString& password, 
+    const QString& name, 
+    const QString& resource, 
+    Shared::AccountPassword passwordType
+)
+{
+    switch (passwordType) {
+        case Shared::AccountPassword::plain:
+            addAccount(login, server, password, name, resource, passwordType);
+            accountReady();
+            break;
+        case Shared::AccountPassword::jammed: {
+            SimpleCrypt crypto(passwordHash);
+            QString decrypted = crypto.decryptToString(password);
+            addAccount(login, server, decrypted, name, resource, passwordType);
+            accountReady();
+        }
+            break;
+        case Shared::AccountPassword::alwaysAsk: 
+            addAccount(login, server, QString(), name, resource, passwordType);
+            emit requestPassword(name);
+            break;
+        case Shared::AccountPassword::kwallet: {
+            addAccount(login, server, QString(), name, resource, passwordType);
+#ifdef WITH_KWALLET
+            if (kwallet.supportState() == PSE::KWallet::success) {
+                kwallet.requestReadPassword(name);
+            } else {
+#endif
+                emit requestPassword(name);
+#ifdef WITH_KWALLET
+            }
+#endif
+        }
+    }
+}
+
+void Core::Squawk::onWalletRejectPassword(const QString& login)
+{
+    emit requestPassword(login);
+}
+
+void Core::Squawk::onWalletResponsePassword(const QString& login, const QString& password)
+{
+    AccountsMap::const_iterator itr = amap.find(login);
+    if (itr == amap.end()) {
+        qDebug() << "An attempt to set password to non existing account" << login << ", skipping";
+        return;
+    }
+    itr->second->setPassword(password);
+    accountReady();
+}

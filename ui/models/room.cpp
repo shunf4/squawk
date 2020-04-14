@@ -32,7 +32,8 @@ Models::Room::Room(const QString& p_jid, const QMap<QString, QVariant>& data, Mo
     avatarState(Shared::Avatar::empty),
     avatarPath(""),
     messages(),
-    participants()
+    participants(),
+    exParticipantAvatars()
 {
     QMap<QString, QVariant>::const_iterator itr = data.find("autoJoin");
     if (itr != data.end()) {
@@ -61,6 +62,15 @@ Models::Room::Room(const QString& p_jid, const QMap<QString, QVariant>& data, Mo
     itr = data.find("avatarPath");
     if (itr != data.end()) {
         setAvatarPath(itr.value().toString());
+    }
+    
+    
+    itr = data.find("avatars");
+    if (itr != data.end()) {
+        QMap<QString, QVariant> avs = itr.value().toMap();
+        for (QMap<QString, QVariant>::const_iterator itr = avs.begin(), end = avs.end(); itr != end; ++itr) {
+            exParticipantAvatars.insert(std::make_pair(itr.key(), itr.value().toString()));
+        }
     }
 }
 
@@ -284,6 +294,11 @@ void Models::Room::addParticipant(const QString& p_name, const QMap<QString, QVa
         qDebug() << "An attempt to add already existing participant" << p_name << "to the room" << name << ", updating instead";
         handleParticipantUpdate(itr, data);
     } else {
+        std::map<QString, QString>::const_iterator eitr = exParticipantAvatars.find(name);
+        if (eitr != exParticipantAvatars.end()) {
+            exParticipantAvatars.erase(eitr);
+        }
+        
         Participant* part = new Participant(data);
         part->setName(p_name);
         participants.insert(std::make_pair(p_name, part));
@@ -311,6 +326,11 @@ void Models::Room::removeParticipant(const QString& p_name)
         Participant* p = itr->second;
         participants.erase(itr);
         removeChild(p->row());
+        
+        if (p->getAvatarState() != Shared::Avatar::empty) {
+            exParticipantAvatars.insert(std::make_pair(p_name, p->getAvatarPath()));
+        }
+        
         p->deleteLater();
         emit participantLeft(p_name);
     }
@@ -407,4 +427,9 @@ QString Models::Room::getParticipantIconPath(const QString& name) const
     }
     
     return itr->second->getAvatarPath();
+}
+
+std::map<QString, QString> Models::Room::getExParticipantAvatars() const
+{
+    return exParticipantAvatars;
 }

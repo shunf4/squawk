@@ -28,7 +28,8 @@ Models::Account::Account(const QMap<QString, QVariant>& data, Models::Item* pare
     error(data.value("error").toString()),
     avatarPath(data.value("avatarPath").toString()),
     state(Shared::ConnectionState::disconnected),
-    availability(Shared::Availability::offline)
+    availability(Shared::Availability::offline),
+    passwordType(Shared::AccountPassword::plain)
 {
     QMap<QString, QVariant>::const_iterator sItr = data.find("state");
     if (sItr != data.end()) {
@@ -37,6 +38,10 @@ Models::Account::Account(const QMap<QString, QVariant>& data, Models::Item* pare
     QMap<QString, QVariant>::const_iterator aItr = data.find("availability");
     if (aItr != data.end()) {
         setAvailability(aItr.value().toUInt());
+    }
+    QMap<QString, QVariant>::const_iterator pItr = data.find("passwordType");
+    if (pItr != data.end()) {
+        setPasswordType(pItr.value().toUInt());
     }
 }
 
@@ -155,6 +160,8 @@ QVariant Models::Account::data(int column) const
             return resource;
         case 8:
             return avatarPath;
+        case 9:
+            return Shared::Global::getName(passwordType);
         default:
             return QVariant();
     }
@@ -162,7 +169,7 @@ QVariant Models::Account::data(int column) const
 
 int Models::Account::columnCount() const
 {
-    return 9;
+    return 10;
 }
 
 void Models::Account::update(const QString& field, const QVariant& value)
@@ -185,6 +192,8 @@ void Models::Account::update(const QString& field, const QVariant& value)
         setError(value.toString());
     } else if (field == "avatarPath") {
         setAvatarPath(value.toString());
+    } else if (field == "passwordType") {
+        setPasswordType(value.toUInt());
     }
 }
 
@@ -240,3 +249,22 @@ QString Models::Account::getFullJid() const
 {
     return getBareJid() + "/" + resource;
 }
+
+Shared::AccountPassword Models::Account::getPasswordType() const
+{
+    return passwordType;
+}
+
+void Models::Account::setPasswordType(Shared::AccountPassword pt)
+{
+    if (passwordType != pt) {
+        passwordType = pt;
+        changed(9);
+    }
+}
+
+void Models::Account::setPasswordType(unsigned int pt)
+{
+    setPasswordType(Shared::Global::fromInt<Shared::AccountPassword>(pt));
+}
+

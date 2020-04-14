@@ -53,11 +53,14 @@ public:
     void fileError(const QString& messageId, const QString& error);
     void fileProgress(const QString& messageId, qreal progress);
     void appendMessageWithUpload(const Shared::Message& msg, const QString& path);
+    void appendMessageWithUploadNoSiganl(const Shared::Message& msg, const QString& path);
     void removeMessage(const QString& messageId);
     void setMyAvatarPath(const QString& p_path);
     void setPalAvatar(const QString& jid, const QString& path);
     void dropPalAvatar(const QString& jid);
     void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
+    void setExPalAvatars(const std::map<QString, QString>& data);
+    void movePalAvatarToEx(const QString& name);
     
 signals:
     void resize(int amount);
@@ -89,6 +92,7 @@ private:
     std::map<QString, Index> palMessages;
     std::map<QString, QString> uploadPaths;
     std::map<QString, QString> palAvatars;
+    std::map<QString, QString> exPalAvatars;
     QVBoxLayout* layout;
     
     QString myName;

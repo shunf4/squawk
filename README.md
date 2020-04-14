@@ -4,7 +4,7 @@
 [![AUR version](https://img.shields.io/aur/version/squawk?style=flat-square)](https://aur.archlinux.org/packages/squawk/)
 [![Liberapay patrons](https://img.shields.io/liberapay/patrons/macaw.me?logo=liberapay&style=flat-square)](https://liberapay.com/macaw.me)
 
-![Squawk screenshot](https://macaw.me/images/squawk/0.1.3.png)
+![Squawk screenshot](https://macaw.me/images/squawk/0.1.4.png)
 
 ### Prerequisites
 
@@ -13,6 +13,7 @@
 - lmdb
 - CMake 3.0 or higher
 - qxmpp 1.1.0 or higher
+- kwallet (optional)
 
 ### Getting
 
@@ -59,6 +60,13 @@ $ cd build
 $ cmake .. -D SYSTEM_QXMPP=False
 $ cmake --build .
 ```
+
+### List of keys
+
+Here is the list of keys you can pass to configuration phase of `cmake ..`. 
+- `CMAKE_BUILD_TYPE` - `Debug` just builds showing all warnings, `Release` builds with no warnings and applies optimizations (default is `Debug`)
+- `SYSTEM_QXMPP` - `True` tries to link against `qxmpp` installed in the system, `False` builds bundled `qxmpp` library (default is `True`)
+- `WITH_KWALLET` - `True` builds the `KWallet` capability module if `KWallet` is installed and if not goes to `False`. `False` disables `KWallet` support (default is `True`)
 
 ## License
 

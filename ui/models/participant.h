@@ -20,6 +20,7 @@
 #define MODELS_PARTICIPANT_H
 
 #include "abstractparticipant.h"
+#include "shared/global.h"
 
 namespace Models {
 

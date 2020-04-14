@@ -19,11 +19,14 @@
 #ifndef ACCOUNT_H
 #define ACCOUNT_H
 
-#include <QScopedPointer>
 #include <QDialog>
+#include <QScopedPointer>
 #include <QMap>
 #include <QString>
 #include <QVariant>
+#include <QStandardItemModel>
+
+#include "shared/global.h"
 
 namespace Ui
 {
@@ -42,6 +45,9 @@ public:
     void setData(const QMap<QString, QVariant>& data);
     void lockId();
 
+private slots:
+    void onComboboxChange(int index);
+    
 private:
     QScopedPointer<Ui::Account> m_ui;
 };

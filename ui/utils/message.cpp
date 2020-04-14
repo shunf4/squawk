@@ -23,18 +23,6 @@
 #include <QFileInfo>
 #include <QRegularExpression>
 
-const QRegularExpression urlReg("(?<!<a\\shref=['\"])(?<!<img\\ssrc=['\"])("
-                                "(?:https?|ftp):\\/\\/"
-                                    "\\w+"
-                                    "(?:"
-                                        "[\\w\\.\\/\\:\\;\\?\\&\\=\\@\\%\\#\\+\\-]?"
-                                        "(?:"
-                                            "\\([\\w\\.\\/\\:\\;\\?\\&\\=\\@\\%\\#\\+\\-]+\\)"
-                                        ")?"
-                                    ")*"
-                                ")");
-const QRegularExpression imgReg("((?:https?|ftp)://\\S+\\.(?:jpg|jpeg|png|svg|gif))");
-
 Message::Message(const Shared::Message& source, bool p_outgoing, const QString& p_sender, const QString& avatarPath, QWidget* parent):
     QWidget(parent),
     outgoing(p_outgoing),
@@ -66,12 +54,9 @@ Message::Message(const Shared::Message& source, bool p_outgoing, const QString& 
     body->setBackgroundRole(QPalette::AlternateBase);
     body->setAutoFillBackground(true);
     
-    QString bd = msg.getBody();
-    //bd.replace(imgReg, "<img src=\"\\1\"/>");
-    bd.replace(urlReg, "<a href=\"\\1\">\\1</a>");
-    //bd.replace("\n", "<br>");
+    QString bd = Shared::processMessageBody(msg.getBody());
     text->setTextFormat(Qt::RichText);
-    text->setText("<p style=\"white-space: pre-wrap;\">" + bd + "</p>");;
+    text->setText(bd);;
     text->setTextInteractionFlags(text->textInteractionFlags() | Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
     text->setWordWrap(true);
     text->setOpenExternalLinks(true);
@@ -308,13 +293,13 @@ bool Message::change(const QMap<QString, QVariant>& data)
 {
     bool idChanged = msg.change(data);
     
-    QString bd = msg.getBody();
-    //bd.replace(imgReg, "<img src=\"\\1\"/>");
-    bd.replace(urlReg, "<a href=\"\\1\">\\1</a>");
-    text->setText(bd);
-    if (bd.size() > 0) {
+    QString body = msg.getBody();
+    QString bd = Shared::processMessageBody(body);
+    if (body.size() > 0) {
+        text->setText(bd);
         text->show();
     } else {
+        text->setText(body);
         text->hide();
     }
     if (msg.getEdited()) {
