@@ -41,11 +41,6 @@ Core::PSE::KWallet::KWallet():
     if (sState == initial) {
         lib.load();
         
-        if (!lib.isLoaded()) {      //fallback from the build directory
-            lib.setFileName("./core/passwordStorageEngines/libkwalletWrapper.so");
-            lib.load();
-        }
-        
         if (lib.isLoaded()) {
             openWallet = (OpenWallet) lib.resolve("openWallet");
             networkWallet = (NetworkWallet) lib.resolve("networkWallet");
@@ -81,7 +76,9 @@ void Core::PSE::KWallet::open()
 {
     if (sState == success) {
         if (cState == disconnected) {
-            wallet = openWallet(networkWallet(), 0, ::KWallet::Wallet::Asynchronous);
+            QString name;
+            networkWallet(name);
+            wallet = openWallet(name, 0, ::KWallet::Wallet::Asynchronous);
             if (wallet) {
                 cState = connecting;
                 connect(wallet, SIGNAL(walletOpened(bool)), this, SLOT(onWalletOpened(bool)));
@@ -89,6 +86,7 @@ void Core::PSE::KWallet::open()
             } else {
                 everError = true;
                 emit opened(false);
+                rejectPending();
             }
         }
     }

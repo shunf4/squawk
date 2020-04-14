@@ -22,6 +22,8 @@
 #include <QWidget>
 #include <QScopedPointer>
 #include <QMap>
+#include <QMimeData>
+#include <QFileInfo>
 
 #include "shared/message.h"
 #include "order.h"
@@ -105,6 +107,9 @@ protected:
     void addAttachedFile(const QString& path);
     void removeAttachedFile(Badge* badge);
     void clearAttachedFiles();
+    void dragEnterEvent(QDragEnterEvent* event) override;
+    void dragLeaveEvent(QDragLeaveEvent* event) override;
+    void dropEvent(QDropEvent* event) override;
     
 protected slots:
     void onEnterPressed();
@@ -138,6 +143,7 @@ protected:
     QLabel* statusIcon;
     QLabel* statusLabel;
     FlowLayout* filesLayout;
+    QWidget* overlay;
     W::Order<Badge*, Badge::Comparator> filesToAttach;
     Scroll scroll;
     bool manualSliderChange;

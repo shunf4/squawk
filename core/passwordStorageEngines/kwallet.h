@@ -79,7 +79,7 @@ private:
     
 private:
     typedef ::KWallet::Wallet* (*OpenWallet)(const QString &, WId, ::KWallet::Wallet::OpenType);
-    typedef const char* (*NetworkWallet)();
+    typedef void (*NetworkWallet)(QString&);
     typedef void (*DeleteWallet)(::KWallet::Wallet*);
     typedef int (*ReadPassword)(::KWallet::Wallet*, const QString&, QString&);
     typedef int (*WritePassword)(::KWallet::Wallet*, const QString&, const QString&);

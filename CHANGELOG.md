@@ -1,6 +1,6 @@
 # Changelog
 
-## Squawk 0.1.4 (UNRELEASED)
+## Squawk 0.1.4 (Apr 14, 2020)
 ### New features
 - message line now is in the same window with roster (new window dialog is still able to opened on context menu)
 - several new ways to manage your account password:
@@ -8,6 +8,7 @@
   - store it in config jammed (local hashing with the constant seed, not secure at all but might look like it is)
   - ask the account password on each program launch
   - store it in KWallet which is dynamically loaded
+- dragging into conversation now attach files
   
 ### Bug fixes
 - never updating MUC avatars now get updated
@@ -15,6 +16,7 @@
 - statuses now behave better: they wrap if they don't fit, you can select them, you can follow links from there
 - messages and statuses don't loose content if you use < ore > symbols
 - now avatars of those who are not in the MUC right now but was also display next to the message
+- fix crash on attempt to attach the same file for the second time
 
 
 ## Squawk 0.1.3 (Mar 31, 2020)

@@ -126,7 +126,11 @@ VCard::VCard(const QString& jid, bool edit, QWidget* parent):
     overlay->setAutoFillBackground(true);
     overlay->setGraphicsEffect(opacity);
     progressLabel->setAlignment(Qt::AlignCenter);
-    progressLabel->setStyleSheet("font: 16pt");
+    QFont pf = progressLabel->font();
+    pf.setBold(true);
+    pf.setPointSize(26);
+    progressLabel->setFont(pf);
+    progressLabel->setWordWrap(true);
     nl->addStretch();
     nl->addWidget(progress);
     nl->addWidget(progressLabel);

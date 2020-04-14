@@ -34,7 +34,8 @@ Squawk::Squawk(QWidget *parent) :
     requestedAccountsForPasswords(),
     prompt(0),
     currentConversation(0),
-    restoreSelection()
+    restoreSelection(),
+    needToRestore(false)
 {
     m_ui->setupUi(this);
     m_ui->roster->setModel(&rosterModel);
@@ -1139,6 +1140,7 @@ void Squawk::onRosterSelectionChanged(const QModelIndex& current, const QModelIn
             if (id != 0) {
                 delete id;
             }
+            needToRestore = true;
             restoreSelection = previous;
             return;
         }
@@ -1204,5 +1206,8 @@ void Squawk::onRosterSelectionChanged(const QModelIndex& current, const QModelIn
 
 void Squawk::onContextAboutToHide()
 {
-    m_ui->roster->selectionModel()->setCurrentIndex(restoreSelection, QItemSelectionModel::ClearAndSelect);
+    if (needToRestore) {
+        needToRestore = false;
+        m_ui->roster->selectionModel()->setCurrentIndex(restoreSelection, QItemSelectionModel::ClearAndSelect);
+    }
 }

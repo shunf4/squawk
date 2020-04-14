@@ -29,7 +29,7 @@ namespace W
     template <typename data_type, typename comparator = std::less<data_type>>
     class Order
     {
-        
+    public:
         class Duplicates: 
             public Utils::Exception
         {

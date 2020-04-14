@@ -8,8 +8,8 @@ extern "C" void deleteWallet(KWallet::Wallet* w) {
     w->deleteLater();
 }
 
-extern "C" const char* networkWallet() {
-    return KWallet::Wallet::NetworkWallet().toStdString().c_str();
+extern "C" void networkWallet(QString& str) {
+    str = KWallet::Wallet::NetworkWallet();
 }
 
 extern "C" int readPassword(KWallet::Wallet* w, const QString &key, QString &value) {

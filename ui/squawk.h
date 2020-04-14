@@ -126,6 +126,7 @@ private:
     QInputDialog* prompt;
     Conversation* currentConversation;
     QModelIndex restoreSelection;
+    bool needToRestore;
     
 protected:
     void closeEvent(QCloseEvent * event) override;
