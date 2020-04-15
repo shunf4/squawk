@@ -46,20 +46,14 @@ Room::~Room()
 {
 }
 
-void Room::handleSendMessage(const QString& text)
+Shared::Message Room::createMessage() const
 {
-    Shared::Message msg(Shared::Message::groupChat);
+    Shared::Message msg = Conversation::createMessage();
+    msg.setType(Shared::Message::groupChat);
     msg.setFromJid(room->getJid());
     msg.setFromResource(room->getNick());
     msg.setToJid(palJid);
-    //msg.setToResource(activePalResource);
-    msg.setBody(text);
-    msg.setOutgoing(true);
-    msg.generateRandomId();
-    msg.setCurrentTime();
-    msg.setState(Shared::Message::State::pending);
-    addMessage(msg);
-    emit sendMessage(msg);
+    return msg;
 }
 
 bool Room::autoJoined() const

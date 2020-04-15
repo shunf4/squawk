@@ -817,15 +817,16 @@ void Core::Archive::readAllResourcesAvatars(std::map<QString, AvatarInfo>& data)
     mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
     mdb_cursor_open(txn, avatars, &cursor);
     rc = mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_FIRST);
-    
-    do {
-        std::string sId((char*)lmdbKey.mv_data, lmdbKey.mv_size);
-        QString res(sId.c_str());
-        if (res != jid) {
-            data.emplace(res, AvatarInfo());
-            data[res].deserialize((char*)lmdbData.mv_data, lmdbData.mv_size);
-        }
-    } while (mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_NEXT) == 0);
+    if (rc == 0) {                                                  //the db might be empty yet
+        do {
+            std::string sId((char*)lmdbKey.mv_data, lmdbKey.mv_size);
+            QString res(sId.c_str());
+            if (res != jid) {
+                data.emplace(res, AvatarInfo());
+                data[res].deserialize((char*)lmdbData.mv_data, lmdbData.mv_size);
+            }
+        } while (mdb_cursor_get(cursor, &lmdbKey, &lmdbData, MDB_NEXT) == 0);
+    }
     
     mdb_cursor_close(cursor);
     mdb_txn_abort(txn);

@@ -61,19 +61,14 @@ void Chat::updateState()
     statusIcon->setToolTip(Shared::Global::getName(av));
 }
 
-void Chat::handleSendMessage(const QString& text)
+Shared::Message Chat::createMessage() const
 {
-    Shared::Message msg(Shared::Message::chat);
+    Shared::Message msg = Conversation::createMessage();
+    msg.setType(Shared::Message::chat);
     msg.setFrom(account->getFullJid());
     msg.setToJid(palJid);
     msg.setToResource(activePalResource);
-    msg.setBody(text);
-    msg.setOutgoing(true);
-    msg.generateRandomId();
-    msg.setCurrentTime();
-    msg.setState(Shared::Message::State::pending);
-    addMessage(msg);
-    emit sendMessage(msg);
+    return msg;
 }
 
 void Chat::addMessage(const Shared::Message& data)

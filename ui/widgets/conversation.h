@@ -102,7 +102,7 @@ signals:
 protected:
     virtual void setName(const QString& name);
     void applyVisualEffects();
-    virtual void handleSendMessage(const QString& text) = 0;
+    virtual Shared::Message createMessage() const;
     void setStatus(const QString& status);
     void addAttachedFile(const QString& path);
     void removeAttachedFile(Badge* badge);

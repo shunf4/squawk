@@ -208,22 +208,14 @@ void Conversation::onEnterPressed()
     
     if (body.size() > 0) {
         m_ui->messageEditor->clear();
-        handleSendMessage(body);
+        Shared::Message msg = createMessage();
+        msg.setBody(body);
+        addMessage(msg);
+        emit sendMessage(msg);
     }
     if (filesToAttach.size() > 0) {
         for (Badge* badge : filesToAttach) {
-            Shared::Message msg;
-            if (isMuc) {
-                msg.setType(Shared::Message::groupChat);
-            } else {
-                msg.setType(Shared::Message::chat);
-                msg.setToResource(activePalResource);
-            }
-            msg.setFrom(account->getFullJid());
-            msg.setToJid(palJid);
-            msg.setOutgoing(true);
-            msg.generateRandomId();
-            msg.setCurrentTime();
+            Shared::Message msg = createMessage();
             line->appendMessageWithUpload(msg, badge->id);
             usleep(1000);       //this is required for the messages not to have equal time when appending into messageline
         }
@@ -484,6 +476,16 @@ void Conversation::dropEvent(QDropEvent* event)
         event->acceptProposedAction();
     }
     overlay->hide();
+}
+
+Shared::Message Conversation::createMessage() const
+{
+    Shared::Message msg;
+    msg.setOutgoing(true);
+    msg.generateRandomId();
+    msg.setCurrentTime();
+    msg.setState(Shared::Message::State::pending);
+    return msg;
 }
 
 bool VisibilityCatcher::eventFilter(QObject* obj, QEvent* event)

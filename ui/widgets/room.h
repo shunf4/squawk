@@ -40,7 +40,7 @@ protected slots:
     void onParticipantLeft(const QString& name);
     
 protected:
-    void handleSendMessage(const QString & text) override;
+    Shared::Message createMessage() const override;
     
 private:
     Models::Room* room;

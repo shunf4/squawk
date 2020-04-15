@@ -1377,6 +1377,7 @@ void Core::Account::addNewRoom(const QString& jid, const QString& nick, const QS
         {"avatars", conf->getAllAvatars()}
     };
     
+    
     Archive::AvatarInfo info;
     bool hasAvatar = conf->readAvatarInfo(info);
     if (hasAvatar) {

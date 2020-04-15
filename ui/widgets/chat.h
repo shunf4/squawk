@@ -43,7 +43,7 @@ protected slots:
     
 protected:
     void setName(const QString & name) override;
-    void handleSendMessage(const QString & text) override;
+    Shared::Message createMessage() const override;
     
 private:
     void updateState();
