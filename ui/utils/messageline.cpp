@@ -369,16 +369,12 @@ void MessageLine::responseLocalFile(const QString& messageId, const QString& pat
                     if (muItr != uploadPaths.end()) {
                         uploadPaths.erase(muItr);
                     }
-                    if (room) {
-                        removeMessage(messageId);
-                    } else {
-                        Shared::Message msg = itr->second->getMessage();
-                        removeMessage(messageId);
-                        msg.setCurrentTime();
-                        message(msg);
-                        itr = messageIndex.find(messageId);
-                        itr->second->showFile(path);
-                    }
+                    Shared::Message msg = itr->second->getMessage();
+                    removeMessage(messageId);
+                    msg.setCurrentTime();
+                    message(msg);
+                    itr = messageIndex.find(messageId);
+                    itr->second->showFile(path);
                 } else {
                     itr->second->showFile(path); //then it is already cached file
                 }
@@ -387,7 +383,7 @@ void MessageLine::responseLocalFile(const QString& messageId, const QString& pat
             if (uItr == uploading.end()) {
                 const Shared::Message& msg = itr->second->getMessage();
                 itr->second->addButton(QIcon::fromTheme("download"), tr("Download"), "<a href=\"" + msg.getOutOfBandUrl() + "\">" + msg.getOutOfBandUrl() + "</a>");
-                itr->second->showComment(tr("Push the button to daownload the file"));
+                itr->second->showComment(tr("Push the button to download the file"));
             } else {
                 qDebug() << "An unhandled state for file uploading - empty path";
             }

@@ -54,6 +54,7 @@ Squawk::Squawk(QWidget *parent) :
     connect(m_ui->actionAccounts, &QAction::triggered, this, &Squawk::onAccounts);
     connect(m_ui->actionAddContact, &QAction::triggered, this, &Squawk::onNewContact);
     connect(m_ui->actionAddConference, &QAction::triggered, this, &Squawk::onNewConference);
+    connect(m_ui->actionQuit, &QAction::triggered, this, &Squawk::close);
     connect(m_ui->comboBox, qOverload<int>(&QComboBox::activated), this, &Squawk::onComboboxActivated);
     //connect(m_ui->roster, &QTreeView::doubleClicked, this, &Squawk::onRosterItemDoubleClicked);
     connect(m_ui->roster, &QTreeView::customContextMenuRequested, this, &Squawk::onRosterContextMenu);
@@ -64,7 +65,6 @@ Squawk::Squawk(QWidget *parent) :
     connect(contextMenu, &QMenu::aboutToHide, this, &Squawk::onContextAboutToHide);
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
     
-    setWindowTitle(tr("Contact list"));
     if (testAttribute(Qt::WA_TranslucentBackground)) {
         m_ui->roster->viewport()->setAutoFillBackground(false);
     }

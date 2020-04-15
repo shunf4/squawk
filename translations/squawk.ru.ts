@@ -384,10 +384,6 @@ p, li { white-space: pre-wrap; }
         <translation>Скачать</translation>
     </message>
     <message>
-        <source>Push the button to daownload the file</source>
-        <translation>Нажмите на кнопку что бы загрузить файл</translation>
-    </message>
-    <message>
         <source>Error uploading file: %1
 You can try again</source>
         <translation>Ошибка загрузки файла на сервер:
@@ -408,6 +404,10 @@ You can try again</source>
     <message>
         <source>Uploading...</source>
         <translation>Загружается...</translation>
+    </message>
+    <message>
+        <source>Push the button to download the file</source>
+        <translation>Нажмите на кнопку что бы загрузить файл</translation>
     </message>
 </context>
 <context>
@@ -547,10 +547,6 @@ You can try again</source>
     <message>
         <source>Add conference</source>
         <translation>Присоединиться к беседе</translation>
-    </message>
-    <message>
-        <source>Contact list</source>
-        <translation>Список контактов</translation>
     </message>
     <message>
         <source>Disconnect</source>

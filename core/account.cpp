@@ -1141,7 +1141,7 @@ void Core::Account::onClientError(QXmppClient::Error err)
                 case QXmppStanza::Error::UnexpectedRequest:
                     errorText = "Unexpected request";
                     break;
-#if (QXMPP_VERSION) >= QT_VERSION_CHECK(1, 1, 0)
+#if (QXMPP_VERSION) >= QT_VERSION_CHECK(1, 3, 0)
                 case QXmppStanza::Error::PolicyViolation:
                     errorText = "Policy violation";
                     break;

@@ -1,5 +1,13 @@
 # Changelog
 
+## Squawk 0.1.5 (UNRELEASED)
+### Bug fixes
+- error with sending attached files to the conference
+- error with building on lower versions of QXmpp
+- error on the first access to the conference database
+- quit now actually quits the app
+
+
 ## Squawk 0.1.4 (Apr 14, 2020)
 ### New features
 - message line now is in the same window with roster (new window dialog is still able to opened on context menu)
