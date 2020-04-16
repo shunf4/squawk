@@ -26,10 +26,12 @@
 #include <deque>
 
 #include "shared/enums.h"
-
 namespace Models {
 
+class Reference;
+    
 class Item : public QObject{
+    friend class Reference;
     Q_OBJECT
     public:
         enum Type {
@@ -39,7 +41,8 @@ class Item : public QObject{
             room,
             presence,
             participant,
-            root
+            root,
+            reference
         };
         
         explicit Item(Type p_type, const QMap<QString, QVariant> &data, Item *parentItem = 0);
@@ -62,8 +65,8 @@ class Item : public QObject{
         QString getName() const;
         void setName(const QString& name);
         
-        Item *child(int row);
-        int childCount() const;
+        virtual Item *child(int row);
+        virtual int childCount() const;
         virtual int columnCount() const;
         virtual QVariant data(int column) const;
         int row() const;
@@ -92,6 +95,7 @@ class Item : public QObject{
         QString name;
         std::deque<Item*> childItems;
         Item* parent;
+        std::deque<Item*> references;
         
     protected slots:
         virtual void toOfflineState();

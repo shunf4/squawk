@@ -480,7 +480,9 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
             if (item->type == Item::contact) {
                 Contact* ca = static_cast<Contact*>(item);
                 if (ca->getJid() == jid) {
-                    qDebug() << "An attempt to add a already existing contact " << jid << " to the group " << group << ", contact will be moved from ungrouped contacts of " << account;
+                    qDebug()    << "An attempt to add a already existing contact " << jid 
+                                << " to the group " << group 
+                                << ", contact will be moved from ungrouped contacts of " << account;
                     
                     parent->appendChild(ca);
                     return;

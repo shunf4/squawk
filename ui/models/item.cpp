@@ -26,7 +26,8 @@ Models::Item::Item(Type p_type, const QMap<QString, QVariant> &p_data, Item *p_p
     type(p_type),
     name(""),
     childItems(),
-    parent(p_parent)
+    parent(p_parent),
+    references()
 {
     QMap<QString, QVariant>::const_iterator itr = p_data.find("name");
     if (itr != p_data.end()) {
