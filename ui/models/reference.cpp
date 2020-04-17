@@ -17,39 +17,37 @@
  */
 
 #include "reference.h"
+#include <QDebug>
 
 using namespace Models;
 
 Models::Reference::Reference(Models::Item* original, Models::Item* parent):
     Models::Item(reference, {}, parent),
-    original(original)
+    original(original),
+    ax(-1),
+    bx(-1),
+    cx(-1),
+    c(false)
 {
-    original->references.push_back(this);
+    connect(original, &Item::childChanged, this, &Reference::onChildChanged);
+    connect(original, &Item::childIsAboutToBeInserted, this, &Reference::onChildIsAboutToBeInserted);
+    connect(original, &Item::childInserted, this, &Reference::onChildInserted);
+    connect(original, &Item::childIsAboutToBeRemoved, this, &Reference::onChildIsAboutToBeRemoved);
+    connect(original, &Item::childRemoved, this, &Reference::onChildRemoved);
+    connect(original, &Item::childIsAboutToBeMoved, this, &Reference::onChildIsAboutToBeMoved);
+    connect(original, &Item::childMoved, this, &Reference::onChildMoved);
     
-    connect(original, &Item::childChanged, this, &Item::childChanged);
-    connect(original, &Item::childIsAboutToBeInserted, this, &Item::childIsAboutToBeInserted);
-    connect(original, &Item::childInserted, this, &Item::childInserted);
-    connect(original, &Item::childIsAboutToBeRemoved, this, &Item::childIsAboutToBeRemoved);
-    connect(original, &Item::childRemoved, this, &Item::childRemoved);
-    connect(original, &Item::childIsAboutToBeMoved, this, &Item::childIsAboutToBeMoved);
-    connect(original, &Item::childMoved, this, &Item::childMoved);
+    original->addReference(this);
 }
 
 Models::Reference::~Reference()
 {
-    disconnect(original, &Item::childIsAboutToBeInserted, this, &Item::childIsAboutToBeInserted);
-    disconnect(original, &Item::childInserted, this, &Item::childInserted);
-    disconnect(original, &Item::childIsAboutToBeRemoved, this, &Item::childIsAboutToBeRemoved);
-    disconnect(original, &Item::childRemoved, this, &Item::childRemoved);
-    disconnect(original, &Item::childIsAboutToBeMoved, this, &Item::childIsAboutToBeMoved);
-    disconnect(original, &Item::childMoved, this, &Item::childMoved);
-    
-    for (std::deque<Item*>::const_iterator itr = original->references.begin(), end = original->references.end(); itr != end; itr++) {
-        if (*itr == this) {
-            original->references.erase(itr);
-            break;
-        }
-    }
+    disconnect(original, &Item::childIsAboutToBeInserted, this, &Reference::onChildIsAboutToBeInserted);
+    disconnect(original, &Item::childInserted, this, &Reference::onChildInserted);
+    disconnect(original, &Item::childIsAboutToBeRemoved, this, &Reference::onChildIsAboutToBeRemoved);
+    disconnect(original, &Item::childRemoved, this, &Reference::onChildRemoved);
+    disconnect(original, &Item::childIsAboutToBeMoved, this, &Reference::onChildIsAboutToBeMoved);
+    disconnect(original, &Item::childMoved, this, &Reference::onChildMoved);
 }
 
 int Models::Reference::columnCount() const
@@ -90,4 +88,80 @@ void Models::Reference::removeChild(int index)
 void Models::Reference::toOfflineState()
 {
     original->toOfflineState();
+}
+
+void Models::Reference::onChildChanged(Models::Item* item, int row, int col)
+{
+    if (item == original) {
+        emit childChanged(this, row, col);
+    }
+}
+
+void Models::Reference::onChildIsAboutToBeInserted(Models::Item* parent, int first, int last)
+{
+    if (parent == original) {
+        ax = first;
+        bx = last;
+    }
+}
+
+void Models::Reference::onChildInserted()
+{
+    if (ax != -1 && bx != -1) {
+        for (int i = ax; i <= bx; ++i) {
+            Reference* ref = new Reference(original->child(i));
+            Item::appendChild(ref);
+        }
+        ax = -1;
+        bx = -1;
+    }
+}
+
+void Models::Reference::onChildIsAboutToBeRemoved(Models::Item* parent, int first, int last)
+{
+    if (parent == original) {
+        for (int i = first; i <= last; ++i) {
+            Reference* ref = static_cast<Reference*>(childItems[i]);
+            Item* orig = original->child(i);
+            orig->removeReference(ref);
+            Item::removeChild(i);
+            delete ref;
+        }
+    }
+}
+
+void Models::Reference::onChildRemoved()
+{
+}
+
+void Models::Reference::onChildIsAboutToBeMoved(Models::Item* source, int first, int last, Models::Item* destination, int newIndex)
+{
+    if (destination == original) {
+        if (source != original) {
+            c = true;
+            ax = first;
+            bx = last;
+            cx = newIndex;
+            emit childIsAboutToBeMoved(source, first, last, destination, newIndex);
+        } else {
+            ax = newIndex;
+            bx = newIndex + last - first + 1;
+        }
+    }
+}
+
+void Models::Reference::onChildMoved()
+{
+    if (c) {
+        std::deque<Item*>::const_iterator beg = childItems.begin() + ax;
+        std::deque<Item*>::const_iterator end = childItems.begin() + bx + 1;
+        std::deque<Item*>::const_iterator tgt = childItems.begin() + cx;
+        std::deque<Item*> temp;
+        temp.insert(temp.end(), beg, end);
+        childItems.erase(beg, end);
+        childItems.insert(tgt, temp.begin(), temp.end());
+        emit childMoved();
+    } else {
+        onChildInserted();
+    }
 }

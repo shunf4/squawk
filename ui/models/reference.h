@@ -30,7 +30,7 @@ class Reference : public Models::Item
 {
     Q_OBJECT
 public:
-    Reference(Models::Item* original, Models::Item* parent);
+    Reference(Models::Item* original, Models::Item* parent = 0);
     ~Reference();
     
     int columnCount() const override;
@@ -44,9 +44,21 @@ public:
 protected slots:
     void toOfflineState() override;
     
+private slots:
+    void onChildChanged(Models::Item* item, int row, int col);
+    void onChildIsAboutToBeInserted(Item* parent, int first, int last);
+    void onChildInserted();
+    void onChildIsAboutToBeRemoved(Item* parent, int first, int last);
+    void onChildRemoved();
+    void onChildIsAboutToBeMoved(Item* source, int first, int last, Item* destination, int newIndex);
+    void onChildMoved();
+    
 private:
     Models::Item* original;
-    
+    int ax;
+    int bx;
+    int cx;
+    bool c;
 };
 
 }

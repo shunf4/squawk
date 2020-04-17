@@ -24,11 +24,14 @@
 #include <QVariant>
 
 #include <deque>
+#include <set>
 
 #include "shared/enums.h"
 namespace Models {
 
 class Reference;
+class Contact;
+class Account;
     
 class Item : public QObject{
     friend class Reference;
@@ -82,11 +85,17 @@ class Item : public QObject{
         
         const Type type;
         
+        int getContact(const QString& jid) const;
+        std::set<Reference*>::size_type referencesCount() const;
+        
+        void addReference(Reference* ref);
+        void removeReference(Reference* ref);
+        
     protected:
         virtual void changed(int col);
         virtual void _removeChild(int index);
         virtual bool columnInvolvedInDisplay(int col);
-        const Item* getParentAccount() const;
+        virtual const Account* getParentAccount() const;
         
     protected slots:
         void onChildChanged(Models::Item* item, int row, int col);
@@ -95,7 +104,7 @@ class Item : public QObject{
         QString name;
         std::deque<Item*> childItems;
         Item* parent;
-        std::deque<Item*> references;
+        std::set<Reference*> references;
         
     protected slots:
         virtual void toOfflineState();

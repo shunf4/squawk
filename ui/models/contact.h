@@ -31,13 +31,14 @@
 #include <deque>
 
 namespace Models {
+class Account;
     
 class Contact : public Item
 {
     Q_OBJECT
 public:
     typedef std::deque<Shared::Message> Messages;
-    Contact(const QString& p_jid, const QMap<QString, QVariant> &data, Item *parentItem = 0);
+    Contact(const Account* acc, const QString& p_jid, const QMap<QString, QVariant> &data, Item *parentItem = 0);
     Contact(const Contact& other);
     ~Contact();
     
@@ -72,6 +73,7 @@ public:
 protected:
     void _removeChild(int index) override;
     bool columnInvolvedInDisplay(int col) override;
+    const Account* getParentAccount() const override;
     
 protected slots:
     void refresh();
@@ -98,6 +100,7 @@ private:
     unsigned int childMessages;
     QString status;
     QString avatarPath;
+    const Account* account;
 };
 
 }

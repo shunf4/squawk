@@ -23,6 +23,8 @@
 
 namespace Models {
 
+class Contact;
+    
 class Group : public Models::Item
 {
     Q_OBJECT
@@ -36,8 +38,6 @@ public:
     
     unsigned int getUnreadMessages() const;
     unsigned int getOnlineContacts() const;
-    
-    bool hasContact(const QString& jid) const;
 
 protected:
     void _removeChild(int index) override;

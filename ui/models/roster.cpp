@@ -62,6 +62,9 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
     QVariant result;
     
     Item *item = static_cast<Item*>(index.internalPointer());
+    if (item->type == Item::reference) {
+        item = static_cast<Reference*>(item)->dereference();
+    }
     switch (role) {
         case Qt::DisplayRole:
         {
@@ -430,7 +433,8 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
 {
     Item* parent;
     Account* acc;
-    Contact* sample = 0;
+    Contact* contact;
+    Reference* ref = 0;
     ElId id(account, jid);
     
     {
@@ -442,13 +446,18 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
         acc = itr->second;
     }
     
-    for (std::multimap<ElId, Contact*>::iterator itr = contacts.lower_bound(id), eItr = contacts.upper_bound(id); itr != eItr; ++itr) {
-        sample = itr->second;                   //need to find if this contact is already added somewhere
-        break;                                  //so one iteration is enough
+    {
+        std::map<ElId, Contact*>::iterator itr = contacts.find(id);
+        if (itr == contacts.end()) {
+            contact = new Contact(acc, jid, data);
+            contacts.insert(std::make_pair(id, contact));
+        } else {
+            contact = itr->second;
+        }
     }
     
-    if (group == "") {       //this means this contact is already added somewhere and there is no sense to add it ungrouped
-        if (sample != 0) {
+    if (group == "") {
+        if (acc->getContact(jid) != -1) {
             qDebug() << "An attempt to add a contact" << jid << "to the ungrouped contact set of account" << account << "for the second time, skipping";
             return;
         } else {
@@ -464,41 +473,26 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
         
         parent = itr->second;
         
-        for (int i = 0; i < parent->childCount(); ++i) {        //checking if the contact is already added to that group
-            Item* item = parent->child(i);
-            if (item->type == Item::contact) {
-                Contact* ca = static_cast<Contact*>(item);
-                if (ca->getJid() == jid) {
-                    qDebug() << "An attempt to add a contact" << jid << "to the group" << group << "for the second time, skipping";
-                    return;
-                }
-            }
+        if (parent->getContact(jid) != -1) {
+            qDebug() << "An attempt to add a contact" << jid << "to the group" << group << "for the second time, skipping";
+            return;
         }
         
-        for (int i = 0; i < acc->childCount(); ++i) {           //checking if that contact is among ugrouped
-            Item* item = acc->child(i);
-            if (item->type == Item::contact) {
-                Contact* ca = static_cast<Contact*>(item);
-                if (ca->getJid() == jid) {
-                    qDebug()    << "An attempt to add a already existing contact " << jid 
-                                << " to the group " << group 
-                                << ", contact will be moved from ungrouped contacts of " << account;
-                    
-                    parent->appendChild(ca);
-                    return;
-                }
-            }
+        int refIndex = acc->getContact(jid);
+        if (refIndex != -1) {           //checking if that contact is among ugrouped
+            qDebug()    << "An attempt to add a already existing contact " << jid 
+                        << " to the group " << group 
+                        << ", contact will be moved from ungrouped contacts of " << account;
+            ref = static_cast<Reference*>(acc->child(refIndex));
+            acc->removeChild(refIndex);
         }
         
     }
-    Contact* contact;
-    if (sample == 0) {
-        contact = new Contact(jid, data);
-    } else {
-        contact = sample->copy();
+    
+    if (ref == 0) {
+        ref = new Reference(contact);
     }
-    contacts.insert(std::make_pair(id, contact));
-    parent->appendChild(contact);
+    parent->appendChild(ref);
 }
 
 void Models::Roster::removeGroup(const QString& account, const QString& name)
@@ -515,33 +509,24 @@ void Models::Roster::removeGroup(const QString& account, const QString& name)
     
     parent->removeChild(row);
     
-    std::deque<Contact*> toInsert;
+    std::deque<Reference*> toInsert;
     for (int i = 0; item->childCount() > 0; ++i) {
-        Contact* cont = static_cast<Contact*>(item->child(0));
+        Reference* ref = static_cast<Reference*>(item->child(0));
         item->removeChild(0);
         
-        std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound({account, cont->getJid()});
-        std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound({account, cont->getJid()});
-        
-        int count = std::distance(cBeg, cEnd);
-        if (count > 1) {
-            for (; cBeg != cEnd; ++count, ++cBeg) {
-                if (cBeg->second == cont) {
-                    delete cont;
-                    contacts.erase(cBeg);
-                    break;
-                }
-            }
+        Contact* cont = static_cast<Contact*>(ref->dereference());
+        if (cont->referencesCount() == 1) {
+            toInsert.push_back(ref);
         } else {
-            toInsert.push_back(cont);
+            cont->removeReference(ref);
+            delete ref;
         }
     }
     
     if (toInsert.size() > 0) {
         Account* acc = accounts.find("account")->second;
         for (std::deque<Contact*>::size_type i = 0; i < toInsert.size(); ++i) {
-            Contact* cont = toInsert[i];
-            acc->appendChild(cont);             //TODO optimisation
+            acc->appendChild(toInsert[i]);             //TODO optimisation
         }
     }
     
@@ -552,19 +537,18 @@ void Models::Roster::removeGroup(const QString& account, const QString& name)
 void Models::Roster::changeContact(const QString& account, const QString& jid, const QMap<QString, QVariant>& data)
 {
     ElId id(account, jid);
-    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(id);
-    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(id);
+    std::map<ElId, Contact*>::iterator cItr = contacts.find(id);
     
-    for (; cBeg != cEnd; ++cBeg) {
+    if (cItr != contacts.end()) {
         for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
-            cBeg->second->update(itr.key(), itr.value());
+            cItr->second->update(itr.key(), itr.value());
         }
-    }
-    
-    std::map<ElId, Room*>::iterator rItr = rooms.find(id);
-    if (rItr != rooms.end()) {
-        for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
-            rItr->second->update(itr.key(), itr.value());
+    } else {
+        std::map<ElId, Room*>::iterator rItr = rooms.find(id);
+        if (rItr != rooms.end()) {
+            for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
+                rItr->second->update(itr.key(), itr.value());
+            }
         }
     }
 }
@@ -572,18 +556,13 @@ void Models::Roster::changeContact(const QString& account, const QString& jid, c
 void Models::Roster::changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data)
 {
     ElId elid(account, jid);
-    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(elid);
-    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(elid);
+    std::map<ElId, Contact*>::iterator cItr = contacts.find(elid);
     
-    for (; cBeg != cEnd; ++cBeg) {
-        for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
-            cBeg->second->changeMessage(id, data);
-        }
-    }
-    
-    std::map<ElId, Room*>::iterator rItr = rooms.find(elid);
-    if (rItr != rooms.end()) {
-        for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
+    if (cItr != contacts.end()) {
+        cItr->second->changeMessage(id, data);
+    } else {
+        std::map<ElId, Room*>::iterator rItr = rooms.find(elid);
+        if (rItr != rooms.end()) {
             rItr->second->changeMessage(id, data);
         }
     }
@@ -592,25 +571,26 @@ void Models::Roster::changeMessage(const QString& account, const QString& jid, c
 void Models::Roster::removeContact(const QString& account, const QString& jid)
 {
     ElId id(account, jid);
-    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(id);
-    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(id);
-    std::multimap<ElId, Contact*>::iterator cpBeg = cBeg;
+    std::map<ElId, Contact*>::iterator itr = contacts.find(id);
     
-    QSet<QString> toRemove;
-    for (; cBeg != cEnd; ++cBeg) {
-        Contact* contact = cBeg->second;
-        Item* parent = contact->parentItem();
-        if (parent->type == Item::group && parent->childCount() == 1) {
-            toRemove.insert(parent->getName());
+    if (itr != contacts.end()) {
+        Contact* contact = itr->second;
+        
+        contacts.erase(itr);
+        delete contact;
+        
+        std::set<ElId> toRemove;
+        for (std::pair<ElId, Group*> pair : groups) {
+            if (pair.second->childCount() == 0) {
+                toRemove.insert(pair.first);
+            }
         }
         
-        parent->removeChild(contact->row());
-        contact->deleteLater();
-    }
-    contacts.erase(cpBeg, cEnd);
-    
-    for (QSet<QString>::const_iterator itr = toRemove.begin(), end = toRemove.end(); itr != end; ++itr) {
-        removeGroup(account, *itr);
+        for (const ElId& elId : toRemove) {
+            removeGroup(elId.account, elId.name);
+        }
+    } else {
+        qDebug() << "An attempt to remove contact " << jid << " from account " << account <<" which doesn't exist there, skipping";
     }
 }
 
@@ -619,6 +599,12 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
     ElId contactId(account, jid);
     ElId groupId(account, group);
     
+    std::map<ElId, Contact*>::iterator cItr = contacts.find(contactId);
+    if (cItr == contacts.end()) {
+        qDebug() << "An attempt to remove non existing contact " << jid << " from group " << group << " of account " << account <<", skipping";
+        return;
+    }
+    
     std::map<ElId, Group*>::iterator gItr = groups.find(groupId);
     if (gItr == groups.end()) {
         qDebug() << "An attempt to remove contact " << jid << " from non existing group " << group << " of account " << account <<", skipping";
@@ -626,57 +612,26 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
     }
     Account* acc = accounts.find(account)->second;  //I assume the account is found, otherwise there will be no groups with that ElId;
     Group* gr = gItr->second;
-    Contact* cont = 0;
+    Contact* cont = cItr->second;
     
-    unsigned int entries(0);
-    unsigned int ungroupped(0);
-    for (std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId), cEnd = contacts.upper_bound(contactId); cBeg != cEnd; ++cBeg) {
-        ++entries;
-        Contact* elem = cBeg->second;
-        if (elem->parentItem() == acc) {
-            ++ungroupped;
-        }
+    int contRow = gr->getContact(jid);
+    if (contRow == -1) {
+        qDebug() << "An attempt to remove contact " << jid << " of account " << account << " from group " << group  <<", but there is no such contact in that group, skipping";
+        return;
+    }
+    Reference* ref = static_cast<Reference*>(gr->child(contRow));
+    gr->removeChild(contRow);
+    
+    if (cont->referencesCount() == 1) {
+        qDebug() << "An attempt to remove last instance of contact" << jid << "from the group" << group << ", contact will be moved to ungrouped contacts of" << account;
+        acc->appendChild(ref);
+    } else {
+        cont->removeReference(ref);
+        delete ref;
     }
     
-    if (ungroupped == 0 && entries == 1) {
-        for (std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId), cEnd = contacts.upper_bound(contactId); cBeg != cEnd; ++cBeg) {
-            if (cBeg->second->parentItem() == gr) {
-                cont = cBeg->second;
-                break;
-            }
-        }
-        
-        if (cont == 0) {
-            qDebug() << "An attempt to remove contact " << jid << " of account " << account << " from group " << group  <<", but there is no such contact in that group, skipping";
-            return;
-        }
-        
-        qDebug() << "An attempt to remove last instance of contact" << jid << "from the group" << group << ", contact will be moved to ungrouped contacts of" << account;
-        acc->appendChild(cont);
-        
-        if (gr->childCount() == 0) {
-            removeGroup(account, group);
-        }
-    } else {
-        for (std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId), cEnd = contacts.upper_bound(contactId); cBeg != cEnd; ++cBeg) {
-            if (cBeg->second->parentItem() == gr) {
-                cont = cBeg->second;
-                contacts.erase(cBeg);
-                break;
-            }
-        }
-        
-        if (cont == 0) {
-            qDebug() << "An attempt to remove contact" << jid << "of account" << account << "from group" << group  <<", but there is no such contact in that group, skipping";
-            return;
-        }
-        
-        gr->removeChild(cont->row());
-        cont->deleteLater();
-        
-        if (gr->childCount() == 0) {
-            removeGroup(account, group);
-        }
+    if (gr->childCount() == 0) {
+        removeGroup(account, group);
     }
 }
 
@@ -738,50 +693,46 @@ void Models::Roster::onChildRemoved()
 void Models::Roster::addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data)
 {
     ElId contactId(account, jid);
-    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId);
-    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(contactId);
-    for (;cBeg != cEnd; ++cBeg) {
-        cBeg->second->addPresence(name, data);
+    std::map<ElId, Contact*>::iterator itr = contacts.find(contactId);
+    if (itr != contacts.end()) {
+        itr->second->addPresence(name, data);
     }
 }
 
 void Models::Roster::removePresence(const QString& account, const QString& jid, const QString& name)
 {
     ElId contactId(account, jid);
-    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(contactId);
-    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(contactId);
-    for (;cBeg != cEnd; ++cBeg) {
-        cBeg->second->removePresence(name);
+    std::map<ElId, Contact*>::iterator itr = contacts.find(contactId);
+    if (itr != contacts.end()) {
+        itr->second->removePresence(name);
     }
 }
 
 void Models::Roster::addMessage(const QString& account, const Shared::Message& data)
 {
     ElId id(account, data.getPenPalJid());
-    
-    std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(id);
-    std::multimap<ElId, Contact*>::iterator cEnd = contacts.upper_bound(id);
-    
-    for (;cBeg != cEnd; ++cBeg) {
-        cBeg->second->addMessage(data);
-    }
-    
-    std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
-    if (rItr != rooms.end()) {
-        rItr->second->addMessage(data);
+    std::map<ElId, Contact*>::iterator itr = contacts.find(id);
+    if (itr != contacts.end()) {
+        itr->second->addMessage(data);
+    } else {
+        std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
+        if (rItr != rooms.end()) {
+            rItr->second->addMessage(data);
+        }
     }
 }
 
 void Models::Roster::dropMessages(const QString& account, const QString& jid)
 {
     ElId id(account, jid);
-    for (std::multimap<ElId, Contact*>::iterator cBeg = contacts.lower_bound(id), cEnd = contacts.upper_bound(id) ;cBeg != cEnd; ++cBeg) {
-        cBeg->second->dropMessages();
-    }
-    
-    std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
-    if (rItr != rooms.end()) {
-        rItr->second->dropMessages();
+    std::map<ElId, Contact*>::iterator itr = contacts.find(id);
+    if (itr != contacts.end()) {
+        itr->second->dropMessages();
+    } else {
+        std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
+        if (rItr != rooms.end()) {
+            rItr->second->dropMessages();
+        }
     }
 }
 
@@ -799,10 +750,10 @@ void Models::Roster::removeAccount(const QString& account)
     accountsModel->removeAccount(index);
     accounts.erase(itr);
     
-    std::multimap<ElId, Contact*>::const_iterator cItr = contacts.begin();
+    std::map<ElId, Contact*>::const_iterator cItr = contacts.begin();
     while (cItr != contacts.end()) {
         if (cItr->first.account == account) {
-            std::multimap<ElId, Contact*>::const_iterator lItr = cItr;
+            std::map<ElId, Contact*>::const_iterator lItr = cItr;
             ++cItr;
             contacts.erase(lItr);
         } else {
@@ -838,7 +789,7 @@ void Models::Roster::removeAccount(const QString& account)
 QString Models::Roster::getContactName(const QString& account, const QString& jid)
 {
     ElId id(account, jid);
-    std::multimap<ElId, Contact*>::const_iterator cItr = contacts.find(id);
+    std::map<ElId, Contact*>::const_iterator cItr = contacts.find(id);
     QString name = "";
     if (cItr == contacts.end()) {
         std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
@@ -971,15 +922,14 @@ bool Models::Roster::groupHasContact(const QString& account, const QString& grou
     if (gItr == groups.end()) {
         return false;
     } else {
-        const Group* gr = gItr->second;
-        return gr->hasContact(contact);
+        return gItr->second->getContact(contact) != -1;
     }
 }
 
 QString Models::Roster::getContactIconPath(const QString& account, const QString& jid, const QString& resource)
 {
     ElId id(account, jid);
-    std::multimap<ElId, Contact*>::const_iterator cItr = contacts.find(id);
+    std::map<ElId, Contact*>::const_iterator cItr = contacts.find(id);
     QString path = "";
     if (cItr == contacts.end()) {
         std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);

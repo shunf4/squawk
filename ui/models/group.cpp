@@ -18,6 +18,7 @@
 
 #include "group.h"
 #include "contact.h"
+#include "reference.h"
 
 Models::Group::Group(const QMap<QString, QVariant>& data, Models::Item* parentItem):
     Item(group, data, parentItem),
@@ -102,17 +103,4 @@ unsigned int Models::Group::getOnlineContacts() const
     }
     
     return amount;
-}
-
-bool Models::Group::hasContact(const QString& jid) const
-{
-    for (Models::Item* item : childItems) {
-        if (item->type == Item::contact) {
-            const Contact* cnt = static_cast<const Contact*>(item);
-            if (cnt->getJid() == jid) {
-                return true;
-            }
-        }
-    }
-    return false;
 }

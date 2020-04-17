@@ -17,10 +17,11 @@
  */
 
 #include "contact.h"
+#include "account.h"
 
 #include <QDebug>
 
-Models::Contact::Contact(const QString& p_jid ,const QMap<QString, QVariant> &data, Item *parentItem):
+Models::Contact::Contact(const Account* acc, const QString& p_jid ,const QMap<QString, QVariant> &data, Item *parentItem):
     Item(Item::contact, data, parentItem),
     jid(p_jid),
     availability(Shared::Availability::offline),
@@ -30,7 +31,8 @@ Models::Contact::Contact(const QString& p_jid ,const QMap<QString, QVariant> &da
     messages(),
     childMessages(0),
     status(),
-    avatarPath()
+    avatarPath(),
+    account(acc)
 {
     QMap<QString, QVariant>::const_iterator itr = data.find("state");
     if (itr != data.end()) {
@@ -368,7 +370,8 @@ Models::Contact::Contact(const Models::Contact& other):
     state(other.state),
     presences(),
     messages(other.messages),
-    childMessages(0)
+    childMessages(0),
+    account(other.account)
 {
     for (const Presence* pres : other.presences) {
         Presence* pCopy = new Presence(*pres);
@@ -415,3 +418,9 @@ void Models::Contact::setAvatarState(unsigned int p_state)
         qDebug() << "An attempt to set invalid avatar state" << p_state << "to the contact" << jid << ", skipping";
     }
 }
+
+const Models::Account * Models::Contact::getParentAccount() const
+{
+    return account;
+}
+
