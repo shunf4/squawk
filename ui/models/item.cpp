@@ -29,7 +29,9 @@ Models::Item::Item(Type p_type, const QMap<QString, QVariant> &p_data, Item *p_p
     name(""),
     childItems(),
     parent(p_parent),
-    references()
+    references(),
+    destroyingByParent(false),
+    destroyingByOriginal(false)
 {
     QMap<QString, QVariant>::const_iterator itr = p_data.find("name");
     if (itr != p_data.end()) {
@@ -48,15 +50,24 @@ Models::Item::Item(const Models::Item& other):
 
 Models::Item::~Item()
 {
-    for (Reference* ref : references) {
-        Item* parent = ref->parentItem();
+    if (!destroyingByParent) {
+        Item* parent = parentItem();
         if (parent != nullptr) {
-            parent->removeChild(ref->row());
+            if (parent->type == reference) {
+                parent->Item::removeChild(row());
+            } else {
+                parent->removeChild(row());
+            }
         }
+    }
+    
+    for (Reference* ref : references) {
+        ref->destroyingByOriginal = true;
         delete ref;
     }
     
     for (Item* child : childItems) {
+        child->destroyingByParent = true;
         delete child;
     }
 }
@@ -70,6 +81,11 @@ void Models::Item::setName(const QString& p_name)
 }
 
 void Models::Item::appendChild(Models::Item* child)
+{
+    _appendChild(child);
+}
+
+void Models::Item::_appendChild(Models::Item* child)
 {
     bool moving = false;
     int newRow = 0;

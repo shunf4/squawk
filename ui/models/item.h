@@ -88,27 +88,26 @@ class Item : public QObject{
         int getContact(const QString& jid) const;
         std::set<Reference*>::size_type referencesCount() const;
         
-        void addReference(Reference* ref);
-        void removeReference(Reference* ref);
-        
     protected:
         virtual void changed(int col);
         virtual void _removeChild(int index);
+        virtual void _appendChild(Item *child);
         virtual bool columnInvolvedInDisplay(int col);
         virtual const Account* getParentAccount() const;
+        void addReference(Reference* ref);
+        void removeReference(Reference* ref);
         
     protected slots:
         void onChildChanged(Models::Item* item, int row, int col);
+        virtual void toOfflineState();
         
     protected:
         QString name;
         std::deque<Item*> childItems;
         Item* parent;
         std::set<Reference*> references;
-        
-    protected slots:
-        virtual void toOfflineState();
-        
+        bool destroyingByParent;
+        bool destroyingByOriginal;
     };
 
 }

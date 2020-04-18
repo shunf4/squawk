@@ -29,7 +29,7 @@ Models::Reference::Reference(Models::Item* original, Models::Item* parent):
     cx(-1),
     c(false)
 {
-    connect(original, &Item::childChanged, this, &Reference::onChildChanged);
+    connect(original, &Item::childChanged, this, &Reference::onChildChanged, Qt::QueuedConnection);
     connect(original, &Item::childIsAboutToBeInserted, this, &Reference::onChildIsAboutToBeInserted);
     connect(original, &Item::childInserted, this, &Reference::onChildInserted);
     connect(original, &Item::childIsAboutToBeRemoved, this, &Reference::onChildIsAboutToBeRemoved);
@@ -38,10 +38,20 @@ Models::Reference::Reference(Models::Item* original, Models::Item* parent):
     connect(original, &Item::childMoved, this, &Reference::onChildMoved);
     
     original->addReference(this);
+    
+    for (int i = 0; i < original->childCount(); i++) {
+        Reference* ref = new Reference(original->child(i));
+        Item::appendChild(ref);
+    }
 }
 
 Models::Reference::~Reference()
 {
+    if (!destroyingByOriginal) {
+        original->removeReference(this);
+    }
+    
+    disconnect(original, &Item::childChanged, this, &Reference::onChildChanged);
     disconnect(original, &Item::childIsAboutToBeInserted, this, &Reference::onChildIsAboutToBeInserted);
     disconnect(original, &Item::childInserted, this, &Reference::onChildInserted);
     disconnect(original, &Item::childIsAboutToBeRemoved, this, &Reference::onChildIsAboutToBeRemoved);
@@ -120,13 +130,13 @@ void Models::Reference::onChildInserted()
 void Models::Reference::onChildIsAboutToBeRemoved(Models::Item* parent, int first, int last)
 {
     if (parent == original) {
+        emit childIsAboutToBeRemoved(this, first, last);
         for (int i = first; i <= last; ++i) {
-            Reference* ref = static_cast<Reference*>(childItems[i]);
-            Item* orig = original->child(i);
-            orig->removeReference(ref);
-            Item::removeChild(i);
+            Reference* ref = static_cast<Reference*>(childItems[first]);
+            Item::_removeChild(first);
             delete ref;
         }
+        childRemoved();
     }
 }
 

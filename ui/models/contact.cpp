@@ -226,9 +226,9 @@ void Models::Contact::_removeChild(int index)
     refresh();
 }
 
-void Models::Contact::appendChild(Models::Item* child)
+void Models::Contact::_appendChild(Models::Item* child)
 {
-    Item::appendChild(child);
+    Item::_appendChild(child);
     connect(child, &Item::childChanged, this, &Contact::refresh);
     refresh();
 }
@@ -334,17 +334,20 @@ void Models::Contact::getMessages(Models::Contact::Messages& container) const
 
 void Models::Contact::toOfflineState()
 {
-    emit childIsAboutToBeRemoved(this, 0, childItems.size());
-    for (std::deque<Item*>::size_type i = 0; i < childItems.size(); ++i) {
-        Item* item = childItems[i];
-        disconnect(item, &Item::childChanged, this, &Contact::refresh);
-        Item::_removeChild(i);
-        item->deleteLater();
+    std::deque<Item*>::size_type size = childItems.size();
+    if (size > 0) {
+        emit childIsAboutToBeRemoved(this, 0, size - 1);
+        for (std::deque<Item*>::size_type i = 0; i < size; ++i) {
+            Item* item = childItems[0];
+            disconnect(item, &Item::childChanged, this, &Contact::refresh);
+            Item::_removeChild(0);
+            item->deleteLater();
+        }
+        childItems.clear();
+        presences.clear();
+        emit childRemoved();
+        refresh();
     }
-    childItems.clear();
-    presences.clear();
-    emit childRemoved();
-    refresh();
 }
 
 QString Models::Contact::getDisplayedName() const

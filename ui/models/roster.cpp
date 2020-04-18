@@ -518,7 +518,6 @@ void Models::Roster::removeGroup(const QString& account, const QString& name)
         if (cont->referencesCount() == 1) {
             toInsert.push_back(ref);
         } else {
-            cont->removeReference(ref);
             delete ref;
         }
     }
@@ -626,7 +625,6 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
         qDebug() << "An attempt to remove last instance of contact" << jid << "from the group" << group << ", contact will be moved to ungrouped contacts of" << account;
         acc->appendChild(ref);
     } else {
-        cont->removeReference(ref);
         delete ref;
     }
     

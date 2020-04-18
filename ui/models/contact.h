@@ -57,7 +57,6 @@ public:
     void addPresence(const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& name);
     
-    void appendChild(Models::Item * child) override;
     QString getContactName() const;
     QString getStatus() const;
     
@@ -72,6 +71,7 @@ public:
     
 protected:
     void _removeChild(int index) override;
+    void _appendChild(Models::Item * child) override;
     bool columnInvolvedInDisplay(int col) override;
     const Account* getParentAccount() const override;
     
