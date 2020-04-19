@@ -76,6 +76,7 @@ public:
     virtual void handlePresence(const QXmppPresence& pres) = 0;
     
     bool changeMessage(const QString& id, const QMap<QString, QVariant>& data);
+    void clearArchiveRequests();
     
 signals:
     void nameChanged(const QString& name);

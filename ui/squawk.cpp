@@ -305,6 +305,9 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
 {
     if (item.isValid()) {
         Models::Item* node = static_cast<Models::Item*>(item.internalPointer());
+        if (node->type == Models::Item::reference) {
+            node = static_cast<Models::Reference*>(node)->dereference();
+        }
         Models::Contact* contact = 0;
         Models::Room* room = 0;
         QString res;
@@ -681,7 +684,9 @@ void Squawk::onRosterContextMenu(const QPoint& point)
     QModelIndex index = m_ui->roster->indexAt(point);
     if (index.isValid()) {
         Models::Item* item = static_cast<Models::Item*>(index.internalPointer());
-    
+        if (item->type == Models::Item::reference) {
+            item = static_cast<Models::Reference*>(item)->dereference();
+        }
         contextMenu->clear();
         bool hasMenu = false;
         bool active = item->getAccountConnectionState() == Shared::ConnectionState::connected;
@@ -1105,6 +1110,9 @@ void Squawk::onRosterSelectionChanged(const QModelIndex& current, const QModelIn
     
     if (current.isValid()) {
         Models::Item* node = static_cast<Models::Item*>(current.internalPointer());
+        if (node->type == Models::Item::reference) {
+            node = static_cast<Models::Reference*>(node)->dereference();
+        }
         Models::Contact* contact = 0;
         Models::Room* room = 0;
         QString res;

@@ -236,6 +236,7 @@ private:
     void logMessage(const QXmppMessage& msg, const QString& reason = "Message wasn't handled: ");
     void storeConferences();
     void clearConferences();
+    void cancelHistoryRequests();
     void sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url);
     RosterItem* getRosterItem(const QString& jid);
 };

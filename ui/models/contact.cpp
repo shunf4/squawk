@@ -17,10 +17,11 @@
  */
 
 #include "contact.h"
+#include "account.h"
 
 #include <QDebug>
 
-Models::Contact::Contact(const QString& p_jid ,const QMap<QString, QVariant> &data, Item *parentItem):
+Models::Contact::Contact(const Account* acc, const QString& p_jid ,const QMap<QString, QVariant> &data, Item *parentItem):
     Item(Item::contact, data, parentItem),
     jid(p_jid),
     availability(Shared::Availability::offline),
@@ -30,7 +31,8 @@ Models::Contact::Contact(const QString& p_jid ,const QMap<QString, QVariant> &da
     messages(),
     childMessages(0),
     status(),
-    avatarPath()
+    avatarPath(),
+    account(acc)
 {
     QMap<QString, QVariant>::const_iterator itr = data.find("state");
     if (itr != data.end()) {
@@ -224,9 +226,9 @@ void Models::Contact::_removeChild(int index)
     refresh();
 }
 
-void Models::Contact::appendChild(Models::Item* child)
+void Models::Contact::_appendChild(Models::Item* child)
 {
-    Item::appendChild(child);
+    Item::_appendChild(child);
     connect(child, &Item::childChanged, this, &Contact::refresh);
     refresh();
 }
@@ -332,17 +334,20 @@ void Models::Contact::getMessages(Models::Contact::Messages& container) const
 
 void Models::Contact::toOfflineState()
 {
-    emit childIsAboutToBeRemoved(this, 0, childItems.size());
-    for (std::deque<Item*>::size_type i = 0; i < childItems.size(); ++i) {
-        Item* item = childItems[i];
-        disconnect(item, &Item::childChanged, this, &Contact::refresh);
-        Item::_removeChild(i);
-        item->deleteLater();
+    std::deque<Item*>::size_type size = childItems.size();
+    if (size > 0) {
+        emit childIsAboutToBeRemoved(this, 0, size - 1);
+        for (std::deque<Item*>::size_type i = 0; i < size; ++i) {
+            Item* item = childItems[0];
+            disconnect(item, &Item::childChanged, this, &Contact::refresh);
+            Item::_removeChild(0);
+            item->deleteLater();
+        }
+        childItems.clear();
+        presences.clear();
+        emit childRemoved();
+        refresh();
     }
-    childItems.clear();
-    presences.clear();
-    emit childRemoved();
-    refresh();
 }
 
 QString Models::Contact::getDisplayedName() const
@@ -368,7 +373,8 @@ Models::Contact::Contact(const Models::Contact& other):
     state(other.state),
     presences(),
     messages(other.messages),
-    childMessages(0)
+    childMessages(0),
+    account(other.account)
 {
     for (const Presence* pres : other.presences) {
         Presence* pCopy = new Presence(*pres);
@@ -415,3 +421,9 @@ void Models::Contact::setAvatarState(unsigned int p_state)
         qDebug() << "An attempt to set invalid avatar state" << p_state << "to the contact" << jid << ", skipping";
     }
 }
+
+const Models::Account * Models::Contact::getParentAccount() const
+{
+    return account;
+}
+

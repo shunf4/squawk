@@ -518,3 +518,13 @@ Shared::VCard Core::RosterItem::handleResponseVCard(const QXmppVCardIq& card, co
     return vCard;
 }
 
+void Core::RosterItem::clearArchiveRequests()
+{
+    syncronizing = false;
+    requestedCount = 0;
+    requestedBefore = "";
+    hisoryCache.clear();
+    responseCache.clear();
+    appendCache.clear();
+    requestCache.clear();
+}

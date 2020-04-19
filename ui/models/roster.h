@@ -32,6 +32,7 @@
 #include "contact.h"
 #include "group.h"
 #include "room.h"
+#include "reference.h"
 
 namespace Models
 {
@@ -87,7 +88,7 @@ private:
     Item* root;
     std::map<QString, Account*> accounts;
     std::map<ElId, Group*> groups;
-    std::multimap<ElId, Contact*> contacts;
+    std::map<ElId, Contact*> contacts;
     std::map<ElId, Room*> rooms;
     
 private slots:

@@ -18,6 +18,7 @@
 
 #include "group.h"
 #include "contact.h"
+#include "reference.h"
 
 Models::Group::Group(const QMap<QString, QVariant>& data, Models::Item* parentItem):
     Item(group, data, parentItem),
@@ -29,9 +30,9 @@ Models::Group::~Group()
 {
 }
 
-void Models::Group::appendChild(Models::Item* child)
+void Models::Group::_appendChild(Models::Item* child)
 {
-    Item::appendChild(child);
+    Item::_appendChild(child);
     connect(child, &Item::childChanged, this, &Group::refresh);
     changed(1);
     refresh();
@@ -82,9 +83,14 @@ void Models::Group::refresh()
 {
     unsigned int newAmount(0);
     
-    for (std::deque<Models::Item*>::const_iterator itr = childItems.begin(), end = childItems.end(); itr != end; ++itr) {
-        Models::Contact* cnt = static_cast<Models::Contact*>(*itr);
-        newAmount += cnt->getMessagesCount();
+    for (Models::Item* item : childItems) {
+        if (item->type == reference) {
+            item = static_cast<Reference*>(item)->dereference();
+        }
+        if (item->type == contact) {
+            Models::Contact* cnt = static_cast<Models::Contact*>(item);
+            newAmount += cnt->getMessagesCount();
+        }
     }
     
     setUnreadMessages(newAmount);
@@ -94,25 +100,17 @@ unsigned int Models::Group::getOnlineContacts() const
 {
     unsigned int amount(0);
     
-    for (std::deque<Models::Item*>::const_iterator itr = childItems.begin(), end = childItems.end(); itr != end; ++itr) {
-        Models::Contact* cnt = static_cast<Models::Contact*>(*itr);
-        if (cnt->getAvailability() != Shared::Availability::offline) {
-            ++amount;
+    for (Models::Item* item : childItems) {
+        if (item->type == reference) {
+            item = static_cast<Reference*>(item)->dereference();
+        }
+        if (item->type == contact) {
+            Models::Contact* cnt = static_cast<Models::Contact*>(item);
+            if (cnt->getAvailability() != Shared::Availability::offline) {
+                ++amount;
+            }
         }
     }
     
     return amount;
-}
-
-bool Models::Group::hasContact(const QString& jid) const
-{
-    for (Models::Item* item : childItems) {
-        if (item->type == Item::contact) {
-            const Contact* cnt = static_cast<const Contact*>(item);
-            if (cnt->getJid() == jid) {
-                return true;
-            }
-        }
-    }
-    return false;
 }

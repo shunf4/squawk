@@ -28,6 +28,9 @@
 #include <QIcon>
 
 namespace Models {
+    class Contact;
+    class Reference;
+    
     class Account : public Item {
         Q_OBJECT
     public:

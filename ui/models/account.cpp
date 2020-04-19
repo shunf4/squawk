@@ -17,6 +17,8 @@
  */
 
 #include "account.h"
+#include "contact.h"
+#include "reference.h"
 #include <QDebug>
 
 Models::Account::Account(const QMap<QString, QVariant>& data, Models::Item* parentItem):
@@ -267,4 +269,3 @@ void Models::Account::setPasswordType(unsigned int pt)
 {
     setPasswordType(Shared::Global::fromInt<Shared::AccountPassword>(pt));
 }
-

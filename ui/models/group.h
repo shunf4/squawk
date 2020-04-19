@@ -23,6 +23,8 @@
 
 namespace Models {
 
+class Contact;
+    
 class Group : public Models::Item
 {
     Q_OBJECT
@@ -30,17 +32,15 @@ public:
     Group(const QMap<QString, QVariant> &data, Item *parentItem = 0);
     ~Group();
     
-    void appendChild(Models::Item* child) override;
     int columnCount() const override;
     QVariant data(int column) const override;
     
     unsigned int getUnreadMessages() const;
     unsigned int getOnlineContacts() const;
-    
-    bool hasContact(const QString& jid) const;
 
 protected:
     void _removeChild(int index) override;
+    void _appendChild(Models::Item* child) override;
     void setUnreadMessages(unsigned int amount);
     
 private slots:

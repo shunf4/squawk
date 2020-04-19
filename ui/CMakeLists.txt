@@ -24,6 +24,7 @@ set(squawkUI_SRC
   models/room.cpp
   models/abstractparticipant.cpp
   models/participant.cpp
+  models/reference.cpp
   utils/messageline.cpp
   utils//message.cpp
   utils/resizer.cpp

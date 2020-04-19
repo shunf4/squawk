@@ -24,12 +24,17 @@
 #include <QVariant>
 
 #include <deque>
+#include <set>
 
 #include "shared/enums.h"
-
 namespace Models {
 
+class Reference;
+class Contact;
+class Account;
+    
 class Item : public QObject{
+    friend class Reference;
     Q_OBJECT
     public:
         enum Type {
@@ -39,7 +44,8 @@ class Item : public QObject{
             room,
             presence,
             participant,
-            root
+            root,
+            reference
         };
         
         explicit Item(Type p_type, const QMap<QString, QVariant> &data, Item *parentItem = 0);
@@ -62,8 +68,8 @@ class Item : public QObject{
         QString getName() const;
         void setName(const QString& name);
         
-        Item *child(int row);
-        int childCount() const;
+        virtual Item *child(int row);
+        virtual int childCount() const;
         virtual int columnCount() const;
         virtual QVariant data(int column) const;
         int row() const;
@@ -79,23 +85,29 @@ class Item : public QObject{
         
         const Type type;
         
+        int getContact(const QString& jid) const;
+        std::set<Reference*>::size_type referencesCount() const;
+        
     protected:
         virtual void changed(int col);
         virtual void _removeChild(int index);
+        virtual void _appendChild(Item *child);
         virtual bool columnInvolvedInDisplay(int col);
-        const Item* getParentAccount() const;
+        virtual const Account* getParentAccount() const;
+        void addReference(Reference* ref);
+        void removeReference(Reference* ref);
         
     protected slots:
         void onChildChanged(Models::Item* item, int row, int col);
+        virtual void toOfflineState();
         
     protected:
         QString name;
         std::deque<Item*> childItems;
         Item* parent;
-        
-    protected slots:
-        virtual void toOfflineState();
-        
+        std::set<Reference*> references;
+        bool destroyingByParent;
+        bool destroyingByOriginal;
     };
 
 }
