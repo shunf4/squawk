@@ -219,6 +219,8 @@ void Core::Account::onClientConnected()
 
 void Core::Account::onClientDisconnected()
 {
+    cancelHistoryRequests();
+    pendingVCardRequests.clear();
     clearConferences();
     if (state != Shared::ConnectionState::disconnected) {
         if (reconnectTimes > 0) {
@@ -854,18 +856,20 @@ void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMess
 {
     if (msg.id().size() > 0 && (msg.body().size() > 0 || msg.outOfBandUrl().size() > 0)) {
         std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
-        QString jid = itr->second;
-        RosterItem* item = getRosterItem(jid);
-        
-        Shared::Message sMsg(static_cast<Shared::Message::Type>(msg.type()));
-        initializeMessage(sMsg, msg, false, true, true);
-        sMsg.setState(Shared::Message::State::sent);
-        
-        QString oId = msg.replaceId();
-        if (oId.size() > 0) {
-            item->correctMessageInArchive(oId, sMsg);
-        } else {
-            item->addMessageToArchive(sMsg);
+        if (itr != achiveQueries.end()) {
+            QString jid = itr->second;
+            RosterItem* item = getRosterItem(jid);
+            
+            Shared::Message sMsg(static_cast<Shared::Message::Type>(msg.type()));
+            initializeMessage(sMsg, msg, false, true, true);
+            sMsg.setState(Shared::Message::State::sent);
+            
+            QString oId = msg.replaceId();
+            if (oId.size() > 0) {
+                item->correctMessageInArchive(oId, sMsg);
+            } else {
+                item->addMessageToArchive(sMsg);
+            }
         }
     } 
     
@@ -896,8 +900,13 @@ void Core::Account::requestArchive(const QString& jid, int count, const QString&
     
     if (contact == 0) {
         qDebug() << "An attempt to request archive for" << jid << "in account" << name << ", but the contact with such id wasn't found, skipping";
-        emit responseArchive(contact->jid, std::list<Shared::Message>());
+        emit responseArchive(jid, std::list<Shared::Message>());
         return;
+    }
+    
+    if (state != Shared::ConnectionState::connected) {
+        qDebug() << "An attempt to request archive for" << jid << "in account" << name << ", but the account is not online, skipping";
+        emit responseArchive(contact->jid, std::list<Shared::Message>());
     }
     
     if (contact->getArchiveState() == RosterItem::empty && before.size() == 0) {
@@ -952,14 +961,16 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
 void Core::Account::onMamResultsReceived(const QString& queryId, const QXmppResultSetReply& resultSetReply, bool complete)
 {
     std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
-    QString jid = itr->second;
-    achiveQueries.erase(itr);
-    
-    RosterItem* ri = getRosterItem(jid);
-    
-    if (ri != 0) {
-        qDebug() << "Flushing messages for" << jid;
-        ri->flushMessagesToArchive(complete, resultSetReply.first(), resultSetReply.last());
+    if (itr != achiveQueries.end()) {
+        QString jid = itr->second;
+        achiveQueries.erase(itr);
+        
+        RosterItem* ri = getRosterItem(jid);
+        
+        if (ri != 0) {
+            qDebug() << "Flushing messages for" << jid;
+            ri->flushMessagesToArchive(complete, resultSetReply.first(), resultSetReply.last());
+        }
     }
 }
 
@@ -1741,5 +1752,16 @@ void Core::Account::onReceiptReceived(const QString& jid, const QString& id)
         pendingStateMessages.erase(itr);
         emit changeMessage(itr->second, id, cData);
     }
+}
+
+void Core::Account::cancelHistoryRequests()
+{
+    for (const std::pair<QString, Conference*>& pair : conferences) {
+        pair.second->clearArchiveRequests();
+    }
+    for (const std::pair<QString, Contact*>& pair : contacts) {
+        pair.second->clearArchiveRequests();
+    }
+    achiveQueries.clear();
 }
 
