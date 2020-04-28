@@ -38,7 +38,6 @@
 #include <QXmppBookmarkManager.h>
 #include <QXmppBookmarkSet.h>
 #include <QXmppUploadRequestManager.h>
-#include <QXmppHttpUploadIq.h>
 #include <QXmppVCardIq.h>
 #include <QXmppVCardManager.h>
 #include <QXmppMessageReceiptManager.h>
@@ -48,12 +47,15 @@
 #include "conference.h"
 #include "networkaccess.h"
 
+#include "handlers/messagehandler.h"
+
 namespace Core
 {
 
 class Account : public QObject
 {
     Q_OBJECT
+    friend class MessageHandler;
 public:
     Account(
         const QString& p_login, 
@@ -86,7 +88,7 @@ public:
     void setAvailability(Shared::Availability avail);
     void setPasswordType(Shared::AccountPassword pt);
     QString getFullJid() const;
-    void sendMessage(Shared::Message data);
+    void sendMessage(const Shared::Message& data);
     void sendMessage(const Shared::Message& data, const QString& path);
     void requestArchive(const QString& jid, int count, const QString& before);
     void setReconnectTimes(unsigned int times);
@@ -165,8 +167,9 @@ private:
     QString avatarType;
     bool ownVCardRequestInProgress;
     NetworkAccess* network;
-    std::map<QString, QString> pendingStateMessages;
     Shared::AccountPassword passwordType;
+    
+    MessageHandler* mh;
     
 private slots:
     void onClientConnected();
@@ -180,10 +183,6 @@ private slots:
     void onRosterPresenceChanged(const QString& bareJid, const QString& resource);
     
     void onPresenceReceived(const QXmppPresence& presence);
-    void onMessageReceived(const QXmppMessage& message);
-    
-    void onCarbonMessageReceived(const QXmppMessage& message);
-    void onCarbonMessageSent(const QXmppMessage& message);
     
     void onMamMessageReceived(const QString& bareJid, const QXmppMessage& message);
     void onMamResultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
@@ -211,15 +210,9 @@ private slots:
     
     void onVCardReceived(const QXmppVCardIq& card);
     void onOwnVCardReceived(const QXmppVCardIq& card);
-    
-    void onUploadSlotReceived(const QXmppHttpUploadSlotIq& slot);
-    void onUploadSlotRequestFailed(const QXmppHttpUploadRequestIq& request);
-    void onFileUploaded(const QString& messageId, const QString& url);
-    void onFileUploadError(const QString& messageId, const QString& errMsg);
+
     void onDiscoveryItemsReceived (const QXmppDiscoveryIq& items);
     void onDiscoveryInfoReceived (const QXmppDiscoveryIq& info);
-    
-    void onReceiptReceived(const QString& jid, const QString &id);
   
 private:
     void addedAccount(const QString &bareJid);
@@ -231,13 +224,10 @@ private:
     void addNewRoom(const QString& jid, const QString& nick, const QString& roomName, bool autoJoin);
     void addToGroup(const QString& jid, const QString& group);
     void removeFromGroup(const QString& jid, const QString& group);
-    void initializeMessage(Shared::Message& target, const QXmppMessage& source, bool outgoing = false, bool forwarded = false, bool guessing = false) const;
     Shared::SubscriptionState castSubscriptionState(QXmppRosterIq::Item::SubscriptionType qs) const;
-    void logMessage(const QXmppMessage& msg, const QString& reason = "Message wasn't handled: ");
     void storeConferences();
     void clearConferences();
     void cancelHistoryRequests();
-    void sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url);
     RosterItem* getRosterItem(const QString& jid);
 };
 

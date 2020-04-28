@@ -53,19 +53,19 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     avatarType(),
     ownVCardRequestInProgress(false),
     network(p_net),
-    pendingStateMessages(),
-    passwordType(Shared::AccountPassword::plain)
+    passwordType(Shared::AccountPassword::plain),
+    mh(new MessageHandler(this))
 {
     config.setUser(p_login);
     config.setDomain(p_server);
     config.setPassword(p_password);
     config.setAutoAcceptSubscriptions(true);
-    config.setAutoReconnectionEnabled(false);
+    //config.setAutoReconnectionEnabled(false);
     
     QObject::connect(&client, &QXmppClient::connected, this, &Account::onClientConnected);
     QObject::connect(&client, &QXmppClient::disconnected, this, &Account::onClientDisconnected);
     QObject::connect(&client, &QXmppClient::presenceReceived, this, &Account::onPresenceReceived);
-    QObject::connect(&client, &QXmppClient::messageReceived, this, &Account::onMessageReceived);
+    QObject::connect(&client, &QXmppClient::messageReceived, mh, &MessageHandler::onMessageReceived);
     QObject::connect(&client, &QXmppClient::error, this, &Account::onClientError);
     
     QObject::connect(rm, &QXmppRosterManager::rosterReceived, this, &Account::onRosterReceived);
@@ -76,8 +76,8 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     
     client.addExtension(cm);
     
-    QObject::connect(cm, &QXmppCarbonManager::messageReceived, this, &Account::onCarbonMessageReceived);
-    QObject::connect(cm, &QXmppCarbonManager::messageSent, this, &Account::onCarbonMessageSent);
+    QObject::connect(cm, &QXmppCarbonManager::messageReceived, mh, &MessageHandler::onCarbonMessageReceived);
+    QObject::connect(cm, &QXmppCarbonManager::messageSent, mh, &MessageHandler::onCarbonMessageSent);
     
     client.addExtension(am);
     
@@ -95,17 +95,17 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     //QObject::connect(&vm, &QXmppVCardManager::clientVCardReceived, this, &Account::onOwnVCardReceived); //for some reason it doesn't work, launching from common handler
     
     client.addExtension(um);
-    QObject::connect(um, &QXmppUploadRequestManager::slotReceived, this, &Account::onUploadSlotReceived);
-    QObject::connect(um, &QXmppUploadRequestManager::requestFailed, this, &Account::onUploadSlotRequestFailed);
+    QObject::connect(um, &QXmppUploadRequestManager::slotReceived, mh, &MessageHandler::onUploadSlotReceived);
+    QObject::connect(um, &QXmppUploadRequestManager::requestFailed, mh, &MessageHandler::onUploadSlotRequestFailed);
     
     QObject::connect(dm, &QXmppDiscoveryManager::itemsReceived, this, &Account::onDiscoveryItemsReceived);
     QObject::connect(dm, &QXmppDiscoveryManager::infoReceived, this, &Account::onDiscoveryInfoReceived);
     
-    QObject::connect(network, &NetworkAccess::uploadFileComplete, this, &Account::onFileUploaded);
-    QObject::connect(network, &NetworkAccess::uploadFileError, this, &Account::onFileUploadError);
+    QObject::connect(network, &NetworkAccess::uploadFileComplete, mh, &MessageHandler::onFileUploaded);
+    QObject::connect(network, &NetworkAccess::uploadFileError, mh, &MessageHandler::onFileUploadError);
     
     client.addExtension(rcpm);
-    QObject::connect(rcpm, &QXmppMessageReceiptManager::messageDelivered, this, &Account::onReceiptReceived);
+    QObject::connect(rcpm, &QXmppMessageReceiptManager::messageDelivered, mh, &MessageHandler::onReceiptReceived);
     
     
     QString path(QStandardPaths::writableLocation(QStandardPaths::CacheLocation));
@@ -156,8 +156,8 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
 
 Account::~Account()
 {
-    QObject::disconnect(network, &NetworkAccess::uploadFileComplete, this, &Account::onFileUploaded);
-    QObject::disconnect(network, &NetworkAccess::uploadFileError, this, &Account::onFileUploadError);
+    QObject::disconnect(network, &NetworkAccess::uploadFileComplete, mh, &MessageHandler::onFileUploaded);
+    QObject::disconnect(network, &NetworkAccess::uploadFileError, mh, &MessageHandler::onFileUploadError);
     
     for (std::map<QString, Contact*>::const_iterator itr = contacts.begin(), end = contacts.end(); itr != end; ++itr) {
         delete itr->second;
@@ -566,290 +566,19 @@ void Core::Account::setResource(const QString& p_resource)
     config.setResource(p_resource);
 }
 
-void Core::Account::onMessageReceived(const QXmppMessage& msg)
-{
-    bool handled = false;
-    switch (msg.type()) {
-        case QXmppMessage::Normal:
-            qDebug() << "received a message with type \"Normal\", not sure what to do with it now, skipping";
-            break;
-        case QXmppMessage::Chat:
-            handled = handleChatMessage(msg);
-            break;
-        case QXmppMessage::GroupChat:
-            handled = handleGroupMessage(msg);
-            break;
-        case QXmppMessage::Error: {
-                QString id = msg.id();
-                std::map<QString, QString>::const_iterator itr = pendingStateMessages.find(id);
-                if (itr != pendingStateMessages.end()) {
-                    QString jid = itr->second;
-                    RosterItem* cnt = getRosterItem(jid);
-                    QMap<QString, QVariant> cData = {
-                        {"state", static_cast<uint>(Shared::Message::State::error)},
-                        {"errorText", msg.error().text()}
-                    };
-                    if (cnt != 0) {
-                        cnt->changeMessage(id, cData);
-                    }
-                    ;
-                    emit changeMessage(jid, id, cData);
-                    pendingStateMessages.erase(itr);
-                    handled = true;
-                } else {
-                    qDebug() << "received a message with type \"Error\", not sure what to do with it now, skipping";
-                }
-            }
-            break;
-        case QXmppMessage::Headline:
-            qDebug() << "received a message with type \"Headline\", not sure what to do with it now, skipping";
-            break;
-    }
-    if (!handled) {
-        logMessage(msg);
-    }
-}
-
-void Core::Account::logMessage(const QXmppMessage& msg, const QString& reason)
-{
-    qDebug() << reason;
-        qDebug() << "- from: " << msg.from();
-        qDebug() << "- to: " << msg.to();
-        qDebug() << "- body: " << msg.body();
-        qDebug() << "- type: " << msg.type();
-        qDebug() << "- state: " << msg.state();
-        qDebug() << "- stamp: " << msg.stamp();
-        qDebug() << "- id: " << msg.id();
-        qDebug() << "- outOfBandUrl: " << msg.outOfBandUrl();
-        qDebug() << "- isAttentionRequested: " << msg.isAttentionRequested();
-        qDebug() << "- isReceiptRequested: " << msg.isReceiptRequested();
-        qDebug() << "- receiptId: " << msg.receiptId();
-        qDebug() << "- subject: " << msg.subject();
-        qDebug() << "- thread: " << msg.thread();
-        qDebug() << "- isMarkable: " << msg.isMarkable();
-        qDebug() << "==============================";
-}
-
-
 QString Core::Account::getFullJid() const
 {
     return getLogin() + "@" + getServer() + "/" + getResource();
 }
 
-void Core::Account::sendMessage(Shared::Message data)
+void Core::Account::sendMessage(const Shared::Message& data)
 {
-    QString jid = data.getPenPalJid();
-    QString id = data.getId();
-    RosterItem* ri = getRosterItem(jid);
-    if (state == Shared::ConnectionState::connected) {
-        QXmppMessage msg(getFullJid(), data.getTo(), data.getBody(), data.getThread());
-        msg.setId(id);
-        msg.setType(static_cast<QXmppMessage::Type>(data.getType()));       //it is safe here, my type is compatible
-        msg.setOutOfBandUrl(data.getOutOfBandUrl());
-        msg.setReceiptRequested(true);
-        
-        bool sent = client.sendPacket(msg);
-        
-        if (sent) {
-            data.setState(Shared::Message::State::sent);
-        } else {
-            data.setState(Shared::Message::State::error);
-            data.setErrorText("Couldn't send message via QXMPP library check out logs");
-        }
-        
-        if (ri != 0) {
-            ri->appendMessageToArchive(data);
-            if (sent) {
-                pendingStateMessages.insert(std::make_pair(id, jid));
-            }
-        }
-        
-    } else {
-        data.setState(Shared::Message::State::error);
-        data.setErrorText("You are is offline or reconnecting");
-    }
-    
-    emit changeMessage(jid, id, {
-        {"state", static_cast<uint>(data.getState())},
-        {"errorText", data.getErrorText()}
-    });
+    mh->sendMessage(data);
 }
 
 void Core::Account::sendMessage(const Shared::Message& data, const QString& path)
 {
-    if (state == Shared::ConnectionState::connected) {
-        QString url = network->getFileRemoteUrl(path);
-        if (url.size() != 0) {
-            sendMessageWithLocalUploadedFile(data, url);
-        } else {
-            if (network->isUploading(path, data.getId())) {
-                pendingMessages.emplace(data.getId(), data);
-            } else {
-                if (um->serviceFound()) {
-                    QFileInfo file(path);
-                    if (file.exists() && file.isReadable()) {
-                        uploadingSlotsQueue.emplace_back(path, data);
-                        if (uploadingSlotsQueue.size() == 1) {
-                            um->requestUploadSlot(file);
-                        }
-                    } else {
-                        emit onFileUploadError(data.getId(), "Uploading file no longer exists or your system user has no permission to read it");
-                        qDebug() << "Requested upload slot in account" << name << "for file" << path << "but the file doesn't exist or is not readable";
-                    }
-                } else {
-                    emit onFileUploadError(data.getId(), "Your server doesn't support file upload service, or it's prohibited for your account");
-                    qDebug() << "Requested upload slot in account" << name << "for file" << path << "but upload manager didn't discover any upload services";
-                }
-            }
-        }
-    } else {
-        emit onFileUploadError(data.getId(), "Account is offline or reconnecting");
-        qDebug() << "An attempt to send message with not connected account " << name << ", skipping";
-    }
-}
-
-void Core::Account::sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url)
-{
-    msg.setOutOfBandUrl(url);
-    if (msg.getBody().size() == 0) {
-        msg.setBody(url);
-    }
-    sendMessage(msg);
-    //TODO removal/progress update
-}
-
-
-void Core::Account::onCarbonMessageReceived(const QXmppMessage& msg)
-{
-    handleChatMessage(msg, false, true);
-}
-
-void Core::Account::onCarbonMessageSent(const QXmppMessage& msg)
-{
-    handleChatMessage(msg, true, true);
-}
-
-bool Core::Account::handleChatMessage(const QXmppMessage& msg, bool outgoing, bool forwarded, bool guessing)
-{
-    const QString& body(msg.body());
-    if (body.size() != 0) {
-        Shared::Message sMsg(Shared::Message::chat);
-        initializeMessage(sMsg, msg, outgoing, forwarded, guessing);
-        QString jid = sMsg.getPenPalJid();
-        std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
-        Contact* cnt;
-        if (itr != contacts.end()) {
-            cnt = itr->second;
-        } else {
-            cnt = new Contact(jid, name);
-            contacts.insert(std::make_pair(jid, cnt));
-            outOfRosterContacts.insert(jid);
-            cnt->setSubscriptionState(Shared::SubscriptionState::unknown);
-            emit addContact(jid, "", QMap<QString, QVariant>({
-                {"state", QVariant::fromValue(Shared::SubscriptionState::unknown)}
-            }));
-            handleNewContact(cnt);
-        }
-        if (outgoing) {
-            if (forwarded) {
-                sMsg.setState(Shared::Message::State::sent);
-            }
-        } else {
-            sMsg.setState(Shared::Message::State::delivered);
-        }
-        QString oId = msg.replaceId();
-        if (oId.size() > 0) {
-            QMap<QString, QVariant> cData = {
-                {"body", sMsg.getBody()},
-                {"stamp", sMsg.getTime()}
-            };
-            cnt->correctMessageInArchive(oId, sMsg);
-            emit changeMessage(jid, oId, cData);
-        } else {
-            cnt->appendMessageToArchive(sMsg);
-            emit message(sMsg);
-        }
-        
-        return true;
-    }
-    return false;
-}
-
-bool Core::Account::handleGroupMessage(const QXmppMessage& msg, bool outgoing, bool forwarded, bool guessing)
-{
-    const QString& body(msg.body());
-    if (body.size() != 0) {
-        const QString& id(msg.id());
-        Shared::Message sMsg(Shared::Message::groupChat);
-        initializeMessage(sMsg, msg, outgoing, forwarded, guessing);
-        QString jid = sMsg.getPenPalJid();
-        std::map<QString, Conference*>::const_iterator itr = conferences.find(jid);
-        Conference* cnt;
-        if (itr != conferences.end()) {
-            cnt = itr->second;
-        } else {
-            return false;
-        }
-        
-        std::map<QString, QString>::const_iterator pItr = pendingStateMessages.find(id);
-        if (pItr != pendingStateMessages.end()) {
-            QMap<QString, QVariant> cData = {{"state", static_cast<uint>(Shared::Message::State::delivered)}};
-            cnt->changeMessage(id, cData);
-            pendingStateMessages.erase(pItr);
-            emit changeMessage(jid, id, cData);
-        } else {
-            QString oId = msg.replaceId();
-            if (oId.size() > 0) {
-                QMap<QString, QVariant> cData = {
-                    {"body", sMsg.getBody()},
-                    {"stamp", sMsg.getTime()}
-                };
-                cnt->correctMessageInArchive(oId, sMsg);
-                emit changeMessage(jid, oId, cData);
-            } else {
-                cnt->appendMessageToArchive(sMsg);
-                QDateTime minAgo = QDateTime::currentDateTimeUtc().addSecs(-60);
-                if (sMsg.getTime() > minAgo) {     //otherwise it's considered a delayed delivery, most probably MUC history receipt
-                    emit message(sMsg);
-                } else {
-                    //qDebug() << "Delayed delivery: ";
-                }
-            }
-        }
-        
-        return true;
-    }
-    return false;
-}
-
-
-void Core::Account::initializeMessage(Shared::Message& target, const QXmppMessage& source, bool outgoing, bool forwarded, bool guessing) const
-{
-    const QDateTime& time(source.stamp());
-    QString id = source.id();
-    if (id.size() == 0) {
-        target.generateRandomId();
-    } else {
-        target.setId(id);
-    }
-    target.setFrom(source.from());
-    target.setTo(source.to());
-    target.setBody(source.body());
-    target.setForwarded(forwarded);
-    target.setOutOfBandUrl(source.outOfBandUrl());
-    if (guessing) {
-        if (target.getFromJid() == getLogin() + "@" + getServer()) {
-            outgoing = true;
-        } else {
-            outgoing = false;
-        }
-    }
-    target.setOutgoing(outgoing);
-    if (time.isValid()) {
-        target.setTime(time);
-    } else {
-        target.setCurrentTime();
-    }
+    mh->sendMessage(data, path);
 }
 
 void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMessage& msg)
@@ -860,8 +589,16 @@ void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMess
             QString jid = itr->second;
             RosterItem* item = getRosterItem(jid);
             
+            qDebug() << "archive for" << jid;
+            qDebug() << "id:" << msg.id();
+            qDebug() << "oid:" << msg.originId();
+            qDebug() << "sid:" << msg.stanzaId();
+            qDebug() << "rid:" << msg.replaceId();
+            qDebug() << "============================";
+            
+            
             Shared::Message sMsg(static_cast<Shared::Message::Type>(msg.type()));
-            initializeMessage(sMsg, msg, false, true, true);
+            mh->initializeMessage(sMsg, msg, false, true, true);
             sMsg.setState(Shared::Message::State::sent);
             
             QString oId = msg.replaceId();
@@ -891,7 +628,6 @@ Core::RosterItem * Core::Account::getRosterItem(const QString& jid)
     
     return item;
 }
-
 
 void Core::Account::requestArchive(const QString& jid, int count, const QString& before)
 {
@@ -1671,57 +1407,6 @@ void Core::Account::uploadVCard(const Shared::VCard& card)
     onOwnVCardReceived(iq);
 }
 
-void Core::Account::onUploadSlotReceived(const QXmppHttpUploadSlotIq& slot)
-{
-    if (uploadingSlotsQueue.size() == 0) {
-        qDebug() << "HTTP Upload manager of account" << name << "reports about success requesting upload slot, but none was requested";
-    } else {
-        const std::pair<QString, Shared::Message>& pair = uploadingSlotsQueue.front();
-        const QString& mId = pair.second.getId();
-        network->uploadFile(mId, pair.first, slot.putUrl(), slot.getUrl(), slot.putHeaders());
-        pendingMessages.emplace(mId, pair.second);
-        uploadingSlotsQueue.pop_front();
-        
-        if (uploadingSlotsQueue.size() > 0) {
-            um->requestUploadSlot(uploadingSlotsQueue.front().first);
-        }
-    }
-}
-
-void Core::Account::onUploadSlotRequestFailed(const QXmppHttpUploadRequestIq& request)
-{
-    if (uploadingSlotsQueue.size() == 0) {
-        qDebug() << "HTTP Upload manager of account" << name << "reports about an error requesting upload slot, but none was requested";
-        qDebug() << request.error().text();
-    } else {
-        const std::pair<QString, Shared::Message>& pair = uploadingSlotsQueue.front();
-        qDebug() << "Error requesting upload slot for file" << pair.first << "in account" << name << ":" << request.error().text();
-        emit uploadFileError(pair.second.getId(), "Error requesting slot to upload file: " + request.error().text());
-        
-        if (uploadingSlotsQueue.size() > 0) {
-            um->requestUploadSlot(uploadingSlotsQueue.front().first);
-        }
-        uploadingSlotsQueue.pop_front();
-    }
-}
-
-void Core::Account::onFileUploaded(const QString& messageId, const QString& url)
-{
-    std::map<QString, Shared::Message>::const_iterator itr = pendingMessages.find(messageId);
-    if (itr != pendingMessages.end()) {
-        sendMessageWithLocalUploadedFile(itr->second, url);
-        pendingMessages.erase(itr);
-    }
-}
-
-void Core::Account::onFileUploadError(const QString& messageId, const QString& errMsg)
-{
-    std::map<QString, Shared::Message>::const_iterator itr = pendingMessages.find(messageId);
-    if (itr != pendingMessages.end()) {
-        pendingMessages.erase(itr);
-    }
-}
-
 void Core::Account::onDiscoveryItemsReceived(const QXmppDiscoveryIq& items)
 {
     for (QXmppDiscoveryIq::Item item : items.items()) {
@@ -1740,26 +1425,12 @@ void Core::Account::onDiscoveryInfoReceived(const QXmppDiscoveryIq& info)
     }
 }
 
-void Core::Account::onReceiptReceived(const QString& jid, const QString& id)
-{
-    std::map<QString, QString>::const_iterator itr = pendingStateMessages.find(id);
-    if (itr != pendingStateMessages.end()) {
-        QMap<QString, QVariant> cData = {{"state", static_cast<uint>(Shared::Message::State::delivered)}};
-        RosterItem* ri = getRosterItem(itr->second);
-        if (ri != 0) {
-            ri->changeMessage(id, cData);
-        }
-        pendingStateMessages.erase(itr);
-        emit changeMessage(itr->second, id, cData);
-    }
-}
-
 void Core::Account::cancelHistoryRequests()
 {
-    for (const std::pair<QString, Conference*>& pair : conferences) {
+    for (const std::pair<const QString, Conference*>& pair : conferences) {
         pair.second->clearArchiveRequests();
     }
-    for (const std::pair<QString, Contact*>& pair : contacts) {
+    for (const std::pair<const QString, Contact*>& pair : contacts) {
         pair.second->clearArchiveRequests();
     }
     achiveQueries.clear();
