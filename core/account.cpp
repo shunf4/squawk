@@ -19,7 +19,6 @@
 #include "account.h"
 #include <QXmppMessage.h>
 #include <QDateTime>
-#include <QTimer>
 
 using namespace Core;
 
@@ -43,8 +42,8 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     rcpm(new QXmppMessageReceiptManager()),
     contacts(),
     conferences(),
-    maxReconnectTimes(0),
-    reconnectTimes(0),
+    reconnectScheduled(false),
+    reconnectTimer(new QTimer),
     queuedContacts(),
     outOfRosterContacts(),
     pendingMessages(),
@@ -62,8 +61,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     config.setAutoAcceptSubscriptions(true);
     //config.setAutoReconnectionEnabled(false);
     
-    QObject::connect(&client, &QXmppClient::connected, this, &Account::onClientConnected);
-    QObject::connect(&client, &QXmppClient::disconnected, this, &Account::onClientDisconnected);
+    QObject::connect(&client, &QXmppClient::stateChanged, this, &Account::onClientStateChange);
     QObject::connect(&client, &QXmppClient::presenceReceived, this, &Account::onPresenceReceived);
     QObject::connect(&client, &QXmppClient::messageReceived, mh, &MessageHandler::onMessageReceived);
     QObject::connect(&client, &QXmppClient::error, this, &Account::onClientError);
@@ -152,10 +150,26 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     } else {
         presence.setVCardUpdateType(QXmppPresence::VCardUpdateNotReady);
     }
+    
+    reconnectTimer->setSingleShot(true);
+    QObject::connect(reconnectTimer, &QTimer::timeout, this, &Account::connect);
+    
+//     QXmppLogger* logger = new QXmppLogger(this);
+//     logger->setLoggingType(QXmppLogger::SignalLogging);
+//     client.setLogger(logger);
+//     
+//     QObject::connect(logger, &QXmppLogger::message, this, [](QXmppLogger::MessageType type, const QString& text){
+//         qDebug() << text;
+//     });
 }
 
 Account::~Account()
 {
+    if (reconnectScheduled) {
+        reconnectScheduled = false;
+        reconnectTimer->stop();
+    }
+    
     QObject::disconnect(network, &NetworkAccess::uploadFileComplete, mh, &MessageHandler::onFileUploaded);
     QObject::disconnect(network, &NetworkAccess::uploadFileError, mh, &MessageHandler::onFileUploadError);
     
@@ -167,6 +181,7 @@ Account::~Account()
         delete itr->second;
     }
     
+    delete reconnectTimer;
     delete rcpm;
     delete dm;
     delete um;
@@ -184,10 +199,8 @@ Shared::ConnectionState Core::Account::getState() const
 void Core::Account::connect()
 {
     if (state == Shared::ConnectionState::disconnected) {
-        reconnectTimes = maxReconnectTimes;
-        state = Shared::ConnectionState::connecting;
+        qDebug() << presence.availableStatusType();
         client.connectToServer(config, presence);
-        emit connectionStateChanged(state);
     } else {
         qDebug("An attempt to connect an account which is already connected, skipping");
     }
@@ -195,54 +208,63 @@ void Core::Account::connect()
 
 void Core::Account::disconnect()
 {
-    reconnectTimes = 0;
+    if (reconnectScheduled) {
+        reconnectScheduled = false;
+        reconnectTimer->stop();
+    }
     if (state != Shared::ConnectionState::disconnected) {
         clearConferences();
         client.disconnectFromServer();
-        state = Shared::ConnectionState::disconnected;
-        emit connectionStateChanged(state);
     }
 }
 
-void Core::Account::onClientConnected()
+void Core::Account::onClientStateChange(QXmppClient::State st)
 {
-    if (state == Shared::ConnectionState::connecting) {
-        reconnectTimes = maxReconnectTimes;
-        state = Shared::ConnectionState::connected;
-        dm->requestItems(getServer());
-        dm->requestInfo(getServer());
-        emit connectionStateChanged(state);
-    } else {
-        qDebug() << "Something weird had happened - xmpp client reported about successful connection but account wasn't in" << state << "state";
-    }
-}
-
-void Core::Account::onClientDisconnected()
-{
-    cancelHistoryRequests();
-    pendingVCardRequests.clear();
-    clearConferences();
-    if (state != Shared::ConnectionState::disconnected) {
-        if (reconnectTimes > 0) {
-            qDebug() << "Account" << name << "is reconnecting for" << reconnectTimes << "more times";
-            --reconnectTimes;
-            state = Shared::ConnectionState::connecting;
-            client.connectToServer(config, presence);
-            emit connectionStateChanged(state);
-        } else {
-            qDebug() << "Account" << name << "has been disconnected";
-            state = Shared::ConnectionState::disconnected;
-            emit connectionStateChanged(state);
+    switch (st) {
+        case QXmppClient::ConnectedState: {
+            if (state != Shared::ConnectionState::connected) {
+                if (client.isActive()) {
+                    Shared::ConnectionState os = state;
+                    state = Shared::ConnectionState::connected;
+                    if (os == Shared::ConnectionState::connecting) {
+                        dm->requestItems(getServer());
+                        dm->requestInfo(getServer());
+                    }
+                    emit connectionStateChanged(state);
+                }
+            } else {
+                qDebug()    << "Something weird happened - xmpp client of account" << name
+                            << "reported about successful connection but account was in" << state << "state";
+            }
         }
-    } else {
-        //qDebug("Something weird had happened - xmpp client reported about being disconnection but account was already in disconnected state");
+            break;
+        case QXmppClient::ConnectingState: {
+            if (state != Shared::ConnectionState::connecting) {
+                state = Shared::ConnectionState::connecting;
+                emit connectionStateChanged(state);
+            }
+        }
+            break;
+        case QXmppClient::DisconnectedState: {
+            cancelHistoryRequests();
+            pendingVCardRequests.clear();
+            if (state != Shared::ConnectionState::disconnected) {
+                state = Shared::ConnectionState::disconnected;
+                emit connectionStateChanged(state);
+            } else {
+                qDebug()    << "Something weird happened - xmpp client of account" << name
+                            << "reported about disconnection but account was in" << state << "state";
+            }
+        }
+            break;
     }
 }
 
 void Core::Account::reconnect()
 {
-    if (state == Shared::ConnectionState::connected) {
-        ++reconnectTimes;
+    if (state == Shared::ConnectionState::connected && !reconnectScheduled) {
+        reconnectScheduled = true;
+        reconnectTimer->start(500);
         client.disconnectFromServer();
     } else {
         qDebug() << "An attempt to reconnect account" << getName() << "which was not connected";
@@ -283,14 +305,6 @@ void Core::Account::onRosterReceived()
     for (int i = 0; i < bj.size(); ++i) {
         const QString& jid = bj[i];
         addedAccount(jid);
-    }
-}
-
-void Core::Account::setReconnectTimes(unsigned int times)
-{
-    maxReconnectTimes = times;
-    if (state == Shared::ConnectionState::connected) {
-        reconnectTimes = times;
     }
 }
 
@@ -589,14 +603,6 @@ void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMess
             QString jid = itr->second;
             RosterItem* item = getRosterItem(jid);
             
-            qDebug() << "archive for" << jid;
-            qDebug() << "id:" << msg.id();
-            qDebug() << "oid:" << msg.originId();
-            qDebug() << "sid:" << msg.stanzaId();
-            qDebug() << "rid:" << msg.replaceId();
-            qDebug() << "============================";
-            
-            
             Shared::Message sMsg(static_cast<Shared::Message::Type>(msg.type()));
             mh->initializeMessage(sMsg, msg, false, true, true);
             sMsg.setState(Shared::Message::State::sent);
@@ -645,49 +651,35 @@ void Core::Account::requestArchive(const QString& jid, int count, const QString&
         emit responseArchive(contact->jid, std::list<Shared::Message>());
     }
     
-    if (contact->getArchiveState() == RosterItem::empty && before.size() == 0) {
-        QXmppMessage msg(getFullJid(), jid, "", "");
-        QString last = Shared::generateUUID();
-        msg.setId(last);
-        if (contact->isMuc()) {
-            msg.setType(QXmppMessage::GroupChat);
-        } else {
-            msg.setType(QXmppMessage::Chat);
-        }
-        msg.setState(QXmppMessage::Active);
-        client.sendPacket(msg);
-        QTimer* timer = new QTimer;
-        QObject::connect(timer, &QTimer::timeout, [timer, contact, count, last](){
-            contact->requestFromEmpty(count, last);
-            timer->deleteLater();
-        });
-        
-        timer->setSingleShot(true);
-        timer->start(1000);
-    } else {
-        contact->requestHistory(count, before);
-    }
+    contact->requestHistory(count, before);
 }
 
 void Core::Account::onContactNeedHistory(const QString& before, const QString& after, const QDateTime& at)
 {
     RosterItem* contact = static_cast<RosterItem*>(sender());
-    QString to = "";
+
+    QString to = contact->jid;
     QXmppResultSetQuery query;
-    query.setMax(100);
-    if (before.size() > 0) {
-        query.setBefore(before);
-    }
     QDateTime start;
-    if (after.size() > 0) {     //there is some strange behavior of ejabberd server returning empty result set
-        if (at.isValid()) {     //there can be some useful information about it here https://github.com/processone/ejabberd/issues/2924
-            start = at;
-        } else {
-            query.setAfter(after);
+    query.setMax(100);
+    
+    if (contact->getArchiveState() == RosterItem::empty) {
+        query.setBefore(before);
+        qDebug() << "Requesting remote history from empty for" << contact->jid;
+    } else {
+        if (before.size() > 0) {
+            query.setBefore(before);
         }
+        if (after.size() > 0) {     //there is some strange behavior of ejabberd server returning empty result set
+            if (at.isValid()) {     //there can be some useful information about it here https://github.com/processone/ejabberd/issues/2924
+                start = at;
+            } else {
+                query.setAfter(after);
+            }
+        }
+        qDebug() << "Remote query for" << contact->jid << "from" << after << ", to" << before;
     }
     
-    qDebug() << "Remote query from" << after << ", to" << before;
     
     QString q = am->retrieveArchivedMessages(to, "", contact->jid, start, QDateTime(), query);
     achiveQueries.insert(std::make_pair(q, contact->jid));
@@ -704,7 +696,7 @@ void Core::Account::onMamResultsReceived(const QString& queryId, const QXmppResu
         RosterItem* ri = getRosterItem(jid);
         
         if (ri != 0) {
-            qDebug() << "Flushing messages for" << jid;
+            qDebug() << "Flushing messages for" << jid << ", complete:" << complete;
             ri->flushMessagesToArchive(complete, resultSetReply.first(), resultSetReply.last());
         }
     }

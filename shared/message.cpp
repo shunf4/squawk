@@ -32,7 +32,12 @@ Shared::Message::Message(Shared::Message::Type p_type):
     outgoing(false),
     forwarded(false),
     state(State::delivered),
-    edited(false) {}
+    edited(false),
+    errorText(),
+    originalMessage(),
+    lastModified(),
+    stanzaId()
+    {}
 
 Shared::Message::Message():
     jFrom(),
@@ -50,7 +55,9 @@ Shared::Message::Message():
     edited(false),
     errorText(),
     originalMessage(),
-    lastModified() {}
+    lastModified(),
+    stanzaId()
+    {}
 
 QString Shared::Message::getBody() const
 {
@@ -77,7 +84,11 @@ QString Shared::Message::getTo() const
 
 QString Shared::Message::getId() const
 {
-    return id;
+    if (id.size() > 0) {
+        return id;
+    } else {
+        return stanzaId;
+    }
 }
 
 QDateTime Shared::Message::getTime() const
@@ -299,6 +310,7 @@ void Shared::Message::serialize(QDataStream& data) const
         data << originalMessage;
         data << lastModified;
     }
+    data << stanzaId;
 }
 
 void Shared::Message::deserialize(QDataStream& data)
@@ -328,6 +340,7 @@ void Shared::Message::deserialize(QDataStream& data)
         data >> originalMessage;
         data >> lastModified;
     }
+    data >> stanzaId;
 }
 
 bool Shared::Message::change(const QMap<QString, QVariant>& data)
@@ -353,6 +366,18 @@ bool Shared::Message::change(const QMap<QString, QVariant>& data)
             idChanged = true;
         }
     }
+    
+    itr = data.find("stanzaId");
+    if (itr != data.end()) {
+        QString newId = itr.value().toString();
+        if (stanzaId != newId) {
+            setStanzaId(newId);
+            if (id.size() == 0) {
+                idChanged = true;
+            }
+        }
+    }
+    
     itr = data.find("body");
     if (itr != data.end()) {
         QMap<QString, QVariant>::const_iterator dItr = data.find("stamp");
@@ -396,4 +421,14 @@ void Shared::Message::setOutOfBandUrl(const QString& url)
 bool Shared::Message::storable() const
 {
     return id.size() > 0 && (body.size() > 0 || oob.size()) > 0;
+}
+
+void Shared::Message::setStanzaId(const QString& sid)
+{
+    stanzaId = sid;
+}
+
+QString Shared::Message::getStanzaId() const
+{
+    return stanzaId;
 }

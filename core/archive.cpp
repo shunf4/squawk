@@ -67,6 +67,7 @@ void Core::Archive::open(const QString& account)
         mdb_dbi_open(txn, "order", MDB_CREATE | MDB_INTEGERKEY, &order);
         mdb_dbi_open(txn, "stats", MDB_CREATE, &stats);
         mdb_dbi_open(txn, "avatars", MDB_CREATE, &avatars);
+        mdb_dbi_open(txn, "sid", MDB_CREATE, &sid);
         mdb_txn_commit(txn);
         
         mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
@@ -99,6 +100,7 @@ void Core::Archive::open(const QString& account)
 void Core::Archive::close()
 {
     if (opened) {
+        mdb_dbi_close(environment, sid);
         mdb_dbi_close(environment, avatars);
         mdb_dbi_close(environment, stats);
         mdb_dbi_close(environment, order);
@@ -139,12 +141,36 @@ bool Core::Archive::addElement(const Shared::Message& message)
             mdb_txn_abort(txn);
             return false;
         } else {
-            rc = mdb_txn_commit(txn);
-            if (rc) {
-                qDebug() << "A transaction error: " << mdb_strerror(rc);
-                return false;
+            if (message.getStanzaId().size() > 0) {
+                const std::string& szid = message.getStanzaId().toStdString();
+                
+                lmdbKey.mv_size = szid.size();
+                lmdbKey.mv_data = (char*)szid.c_str();
+                lmdbData.mv_size = id.size();
+                lmdbData.mv_data = (uint8_t*)id.data();
+                rc = mdb_put(txn, sid, &lmdbKey, &lmdbData, MDB_NOOVERWRITE);
+                
+                if (rc) {
+                    qDebug() << "An element stanzaId to id pair couldn't be inserted into the archive" << mdb_strerror(rc);
+                    mdb_txn_abort(txn);
+                    return false;
+                } else {
+                    rc = mdb_txn_commit(txn);
+                    if (rc) {
+                        qDebug() << "A transaction error: " << mdb_strerror(rc);
+                        return false;
+                    }
+                    return true;
+                }
+                
+            } else {
+                rc = mdb_txn_commit(txn);
+                if (rc) {
+                    qDebug() << "A transaction error: " << mdb_strerror(rc);
+                    return false;
+                }
+                return true;
             }
-            return true;
         }
     } else {
         qDebug() << "An element couldn't been added to the archive, skipping" << mdb_strerror(rc);
@@ -164,10 +190,12 @@ void Core::Archive::clear()
     mdb_drop(txn, main, 0);
     mdb_drop(txn, order, 0);
     mdb_drop(txn, stats, 0);
+    mdb_drop(txn, avatars, 0);
+    mdb_drop(txn, sid, 0);
     mdb_txn_commit(txn);
 }
 
-Shared::Message Core::Archive::getElement(const QString& id)
+Shared::Message Core::Archive::getElement(const QString& id) const
 {
     if (!opened) {
         throw Closed("getElement", jid.toStdString());
@@ -186,7 +214,7 @@ Shared::Message Core::Archive::getElement(const QString& id)
     }
 }
 
-Shared::Message Core::Archive::getMessage(const std::string& id, MDB_txn* txn)
+Shared::Message Core::Archive::getMessage(const std::string& id, MDB_txn* txn) const
 {
     MDB_val lmdbKey, lmdbData;
     lmdbKey.mv_size = id.size();
@@ -220,6 +248,7 @@ void Core::Archive::changeMessage(const QString& id, const QMap<QString, QVarian
     std::string strId(id.toStdString());
     try {
         Shared::Message msg = getMessage(strId, txn);
+        bool hadStanzaId = msg.getStanzaId().size() > 0;
         QDateTime oTime = msg.getTime();
         bool idChange = msg.change(data);
         
@@ -250,6 +279,19 @@ void Core::Archive::changeMessage(const QString& id, const QMap<QString, QVarian
                 throw Unknown(jid.toStdString(), mdb_strerror(rc));
             }
         }
+        
+        if (msg.getStanzaId().size() > 0 && (idChange || !hadStanzaId)) {
+            const std::string& szid = msg.getStanzaId().toStdString();
+            
+            lmdbData.mv_size = szid.size();
+            lmdbData.mv_data = (char*)szid.c_str();
+            rc = mdb_put(txn, sid, &lmdbData, &lmdbKey, 0);
+            
+            if (rc != 0) {
+                throw Unknown(jid.toStdString(), mdb_strerror(rc));
+            }
+        };
+        
         lmdbData.mv_size = ba.size();
         lmdbData.mv_data = (uint8_t*)ba.data();
         rc = mdb_put(txn, main, &lmdbKey, &lmdbData, 0);
@@ -395,7 +437,20 @@ unsigned int Core::Archive::addElements(const std::list<Shared::Message>& messag
             if (rc) {
                 qDebug() << "An element couldn't be inserted into the index, aborting the transaction" << mdb_strerror(rc);
             } else {
-                //qDebug() << "element added with id" << message.getId() << "stamp" << message.getTime();
+                if (message.getStanzaId().size() > 0) {
+                    const std::string& szid = message.getStanzaId().toStdString();
+                    
+                    lmdbKey.mv_size = szid.size();
+                    lmdbKey.mv_data = (char*)szid.c_str();
+                    lmdbData.mv_size = id.size();
+                    lmdbData.mv_data = (uint8_t*)id.data();
+                    rc = mdb_put(txn, sid, &lmdbKey, &lmdbData, MDB_NOOVERWRITE);
+                    
+                    if (rc) {
+                        qDebug() << "During bulk add an element stanzaId to id pair couldn't be inserted into the archive, continuing without stanzaId" << mdb_strerror(rc);
+                    }
+                    
+                }
                 success++;
             }
         } else {
@@ -533,6 +588,46 @@ void Core::Archive::setFromTheBeginning(bool is)
         } else {
             mdb_txn_commit(txn);
         }
+    }
+}
+
+QString Core::Archive::idByStanzaId(const QString& stanzaId) const
+{
+    if (!opened) {
+        throw Closed("idByStanzaId", jid.toStdString());
+    }
+    QString id;
+    std::string ssid = stanzaId.toStdString();
+    
+    MDB_txn *txn;
+    MDB_val lmdbKey, lmdbData;
+    lmdbKey.mv_size = ssid.size();
+    lmdbKey.mv_data = (char*)ssid.c_str();
+    mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
+    int rc = mdb_get(txn, sid, &lmdbKey, &lmdbData);
+    if (rc == 0) {
+        id = QString::fromStdString(std::string((char*)lmdbData.mv_data, lmdbData.mv_size));
+    }
+    mdb_txn_abort(txn);
+    
+    return id;
+}
+
+QString Core::Archive::stanzaIdById(const QString& id) const
+{
+    if (!opened) {
+        throw Closed("stanzaIdById", jid.toStdString());
+    }
+    
+    try {
+        Shared::Message msg = getElement(id);
+        return msg.getStanzaId();
+    } catch (const NotFound& e) {
+        return QString();
+    } catch (const Empty& e) {
+        return QString();
+    } catch (...) {
+        throw;
     }
 }
 

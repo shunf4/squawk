@@ -25,6 +25,7 @@
 #include <QMimeDatabase>
 #include <QStandardPaths>
 #include <QDir>
+#include <QTimer>
 
 #include <map>
 #include <set>
@@ -66,10 +67,6 @@ public:
         QObject* parent = 0);
     ~Account();
     
-    void connect();
-    void disconnect();
-    void reconnect();
-    
     Shared::ConnectionState getState() const;
     QString getName() const;
     QString getLogin() const;
@@ -91,7 +88,6 @@ public:
     void sendMessage(const Shared::Message& data);
     void sendMessage(const Shared::Message& data, const QString& path);
     void requestArchive(const QString& jid, int count, const QString& before);
-    void setReconnectTimes(unsigned int times);
     void subscribeToContact(const QString& jid, const QString& reason);
     void unsubscribeFromContact(const QString& jid, const QString& reason);
     void removeContactRequest(const QString& jid);
@@ -107,6 +103,9 @@ public:
     void uploadVCard(const Shared::VCard& card);
     
 public slots:
+    void connect();
+    void disconnect();
+    void reconnect();
     void requestVCard(const QString& jid);
     
 signals:
@@ -154,8 +153,8 @@ private:
     QXmppMessageReceiptManager* rcpm;
     std::map<QString, Contact*> contacts;
     std::map<QString, Conference*> conferences;
-    unsigned int maxReconnectTimes;
-    unsigned int reconnectTimes;
+    bool reconnectScheduled;
+    QTimer* reconnectTimer;
     
     std::map<QString, QString> queuedContacts;
     std::set<QString> outOfRosterContacts;
@@ -172,8 +171,7 @@ private:
     MessageHandler* mh;
     
 private slots:
-    void onClientConnected();
-    void onClientDisconnected();
+    void onClientStateChange(QXmppClient::State state);
     void onClientError(QXmppClient::Error err);
     
     void onRosterReceived();
@@ -219,8 +217,6 @@ private:
     void handleNewContact(Contact* contact);
     void handleNewRosterItem(RosterItem* contact);
     void handleNewConference(Conference* contact);
-    bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
-    bool handleGroupMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
     void addNewRoom(const QString& jid, const QString& nick, const QString& roomName, bool autoJoin);
     void addToGroup(const QString& jid, const QString& group);
     void removeFromGroup(const QString& jid, const QString& group);

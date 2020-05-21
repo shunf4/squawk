@@ -157,7 +157,7 @@ void Core::RosterItem::performRequest(int count, const QString& before)
                 requestedCount = -1;
             }
             Shared::Message msg = archive->newest();
-            emit needHistory("", msg.getId(), msg.getTime());
+            emit needHistory("", getId(msg), msg.getTime());
         }
             break;
         case end: 
@@ -176,27 +176,37 @@ void Core::RosterItem::performRequest(int count, const QString& before)
                 } catch (const Archive::NotFound& e) {
                     requestCache.emplace_back(requestedCount, before);
                     requestedCount = -1;
-                    emit needHistory(archive->oldestId(), "");
+                    emit needHistory(getId(archive->oldest()), "");
                 } catch (const Archive::Empty& e) {
                     requestCache.emplace_back(requestedCount, before);
                     requestedCount = -1;
-                    emit needHistory(archive->oldestId(), "");
+                    emit needHistory(getId(archive->oldest()), "");
                 }
                 
                 if (found) {
                     int rSize = responseCache.size();
                     if (rSize < count) {
                         if (rSize != 0) {
-                            emit needHistory(responseCache.front().getId(), "");
+                            emit needHistory(getId(responseCache.front()), "");
                         } else {
-                            emit needHistory(before, "");
+                            QString bf;
+                            if (muc) {
+                                bf = archive->stanzaIdById(before);
+                                if (bf.size() < 0) {
+                                    qDebug() << "Didn't find stanzaId for id requesting history for" << jid << ", falling back to requesting by id";
+                                    bf = before;
+                                }
+                            } else {
+                                bf = before;
+                            }
+                            emit needHistory(bf, "");
                         }
                     } else {
                         nextRequest();
                     }
                 }
             } else {
-                emit needHistory(archive->oldestId(), "");
+                emit needHistory(getId(archive->oldest()), "");
             }
             break;
         case complete:
@@ -213,10 +223,20 @@ void Core::RosterItem::performRequest(int count, const QString& before)
     }
 }
 
+QString Core::RosterItem::getId(const Shared::Message& msg)
+{
+    QString id;
+    if (muc) {
+        id = msg.getStanzaId();
+    } else {
+        id = msg.getId();
+    }
+    return id;
+}
+
 void Core::RosterItem::appendMessageToArchive(const Shared::Message& msg)
 {
-    const QString& id = msg.getId(); 
-    if (id.size() > 0) {
+    if (msg.getId().size() > 0) {
         if (msg.storable()) {
             switch (archiveState) {
                 case empty:
@@ -224,13 +244,13 @@ void Core::RosterItem::appendMessageToArchive(const Shared::Message& msg)
                         archiveState = end;
                     }
                     if (!syncronizing) {
-                        requestHistory(-1, id);
+                        requestHistory(-1, getId(msg));
                     }
                     break;
                 case beginning:
                     appendCache.push_back(msg);
                     if (!syncronizing) {
-                        requestHistory(-1, id);
+                        requestHistory(-1, getId(msg));
                     }
                     break;
                 case end:
@@ -239,7 +259,7 @@ void Core::RosterItem::appendMessageToArchive(const Shared::Message& msg)
                 case chunk:
                     appendCache.push_back(msg);
                     if (!syncronizing) {
-                        requestHistory(-1, id);
+                        requestHistory(-1, getId(msg));
                     }
                     break;
                 case complete:
@@ -247,7 +267,7 @@ void Core::RosterItem::appendMessageToArchive(const Shared::Message& msg)
                     break;
             }
         } else if (!syncronizing && archiveState == empty) {
-            requestHistory(-1, id);
+            requestHistory(-1, getId(msg));
         }
     }
 }
@@ -374,26 +394,6 @@ void Core::RosterItem::flushMessagesToArchive(bool finished, const QString& firs
         case complete:
             nextRequest();
             break;
-    }
-}
-
-void Core::RosterItem::requestFromEmpty(int count, const QString& before)
-{
-    if (syncronizing) {
-        qDebug("perform from empty didn't work, another request queued");
-    } else {
-        if (archiveState != empty) {
-            qDebug("perform from empty didn't work, the state is not empty");
-            requestHistory(count, before);
-        } else {
-            syncronizing = true;
-            requestedCount = count;
-            requestedBefore = "";
-            hisoryCache.clear();
-            responseCache.clear();
-            
-            emit needHistory(before, "");
-        }
     }
 }
 

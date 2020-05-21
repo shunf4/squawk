@@ -45,7 +45,7 @@ public:
     
     bool addElement(const Shared::Message& message);
     unsigned int addElements(const std::list<Shared::Message>& messages);
-    Shared::Message getElement(const QString& id);
+    Shared::Message getElement(const QString& id) const;
     void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     Shared::Message oldest();
     QString oldestId();
@@ -60,6 +60,8 @@ public:
     AvatarInfo getAvatarInfo(const QString& resource = "") const;
     bool readAvatarInfo(AvatarInfo& target, const QString& resource = "") const;
     void readAllResourcesAvatars(std::map<QString, AvatarInfo>& data) const;
+    QString idByStanzaId(const QString& stanzaId) const;
+    QString stanzaIdById(const QString& id) const;
     
 public:
     const QString jid;
@@ -169,10 +171,11 @@ private:
     bool opened;
     bool fromTheBeginning;
     MDB_env* environment;
-    MDB_dbi main;
-    MDB_dbi order;
+    MDB_dbi main;           //id to message
+    MDB_dbi order;          //time to id
     MDB_dbi stats;
-    MDB_dbi avatars;
+    MDB_dbi avatars;        
+    MDB_dbi sid;            //stanzaId to id
     
     bool getStatBoolValue(const std::string& id, MDB_txn* txn);
     std::string getStatStringValue(const std::string& id, MDB_txn* txn);
@@ -183,7 +186,7 @@ private:
     void printOrder();
     void printKeys();
     bool dropAvatar(const std::string& resource);
-    Shared::Message getMessage(const std::string& id, MDB_txn* txn);
+    Shared::Message getMessage(const std::string& id, MDB_txn* txn) const;
     Shared::Message getStoredMessage(MDB_txn *txn, MDB_cursor* cursor, MDB_cursor_op op, MDB_val* key, MDB_val* value, int& rc);
     Shared::Message edge(bool end);
 };

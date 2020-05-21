@@ -133,11 +133,9 @@ void Core::Squawk::addAccount(
 )
 {
     QSettings settings;
-    unsigned int reconnects = settings.value("reconnects", 2).toUInt();
     
     Account* acc = new Account(login, server, password, name, &network);
     acc->setResource(resource);
-    acc->setReconnectTimes(reconnects);
     acc->setPasswordType(passwordType);
     accounts.push_back(acc);
     amap.insert(std::make_pair(name, acc));
@@ -664,6 +662,7 @@ void Core::Squawk::responsePassword(const QString& account, const QString& passw
         return;
     }
     itr->second->setPassword(password);
+    emit changeAccount(account, {{"password", password}});
     accountReady();
 }
 
@@ -750,5 +749,6 @@ void Core::Squawk::onWalletResponsePassword(const QString& login, const QString&
         return;
     }
     itr->second->setPassword(password);
+    emit changeAccount(login, {{"password", password}});
     accountReady();
 }

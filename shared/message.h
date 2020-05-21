@@ -71,6 +71,7 @@ public:
     void setEdited(bool p_edited);
     void setErrorText(const QString& err);
     bool change(const QMap<QString, QVariant>& data);
+    void setStanzaId(const QString& sid);
     
     QString getFrom() const;
     QString getFromJid() const;
@@ -98,6 +99,7 @@ public:
     bool serverStored() const;
     QDateTime getLastModified() const;
     QString getOriginalBody() const;
+    QString getStanzaId() const;
     
     void serialize(QDataStream& data) const;
     void deserialize(QDataStream& data);
@@ -120,6 +122,7 @@ private:
     QString errorText;
     QString originalMessage;
     QDateTime lastModified;
+    QString stanzaId;
 };
 
 }

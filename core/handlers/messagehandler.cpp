@@ -162,7 +162,7 @@ bool Core::MessageHandler::handleGroupMessage(const QXmppMessage& msg, bool outg
         }
         
         return true;
-    }
+    } 
     return false;
 }
 
@@ -176,16 +176,13 @@ void Core::MessageHandler::initializeMessage(Shared::Message& target, const QXmp
     if (id.size() == 0) {
         id = source.id();
     }
-    if (id.size() == 0) {
-        id = source.stanzaId();
-    }
+    target.setStanzaId(source.stanzaId());
 #else
     id = source.id();
 #endif
-    if (id.size() == 0) {
-        target.generateRandomId();
-    } else {
-        target.setId(id);
+    target.setId(id);
+    if (target.getId().size() == 0) {
+        target.generateRandomId();          //TODO out of desperation, I need at least a random ID
     }
     target.setFrom(source.from());
     target.setTo(source.to());
@@ -217,13 +214,10 @@ void Core::MessageHandler::logMessage(const QXmppMessage& msg, const QString& re
     qDebug() << "- state: " << msg.state();
     qDebug() << "- stamp: " << msg.stamp();
     qDebug() << "- id: " << msg.id();
+#if (QXMPP_VERSION) >= QT_VERSION_CHECK(1, 3, 0)
+    qDebug() << "- stanzaId: " << msg.stanzaId();
+#endif
     qDebug() << "- outOfBandUrl: " << msg.outOfBandUrl();
-    qDebug() << "- isAttentionRequested: " << msg.isAttentionRequested();
-    qDebug() << "- isReceiptRequested: " << msg.isReceiptRequested();
-    qDebug() << "- receiptId: " << msg.receiptId();
-    qDebug() << "- subject: " << msg.subject();
-    qDebug() << "- thread: " << msg.thread();
-    qDebug() << "- isMarkable: " << msg.isMarkable();
     qDebug() << "==============================";
 }
 

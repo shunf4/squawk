@@ -67,7 +67,6 @@ public:
     void appendMessageToArchive(const Shared::Message& msg);
     void flushMessagesToArchive(bool finished, const QString& firstId, const QString& lastId);
     void requestHistory(int count, const QString& before);
-    void requestFromEmpty(int count, const QString& before);
     QString avatarPath(const QString& resource = "") const;
     QString folderPath() const;
     bool readAvatarInfo(Archive::AvatarInfo& target, const QString& resource = "") const;
@@ -112,6 +111,7 @@ protected:
 private:
     void nextRequest();
     void performRequest(int count, const QString& before);
+    QString getId(const Shared::Message& msg);
 };
 
 }
