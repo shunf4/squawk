@@ -658,7 +658,8 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
 {
     RosterItem* contact = static_cast<RosterItem*>(sender());
 
-    QString to = contact->jid;
+    QString to;
+    QString with;
     QXmppResultSetQuery query;
     QDateTime start;
     query.setMax(100);
@@ -680,8 +681,14 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
         qDebug() << "Remote query for" << contact->jid << "from" << after << ", to" << before;
     }
     
+    if (contact->isMuc()) {
+        to = contact->jid;
+    } else {
+        with = contact->jid;
+    }
     
-    QString q = am->retrieveArchivedMessages(to, "", contact->jid, start, QDateTime(), query);
+    
+    QString q = am->retrieveArchivedMessages(to, "", with, start, QDateTime(), query);
     achiveQueries.insert(std::make_pair(q, contact->jid));
 }
 
