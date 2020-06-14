@@ -27,7 +27,7 @@
 #include <QXmppMessage.h>
 #include <QXmppHttpUploadIq.h>
 
-#include "shared/message.h"
+#include <shared/message.h>
 
 namespace Core {
 

@@ -1,0 +1,583 @@
+/*
+ * Squawk messenger. 
+ * Copyright (C) 2019  Yury Gubich <blue@macaw.me>
+ * 
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+#include "rosterhandler.h"
+#include "core/account.h"
+
+Core::RosterHandler::RosterHandler(Core::Account* account):
+    QObject(),
+    acc(account),
+    contacts(),
+    conferences(),
+    groups(),
+    queuedContacts(),
+    outOfRosterContacts()
+{
+    connect(acc->rm, &QXmppRosterManager::rosterReceived, this, &RosterHandler::onRosterReceived);
+    connect(acc->rm, &QXmppRosterManager::itemAdded, this, &RosterHandler::onRosterItemAdded);
+    connect(acc->rm, &QXmppRosterManager::itemRemoved, this, &RosterHandler::onRosterItemRemoved);
+    connect(acc->rm, &QXmppRosterManager::itemChanged, this, &RosterHandler::onRosterItemChanged);
+    
+    
+    connect(acc->mm, &QXmppMucManager::roomAdded, this, &RosterHandler::onMucRoomAdded);
+    connect(acc->bm, &QXmppBookmarkManager::bookmarksReceived, this, &RosterHandler::bookmarksReceived);
+}
+
+Core::RosterHandler::~RosterHandler()
+{
+    for (std::map<QString, Contact*>::const_iterator itr = contacts.begin(), end = contacts.end(); itr != end; ++itr) {
+        delete itr->second;
+    }
+    
+    for (std::map<QString, Conference*>::const_iterator itr = conferences.begin(), end = conferences.end(); itr != end; ++itr) {
+        delete itr->second;
+    }
+}
+
+void Core::RosterHandler::onRosterReceived()
+{
+    acc->vm->requestClientVCard();         //TODO need to make sure server actually supports vCards
+    acc->ownVCardRequestInProgress = true;
+    
+    QStringList bj = acc->rm->getRosterBareJids();
+    for (int i = 0; i < bj.size(); ++i) {
+        const QString& jid = bj[i];
+        addedAccount(jid);
+    }
+}
+
+void Core::RosterHandler::onRosterItemAdded(const QString& bareJid)
+{
+    addedAccount(bareJid);
+    std::map<QString, QString>::const_iterator itr = queuedContacts.find(bareJid);
+    if (itr != queuedContacts.end()) {
+        acc->rm->subscribe(bareJid, itr->second);
+        queuedContacts.erase(itr);
+    }
+}
+
+void Core::RosterHandler::addedAccount(const QString& jid)
+{
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    QXmppRosterIq::Item re = acc->rm->getRosterEntry(jid);
+    Contact* contact;
+    bool newContact = false;
+    if (itr == contacts.end()) {
+        newContact = true;
+        contact = new Contact(jid, acc->name);
+        contacts.insert(std::make_pair(jid, contact));
+        
+    } else {
+        contact = itr->second;
+    }
+    
+    QSet<QString> gr = re.groups();
+    Shared::SubscriptionState state = castSubscriptionState(re.subscriptionType());
+    contact->setGroups(gr);
+    contact->setSubscriptionState(state);
+    contact->setName(re.name());
+    
+    if (newContact) {
+        QMap<QString, QVariant> cData({
+            {"name", re.name()},
+            {"state", QVariant::fromValue(state)}
+        });
+        
+        careAboutAvatar(contact, cData);
+        int grCount = 0;
+        for (QSet<QString>::const_iterator itr = gr.begin(), end = gr.end(); itr != end; ++itr) {
+            const QString& groupName = *itr;
+            addToGroup(jid, groupName);
+            emit acc->addContact(jid, groupName, cData);
+            grCount++;
+        }
+        
+        if (grCount == 0) {
+            emit acc->addContact(jid, "", cData);
+        }
+        handleNewContact(contact);
+    }
+}
+
+void Core::RosterHandler::addNewRoom(const QString& jid, const QString& nick, const QString& roomName, bool autoJoin)
+{
+    QXmppMucRoom* room = acc->mm->addRoom(jid);
+    QString lNick = nick;
+    if (lNick.size() == 0) {
+        lNick = acc->getName();
+    }
+    Conference* conf = new Conference(jid, acc->getName(), autoJoin, roomName, lNick, room);
+    conferences.insert(std::make_pair(jid, conf));
+    
+    handleNewConference(conf);
+    
+    QMap<QString, QVariant> cData = {
+        {"autoJoin", conf->getAutoJoin()},
+        {"joined", conf->getJoined()},
+        {"nick", conf->getNick()},
+        {"name", conf->getName()},
+        {"avatars", conf->getAllAvatars()}
+    };
+    careAboutAvatar(conf, cData);
+    emit acc->addRoom(jid, cData);
+}
+
+void Core::RosterHandler::careAboutAvatar(Core::RosterItem* item, QMap<QString, QVariant>& data)
+{
+    Archive::AvatarInfo info;
+    bool hasAvatar = item->readAvatarInfo(info);
+    if (hasAvatar) {
+        if (info.autogenerated) {
+            data.insert("avatarState", QVariant::fromValue(Shared::Avatar::autocreated));
+        } else {
+            data.insert("avatarState", QVariant::fromValue(Shared::Avatar::valid));
+        }
+        data.insert("avatarPath", item->avatarPath() + "." + info.type);
+    } else {
+        data.insert("avatarState", QVariant::fromValue(Shared::Avatar::empty));
+        data.insert("avatarPath", "");
+        acc->requestVCard(item->jid);
+    }
+}
+
+void Core::RosterHandler::addContactRequest(const QString& jid, const QString& name, const QSet<QString>& groups)
+{
+    if (acc->state == Shared::ConnectionState::connected) {
+        std::map<QString, QString>::const_iterator itr = queuedContacts.find(jid);
+        if (itr != queuedContacts.end()) {
+            qDebug() << "An attempt to add contact " << jid << " to account " << acc->name << " but the account is already queued for adding, skipping";
+        } else {
+            queuedContacts.insert(std::make_pair(jid, ""));     //TODO need to add reason here;
+            acc->rm->addItem(jid, name, groups);
+        }
+    } else {
+        qDebug() << "An attempt to add contact " << jid << " to account " << acc->name << " but the account is not in the connected state, skipping";
+    }
+}
+
+void Core::RosterHandler::removeContactRequest(const QString& jid)
+{
+    if (acc->state == Shared::ConnectionState::connected) {
+        std::set<QString>::const_iterator itr = outOfRosterContacts.find(jid);
+        if (itr != outOfRosterContacts.end()) {
+            outOfRosterContacts.erase(itr);
+            onRosterItemRemoved(jid);
+        } else {
+            acc->rm->removeItem(jid);
+        }
+    } else {
+        qDebug() << "An attempt to remove contact " << jid << " from account " << acc->name << " but the account is not in the connected state, skipping";
+    }
+}
+
+void Core::RosterHandler::handleNewRosterItem(Core::RosterItem* contact)
+{
+    connect(contact, &RosterItem::needHistory, this->acc, &Account::onContactNeedHistory);
+    connect(contact, &RosterItem::historyResponse, this, &RosterHandler::onContactHistoryResponse);
+    connect(contact, &RosterItem::nameChanged, this, &RosterHandler::onContactNameChanged);
+    connect(contact, &RosterItem::avatarChanged, this, &RosterHandler::onContactAvatarChanged);
+    connect(contact, &RosterItem::requestVCard, this->acc, &Account::requestVCard);
+}
+
+void Core::RosterHandler::handleNewContact(Core::Contact* contact)
+{
+    handleNewRosterItem(contact);
+    connect(contact, &Contact::groupAdded, this, &RosterHandler::onContactGroupAdded);
+    connect(contact, &Contact::groupRemoved, this, &RosterHandler::onContactGroupRemoved);
+    connect(contact, &Contact::subscriptionStateChanged, this, &RosterHandler::onContactSubscriptionStateChanged);
+}
+
+void Core::RosterHandler::handleNewConference(Core::Conference* contact)
+{
+    handleNewRosterItem(contact);
+    connect(contact, &Conference::nickChanged, this, &RosterHandler::onMucNickNameChanged);
+    connect(contact, &Conference::subjectChanged, this, &RosterHandler::onMucSubjectChanged);
+    connect(contact, &Conference::joinedChanged, this, &RosterHandler::onMucJoinedChanged);
+    connect(contact, &Conference::autoJoinChanged, this, &RosterHandler::onMucAutoJoinChanged);
+    connect(contact, &Conference::addParticipant, this, &RosterHandler::onMucAddParticipant);
+    connect(contact, &Conference::changeParticipant, this, &RosterHandler::onMucChangeParticipant);
+    connect(contact, &Conference::removeParticipant, this, &RosterHandler::onMucRemoveParticipant);
+}
+
+void Core::RosterHandler::onMucAddParticipant(const QString& nickName, const QMap<QString, QVariant>& data)
+{
+    Conference* room = static_cast<Conference*>(sender());
+    emit acc->addRoomParticipant(room->jid, nickName, data);
+}
+
+void Core::RosterHandler::onMucChangeParticipant(const QString& nickName, const QMap<QString, QVariant>& data)
+{
+    Conference* room = static_cast<Conference*>(sender());
+    emit acc->changeRoomParticipant(room->jid, nickName, data);
+}
+
+void Core::RosterHandler::onMucRemoveParticipant(const QString& nickName)
+{
+    Conference* room = static_cast<Conference*>(sender());
+    emit acc->removeRoomParticipant(room->jid, nickName);
+}
+
+void Core::RosterHandler::onMucSubjectChanged(const QString& subject)
+{
+    Conference* room = static_cast<Conference*>(sender());
+    emit acc->changeRoom(room->jid, {
+        {"subject", subject}
+    });
+}
+
+void Core::RosterHandler::onContactGroupAdded(const QString& group)
+{
+    Contact* contact = static_cast<Contact*>(sender());
+    if (contact->groupsCount() == 1) {
+        // not sure i need to handle it here, the situation with grouped and ungrouped contacts handled on the client anyway
+    }
+    
+    QMap<QString, QVariant> cData({
+        {"name", contact->getName()},
+        {"state", QVariant::fromValue(contact->getSubscriptionState())}
+    });
+    addToGroup(contact->jid, group);
+    emit acc->addContact(contact->jid, group, cData);
+}
+
+void Core::RosterHandler::onContactGroupRemoved(const QString& group)
+{
+    Contact* contact = static_cast<Contact*>(sender());
+    if (contact->groupsCount() == 0) {
+        // not sure i need to handle it here, the situation with grouped and ungrouped contacts handled on the client anyway
+    }
+    
+    emit acc->removeContact(contact->jid, group);
+    removeFromGroup(contact->jid, group);
+}
+
+void Core::RosterHandler::onContactNameChanged(const QString& cname)
+{
+    Contact* contact = static_cast<Contact*>(sender());
+    QMap<QString, QVariant> cData({
+        {"name", cname},
+    });
+    emit acc->changeContact(contact->jid, cData);
+}
+
+void Core::RosterHandler::onContactSubscriptionStateChanged(Shared::SubscriptionState cstate)
+{
+    Contact* contact = static_cast<Contact*>(sender());
+    QMap<QString, QVariant> cData({
+        {"state", QVariant::fromValue(cstate)},
+    });
+    emit acc->changeContact(contact->jid, cData);
+}
+
+void Core::RosterHandler::addToGroup(const QString& jid, const QString& group)
+{
+    std::map<QString, std::set<QString>>::iterator gItr = groups.find(group);
+    if (gItr == groups.end()) {
+        gItr = groups.insert(std::make_pair(group, std::set<QString>())).first;
+        emit acc->addGroup(group);
+    }
+    gItr->second.insert(jid);
+}
+
+void Core::RosterHandler::removeFromGroup(const QString& jid, const QString& group)
+{
+    QSet<QString> toRemove;
+    std::map<QString, std::set<QString>>::iterator itr = groups.find(group);
+    if (itr == groups.end()) {
+        qDebug() << "An attempt to remove contact" << jid << "of account" << acc->name << "from non existing group" << group << ", skipping";
+        return;
+    }
+    std::set<QString> contacts = itr->second;
+    std::set<QString>::const_iterator cItr = contacts.find(jid);
+    if (cItr != contacts.end()) {
+        contacts.erase(cItr);
+        if (contacts.size() == 0) {
+            emit acc->removeGroup(group);
+            groups.erase(group);
+        }
+    }
+}
+
+void Core::RosterHandler::onContactHistoryResponse(const std::list<Shared::Message>& list)
+{
+    RosterItem* contact = static_cast<RosterItem*>(sender());
+    
+    qDebug() << "Collected history for contact " << contact->jid << list.size() << "elements";
+    emit acc->responseArchive(contact->jid, list);
+}
+
+Core::RosterItem * Core::RosterHandler::getRosterItem(const QString& jid)
+{
+    RosterItem* item = 0;
+    std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
+    if (citr != contacts.end()) {
+        item = citr->second;
+    } else {
+        std::map<QString, Conference*>::const_iterator coitr = conferences.find(jid);
+        if (coitr != conferences.end()) {
+            item = coitr->second;
+        }
+    }
+    return item;
+}
+
+Core::Conference * Core::RosterHandler::getConference(const QString& jid)
+{
+    Conference* item = 0;
+    std::map<QString, Conference*>::const_iterator coitr = conferences.find(jid);
+    if (coitr != conferences.end()) {
+        item = coitr->second;
+    }
+    return item;
+}
+
+Core::Contact * Core::RosterHandler::getContact(const QString& jid)
+{
+    Contact* item = 0;
+    std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
+    if (citr != contacts.end()) {
+        item = citr->second;
+    }
+    return item;
+}
+
+Core::Contact * Core::RosterHandler::addOutOfRosterContact(const QString& jid)
+{
+    Contact* cnt = new Contact(jid, acc->name);
+    contacts.insert(std::make_pair(jid, cnt));
+    outOfRosterContacts.insert(jid);
+    cnt->setSubscriptionState(Shared::SubscriptionState::unknown);
+    emit acc->addContact(jid, "", QMap<QString, QVariant>({
+        {"state", QVariant::fromValue(Shared::SubscriptionState::unknown)}
+    }));
+    handleNewContact(cnt);
+    return cnt;
+}
+
+void Core::RosterHandler::onRosterItemChanged(const QString& bareJid)
+{
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(bareJid);
+    if (itr == contacts.end()) {
+        qDebug() << "An attempt to change non existing contact" << bareJid << "from account" << acc->name << ", skipping";
+        return;
+    }
+    Contact* contact = itr->second;
+    QXmppRosterIq::Item re = acc->rm->getRosterEntry(bareJid);
+    
+    Shared::SubscriptionState state = castSubscriptionState(re.subscriptionType());
+    
+    contact->setGroups(re.groups());
+    contact->setSubscriptionState(state);
+    contact->setName(re.name());
+}
+
+void Core::RosterHandler::onRosterItemRemoved(const QString& bareJid)
+{
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(bareJid);
+    if (itr == contacts.end()) {
+        qDebug() << "An attempt to remove non existing contact" << bareJid << "from account" << acc->name << ", skipping";
+        return;
+    }
+    Contact* contact = itr->second;
+    contacts.erase(itr);
+    QSet<QString> cGroups = contact->getGroups();
+    for (QSet<QString>::const_iterator itr = cGroups.begin(), end = cGroups.end(); itr != end; ++itr) {
+        removeFromGroup(bareJid, *itr);
+    }
+    emit acc->removeContact(bareJid);
+    
+    contact->deleteLater();
+}
+
+void Core::RosterHandler::onMucRoomAdded(QXmppMucRoom* room)
+{
+    qDebug()    << "room" << room->jid() << "added with name" << room->name() 
+                << ", account" << acc->getName() << "joined:" << room->isJoined(); 
+}
+
+void Core::RosterHandler::bookmarksReceived(const QXmppBookmarkSet& bookmarks)
+{
+    QList<QXmppBookmarkConference> confs = bookmarks.conferences();
+    for (QList<QXmppBookmarkConference>::const_iterator itr = confs.begin(), end = confs.end(); itr != end; ++itr) {
+        const QXmppBookmarkConference& c = *itr;
+        
+        QString jid = c.jid();
+        std::map<QString, Conference*>::const_iterator cItr = conferences.find(jid);
+        if (cItr == conferences.end()) {
+            addNewRoom(jid, c.nickName(), c.name(), c.autoJoin());
+        } else {
+            qDebug() << "Received a bookmark to a MUC " << jid << " which is already booked by another bookmark, skipping";
+        }
+    }
+}
+
+void Core::RosterHandler::onMucJoinedChanged(bool joined)
+{
+    Conference* room = static_cast<Conference*>(sender());
+    emit acc->changeRoom(room->jid, {
+        {"joined", joined}
+    });
+}
+
+void Core::RosterHandler::onMucAutoJoinChanged(bool autoJoin)
+{
+    storeConferences();
+    Conference* room = static_cast<Conference*>(sender());
+    emit acc->changeRoom(room->jid, {
+        {"autoJoin", autoJoin}
+    });
+}
+
+void Core::RosterHandler::onMucNickNameChanged(const QString& nickName)
+{
+    storeConferences();
+    Conference* room = static_cast<Conference*>(sender());
+    emit acc->changeRoom(room->jid, {
+        {"nick", nickName}
+    });
+}
+
+Shared::SubscriptionState Core::RosterHandler::castSubscriptionState(QXmppRosterIq::Item::SubscriptionType qs)
+{
+    Shared::SubscriptionState state;
+    if (qs == QXmppRosterIq::Item::NotSet) {
+        state = Shared::SubscriptionState::unknown;
+    } else {
+        state = static_cast<Shared::SubscriptionState>(qs);
+    }
+    return state;
+}
+
+void Core::RosterHandler::storeConferences()
+{
+    QXmppBookmarkSet bms = acc->bm->bookmarks();
+    QList<QXmppBookmarkConference> confs;
+    for (std::map<QString, Conference*>::const_iterator itr = conferences.begin(), end = conferences.end(); itr != end; ++itr) {
+        Conference* conference = itr->second;
+        QXmppBookmarkConference conf;
+        conf.setJid(conference->jid);
+        conf.setName(conference->getName());
+        conf.setNickName(conference->getNick());
+        conf.setAutoJoin(conference->getAutoJoin());
+        confs.push_back(conf);
+    }
+    bms.setConferences(confs);
+    acc->bm->setBookmarks(bms);
+}
+
+void Core::RosterHandler::clearConferences()
+{
+    for (std::map<QString, Conference*>::const_iterator itr = conferences.begin(), end = conferences.end(); itr != end; itr++) {
+        itr->second->deleteLater();
+        emit acc->removeRoom(itr->first);
+    }
+    conferences.clear();
+}
+
+void Core::RosterHandler::removeRoomRequest(const QString& jid)
+{
+    std::map<QString, Conference*>::const_iterator itr = conferences.find(jid);
+    if (itr == conferences.end()) {
+        qDebug() << "An attempt to remove non existing room" << jid << "from account" << acc->name << ", skipping";
+    }
+    itr->second->deleteLater();
+    conferences.erase(itr);
+    emit acc->removeRoom(jid);
+    storeConferences();
+}
+
+void Core::RosterHandler::addRoomRequest(const QString& jid, const QString& nick, const QString& password, bool autoJoin)
+{
+    std::map<QString, Conference*>::const_iterator cItr = conferences.find(jid);
+    if (cItr == conferences.end()) {
+        addNewRoom(jid, nick, "", autoJoin);
+        storeConferences();
+    } else {
+        qDebug() << "An attempt to add a MUC " << jid << " which is already present in the rester, skipping";
+    }
+}
+
+void Core::RosterHandler::addContactToGroupRequest(const QString& jid, const QString& groupName)
+{
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    if (itr == contacts.end()) {
+        qDebug()    << "An attempt to add non existing contact" << jid << "of account" 
+                    << acc->name << "to the group" << groupName << ", skipping";
+    } else {
+        QXmppRosterIq::Item item = acc->rm->getRosterEntry(jid);
+        QSet<QString> groups = item.groups();
+        if (groups.find(groupName) == groups.end()) {           //TODO need to change it, I guess that sort of code is better in qxmpp lib
+            groups.insert(groupName);
+            item.setGroups(groups);
+            
+            QXmppRosterIq iq;
+            iq.setType(QXmppIq::Set);
+            iq.addItem(item);
+            acc->client.sendPacket(iq);
+        } else {
+            qDebug()    << "An attempt to add contact" << jid << "of account" 
+                        << acc->name << "to the group" << groupName << "but it's already in that group, skipping";
+        }
+    }
+}
+
+void Core::RosterHandler::removeContactFromGroupRequest(const QString& jid, const QString& groupName)
+{
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    if (itr == contacts.end()) {
+        qDebug()    << "An attempt to remove non existing contact" << jid << "of account" 
+                    << acc->name << "from the group" << groupName << ", skipping";
+    } else {
+        QXmppRosterIq::Item item = acc->rm->getRosterEntry(jid);
+        QSet<QString> groups = item.groups();
+        QSet<QString>::const_iterator gItr = groups.find(groupName);
+        if (gItr != groups.end()) {
+            groups.erase(gItr);
+            item.setGroups(groups);
+            
+            QXmppRosterIq iq;
+            iq.setType(QXmppIq::Set);
+            iq.addItem(item);
+            acc->client.sendPacket(iq);
+        } else {
+            qDebug()    << "An attempt to remove contact" << jid << "of account" 
+                        << acc->name << "from the group" << groupName << "but it's not in that group, skipping";
+        }
+    }
+}
+
+void Core::RosterHandler::onContactAvatarChanged(Shared::Avatar type, const QString& path)
+{
+    RosterItem* item = static_cast<RosterItem*>(sender());
+    QMap<QString, QVariant> cData({
+        {"avatarState", static_cast<uint>(type)},
+        {"avatarPath", path}
+    });
+    
+    emit acc->changeContact(item->jid, cData);
+}
+
+void Core::RosterHandler::cancelHistoryRequests()
+{
+    for (const std::pair<const QString, Conference*>& pair : conferences) {
+        pair.second->clearArchiveRequests();
+    }
+    for (const std::pair<const QString, Contact*>& pair : contacts) {
+        pair.second->clearArchiveRequests();
+    }
+}

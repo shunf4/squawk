@@ -46,7 +46,7 @@ void Core::MessageHandler::onMessageReceived(const QXmppMessage& msg)
             std::map<QString, QString>::const_iterator itr = pendingStateMessages.find(id);
             if (itr != pendingStateMessages.end()) {
                 QString jid = itr->second;
-                RosterItem* cnt = acc->getRosterItem(jid);
+                RosterItem* cnt = acc->rh->getRosterItem(jid);
                 QMap<QString, QVariant> cData = {
                     {"state", static_cast<uint>(Shared::Message::State::error)},
                     {"errorText", msg.error().text()}
@@ -79,19 +79,9 @@ bool Core::MessageHandler::handleChatMessage(const QXmppMessage& msg, bool outgo
         Shared::Message sMsg(Shared::Message::chat);
         initializeMessage(sMsg, msg, outgoing, forwarded, guessing);
         QString jid = sMsg.getPenPalJid();
-        std::map<QString, Contact*>::const_iterator itr = acc->contacts.find(jid);
-        Contact* cnt;
-        if (itr != acc->contacts.end()) {
-            cnt = itr->second;
-        } else {
-            cnt = new Contact(jid, acc->name);
-            acc->contacts.insert(std::make_pair(jid, cnt));
-            acc->outOfRosterContacts.insert(jid);
-            cnt->setSubscriptionState(Shared::SubscriptionState::unknown);
-            emit acc->addContact(jid, "", QMap<QString, QVariant>({
-                {"state", QVariant::fromValue(Shared::SubscriptionState::unknown)}
-            }));
-            acc->handleNewContact(cnt);
+        Contact* cnt = acc->rh->getContact(jid);
+        if (cnt == 0) {
+            cnt = acc->rh->addOutOfRosterContact(jid);
         }
         if (outgoing) {
             if (forwarded) {
@@ -127,11 +117,8 @@ bool Core::MessageHandler::handleGroupMessage(const QXmppMessage& msg, bool outg
         Shared::Message sMsg(Shared::Message::groupChat);
         initializeMessage(sMsg, msg, outgoing, forwarded, guessing);
         QString jid = sMsg.getPenPalJid();
-        std::map<QString, Conference*>::const_iterator itr = acc->conferences.find(jid);
-        Conference* cnt;
-        if (itr != acc->conferences.end()) {
-            cnt = itr->second;
-        } else {
+        Conference* cnt = acc->rh->getConference(jid);
+        if (cnt == 0) {
             return false;
         }
         
@@ -236,7 +223,7 @@ void Core::MessageHandler::onReceiptReceived(const QString& jid, const QString& 
     std::map<QString, QString>::const_iterator itr = pendingStateMessages.find(id);
     if (itr != pendingStateMessages.end()) {
         QMap<QString, QVariant> cData = {{"state", static_cast<uint>(Shared::Message::State::delivered)}};
-        RosterItem* ri = acc->getRosterItem(itr->second);
+        RosterItem* ri = acc->rh->getRosterItem(itr->second);
         if (ri != 0) {
             ri->changeMessage(id, cData);
         }
@@ -249,7 +236,7 @@ void Core::MessageHandler::sendMessage(Shared::Message data)
 {
     QString jid = data.getPenPalJid();
     QString id = data.getId();
-    RosterItem* ri = acc->getRosterItem(jid);
+    RosterItem* ri = acc->rh->getRosterItem(jid);
     if (acc->state == Shared::ConnectionState::connected) {
         QXmppMessage msg(acc->getFullJid(), data.getTo(), data.getBody(), data.getThread());
         

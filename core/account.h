@@ -49,6 +49,7 @@
 #include "networkaccess.h"
 
 #include "handlers/messagehandler.h"
+#include "handlers/rosterhandler.h"
 
 namespace Core
 {
@@ -57,6 +58,7 @@ class Account : public QObject
 {
     Q_OBJECT
     friend class MessageHandler;
+    friend class RosterHandler;
 public:
     Account(
         const QString& p_login, 
@@ -141,7 +143,6 @@ private:
     QXmppConfiguration config;
     QXmppPresence presence;
     Shared::ConnectionState state;
-    std::map<QString, std::set<QString>> groups;
     QXmppCarbonManager* cm;
     QXmppMamManager* am;
     QXmppMucManager* mm;
@@ -151,16 +152,10 @@ private:
     QXmppUploadRequestManager* um;
     QXmppDiscoveryManager* dm;
     QXmppMessageReceiptManager* rcpm;
-    std::map<QString, Contact*> contacts;
-    std::map<QString, Conference*> conferences;
     bool reconnectScheduled;
     QTimer* reconnectTimer;
     
-    std::map<QString, QString> queuedContacts;
-    std::set<QString> outOfRosterContacts;
     std::set<QString> pendingVCardRequests;
-    std::map<QString, Shared::Message> pendingMessages;
-    std::deque<std::pair<QString, Shared::Message>> uploadingSlotsQueue;
     
     QString avatarHash;
     QString avatarType;
@@ -169,41 +164,18 @@ private:
     Shared::AccountPassword passwordType;
     
     MessageHandler* mh;
+    RosterHandler* rh;
     
 private slots:
     void onClientStateChange(QXmppClient::State state);
     void onClientError(QXmppClient::Error err);
     
-    void onRosterReceived();
-    void onRosterItemAdded(const QString& bareJid);
-    void onRosterItemChanged(const QString& bareJid);
-    void onRosterItemRemoved(const QString& bareJid);
-    void onRosterPresenceChanged(const QString& bareJid, const QString& resource);
-    
     void onPresenceReceived(const QXmppPresence& presence);
-    
+    void onContactNeedHistory(const QString& before, const QString& after, const QDateTime& at);
+
     void onMamMessageReceived(const QString& bareJid, const QXmppMessage& message);
     void onMamResultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);
-    
-    void onMucRoomAdded(QXmppMucRoom* room);
-    void onMucJoinedChanged(bool joined);
-    void onMucAutoJoinChanged(bool autoJoin);
-    void onMucNickNameChanged(const QString& nickName);
-    void onMucSubjectChanged(const QString& subject);
-    void onMucAddParticipant(const QString& nickName, const QMap<QString, QVariant>& data);
-    void onMucChangeParticipant(const QString& nickName, const QMap<QString, QVariant>& data);
-    void onMucRemoveParticipant(const QString& nickName);
-    
-    void bookmarksReceived(const QXmppBookmarkSet& bookmarks);
-    
-    void onContactGroupAdded(const QString& group);
-    void onContactGroupRemoved(const QString& group);
-    void onContactNameChanged(const QString& name);
-    void onContactSubscriptionStateChanged(Shared::SubscriptionState state);
-    void onContactHistoryResponse(const std::list<Shared::Message>& list);
-    void onContactNeedHistory(const QString& before, const QString& after, const QDateTime& at);
-    void onContactAvatarChanged(Shared::Avatar, const QString& path);
-    
+
     void onMamLog(QXmppLogger::MessageType type, const QString &msg);
     
     void onVCardReceived(const QXmppVCardIq& card);
@@ -213,18 +185,7 @@ private slots:
     void onDiscoveryInfoReceived (const QXmppDiscoveryIq& info);
   
 private:
-    void addedAccount(const QString &bareJid);
-    void handleNewContact(Contact* contact);
-    void handleNewRosterItem(RosterItem* contact);
-    void handleNewConference(Conference* contact);
-    void addNewRoom(const QString& jid, const QString& nick, const QString& roomName, bool autoJoin);
-    void addToGroup(const QString& jid, const QString& group);
-    void removeFromGroup(const QString& jid, const QString& group);
-    Shared::SubscriptionState castSubscriptionState(QXmppRosterIq::Item::SubscriptionType qs) const;
-    void storeConferences();
-    void clearConferences();
     void cancelHistoryRequests();
-    RosterItem* getRosterItem(const QString& jid);
 };
 
 void initializeVCard(Shared::VCard& vCard, const QXmppVCardIq& card);

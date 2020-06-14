@@ -19,6 +19,7 @@ set(squawkCORE_SRC
     networkaccess.cpp
     adapterFuctions.cpp
     handlers/messagehandler.cpp
+    handlers/rosterhandler.cpp
 )
 
 add_subdirectory(passwordStorageEngines)

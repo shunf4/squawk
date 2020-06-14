@@ -30,6 +30,7 @@
 #include <QString>
 #include <QVector>
 #include <QFlags>
+#include <QRandomGenerator>
 
 /**
  @ short Simple encrypt*ion and decryption of strings and byte arrays

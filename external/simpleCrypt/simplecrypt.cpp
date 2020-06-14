@@ -36,10 +36,7 @@ SimpleCrypt::SimpleCrypt():
 m_key(0),
 m_compressionMode(CompressionAuto),
 m_protectionMode(ProtectionChecksum),
-m_lastError(ErrorNoError)
-{
-    qsrand(uint(QDateTime::currentMSecsSinceEpoch() & 0xFFFF));
-}
+m_lastError(ErrorNoError) {}
 
 SimpleCrypt::SimpleCrypt(quint64 key):
 m_key(key),
@@ -47,7 +44,6 @@ m_compressionMode(CompressionAuto),
 m_protectionMode(ProtectionChecksum),
 m_lastError(ErrorNoError)
 {
-    qsrand(uint(QDateTime::currentMSecsSinceEpoch() & 0xFFFF));
     splitKey();
 }
 
@@ -113,7 +109,7 @@ QByteArray SimpleCrypt::encryptToByteArray(QByteArray plaintext)
     }
     
     //prepend a random char to the string
-    char randomChar = char(qrand() & 0xFF);
+    char randomChar = char(QRandomGenerator::global()->generate() & 0xFF);
     ba = randomChar + integrityProtection + ba;
     
     int pos(0);
