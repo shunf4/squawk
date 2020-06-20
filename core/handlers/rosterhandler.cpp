@@ -421,7 +421,11 @@ void Core::RosterHandler::bookmarksReceived(const QXmppBookmarkSet& bookmarks)
         if (cItr == conferences.end()) {
             addNewRoom(jid, c.nickName(), c.name(), c.autoJoin());
         } else {
-            qDebug() << "Received a bookmark to a MUC " << jid << " which is already booked by another bookmark, skipping";
+            if (c.autoJoin()) {
+                cItr->second->setJoined(true);
+            } else {
+                cItr->second->setAutoJoin(false);
+            }
         }
     }
 }
@@ -572,12 +576,14 @@ void Core::RosterHandler::onContactAvatarChanged(Shared::Avatar type, const QStr
     emit acc->changeContact(item->jid, cData);
 }
 
-void Core::RosterHandler::cancelHistoryRequests()
+void Core::RosterHandler::handleOffline()
 {
     for (const std::pair<const QString, Conference*>& pair : conferences) {
         pair.second->clearArchiveRequests();
+        pair.second->downgradeDatabaseState();
     }
     for (const std::pair<const QString, Contact*>& pair : contacts) {
         pair.second->clearArchiveRequests();
+        pair.second->downgradeDatabaseState();
     }
 }

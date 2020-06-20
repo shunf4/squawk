@@ -523,8 +523,25 @@ void Core::RosterItem::clearArchiveRequests()
     syncronizing = false;
     requestedCount = 0;
     requestedBefore = "";
+    for (const std::pair<int, QString>& pair : requestCache) {
+        if (pair.first != -1) {
+            emit historyResponse(responseCache);        //just to notify those who still waits with whatever happened to be left in caches yet
+        }
+        responseCache.clear();
+    }
     hisoryCache.clear();
-    responseCache.clear();
+    responseCache.clear();  //in case the cycle never runned
     appendCache.clear();
     requestCache.clear();
+}
+
+void Core::RosterItem::downgradeDatabaseState()
+{
+    if (archiveState == ArchiveState::complete) {
+        archiveState = ArchiveState::beginning;
+    }
+    
+    if (archiveState == ArchiveState::end) {
+        archiveState = ArchiveState::chunk;
+    }
 }

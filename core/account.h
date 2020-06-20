@@ -138,7 +138,7 @@ signals:
     
 private:
     QString name;
-    std::map<QString, QString> achiveQueries;
+    std::map<QString, QString> archiveQueries;
     QXmppClient client;
     QXmppConfiguration config;
     QXmppPresence presence;
@@ -186,6 +186,7 @@ private slots:
   
 private:
     void cancelHistoryRequests();
+    void onReconnectTimer();
 };
 
 void initializeVCard(Shared::VCard& vCard, const QXmppVCardIq& card);

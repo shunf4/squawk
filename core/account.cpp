@@ -25,7 +25,7 @@ using namespace Core;
 Account::Account(const QString& p_login, const QString& p_server, const QString& p_password, const QString& p_name, NetworkAccess* p_net, QObject* parent):
     QObject(parent),
     name(p_name),
-    achiveQueries(),
+    archiveQueries(),
     client(),
     config(),
     presence(),
@@ -137,7 +137,7 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     }
     
     reconnectTimer->setSingleShot(true);
-    QObject::connect(reconnectTimer, &QTimer::timeout, this, &Account::connect);
+    QObject::connect(reconnectTimer, &QTimer::timeout, this, &Account::onReconnectTimer);
     
 //     QXmppLogger* logger = new QXmppLogger(this);
 //     logger->setLoggingType(QXmppLogger::SignalLogging);
@@ -178,11 +178,23 @@ Shared::ConnectionState Core::Account::getState() const
 
 void Core::Account::connect()
 {
+    if (reconnectScheduled) {
+        reconnectScheduled = false;
+        reconnectTimer->stop();
+    }
     if (state == Shared::ConnectionState::disconnected) {
         qDebug() << presence.availableStatusType();
         client.connectToServer(config, presence);
     } else {
         qDebug("An attempt to connect an account which is already connected, skipping");
+    }
+}
+
+void Core::Account::onReconnectTimer()
+{
+    if (reconnectScheduled) {
+        reconnectScheduled = false;
+        connect();
     }
 }
 
@@ -193,7 +205,7 @@ void Core::Account::disconnect()
         reconnectTimer->stop();
     }
     if (state != Shared::ConnectionState::disconnected) {
-        rh->clearConferences();
+        //rh->clearConferences();
         client.disconnectFromServer();
     }
 }
@@ -397,8 +409,8 @@ void Core::Account::sendMessage(const Shared::Message& data, const QString& path
 void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMessage& msg)
 {
     if (msg.id().size() > 0 && (msg.body().size() > 0 || msg.outOfBandUrl().size() > 0)) {
-        std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
-        if (itr != achiveQueries.end()) {
+        std::map<QString, QString>::const_iterator itr = archiveQueries.find(queryId);
+        if (itr != archiveQueries.end()) {
             QString jid = itr->second;
             RosterItem* item = rh->getRosterItem(jid);
             
@@ -469,15 +481,15 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
     }
     
     QString q = am->retrieveArchivedMessages(to, "", with, start, QDateTime(), query);
-    achiveQueries.insert(std::make_pair(q, contact->jid));
+    archiveQueries.insert(std::make_pair(q, contact->jid));
 }
 
 void Core::Account::onMamResultsReceived(const QString& queryId, const QXmppResultSetReply& resultSetReply, bool complete)
 {
-    std::map<QString, QString>::const_iterator itr = achiveQueries.find(queryId);
-    if (itr != achiveQueries.end()) {
+    std::map<QString, QString>::const_iterator itr = archiveQueries.find(queryId);
+    if (itr != archiveQueries.end()) {
         QString jid = itr->second;
-        achiveQueries.erase(itr);
+        archiveQueries.erase(itr);
         
         RosterItem* ri = rh->getRosterItem(jid);
         
@@ -570,6 +582,8 @@ void Core::Account::onClientError(QXmppClient::Error err)
                     break;
                 case QXmppStanza::Error::UndefinedCondition:
                     errorText = "Undefined condition";
+                    reconnectScheduled = true;
+                    reconnectTimer->start(500);     //let's reconnect here just for now, it seems to be something broken in QXMPP
                     break;
                 case QXmppStanza::Error::UnexpectedRequest:
                     errorText = "Unexpected request";
@@ -882,7 +896,13 @@ void Core::Account::onDiscoveryInfoReceived(const QXmppDiscoveryIq& info)
 
 void Core::Account::cancelHistoryRequests()
 {
-    rh->cancelHistoryRequests();
-    achiveQueries.clear();
+    rh->handleOffline();
+    archiveQueries.clear();
+    pendingVCardRequests.clear();
+    Shared::VCard vCard;                    //just to show, that there is now more pending request
+    for (const QString& jid : pendingVCardRequests) {
+        emit receivedVCard(jid, vCard);     //need to show it better in the future, like with an error
+    }
+    ownVCardRequestInProgress = false;
 }
 

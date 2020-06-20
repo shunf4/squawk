@@ -76,6 +76,7 @@ public:
     
     bool changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     void clearArchiveRequests();
+    void downgradeDatabaseState();
     
 signals:
     void nameChanged(const QString& name);

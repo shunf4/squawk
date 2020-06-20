@@ -55,7 +55,7 @@ public:
     
     void removeRoomRequest(const QString& jid);
     void addRoomRequest(const QString& jid, const QString& nick, const QString& password, bool autoJoin);
-    void cancelHistoryRequests();
+    void handleOffline();
     
     Core::Contact* getContact(const QString& jid);
     Core::Conference* getConference(const QString& jid);
