@@ -105,9 +105,9 @@ void Shared::Message::setFrom(const QString& from)
 {
     QStringList list = from.split("/");
     if (list.size() == 1) {
-        jFrom = from;
+        jFrom = from.toLower();
     } else {
-        jFrom = list.front();
+        jFrom = list.front().toLower();
         rFrom = list.back();
     }
 }
@@ -116,9 +116,9 @@ void Shared::Message::setTo(const QString& to)
 {
     QStringList list = to.split("/");
     if (list.size() == 1) {
-        jTo = to;
+        jTo = to.toLower();
     } else {
-        jTo = list.front();
+        jTo = list.front().toLower();
         rTo = list.back();
     }
 }
@@ -188,7 +188,7 @@ bool Shared::Message::getEdited() const
 
 void Shared::Message::setFromJid(const QString& from)
 {
-    jFrom = from;
+    jFrom = from.toLower();
 }
 
 void Shared::Message::setFromResource(const QString& from)
@@ -198,7 +198,7 @@ void Shared::Message::setFromResource(const QString& from)
 
 void Shared::Message::setToJid(const QString& to)
 {
-    jTo = to;
+    jTo = to.toLower();
 }
 
 void Shared::Message::setToResource(const QString& to)

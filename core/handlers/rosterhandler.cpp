@@ -57,16 +57,17 @@ void Core::RosterHandler::onRosterReceived()
     QStringList bj = acc->rm->getRosterBareJids();
     for (int i = 0; i < bj.size(); ++i) {
         const QString& jid = bj[i];
-        addedAccount(jid);
+        addedAccount(jid.toLower());
     }
 }
 
 void Core::RosterHandler::onRosterItemAdded(const QString& bareJid)
 {
-    addedAccount(bareJid);
-    std::map<QString, QString>::const_iterator itr = queuedContacts.find(bareJid);
+    QString lcJid = bareJid.toLower();
+    addedAccount(lcJid);
+    std::map<QString, QString>::const_iterator itr = queuedContacts.find(lcJid);
     if (itr != queuedContacts.end()) {
-        acc->rm->subscribe(bareJid, itr->second);
+        acc->rm->subscribe(lcJid, itr->second);
         queuedContacts.erase(itr);
     }
 }
@@ -172,16 +173,17 @@ void Core::RosterHandler::addContactRequest(const QString& jid, const QString& n
 
 void Core::RosterHandler::removeContactRequest(const QString& jid)
 {
+    QString lcJid = jid.toLower();
     if (acc->state == Shared::ConnectionState::connected) {
-        std::set<QString>::const_iterator itr = outOfRosterContacts.find(jid);
+        std::set<QString>::const_iterator itr = outOfRosterContacts.find(lcJid);
         if (itr != outOfRosterContacts.end()) {
             outOfRosterContacts.erase(itr);
-            onRosterItemRemoved(jid);
+            onRosterItemRemoved(lcJid);
         } else {
-            acc->rm->removeItem(jid);
+            acc->rm->removeItem(lcJid);
         }
     } else {
-        qDebug() << "An attempt to remove contact " << jid << " from account " << acc->name << " but the account is not in the connected state, skipping";
+        qDebug() << "An attempt to remove contact " << lcJid << " from account " << acc->name << " but the account is not in the connected state, skipping";
     }
 }
 
@@ -291,7 +293,7 @@ void Core::RosterHandler::addToGroup(const QString& jid, const QString& group)
         gItr = groups.insert(std::make_pair(group, std::set<QString>())).first;
         emit acc->addGroup(group);
     }
-    gItr->second.insert(jid);
+    gItr->second.insert(jid.toLower());
 }
 
 void Core::RosterHandler::removeFromGroup(const QString& jid, const QString& group)
@@ -303,7 +305,7 @@ void Core::RosterHandler::removeFromGroup(const QString& jid, const QString& gro
         return;
     }
     std::set<QString> contacts = itr->second;
-    std::set<QString>::const_iterator cItr = contacts.find(jid);
+    std::set<QString>::const_iterator cItr = contacts.find(jid.toLower());
     if (cItr != contacts.end()) {
         contacts.erase(cItr);
         if (contacts.size() == 0) {
@@ -324,11 +326,12 @@ void Core::RosterHandler::onContactHistoryResponse(const std::list<Shared::Messa
 Core::RosterItem * Core::RosterHandler::getRosterItem(const QString& jid)
 {
     RosterItem* item = 0;
-    std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
+    QString lcJid = jid.toLower();
+    std::map<QString, Contact*>::const_iterator citr = contacts.find(lcJid);
     if (citr != contacts.end()) {
         item = citr->second;
     } else {
-        std::map<QString, Conference*>::const_iterator coitr = conferences.find(jid);
+        std::map<QString, Conference*>::const_iterator coitr = conferences.find(lcJid);
         if (coitr != conferences.end()) {
             item = coitr->second;
         }
@@ -339,7 +342,7 @@ Core::RosterItem * Core::RosterHandler::getRosterItem(const QString& jid)
 Core::Conference * Core::RosterHandler::getConference(const QString& jid)
 {
     Conference* item = 0;
-    std::map<QString, Conference*>::const_iterator coitr = conferences.find(jid);
+    std::map<QString, Conference*>::const_iterator coitr = conferences.find(jid.toLower());
     if (coitr != conferences.end()) {
         item = coitr->second;
     }
@@ -349,7 +352,7 @@ Core::Conference * Core::RosterHandler::getConference(const QString& jid)
 Core::Contact * Core::RosterHandler::getContact(const QString& jid)
 {
     Contact* item = 0;
-    std::map<QString, Contact*>::const_iterator citr = contacts.find(jid);
+    std::map<QString, Contact*>::const_iterator citr = contacts.find(jid.toLower());
     if (citr != contacts.end()) {
         item = citr->second;
     }
@@ -358,11 +361,12 @@ Core::Contact * Core::RosterHandler::getContact(const QString& jid)
 
 Core::Contact * Core::RosterHandler::addOutOfRosterContact(const QString& jid)
 {
-    Contact* cnt = new Contact(jid, acc->name);
-    contacts.insert(std::make_pair(jid, cnt));
-    outOfRosterContacts.insert(jid);
+    QString lcJid = jid.toLower();
+    Contact* cnt = new Contact(lcJid, acc->name);
+    contacts.insert(std::make_pair(lcJid, cnt));
+    outOfRosterContacts.insert(lcJid);
     cnt->setSubscriptionState(Shared::SubscriptionState::unknown);
-    emit acc->addContact(jid, "", QMap<QString, QVariant>({
+    emit acc->addContact(lcJid, "", QMap<QString, QVariant>({
         {"state", QVariant::fromValue(Shared::SubscriptionState::unknown)}
     }));
     handleNewContact(cnt);
@@ -371,13 +375,14 @@ Core::Contact * Core::RosterHandler::addOutOfRosterContact(const QString& jid)
 
 void Core::RosterHandler::onRosterItemChanged(const QString& bareJid)
 {
-    std::map<QString, Contact*>::const_iterator itr = contacts.find(bareJid);
+    QString lcJid = bareJid.toLower();
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(lcJid);
     if (itr == contacts.end()) {
-        qDebug() << "An attempt to change non existing contact" << bareJid << "from account" << acc->name << ", skipping";
+        qDebug() << "An attempt to change non existing contact" << lcJid << "from account" << acc->name << ", skipping";
         return;
     }
     Contact* contact = itr->second;
-    QXmppRosterIq::Item re = acc->rm->getRosterEntry(bareJid);
+    QXmppRosterIq::Item re = acc->rm->getRosterEntry(lcJid);
     
     Shared::SubscriptionState state = castSubscriptionState(re.subscriptionType());
     
@@ -388,18 +393,19 @@ void Core::RosterHandler::onRosterItemChanged(const QString& bareJid)
 
 void Core::RosterHandler::onRosterItemRemoved(const QString& bareJid)
 {
-    std::map<QString, Contact*>::const_iterator itr = contacts.find(bareJid);
+    QString lcJid = bareJid.toLower();
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(lcJid);
     if (itr == contacts.end()) {
-        qDebug() << "An attempt to remove non existing contact" << bareJid << "from account" << acc->name << ", skipping";
+        qDebug() << "An attempt to remove non existing contact" << lcJid << "from account" << acc->name << ", skipping";
         return;
     }
     Contact* contact = itr->second;
     contacts.erase(itr);
     QSet<QString> cGroups = contact->getGroups();
     for (QSet<QString>::const_iterator itr = cGroups.begin(), end = cGroups.end(); itr != end; ++itr) {
-        removeFromGroup(bareJid, *itr);
+        removeFromGroup(lcJid, *itr);
     }
-    emit acc->removeContact(bareJid);
+    emit acc->removeContact(lcJid);
     
     contact->deleteLater();
 }
@@ -416,7 +422,7 @@ void Core::RosterHandler::bookmarksReceived(const QXmppBookmarkSet& bookmarks)
     for (QList<QXmppBookmarkConference>::const_iterator itr = confs.begin(), end = confs.end(); itr != end; ++itr) {
         const QXmppBookmarkConference& c = *itr;
         
-        QString jid = c.jid();
+        QString jid = c.jid().toLower();
         std::map<QString, Conference*>::const_iterator cItr = conferences.find(jid);
         if (cItr == conferences.end()) {
             addNewRoom(jid, c.nickName(), c.name(), c.autoJoin());
@@ -495,35 +501,38 @@ void Core::RosterHandler::clearConferences()
 
 void Core::RosterHandler::removeRoomRequest(const QString& jid)
 {
-    std::map<QString, Conference*>::const_iterator itr = conferences.find(jid);
+    QString lcJid = jid.toLower();
+    std::map<QString, Conference*>::const_iterator itr = conferences.find(lcJid);
     if (itr == conferences.end()) {
-        qDebug() << "An attempt to remove non existing room" << jid << "from account" << acc->name << ", skipping";
+        qDebug() << "An attempt to remove non existing room" << lcJid << "from account" << acc->name << ", skipping";
     }
     itr->second->deleteLater();
     conferences.erase(itr);
-    emit acc->removeRoom(jid);
+    emit acc->removeRoom(lcJid);
     storeConferences();
 }
 
 void Core::RosterHandler::addRoomRequest(const QString& jid, const QString& nick, const QString& password, bool autoJoin)
 {
-    std::map<QString, Conference*>::const_iterator cItr = conferences.find(jid);
+    QString lcJid = jid.toLower();
+    std::map<QString, Conference*>::const_iterator cItr = conferences.find(lcJid);
     if (cItr == conferences.end()) {
-        addNewRoom(jid, nick, "", autoJoin);
+        addNewRoom(lcJid, nick, "", autoJoin);
         storeConferences();
     } else {
-        qDebug() << "An attempt to add a MUC " << jid << " which is already present in the rester, skipping";
+        qDebug() << "An attempt to add a MUC " << lcJid << " which is already present in the rester, skipping";
     }
 }
 
 void Core::RosterHandler::addContactToGroupRequest(const QString& jid, const QString& groupName)
 {
-    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    QString lcJid = jid.toLower();
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(lcJid);
     if (itr == contacts.end()) {
-        qDebug()    << "An attempt to add non existing contact" << jid << "of account" 
+        qDebug()    << "An attempt to add non existing contact" << lcJid << "of account" 
                     << acc->name << "to the group" << groupName << ", skipping";
     } else {
-        QXmppRosterIq::Item item = acc->rm->getRosterEntry(jid);
+        QXmppRosterIq::Item item = acc->rm->getRosterEntry(lcJid);
         QSet<QString> groups = item.groups();
         if (groups.find(groupName) == groups.end()) {           //TODO need to change it, I guess that sort of code is better in qxmpp lib
             groups.insert(groupName);
@@ -542,12 +551,13 @@ void Core::RosterHandler::addContactToGroupRequest(const QString& jid, const QSt
 
 void Core::RosterHandler::removeContactFromGroupRequest(const QString& jid, const QString& groupName)
 {
-    std::map<QString, Contact*>::const_iterator itr = contacts.find(jid);
+    QString lcJid = jid.toLower();
+    std::map<QString, Contact*>::const_iterator itr = contacts.find(lcJid);
     if (itr == contacts.end()) {
-        qDebug()    << "An attempt to remove non existing contact" << jid << "of account" 
+        qDebug()    << "An attempt to remove non existing contact" << lcJid << "of account" 
                     << acc->name << "from the group" << groupName << ", skipping";
     } else {
-        QXmppRosterIq::Item item = acc->rm->getRosterEntry(jid);
+        QXmppRosterIq::Item item = acc->rm->getRosterEntry(lcJid);
         QSet<QString> groups = item.groups();
         QSet<QString>::const_iterator gItr = groups.find(groupName);
         if (gItr != groups.end()) {
@@ -559,7 +569,7 @@ void Core::RosterHandler::removeContactFromGroupRequest(const QString& jid, cons
             iq.addItem(item);
             acc->client.sendPacket(iq);
         } else {
-            qDebug()    << "An attempt to remove contact" << jid << "of account" 
+            qDebug()    << "An attempt to remove contact" << lcJid << "of account" 
                         << acc->name << "from the group" << groupName << "but it's not in that group, skipping";
         }
     }

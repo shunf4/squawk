@@ -321,7 +321,7 @@ void Core::Account::onPresenceReceived(const QXmppPresence& p_presence)
 {
     QString id = p_presence.from();
     QStringList comps = id.split("/");
-    QString jid = comps.front();
+    QString jid = comps.front().toLower();
     QString resource = comps.back();
     
     QString myJid = getLogin() + "@" + getServer();
@@ -682,7 +682,7 @@ void Core::Account::onVCardReceived(const QXmppVCardIq& card)
 {
     QString id = card.from();
     QStringList comps = id.split("/");
-    QString jid = comps.front();
+    QString jid = comps.front().toLower();
     QString resource("");
     if (comps.size() > 1) {
         resource = comps.back();

@@ -6,6 +6,8 @@
 - error with building on lower versions of QXmpp
 - error on the first access to the conference database
 - quit now actually quits the app
+- history in MUC now works properly and requests messages from server
+- error with handling non lower cased JIDs
 
 
 ## Squawk 0.1.4 (Apr 14, 2020)
