@@ -1,6 +1,6 @@
 # Changelog
 
-## Squawk 0.1.5 (UNRELEASED)
+## Squawk 0.1.5 (Jul 29, 2020)
 ### Bug fixes
 - error with sending attached files to the conference
 - error with building on lower versions of QXmpp
@@ -8,6 +8,7 @@
 - quit now actually quits the app
 - history in MUC now works properly and requests messages from server
 - error with handling non lower cased JIDs
+- some workaround upon reconnection
 
 
 ## Squawk 0.1.4 (Apr 14, 2020)

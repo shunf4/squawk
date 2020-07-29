@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
     
     QApplication::setApplicationName("squawk");
     QApplication::setApplicationDisplayName("Squawk");
-    QApplication::setApplicationVersion("0.1.4");
+    QApplication::setApplicationVersion("0.1.5");
     
     QTranslator qtTranslator;
     qtTranslator.load("qt_" + QLocale::system().name(), QLibraryInfo::location(QLibraryInfo::TranslationsPath));

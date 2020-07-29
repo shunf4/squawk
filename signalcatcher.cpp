@@ -48,7 +48,7 @@ void SignalCatcher::handleSigInt()
 {
     snInt->setEnabled(false);
     char tmp;
-    ::read(sigintFd[1], &tmp, sizeof(tmp));
+    ssize_t s = ::read(sigintFd[1], &tmp, sizeof(tmp));
 
     app->quit();
 
@@ -58,7 +58,7 @@ void SignalCatcher::handleSigInt()
 void SignalCatcher::intSignalHandler(int unused)
 {
     char a = 1;
-    ::write(sigintFd[0], &a, sizeof(a));
+    ssize_t s = ::write(sigintFd[0], &a, sizeof(a));
 }
 
 int SignalCatcher::setup_unix_signal_handlers()
