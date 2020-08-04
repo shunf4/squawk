@@ -334,7 +334,11 @@ void Core::NetworkAccess::startDownload(const QString& messageId, const QString&
     QNetworkRequest req(url);
     dwn->reply = manager->get(req);
     connect(dwn->reply, &QNetworkReply::downloadProgress, this, &NetworkAccess::onDownloadProgress);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     connect(dwn->reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::errorOccurred), this, &NetworkAccess::onDownloadError);
+#else
+    connect(dwn->reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::error), this, &NetworkAccess::onDownloadError);
+#endif
     connect(dwn->reply, &QNetworkReply::finished, this, &NetworkAccess::onDownloadFinished);
     downloads.insert(std::make_pair(url, dwn));
     emit downloadFileProgress(messageId, 0);
@@ -414,7 +418,12 @@ void Core::NetworkAccess::startUpload(const QString& messageId, const QString& u
         upl->reply = manager->put(req, file);
         
         connect(upl->reply, &QNetworkReply::uploadProgress, this, &NetworkAccess::onUploadProgress);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
         connect(upl->reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::errorOccurred), this, &NetworkAccess::onUploadError);
+#else
+        connect(upl->reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::error), this, &NetworkAccess::onUploadError);
+#endif
+        
         connect(upl->reply, &QNetworkReply::finished, this, &NetworkAccess::onUploadFinished);
         uploads.insert(std::make_pair(url, upl));
         emit downloadFileProgress(messageId, 0);
@@ -490,7 +499,11 @@ void Core::NetworkAccess::uploadFile(const QString& messageId, const QString& pa
         upl->reply = manager->put(req, file);
         
         connect(upl->reply, &QNetworkReply::uploadProgress, this, &NetworkAccess::onUploadProgress);
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
         connect(upl->reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::errorOccurred), this, &NetworkAccess::onUploadError);
+#else
+        connect(upl->reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::error), this, &NetworkAccess::onUploadError);
+#endif
         connect(upl->reply, &QNetworkReply::finished, this, &NetworkAccess::onUploadFinished);
         uploads.insert(std::make_pair(put.toString(), upl));
         emit downloadFileProgress(messageId, 0);
