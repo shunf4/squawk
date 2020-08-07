@@ -223,30 +223,40 @@ void Core::Squawk::onAccountConnectionStateChanged(Shared::ConnectionState p_sta
     Account* acc = static_cast<Account*>(sender());
     emit changeAccount(acc->getName(), {{"state", QVariant::fromValue(p_state)}});
     
-    switch (p_state) {
-        case Shared::ConnectionState::disconnected: {
-                bool equals = true;
-                for (Accounts::const_iterator itr = accounts.begin(), end = accounts.end(); itr != end; itr++) {
-                    if ((*itr)->getState() != Shared::ConnectionState::disconnected) {
-                        equals = false;
-                    }
-                }
-                if (equals && state != Shared::Availability::offline) {
-                    state = Shared::Availability::offline;
-                    emit stateChanged(state);
-                }
-            }
-            break;
-        case Shared::ConnectionState::connected:
 #ifdef WITH_KWALLET
-            if (acc->getPasswordType() == Shared::AccountPassword::kwallet && kwallet.supportState() == PSE::KWallet::success) {
-                kwallet.requestWritePassword(acc->getName(), acc->getPassword(), true);
-            }
-#endif
-            break;
-        default:
-            break;
+    if (p_state == Shared::ConnectionState::connected) {
+        if (acc->getPasswordType() == Shared::AccountPassword::kwallet && kwallet.supportState() == PSE::KWallet::success) {
+            kwallet.requestWritePassword(acc->getName(), acc->getPassword(), true);
+        }
     }
+#endif
+    
+    Accounts::const_iterator itr = accounts.begin();
+    bool es = true;
+    bool ea = true;
+    Shared::ConnectionState cs = (*itr)->getState();
+    Shared::Availability av = (*itr)->getAvailability();
+    itr++;
+    for (Accounts::const_iterator end = accounts.end(); itr != end; itr++) {
+        Account* item = *itr;
+        if (item->getState() != cs) {
+            es = false;
+        }
+        if (item->getAvailability() != av) {
+            ea = false;
+        }
+    }
+    
+    if (es) {
+        if (cs == Shared::ConnectionState::disconnected) {
+            state = Shared::Availability::offline;
+            emit stateChanged(state);
+        } else if (ea) {
+            state = av;
+            emit stateChanged(state);
+        }
+    }
+    
 }
 
 void Core::Squawk::onAccountAddContact(const QString& jid, const QString& group, const QMap<QString, QVariant>& data)

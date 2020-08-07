@@ -54,6 +54,8 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
 {
     m_ui->setupUi(this);
     
+    connect(acc, &Models::Account::childChanged, this, &Conversation::onAccountChanged);
+    
     filesLayout = new FlowLayout(m_ui->filesPanel, 0);
     m_ui->filesPanel->setLayout(filesLayout);
     
@@ -119,6 +121,20 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
 
 Conversation::~Conversation()
 {
+}
+
+void Conversation::onAccountChanged(Models::Item* item, int row, int col)
+{
+    if (item == account) {
+        if (col == 2 && account->getState() == Shared::ConnectionState::connected) {
+            if (!requestingHistory) {
+                requestingHistory = true;
+                line->showBusyIndicator();
+                emit requestArchive("");
+                scroll = down;
+            }
+        }
+    }
 }
 
 void Conversation::applyVisualEffects()

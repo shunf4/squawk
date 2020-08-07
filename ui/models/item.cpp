@@ -215,9 +215,8 @@ void Models::Item::_removeChild(int index)
 
 void Models::Item::changed(int col)
 {
-    if (parent != nullptr) {
-        emit childChanged(this, row(), col);
-    }
+    
+    emit childChanged(this, row(), col);
 }
 
 void Models::Item::toOfflineState()

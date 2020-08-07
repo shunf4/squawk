@@ -121,6 +121,7 @@ protected slots:
     void onBadgeClose();
     void onClearButton();
     void onTextEditDocSizeChanged(const QSizeF& size);
+    void onAccountChanged(Models::Item* item, int row, int col);
     
 public:
     const bool isMuc;

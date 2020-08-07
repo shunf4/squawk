@@ -185,7 +185,7 @@ private slots:
     void onDiscoveryInfoReceived (const QXmppDiscoveryIq& info);
   
 private:
-    void cancelHistoryRequests();
+    void handleDisconnection();
     void onReconnectTimer();
 };
 

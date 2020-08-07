@@ -1,5 +1,13 @@
 # Changelog
 
+## Squawk 0.2.0 (Unreleased)
+### Bug fixes
+- carbon copies switches on again after reconnection
+- requesting the history of the current chat after reconnection
+- global availability (in drop down list) gets restored after reconnection
+- status icon in active chat changes when presence of the pen pal changes
+
+
 ## Squawk 0.1.5 (Jul 29, 2020)
 ### Bug fixes
 - error with sending attached files to the conference

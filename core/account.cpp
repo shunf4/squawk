@@ -183,7 +183,6 @@ void Core::Account::connect()
         reconnectTimer->stop();
     }
     if (state == Shared::ConnectionState::disconnected) {
-        qDebug() << presence.availableStatusType();
         client.connectToServer(config, presence);
     } else {
         qDebug("An attempt to connect an account which is already connected, skipping");
@@ -219,6 +218,7 @@ void Core::Account::onClientStateChange(QXmppClient::State st)
                     Shared::ConnectionState os = state;
                     state = Shared::ConnectionState::connected;
                     if (os == Shared::ConnectionState::connecting) {
+                        qDebug() << "running service discovery for account" << name;
                         dm->requestItems(getServer());
                         dm->requestInfo(getServer());
                     }
@@ -238,9 +238,8 @@ void Core::Account::onClientStateChange(QXmppClient::State st)
         }
             break;
         case QXmppClient::DisconnectedState: {
-            cancelHistoryRequests();
-            pendingVCardRequests.clear();
             if (state != Shared::ConnectionState::disconnected) {
+                handleDisconnection();
                 state = Shared::ConnectionState::disconnected;
                 emit connectionStateChanged(state);
             } else {
@@ -887,15 +886,18 @@ void Core::Account::onDiscoveryItemsReceived(const QXmppDiscoveryIq& items)
 
 void Core::Account::onDiscoveryInfoReceived(const QXmppDiscoveryIq& info)
 {
+    qDebug() << "Discovery info received for account" << name;
     if (info.from() == getServer()) {
         if (info.features().contains("urn:xmpp:carbons:2")) {
+            qDebug() << "Enabling carbon copies for account" << name;
             cm->setCarbonsEnabled(true);
         }
     }
 }
 
-void Core::Account::cancelHistoryRequests()
+void Core::Account::handleDisconnection()
 {
+    cm->setCarbonsEnabled(false);
     rh->handleOffline();
     archiveQueries.clear();
     pendingVCardRequests.clear();
@@ -903,6 +905,7 @@ void Core::Account::cancelHistoryRequests()
     for (const QString& jid : pendingVCardRequests) {
         emit receivedVCard(jid, vCard);     //need to show it better in the future, like with an error
     }
+    pendingVCardRequests.clear();
     ownVCardRequestInProgress = false;
 }
 
