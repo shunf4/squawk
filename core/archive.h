@@ -46,6 +46,7 @@ public:
     bool addElement(const Shared::Message& message);
     unsigned int addElements(const std::list<Shared::Message>& messages);
     Shared::Message getElement(const QString& id) const;
+    bool hasElement(const QString& id) const;
     void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     Shared::Message oldest();
     QString oldestId();

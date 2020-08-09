@@ -248,18 +248,22 @@ void Core::RosterItem::appendMessageToArchive(const Shared::Message& msg)
                     }
                     break;
                 case beginning:
-                    appendCache.push_back(msg);
-                    if (!syncronizing) {
-                        requestHistory(-1, getId(msg));
+                    if (!archive->hasElement(msg.getId())) {
+                        appendCache.push_back(msg);
+                        if (!syncronizing) {
+                            requestHistory(-1, getId(msg));
+                        }
                     }
                     break;
                 case end:
                     archive->addElement(msg);
                     break;
                 case chunk:
-                    appendCache.push_back(msg);
-                    if (!syncronizing) {
-                        requestHistory(-1, getId(msg));
+                    if (!archive->hasElement(msg.getId())) {
+                        appendCache.push_back(msg);
+                        if (!syncronizing) {
+                            requestHistory(-1, getId(msg));
+                        }
                     }
                     break;
                 case complete:

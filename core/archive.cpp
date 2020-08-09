@@ -214,6 +214,26 @@ Shared::Message Core::Archive::getElement(const QString& id) const
     }
 }
 
+bool Core::Archive::hasElement(const QString& id) const
+{
+    if (!opened) {
+        throw Closed("hasElement", jid.toStdString());
+    }
+    
+    MDB_txn *txn;
+    mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
+    
+    bool has;
+    MDB_val lmdbKey, lmdbData;
+    lmdbKey.mv_size = id.size();
+    lmdbKey.mv_data = (char*)id.toStdString().c_str();
+    int rc = mdb_get(txn, main, &lmdbKey, &lmdbData);
+    has = rc == 0;
+    mdb_txn_abort(txn);
+    
+    return has;
+}
+
 Shared::Message Core::Archive::getMessage(const std::string& id, MDB_txn* txn) const
 {
     MDB_val lmdbKey, lmdbData;

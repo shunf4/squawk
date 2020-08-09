@@ -7,6 +7,9 @@
 - global availability (in drop down list) gets restored after reconnection
 - status icon in active chat changes when presence of the pen pal changes
 
+### Improvements
+- slightly reduced the traffic on the startup by not requesting history of all MUCs
+
 
 ## Squawk 0.1.5 (Jul 29, 2020)
 ### Bug fixes
