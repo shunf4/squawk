@@ -58,7 +58,6 @@ public:
     void removePresence(const QString& account, const QString& jid, const QString& name);
     void addMessage(const QString& account, const Shared::Message& data);
     void changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
-    void dropMessages(const QString& account, const QString& jid);
     void addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void changeRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void removeRoom(const QString& account, const QString jid);
@@ -81,8 +80,12 @@ public:
     Account* getAccount(const QString& name);
     QModelIndex getAccountIndex(const QString& name);
     QModelIndex getGroupIndex(const QString& account, const QString& name);
+    void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list);
     
     Accounts* accountsModel;
+    
+signals:
+    void requestArchive(const QString& account, const QString& jid, const QString& before);
     
 private:
     Item* root;
@@ -100,6 +103,7 @@ private slots:
     void onChildRemoved();
     void onChildIsAboutToBeMoved(Item* source, int first, int last, Item* destination, int newIndex);
     void onChildMoved();
+    void onElementRequestArchive(const QString& before);
     
 public:
     class ElId {

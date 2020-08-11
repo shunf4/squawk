@@ -28,6 +28,8 @@ Chat::Chat(Models::Account* acc, Models::Contact* p_contact, QWidget* parent):
     setAvatar(p_contact->getAvatarPath());
     
     connect(contact, &Models::Contact::childChanged, this, &Chat::onContactChanged);
+    
+    feed->setModel(p_contact->feed);
 }
 
 Chat::~Chat()
@@ -71,31 +73,15 @@ Shared::Message Chat::createMessage() const
     return msg;
 }
 
-void Chat::addMessage(const Shared::Message& data)
-{
-    Conversation::addMessage(data);
-    
-    if (!data.getOutgoing()) {                          //TODO need to check if that was the last message
-        const QString& res = data.getPenPalResource();
-        if (res.size() > 0) {
-            setPalResource(res);
-        }
-    }
-}
-
-void Chat::setName(const QString& name)
-{
-    Conversation::setName(name);
-    line->setPalName(getJid(), name);
-}
-
-void Chat::setAvatar(const QString& path)
-{
-    Conversation::setAvatar(path);
-    
-    if (path.size() == 0) {
-        line->dropPalAvatar(contact->getJid());
-    } else {
-        line->setPalAvatar(contact->getJid(), path);
-    }
-}
+// TODO
+// void Chat::addMessage(const Shared::Message& data)
+// {
+//     Conversation::addMessage(data);
+//     
+//     if (!data.getOutgoing()) {                          //TODO need to check if that was the last message
+//         const QString& res = data.getPenPalResource();
+//         if (res.size() > 0) {
+//             setPalResource(res);
+//         }
+//     }
+// }

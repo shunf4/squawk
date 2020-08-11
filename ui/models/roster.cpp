@@ -215,11 +215,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     break;
                 case Item::presence: {
                     Presence* contact = static_cast<Presence*>(item);
-                    QString str("");
-                    int mc = contact->getMessagesCount();
-                    if (mc > 0) {
-                        str += tr("New messages: ") + std::to_string(mc).c_str() + "\n";
-                    }
+                    QString str;
                     Shared::Availability av = contact->getAvailability();
                     str += tr("Availability: ") + Shared::Global::getName(av);
                     QString s = contact->getStatus();
@@ -232,7 +228,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     break;
                 case Item::participant: {
                     Participant* p = static_cast<Participant*>(item);
-                    QString str("");
+                    QString str;
                     Shared::Availability av = p->getAvailability();
                     str += tr("Availability: ") + Shared::Global::getName(av) + "\n";
                     QString s = p->getStatus();
@@ -260,7 +256,7 @@ QVariant Models::Roster::data (const QModelIndex& index, int role) const
                     break;
                 case Item::room: {
                     Room* rm = static_cast<Room*>(item);
-                    unsigned int count = rm->getUnreadMessagesCount();
+                    unsigned int count = rm->getMessagesCount();
                     QString str("");
                     if (count > 0) {
                         str += tr("New messages: ") + std::to_string(count).c_str() + "\n";
@@ -450,6 +446,7 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
         std::map<ElId, Contact*>::iterator itr = contacts.find(id);
         if (itr == contacts.end()) {
             contact = new Contact(acc, jid, data);
+            connect(contact, &Contact::requestArchive, this, &Roster::onElementRequestArchive);
             contacts.insert(std::make_pair(id, contact));
         } else {
             contact = itr->second;
@@ -720,20 +717,6 @@ void Models::Roster::addMessage(const QString& account, const Shared::Message& d
     }
 }
 
-void Models::Roster::dropMessages(const QString& account, const QString& jid)
-{
-    ElId id(account, jid);
-    std::map<ElId, Contact*>::iterator itr = contacts.find(id);
-    if (itr != contacts.end()) {
-        itr->second->dropMessages();
-    } else {
-        std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
-        if (rItr != rooms.end()) {
-            rItr->second->dropMessages();
-        }
-    }
-}
-
 void Models::Roster::removeAccount(const QString& account)
 {
     std::map<QString, Account*>::const_iterator itr = accounts.find(account);
@@ -821,7 +804,8 @@ void Models::Roster::addRoom(const QString& account, const QString jid, const QM
         return;
     }
     
-    Room* room = new Room(jid, data);
+    Room* room = new Room(acc, jid, data);
+    connect(room, &Contact::requestArchive, this, &Roster::onElementRequestArchive);
     rooms.insert(std::make_pair(id, room));
     acc->appendChild(room);
 }
@@ -971,6 +955,26 @@ QModelIndex Models::Roster::getGroupIndex(const QString& account, const QString&
         } else {
             QModelIndex accIndex = index(itr->second->row(), 0, QModelIndex());
             return index(gItr->second->row(), 0, accIndex);
+        }
+    }
+}
+
+void Models::Roster::onElementRequestArchive(const QString& before)
+{
+    Element* el = static_cast<Element*>(sender());
+    emit requestArchive(el->getAccountName(), el->getJid(), before);
+}
+
+void Models::Roster::responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list)
+{
+    ElId id(account, jid);
+    std::map<ElId, Contact*>::iterator itr = contacts.find(id);
+    if (itr != contacts.end()) {
+        itr->second->responseArchive(list);
+    } else {
+        std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
+        if (rItr != rooms.end()) {
+            rItr->second->responseArchive(list);
         }
     }
 }

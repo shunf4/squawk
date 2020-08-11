@@ -24,6 +24,7 @@
 #include <QMap>
 #include <QMimeData>
 #include <QFileInfo>
+#include <QListView>
 
 #include "shared/message.h"
 #include "order.h"
@@ -78,7 +79,6 @@ public:
     QString getAccount() const;
     QString getPalResource() const;
     Models::Roster::ElId getId() const;
-    virtual void addMessage(const Shared::Message& data);
     
     void setPalResource(const QString& res);
     void responseArchive(const std::list<Shared::Message> list);
@@ -135,7 +135,6 @@ protected:
     Models::Account* account;
     QString palJid;
     QString activePalResource;
-    MessageLine* line;
     QScopedPointer<Ui::Conversation> m_ui;
     KeyEnterReceiver ker;
     Resizer scrollResizeCatcher;
@@ -146,6 +145,7 @@ protected:
     FlowLayout* filesLayout;
     QWidget* overlay;
     W::Order<Badge*, Badge::Comparator> filesToAttach;
+    QListView* feed;
     Scroll scroll;
     bool manualSliderChange;
     bool requestingHistory;

@@ -19,7 +19,7 @@
 #ifndef MODELS_CONTACT_H
 #define MODELS_CONTACT_H
 
-#include "item.h"
+#include "element.h"
 #include "presence.h"
 #include "shared/enums.h"
 #include "shared/message.h"
@@ -31,49 +31,34 @@
 #include <deque>
 
 namespace Models {
-class Account;
     
-class Contact : public Item
+class Contact : public Element
 {
     Q_OBJECT
 public:
-    typedef std::deque<Shared::Message> Messages;
     Contact(const Account* acc, const QString& p_jid, const QMap<QString, QVariant> &data, Item *parentItem = 0);
-    Contact(const Contact& other);
     ~Contact();
     
-    QString getJid() const;
     Shared::Availability getAvailability() const;
     Shared::SubscriptionState getState() const;
-    Shared::Avatar getAvatarState() const;
-    QString getAvatarPath() const;
+
     QIcon getStatusIcon(bool big = false) const;
     
     int columnCount() const override;
     QVariant data(int column) const override;
         
-    void update(const QString& field, const QVariant& value);
+    void update(const QString& field, const QVariant& value) override;
     
     void addPresence(const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& name);
     
     QString getContactName() const;
     QString getStatus() const;
-    
-    void addMessage(const Shared::Message& data);
-    void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
-    unsigned int getMessagesCount() const;
-    void dropMessages();
-    void getMessages(Messages& container) const;
     QString getDisplayedName() const override;
-    
-    Contact* copy() const;
     
 protected:
     void _removeChild(int index) override;
     void _appendChild(Models::Item * child) override;
-    bool columnInvolvedInDisplay(int col) override;
-    const Account* getParentAccount() const override;
     
 protected slots:
     void refresh();
@@ -84,23 +69,13 @@ protected:
     void setAvailability(unsigned int p_state);
     void setState(Shared::SubscriptionState p_state);
     void setState(unsigned int p_state);
-    void setAvatarState(Shared::Avatar p_state);
-    void setAvatarState(unsigned int p_state);
-    void setAvatarPath(const QString& path);
-    void setJid(const QString p_jid);
     void setStatus(const QString& p_state);
     
 private:
-    QString jid;
     Shared::Availability availability;
     Shared::SubscriptionState state;
-    Shared::Avatar avatarState;
     QMap<QString, Presence*> presences;
-    Messages messages;
-    unsigned int childMessages;
     QString status;
-    QString avatarPath;
-    const Account* account;
 };
 
 }

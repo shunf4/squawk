@@ -32,25 +32,10 @@ class Presence : public Models::AbstractParticipant
 {
     Q_OBJECT
 public:
-    typedef std::deque<Shared::Message> Messages;
     explicit Presence(const QMap<QString, QVariant> &data, Item *parentItem = 0);
-    Presence(const Presence& other);
     ~Presence();
     
     int columnCount() const override;
-    QVariant data(int column) const override;
-    
-    QIcon getStatusIcon(bool big = false) const override;
-    
-    unsigned int getMessagesCount() const;
-    void dropMessages();
-    void addMessage(const Shared::Message& data);
-    bool changeMessage(const QString& id, const QMap<QString, QVariant>& data);
-    
-    void getMessages(Messages& container) const;
-
-private:
-    Messages messages;
 };
 
 }

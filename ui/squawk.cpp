@@ -62,6 +62,7 @@ Squawk::Squawk(QWidget *parent) :
     connect(m_ui->roster->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &Squawk::onRosterSelectionChanged);
     
     connect(rosterModel.accountsModel, &Models::Accounts::sizeChanged, this, &Squawk::onAccountsSizeChanged);
+    connect(&rosterModel, &Models::Roster::requestArchive, this, &Squawk::onConversationRequestArchive);
     connect(contextMenu, &QMenu::aboutToHide, this, &Squawk::onContextAboutToHide);
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
     
@@ -336,17 +337,14 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
             Models::Account* acc = rosterModel.getAccount(id->account);
             Conversation* conv = 0;
             bool created = false;
-            Models::Contact::Messages deque;
             if (itr != conversations.end()) {
                 conv = itr->second;
             } else if (contact != 0) {
                 created = true;
                 conv = new Chat(acc, contact);
-                contact->getMessages(deque);
             } else if (room != 0) {
                 created = true;
                 conv = new Room(acc, room);
-                room->getMessages(deque);
                 
                 if (!room->getJoined()) {
                     emit setRoomJoined(id->account, id->name, true);
@@ -358,12 +356,6 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
                     conv->setAttribute(Qt::WA_DeleteOnClose);
                     subscribeConversation(conv);
                     conversations.insert(std::make_pair(*id, conv));
-                    
-                    if (created) {
-                        for (Models::Contact::Messages::const_iterator itr = deque.begin(), end = deque.end(); itr != end; ++itr) {
-                            conv->addMessage(*itr);
-                        }
-                    }
                 }
                 
                 conv->show();
@@ -378,12 +370,6 @@ void Squawk::onRosterItemDoubleClicked(const QModelIndex& item)
             delete id;
         }
     }
-}
-
-void Squawk::onConversationShown()
-{
-    Conversation* conv = static_cast<Conversation*>(sender());
-    rosterModel.dropMessages(conv->getAccount(), conv->getJid());
 }
 
 void Squawk::onConversationClosed(QObject* parent)
@@ -505,8 +491,9 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
     Conversations::iterator itr = conversations.find(id);
     bool found = false;
     
+    rosterModel.addMessage(account, data);
+    
     if (currentConversation != 0 && currentConversation->getId() == id) {
-        currentConversation->addMessage(data);
         QApplication::alert(this);
         if (!isVisible() && !data.getForwarded()) {
             notify(account, data);
@@ -516,11 +503,7 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
     
     if (itr != conversations.end()) {
         Conversation* conv = itr->second;
-        conv->addMessage(data);
         QApplication::alert(conv);
-        if (!found && conv->isMinimized()) {
-            rosterModel.addMessage(account, data);
-        }
         if (!conv->isVisible() && !data.getForwarded()) {
             notify(account, data);
         }
@@ -528,7 +511,6 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
     }
     
     if (!found) {
-        rosterModel.addMessage(account, data);
         if (!data.getForwarded()) {
             QApplication::alert(this);
             notify(account, data);
@@ -599,16 +581,7 @@ void Squawk::onConversationMessage(const Shared::Message& msg)
     emit sendMessage(conv->getAccount(), msg);
     Models::Roster::ElId id = conv->getId();
     
-    if (currentConversation != 0 && currentConversation->getId() == id) {
-        if (conv == currentConversation) {
-            Conversations::iterator itr = conversations.find(id);
-            if (itr != conversations.end()) {
-                itr->second->addMessage(msg);
-            }
-        } else {
-            currentConversation->addMessage(msg);
-        }
-    }
+    rosterModel.addMessage(conv->getAccount(), msg);
 }
 
 void Squawk::onConversationMessage(const Shared::Message& msg, const QString& path)
@@ -632,24 +605,14 @@ void Squawk::onConversationMessage(const Shared::Message& msg, const QString& pa
     emit sendMessage(conv->getAccount(), msg, path);
 }
 
-void Squawk::onConversationRequestArchive(const QString& before)
+void Squawk::onConversationRequestArchive(const QString& account, const QString& jid, const QString& before)
 {
-    Conversation* conv = static_cast<Conversation*>(sender());
-    requestArchive(conv->getAccount(), conv->getJid(), 20, before); //TODO amount as a settings value
+    emit requestArchive(account, jid, 20, before); //TODO amount as a settings value
 }
 
 void Squawk::responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list)
 {
-    Models::Roster::ElId id(account, jid);
-    
-    if (currentConversation != 0 && currentConversation->getId() == id) {
-        currentConversation->responseArchive(list);
-    }
-    
-    Conversations::const_iterator itr = conversations.find(id);
-    if (itr != conversations.end()) {
-        itr->second->responseArchive(list);
-    }
+    rosterModel.responseArchive(account, jid, list);
 }
 
 void Squawk::removeAccount(const QString& account)
@@ -661,8 +624,6 @@ void Squawk::removeAccount(const QString& account)
             ++itr;
             Conversation* conv = lItr->second;
             disconnect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
-            disconnect(conv, &Conversation::requestArchive, this, &Squawk::onConversationRequestArchive);
-            disconnect(conv, &Conversation::shown, this, &Squawk::onConversationShown);
             conv->close();
             conversations.erase(lItr);
         } else {
@@ -926,7 +887,6 @@ void Squawk::onActivateVCard(const QString& account, const QString& jid, bool ed
 {
     std::map<QString, VCard*>::const_iterator itr = vCards.find(jid);
     VCard* card;
-    Models::Contact::Messages deque;
     if (itr != vCards.end()) {
         card = itr->second;
     } else {
@@ -1095,10 +1055,8 @@ void Squawk::subscribeConversation(Conversation* conv)
     connect(conv, qOverload<const Shared::Message&>(&Conversation::sendMessage), this, qOverload<const Shared::Message&>(&Squawk::onConversationMessage));
     connect(conv, qOverload<const Shared::Message&, const QString&>(&Conversation::sendMessage), 
             this, qOverload<const Shared::Message&, const QString&>(&Squawk::onConversationMessage));
-    connect(conv, &Conversation::requestArchive, this, &Squawk::onConversationRequestArchive);
     connect(conv, &Conversation::requestLocalFile, this, &Squawk::onConversationRequestLocalFile);
     connect(conv, &Conversation::downloadFile, this, &Squawk::onConversationDownloadFile);
-    connect(conv, &Conversation::shown, this, &Squawk::onConversationShown);
 }
 
 void Squawk::onRosterSelectionChanged(const QModelIndex& current, const QModelIndex& previous)
@@ -1168,13 +1126,10 @@ void Squawk::onRosterSelectionChanged(const QModelIndex& current, const QModelIn
             }
             
             Models::Account* acc = rosterModel.getAccount(id->account);
-            Models::Contact::Messages deque;
             if (contact != 0) {
                 currentConversation = new Chat(acc, contact);
-                contact->getMessages(deque);
             } else if (room != 0) {
                 currentConversation = new Room(acc, room);
-                room->getMessages(deque);
                 
                 if (!room->getJoined()) {
                     emit setRoomJoined(id->account, id->name, true);
@@ -1185,9 +1140,6 @@ void Squawk::onRosterSelectionChanged(const QModelIndex& current, const QModelIn
             }
             
             subscribeConversation(currentConversation);
-            for (Models::Contact::Messages::const_iterator itr = deque.begin(), end = deque.end(); itr != end; ++itr) {
-                currentConversation->addMessage(*itr);
-            }
             
             if (res.size() > 0) {
                 currentConversation->setPalResource(res);

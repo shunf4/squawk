@@ -22,16 +22,12 @@
 #include <QIcon>
 #include <QDebug>
 
-Models::Room::Room(const QString& p_jid, const QMap<QString, QVariant>& data, Models::Item* parentItem):
-    Item(room, data, parentItem),
+Models::Room::Room(const Account* acc, const QString& p_jid, const QMap<QString, QVariant>& data, Models::Item* parentItem):
+    Element(room, acc, p_jid, data, parentItem),
     autoJoin(false),
     joined(false),
-    jid(p_jid),
     nick(""),
     subject(""),
-    avatarState(Shared::Avatar::empty),
-    avatarPath(""),
-    messages(),
     participants(),
     exParticipantAvatars()
 {
@@ -55,16 +51,6 @@ Models::Room::Room(const QString& p_jid, const QMap<QString, QVariant>& data, Mo
         setSubject(itr.value().toString());
     }
     
-    itr = data.find("avatarState");
-    if (itr != data.end()) {
-        setAvatarState(itr.value().toUInt());
-    }
-    itr = data.find("avatarPath");
-    if (itr != data.end()) {
-        setAvatarPath(itr.value().toString());
-    }
-    
-    
     itr = data.find("avatars");
     if (itr != data.end()) {
         QMap<QString, QVariant> avs = itr.value().toMap();
@@ -78,19 +64,9 @@ Models::Room::~Room()
 {
 }
 
-unsigned int Models::Room::getUnreadMessagesCount() const
-{
-    return messages.size();
-}
-
 int Models::Room::columnCount() const
 {
     return 7;
-}
-
-QString Models::Room::getJid() const
-{
-    return jid;
 }
 
 bool Models::Room::getAutoJoin() const
@@ -151,14 +127,6 @@ void Models::Room::setAutoJoin(bool p_autoJoin)
     }
 }
 
-void Models::Room::setJid(const QString& p_jid)
-{
-    if (jid != p_jid) {
-        jid = p_jid;
-        changed(1);
-    }
-}
-
 void Models::Room::setJoined(bool p_joined)
 {
     if (joined != p_joined) {
@@ -182,8 +150,6 @@ void Models::Room::update(const QString& field, const QVariant& value)
 {
     if (field == "name") {
         setName(value.toString());
-    } else if (field == "jid") {
-        setJid(value.toString());
     } else if (field == "joined") {
         setJoined(value.toBool());
     } else if (field == "autoJoin") {
@@ -192,16 +158,14 @@ void Models::Room::update(const QString& field, const QVariant& value)
         setNick(value.toString());
     } else if (field == "subject") {
         setSubject(value.toString());
-    } else if (field == "avatarState") {
-        setAvatarState(value.toUInt());
-    } else if (field == "avatarPath") {
-        setAvatarPath(value.toString());
+    } else {
+        Element::update(field, value);
     }
 }
 
 QIcon Models::Room::getStatusIcon(bool big) const
 {
-    if (messages.size() > 0) {
+    if (getMessagesCount() > 0) {
         return Shared::icon("mail-message", big);
     } else {
         if (autoJoin) {
@@ -237,42 +201,6 @@ QString Models::Room::getStatusText() const
     }
 }
 
-unsigned int Models::Room::getMessagesCount() const
-{
-    return messages.size();
-}
-
-void Models::Room::addMessage(const Shared::Message& data)
-{
-    messages.emplace_back(data);
-    changed(5);
-}
-
-void Models::Room::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
-{
-    for (Shared::Message& msg : messages) {
-        if (msg.getId() == id) {
-            msg.change(data);
-            break;
-        }
-    }
-}
-
-void Models::Room::dropMessages()
-{
-    if (messages.size() > 0) {
-        messages.clear();
-        changed(5);
-    }
-}
-
-void Models::Room::getMessages(Models::Room::Messages& container) const
-{
-    for (Messages::const_iterator itr = messages.begin(), end = messages.end(); itr != end; ++itr) {
-        const Shared::Message& msg = *itr;
-        container.push_back(msg);
-    }
-}
 
 void Models::Room::toOfflineState()
 {
@@ -365,47 +293,6 @@ void Models::Room::setSubject(const QString& sub)
 QString Models::Room::getDisplayedName() const
 {
     return getRoomName();
-}
-
-bool Models::Room::columnInvolvedInDisplay(int col)
-{
-    return Item::columnInvolvedInDisplay(col) && col == 1;
-}
-
-QString Models::Room::getAvatarPath() const
-{
-    return avatarPath;
-}
-
-Shared::Avatar Models::Room::getAvatarState() const
-{
-    return avatarState;
-}
-
-void Models::Room::setAvatarPath(const QString& path)
-{
-    if (avatarPath != path) {
-        avatarPath = path;
-        changed(8);
-    }
-}
-
-void Models::Room::setAvatarState(Shared::Avatar p_state)
-{
-    if (avatarState != p_state) {
-        avatarState = p_state;
-        changed(7);
-    }
-}
-
-void Models::Room::setAvatarState(unsigned int p_state)
-{
-    if (p_state <= static_cast<quint8>(Shared::Avatar::valid)) {
-        Shared::Avatar state = static_cast<Shared::Avatar>(p_state);
-        setAvatarState(state);
-    } else {
-        qDebug() << "An attempt to set invalid avatar state" << p_state << "to the room" << jid << ", skipping";
-    }
 }
 
 std::map<QString, const Models::Participant &> Models::Room::getParticipants() const

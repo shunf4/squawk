@@ -20,17 +20,9 @@
 #include "shared/icons.h"
 
 Models::Presence::Presence(const QMap<QString, QVariant>& data, Item* parentItem):
-    AbstractParticipant(Item::presence, data, parentItem),
-    messages()
+    AbstractParticipant(Item::presence, data, parentItem)
 {
 }
-
-Models::Presence::Presence(const Models::Presence& other):
-    AbstractParticipant(other),
-    messages(other.messages)
-{
-}
-
 
 Models::Presence::~Presence()
 {
@@ -38,64 +30,5 @@ Models::Presence::~Presence()
 
 int Models::Presence::columnCount() const
 {
-    return 5;
-}
-
-QVariant Models::Presence::data(int column) const
-{
-    switch (column) {
-        case 4:
-            return getMessagesCount();
-        default:
-            return AbstractParticipant::data(column);
-    }
-}
-
-unsigned int Models::Presence::getMessagesCount() const
-{
-    return messages.size();
-}
-
-void Models::Presence::addMessage(const Shared::Message& data)
-{
-    messages.emplace_back(data);
-    changed(4);
-}
-
-bool Models::Presence::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
-{
-    bool found = false;
-    for (Shared::Message& msg : messages) {
-        if (msg.getId() == id) {
-            msg.change(data);
-            found = true;
-            break;
-        }
-    }
-    return found;
-}
-
-void Models::Presence::dropMessages()
-{
-    if (messages.size() > 0) {
-        messages.clear();
-        changed(4);
-    }
-}
-
-QIcon Models::Presence::getStatusIcon(bool big) const
-{
-    if (getMessagesCount() > 0) {
-        return Shared::icon("mail-message", big);
-    } else {
-        return AbstractParticipant::getStatusIcon();
-    }
-}
-
-void Models::Presence::getMessages(Models::Presence::Messages& container) const
-{
-    for (Messages::const_iterator itr = messages.begin(), end = messages.end(); itr != end; ++itr) {
-        const Shared::Message& msg = *itr;
-        container.push_back(msg);
-    }
+    return 4;
 }

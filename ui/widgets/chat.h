@@ -35,14 +35,12 @@ public:
     Chat(Models::Account* acc, Models::Contact* p_contact, QWidget* parent = 0);
     ~Chat();
     
-    void addMessage(const Shared::Message & data) override;
-    void setAvatar(const QString& path) override;
+    //void addMessage(const Shared::Message & data) override;
 
 protected slots:
     void onContactChanged(Models::Item* item, int row, int col);
     
 protected:
-    void setName(const QString & name) override;
     Shared::Message createMessage() const override;
     
 private:

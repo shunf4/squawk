@@ -148,9 +148,8 @@ private slots:
     void onRosterItemDoubleClicked(const QModelIndex& item);
     void onConversationMessage(const Shared::Message& msg);
     void onConversationMessage(const Shared::Message& msg, const QString& path);
-    void onConversationRequestArchive(const QString& before);
+    void onConversationRequestArchive(const QString& account, const QString& jid, const QString& before);
     void onRosterContextMenu(const QPoint& point);
-    void onConversationShown();
     void onConversationRequestLocalFile(const QString& messageId, const QString& url);
     void onConversationDownloadFile(const QString& messageId, const QString& url);
     void onItemCollepsed(const QModelIndex& index);

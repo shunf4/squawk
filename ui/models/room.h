@@ -19,7 +19,7 @@
 #ifndef MODELS_ROOM_H
 #define MODELS_ROOM_H
 
-#include "item.h"
+#include "element.h"
 #include "participant.h"
 #include "shared/enums.h"
 #include "shared/message.h"
@@ -29,21 +29,18 @@ namespace Models {
 /**
  * @todo write docs
  */
-class Room : public Models::Item
+class Room : public Element
 {
     Q_OBJECT
 public:
-    typedef std::deque<Shared::Message> Messages;
-    Room(const QString& p_jid, const QMap<QString, QVariant> &data, Item *parentItem = 0);
+    Room(const Account* acc, const QString& p_jid, const QMap<QString, QVariant> &data, Item *parentItem = 0);
     ~Room();
     
     int columnCount() const override;
     QVariant data(int column) const override;
     
-    unsigned int getUnreadMessagesCount() const;
     bool getJoined() const;
     bool getAutoJoin() const;
-    QString getJid() const;
     QString getNick() const;
     QString getRoomName() const;
     QString getSubject() const;
@@ -53,17 +50,10 @@ public:
     
     void setJoined(bool p_joined);
     void setAutoJoin(bool p_autoJoin);
-    void setJid(const QString& p_jid);
     void setNick(const QString& p_nick);
     void setSubject(const QString& sub);
     
-    void update(const QString& field, const QVariant& value);
-    
-    void addMessage(const Shared::Message& data);
-    void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
-    unsigned int getMessagesCount() const;
-    void dropMessages();
-    void getMessages(Messages& container) const;
+    void update(const QString& field, const QVariant& value) override;
     
     void addParticipant(const QString& name, const QMap<QString, QVariant>& data);
     void changeParticipant(const QString& name, const QMap<QString, QVariant>& data);
@@ -71,8 +61,6 @@ public:
     
     void toOfflineState() override;
     QString getDisplayedName() const override;
-    Shared::Avatar getAvatarState() const;
-    QString getAvatarPath() const;
     std::map<QString, const Participant&> getParticipants() const;
     QString getParticipantIconPath(const QString& name) const;
     std::map<QString, QString> getExParticipantAvatars() const;
@@ -84,24 +72,14 @@ signals:
 private:
     void handleParticipantUpdate(std::map<QString, Participant*>::const_iterator itr, const QMap<QString, QVariant>& data);
     
-protected:
-    bool columnInvolvedInDisplay(int col) override;
-    void setAvatarState(Shared::Avatar p_state);
-    void setAvatarState(unsigned int p_state);
-    void setAvatarPath(const QString& path);
-    
 private:
     bool autoJoin;
     bool joined;
     QString jid;
     QString nick;
     QString subject;
-    Shared::Avatar avatarState;
-    QString avatarPath;
-    Messages messages;
     std::map<QString, Participant*> participants;
     std::map<QString, QString> exParticipantAvatars;
-
 };
 
 }

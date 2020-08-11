@@ -9,6 +9,10 @@ set(CMAKE_AUTOUIC ON)
 # Find the QtWidgets library
 find_package(Qt5Widgets CONFIG REQUIRED)
 find_package(Qt5DBus CONFIG REQUIRED)
+find_package(Boost 1.36.0 CONFIG REQUIRED)
+if(Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+endif()
 
 add_subdirectory(widgets)
 
@@ -25,6 +29,8 @@ set(squawkUI_SRC
   models/abstractparticipant.cpp
   models/participant.cpp
   models/reference.cpp
+  models/messagefeed.cpp
+  models/element.cpp
   utils/messageline.cpp
   utils//message.cpp
   utils/resizer.cpp
