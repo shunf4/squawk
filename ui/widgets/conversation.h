@@ -24,7 +24,7 @@
 #include <QMap>
 #include <QMimeData>
 #include <QFileInfo>
-#include <QListView>
+#include <QQuickView>
 
 #include "shared/message.h"
 #include "order.h"
@@ -72,7 +72,7 @@ class Conversation : public QWidget
 {
     Q_OBJECT
 public:
-    Conversation(bool muc, Models::Account* acc, const QString pJid, const QString pRes, QWidget* parent = 0);
+    Conversation(bool muc, Models::Account* acc, Models::Element* el, const QString pJid, const QString pRes, QWidget* parent = 0);
     ~Conversation();
     
     QString getJid() const;
@@ -133,6 +133,7 @@ protected:
         down
     };
     Models::Account* account;
+    Models::Element* element;
     QString palJid;
     QString activePalResource;
     QScopedPointer<Ui::Conversation> m_ui;
@@ -145,7 +146,7 @@ protected:
     FlowLayout* filesLayout;
     QWidget* overlay;
     W::Order<Badge*, Badge::Comparator> filesToAttach;
-    QListView* feed;
+    QQuickView* feed;
     Scroll scroll;
     bool manualSliderChange;
     bool requestingHistory;

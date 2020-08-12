@@ -20,6 +20,15 @@
 
 #include <QDebug>
 
+const QHash<int, QByteArray> MessageFeed::roles = {
+    {Text, "text"},
+    {Sender, "sender"},
+    {Date, "date"},
+    {DeliveryState, "deliveryState"},
+    {Correction, "correction"},
+    {SentByMe,"sentByMe"}
+};
+
 MessageFeed::MessageFeed(QObject* parent):
     QAbstractListModel(parent),
     storage(),
@@ -69,25 +78,43 @@ void MessageFeed::removeMessage(const QString& id)
 QVariant MessageFeed::data(const QModelIndex& index, int role) const
 {
     int i = index.row();
-    if (syncState == syncing) {
-        --i;
-    }
     QVariant answer;
-    switch (role) {
-        case Qt::DisplayRole: {
-            if (i == -1) {
-                return "Loading...";
-            }
-            
-            StorageByTime::const_iterator itr = indexByTime.nth(i);
-            if (itr != indexByTime.end()) {
-                const Shared::Message* msg = *itr;
-                answer = msg->getFrom() + ": " + msg->getBody();
-            }
+    
+    StorageByTime::const_iterator itr = indexByTime.nth(i);
+    if (itr != indexByTime.end()) {
+        const Shared::Message* msg = *itr;
+        
+        switch (role) {
+            case Text: 
+                answer = msg->getBody();
+                break;
+            case Sender: 
+                answer = msg->getFrom();
+                break;
+            case Date: 
+                answer = msg->getTime();
+                break;
+            case DeliveryState: 
+                answer = static_cast<unsigned int>(msg->getState());
+                break;
+            case Correction: 
+                answer = msg->getEdited();
+                break;
+            case SentByMe: 
+                answer = msg->getOutgoing();
+                break;
+            default:
+                break;
         }
-            break;
-        default:
-            break;
+    } else {
+        switch (role) {
+            case Text: 
+                answer = "loading...";
+                break;
+            default:
+                answer = "";
+                break;
+        }
     }
     
     return answer;
@@ -115,27 +142,28 @@ bool MessageFeed::canFetchMore(const QModelIndex& parent) const
 void MessageFeed::fetchMore(const QModelIndex& parent)
 {
     if (syncState == incomplete) {
-        beginInsertRows(QModelIndex(), 0, 0);
+        beginInsertRows(QModelIndex(), storage.size(), storage.size());
         syncState = syncing;
         endInsertRows();
         
         if (storage.size() == 0) {
             emit requestArchive("");
         } else {
-            emit requestArchive((*indexByTime.nth(0))->getId());
+            emit requestArchive((*indexByTime.rbegin())->getId());
         }
     }
 }
 
 void MessageFeed::responseArchive(const std::list<Shared::Message> list)
 {
+    Storage::size_type size = storage.size();
     if (syncState == syncing) {
-        beginRemoveRows(QModelIndex(), 0, 0);
+        beginRemoveRows(QModelIndex(), size, size);
         syncState = incomplete;
         endRemoveRows();
     }
     
-    beginInsertRows(QModelIndex(), 0, list.size() - 1);
+    beginInsertRows(QModelIndex(), size, size + list.size() - 1);
     for (const Shared::Message& msg : list) {
         Shared::Message* copy = new Shared::Message(msg);
         storage.insert(copy);
@@ -143,3 +171,7 @@ void MessageFeed::responseArchive(const std::list<Shared::Message> list)
     endInsertRows();
 }
 
+QHash<int, QByteArray> MessageFeed::roleNames() const
+{
+    return roles;
+}

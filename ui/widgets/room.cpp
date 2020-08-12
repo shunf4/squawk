@@ -19,7 +19,7 @@
 #include "room.h"
 
 Room::Room(Models::Account* acc, Models::Room* p_room, QWidget* parent):
-    Conversation(true, acc, p_room->getJid(), "", parent),
+    Conversation(true, acc, p_room, p_room->getJid(), "", parent),
     room(p_room)
 {
     setName(p_room->getName());
@@ -29,8 +29,6 @@ Room::Room(Models::Account* acc, Models::Room* p_room, QWidget* parent):
     connect(room, &Models::Room::childChanged, this, &Room::onRoomChanged);
     connect(room, &Models::Room::participantJoined, this, &Room::onParticipantJoined);
     connect(room, &Models::Room::participantLeft, this, &Room::onParticipantLeft);
-    
-    feed->setModel(p_room->feed);
 }
 
 Room::~Room()

@@ -7,7 +7,7 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
 # Find the QtWidgets library
-find_package(Qt5Widgets CONFIG REQUIRED)
+find_package(Qt5Widgets CONFIG REQUIRED COMPONENTS Widgets Quick Qml QuickControls2 Core)
 
 add_subdirectory(vcard)
 
@@ -21,9 +21,12 @@ set(squawkWidgets_SRC
   joinconference.cpp
 )
 
-# Tell CMake to create the helloworld executable
 add_library(squawkWidgets ${squawkWidgets_SRC})
 
 # Use the Widgets module from Qt 5.
 target_link_libraries(squawkWidgets vCardUI)
 target_link_libraries(squawkWidgets Qt5::Widgets)
+target_link_libraries(squawkWidgets Qt5::Qml)
+target_link_libraries(squawkWidgets Qt5::QuickControls2)
+
+qt5_use_modules(squawkWidgets Quick Qml QuickControls2 Core Widgets)

@@ -29,7 +29,7 @@
 #include <QAbstractTextDocumentLayout>
 #include <QCoreApplication>
 
-Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, const QString pRes, QWidget* parent):
+Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, const QString pJid, const QString pRes, QWidget* parent):
     QWidget(parent),
     isMuc(muc),
     account(acc),
@@ -45,7 +45,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     filesLayout(0),
     overlay(new QWidget()),
     filesToAttach(),
-    feed(0),
+    feed(new QQuickView()),
     scroll(down),
     manualSliderChange(false),
     requestingHistory(false),
@@ -53,7 +53,14 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1)
 {
     m_ui->setupUi(this);
-    feed = m_ui->feed;
+    
+    feed->setColor(QWidget::palette().color(QPalette::Base));
+    feed->setInitialProperties({{"model", QVariant::fromValue(el->feed)}});
+    feed->setResizeMode(QQuickView::SizeRootObjectToView);
+    feed->setSource(QUrl("qrc:/qml/feed.qml"));
+    QWidget *container = QWidget::createWindowContainer(feed, this);
+    container->setAutoFillBackground(false);
+    m_ui->widget->layout()->addWidget(container);
     
     connect(acc, &Models::Account::childChanged, this, &Conversation::onAccountChanged);
     

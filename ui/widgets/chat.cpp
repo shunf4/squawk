@@ -19,7 +19,7 @@
 #include "chat.h"
 
 Chat::Chat(Models::Account* acc, Models::Contact* p_contact, QWidget* parent):
-    Conversation(false, acc, p_contact->getJid(), "", parent),
+    Conversation(false, acc, p_contact, p_contact->getJid(), "", parent),
     contact(p_contact)
 {
     setName(p_contact->getContactName());
@@ -28,8 +28,6 @@ Chat::Chat(Models::Account* acc, Models::Contact* p_contact, QWidget* parent):
     setAvatar(p_contact->getAvatarPath());
     
     connect(contact, &Models::Contact::childChanged, this, &Chat::onContactChanged);
-    
-    feed->setModel(p_contact->feed);
 }
 
 Chat::~Chat()

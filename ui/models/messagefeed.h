@@ -47,6 +47,8 @@ public:
     
     bool canFetchMore(const QModelIndex & parent) const override;
     void fetchMore(const QModelIndex & parent) override;
+    QHash<int, QByteArray> roleNames() const override;
+    
     void responseArchive(const std::list<Shared::Message> list);
     
     unsigned int unreadMessagesCount() const;
@@ -54,6 +56,15 @@ public:
 signals:
     void requestArchive(const QString& before);
     
+public:
+    enum MessageRoles {
+        Text = Qt::UserRole + 1,
+        Sender,
+        Date,
+        DeliveryState,
+        Correction,
+        SentByMe
+    };
 private:
     enum SyncState {
         incomplete,
@@ -81,7 +92,8 @@ private:
                     Shared::Message,
                     QDateTime,
                     &Shared::Message::getTime
-                >
+                >,
+                std::greater<QDateTime>
             >
         >
     > Storage; 
@@ -94,6 +106,7 @@ private:
     
     SyncState syncState;
     
+    static const QHash<int, QByteArray> roles;
 
 };
 
