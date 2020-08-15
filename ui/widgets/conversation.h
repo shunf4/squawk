@@ -24,7 +24,6 @@
 #include <QMap>
 #include <QMimeData>
 #include <QFileInfo>
-#include <QQuickView>
 
 #include "shared/message.h"
 #include "order.h"
@@ -34,6 +33,7 @@
 #include "ui/utils/resizer.h"
 #include "ui/utils/flowlayout.h"
 #include "ui/utils/badge.h"
+#include "ui/utils/feedview.h"
 #include "shared/icons.h"
 #include "shared/utils.h"
 
@@ -146,7 +146,7 @@ protected:
     FlowLayout* filesLayout;
     QWidget* overlay;
     W::Order<Badge*, Badge::Comparator> filesToAttach;
-    QQuickView* feed;
+    FeedView* feed;
     Scroll scroll;
     bool manualSliderChange;
     bool requestingHistory;

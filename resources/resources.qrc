@@ -160,7 +160,5 @@
     <file>images/fallback/light/small/favorite.svg</file>
     <file>images/fallback/light/small/unfavorite.svg</file>
     <file>images/fallback/light/small/add.svg</file>
-    
-    <file>qml/feed.qml</file>
 </qresource>
 </RCC>

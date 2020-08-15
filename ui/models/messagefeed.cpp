@@ -85,6 +85,7 @@ QVariant MessageFeed::data(const QModelIndex& index, int role) const
         const Shared::Message* msg = *itr;
         
         switch (role) {
+            case Qt::DisplayRole:
             case Text: 
                 answer = msg->getBody();
                 break;
@@ -108,6 +109,7 @@ QVariant MessageFeed::data(const QModelIndex& index, int role) const
         }
     } else {
         switch (role) {
+            case Qt::DisplayRole:
             case Text: 
                 answer = "loading...";
                 break;

@@ -77,11 +77,6 @@ int main(int argc, char *argv[])
     
     new Shared::Global();        //translates enums
     
-    // QtQuickControls2 Style
-    if (qEnvironmentVariableIsEmpty("QT_QUICK_CONTROLS_STYLE")) {
-        qputenv("QT_QUICK_CONTROLS_STYLE", "Material");
-    }
-    
     Squawk w;
     w.show();
     

@@ -45,7 +45,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     filesLayout(0),
     overlay(new QWidget()),
     filesToAttach(),
-    feed(new QQuickView()),
+    feed(new FeedView()),
     scroll(down),
     manualSliderChange(false),
     requestingHistory(false),
@@ -54,13 +54,8 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
 {
     m_ui->setupUi(this);
     
-    feed->setColor(QWidget::palette().color(QPalette::Base));
-    feed->setInitialProperties({{"model", QVariant::fromValue(el->feed)}});
-    feed->setResizeMode(QQuickView::SizeRootObjectToView);
-    feed->setSource(QUrl("qrc:/qml/feed.qml"));
-    QWidget *container = QWidget::createWindowContainer(feed, this);
-    container->setAutoFillBackground(false);
-    m_ui->widget->layout()->addWidget(container);
+    feed->setModel(el->feed);
+    m_ui->widget->layout()->addWidget(feed);
     
     connect(acc, &Models::Account::childChanged, this, &Conversation::onAccountChanged);
     
