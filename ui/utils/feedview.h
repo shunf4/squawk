@@ -45,6 +45,7 @@ public:
     
 protected slots:
     void rowsInserted(const QModelIndex & parent, int start, int end) override;
+    void verticalScrollbarValueChanged(int value) override;
     
 protected:
     int verticalOffset() const override;
@@ -53,12 +54,16 @@ protected:
     void updateGeometries() override;
     
 private:
+    bool tryToCalculateGeometriesWithNoScrollbars(const QStyleOptionViewItem& option, const QAbstractItemModel* model, uint32_t totalHeight);
+    
+private:
     struct Hint {
         bool dirty;
         uint32_t offset;
         uint32_t height;
     };
     std::deque<Hint> hints;
+    int vo;
     
 };
 

@@ -20,13 +20,19 @@
 
 #include <QPaintEvent>
 #include <QPainter>
+#include <QScrollBar>
 #include <QDebug>
+
+constexpr int maxMessageHeight = 10000;
+constexpr int approximateSingleMessageHeight = 20;
 
 FeedView::FeedView(QWidget* parent):
     QAbstractItemView(parent),
-    hints()
+    hints(),
+    vo(0)
 {
-
+    horizontalScrollBar()->setRange(0, 0);
+    verticalScrollBar()->setSingleStep(approximateSingleMessageHeight);
 }
 
 FeedView::~FeedView()
@@ -35,6 +41,17 @@ FeedView::~FeedView()
 
 QModelIndex FeedView::indexAt(const QPoint& point) const
 {
+    int32_t totalHeight = viewport()->height() + vo;
+    if (point.y() <= totalHeight) {                      //if it's bigger - someone wants to know the index below the feed beginning, it's invalid
+        uint32_t y = totalHeight - point.y();
+        
+        for (std::deque<Hint>::size_type i = 0; i < hints.size(); ++i) {
+            if (y > hints[i].offset) {
+                return model()->index(i - 1, 0, rootIndex());
+            }
+        }
+    }
+    
     return QModelIndex();
 }
 
@@ -45,11 +62,12 @@ void FeedView::scrollTo(const QModelIndex& index, QAbstractItemView::ScrollHint 
 QRect FeedView::visualRect(const QModelIndex& index) const
 {
     if (!index.isValid() || index.row() >= hints.size()) {
+        qDebug() << "visualRect for" << index.row();
         return QRect();
     } else {
         const Hint& hint = hints.at(index.row());
         const QWidget* vp = viewport();
-        return QRect(0, vp->height() - hint.height - hint.offset, vp->width(), hint.height);
+        return QRect(0, vp->height() - hint.height - hint.offset + vo, vp->width(), hint.height);
     }
 }
 
@@ -60,7 +78,7 @@ int FeedView::horizontalOffset() const
 
 bool FeedView::isIndexHidden(const QModelIndex& index) const
 {
-    return true;
+    return false;
 }
 
 QModelIndex FeedView::moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers modifiers)
@@ -74,7 +92,7 @@ void FeedView::setSelection(const QRect& rect, QItemSelectionModel::SelectionFla
 
 int FeedView::verticalOffset() const
 {
-    return 0;
+    return vo;
 }
 
 QRegion FeedView::visualRegionForSelection(const QItemSelection& selection) const
@@ -84,22 +102,80 @@ QRegion FeedView::visualRegionForSelection(const QItemSelection& selection) cons
 
 void FeedView::rowsInserted(const QModelIndex& parent, int start, int end)
 {
-    scheduleDelayedItemsLayout();
+    updateGeometries();
     QAbstractItemView::rowsInserted(parent, start, end);
 }
 
 void FeedView::updateGeometries()
 {
     qDebug() << "updateGeometries";
-    QAbstractItemView::updateGeometries();
-    const QAbstractItemModel* m = model();
-    QStyleOptionViewItem option = viewOptions();
-    uint32_t previousOffset = 0;
+    QScrollBar* bar = verticalScrollBar();
     
-    hints.clear();
+    QAbstractItemView::updateGeometries();
+    
+    const QStyle* st = style();
+    const QAbstractItemModel* m = model();
+    QRect layoutBounds = QRect(QPoint(), maximumViewportSize());
+    QStyleOptionViewItem option = viewOptions();
+    option.rect.setHeight(maxMessageHeight);
+    option.rect.setWidth(layoutBounds.width());
+    int frameAroundContents = 0;
+    int verticalScrollBarExtent = st->pixelMetric(QStyle::PM_ScrollBarExtent, 0, bar);
+    
+    bool layedOut = false;
+    if (verticalScrollBarExtent != 0 && verticalScrollBarPolicy() == Qt::ScrollBarAsNeeded && m->rowCount() * approximateSingleMessageHeight < layoutBounds.height()) {
+        hints.clear();
+        layedOut = tryToCalculateGeometriesWithNoScrollbars(option, m, layoutBounds.height());
+    }
+    
+    if (layedOut) {
+        bar->setRange(0, 0);
+    } else {
+        int verticalMargin = 0;
+        if (st->styleHint(QStyle::SH_ScrollView_FrameOnlyAroundContents)) {
+            frameAroundContents = st->pixelMetric(QStyle::PM_DefaultFrameWidth) * 2;
+        }
+        
+        if (verticalScrollBarPolicy() == Qt::ScrollBarAsNeeded) {
+            verticalMargin = verticalScrollBarExtent + frameAroundContents;
+        }
+        
+        layoutBounds.adjust(0, 0, -verticalMargin, 0);
+        
+        option.features |= QStyleOptionViewItem::WrapText;
+        option.rect.setWidth(layoutBounds.width());
+        
+        hints.clear();
+        uint32_t previousOffset = 0;
+        for (int i = 0, size = m->rowCount(); i < size; ++i) {
+            QModelIndex index = m->index(i, 0, rootIndex());
+            int height = itemDelegate(index)->sizeHint(option, index).height();
+            hints.emplace_back(Hint({
+                false,
+                previousOffset,
+                static_cast<uint32_t>(height)
+            }));
+            previousOffset += height;
+        }
+        
+        bar->setRange(0, previousOffset - layoutBounds.height());
+        bar->setPageStep(layoutBounds.height());
+        bar->setValue(previousOffset - layoutBounds.height() - vo);
+    }
+}
+
+bool FeedView::tryToCalculateGeometriesWithNoScrollbars(const QStyleOptionViewItem& option, const QAbstractItemModel* m, uint32_t totalHeight)
+{
+    uint32_t previousOffset = 0;
+    bool success = true;
     for (int i = 0, size = m->rowCount(); i < size; ++i) {
-        QModelIndex index = m->index(i, 0, QModelIndex());
+        QModelIndex index = m->index(i, 0, rootIndex());
         int height = itemDelegate(index)->sizeHint(option, index).height();
+        
+        if (previousOffset + height > totalHeight) {
+            success = false;
+            break;
+        }
         hints.emplace_back(Hint({
             false,
             previousOffset,
@@ -107,19 +183,52 @@ void FeedView::updateGeometries()
         }));
         previousOffset += height;
     }
+    
+    return success;
 }
+
 
 void FeedView::paintEvent(QPaintEvent* event)
 {
-    qDebug() << "paint";
+    qDebug() << "paint" << event->rect();
     const QAbstractItemModel* m = model();
-    QRect zone = event->rect().translated(horizontalOffset(), -verticalOffset());
-    QPainter painter(viewport());
-    QStyleOptionViewItem option = viewOptions();
+    QWidget* vp = viewport();
+    QRect zone = event->rect().translated(0, -vo);
+    uint32_t vph = vp->height(); 
+    int32_t y1 = zone.y();
+    int32_t y2 = y1 + zone.height();
     
-    for (int i = 0, size = m->rowCount(); i < size; ++i) {
-        QModelIndex index = m->index(i, 0, QModelIndex());
+    bool inZone = false;
+    std::deque<QModelIndex> toRener;
+    for (std::deque<Hint>::size_type i = 0; i < hints.size(); ++i) {
+        const Hint& hint = hints[i];
+        int32_t relativeY1 = vph - hint.offset - hint.height;
+        if (!inZone) {
+            if (y2 > relativeY1) {
+                inZone = true;
+            }
+        }
+        if (inZone) {
+            toRener.emplace_back(m->index(i, 0, rootIndex()));
+        }
+        if (y1 > relativeY1) {
+            break;
+        }
+    }
+    
+    QPainter painter(vp);
+    QStyleOptionViewItem option = viewOptions();
+    option.features = QStyleOptionViewItem::WrapText;
+    
+    for (const QModelIndex& index : toRener) {
         option.rect = visualRect(index);
         itemDelegate(index)->paint(&painter, option, index);
     }
+}
+
+void FeedView::verticalScrollbarValueChanged(int value)
+{
+    vo = verticalScrollBar()->maximum() - value;
+    
+    QAbstractItemView::verticalScrollbarValueChanged(vo);
 }
