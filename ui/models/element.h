@@ -42,6 +42,7 @@ public:
     void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     unsigned int getMessagesCount() const;
     void responseArchive(const std::list<Shared::Message> list);
+    bool isRoom() const;
     
 signals:
     void requestArchive(const QString& before);

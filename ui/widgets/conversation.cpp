@@ -46,6 +46,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     overlay(new QWidget()),
     filesToAttach(),
     feed(new FeedView()),
+    delegate(new MessageDelegate()),
     scroll(down),
     manualSliderChange(false),
     requestingHistory(false),
@@ -54,6 +55,8 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
 {
     m_ui->setupUi(this);
     
+    feed->setItemDelegate(delegate);
+    delegate->initializeFonts(feed->getFont());
     feed->setModel(el->feed);
     m_ui->widget->layout()->addWidget(feed);
     

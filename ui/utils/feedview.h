@@ -43,6 +43,8 @@ public:
     void setSelection(const QRect & rect, QItemSelectionModel::SelectionFlags command) override;
     QRegion visualRegionForSelection(const QItemSelection & selection) const override;
     
+    QFont getFont() const;
+    
 protected slots:
     void rowsInserted(const QModelIndex & parent, int start, int end) override;
     void verticalScrollbarValueChanged(int value) override;

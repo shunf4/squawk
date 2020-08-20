@@ -29,13 +29,17 @@
 #include <boost/multi_index/mem_fun.hpp>
 
 #include <shared/message.h>
+#include <shared/icons.h>
 
 
+namespace Models {
+    class Element;
+    
 class MessageFeed : public QAbstractListModel
 {
     Q_OBJECT
 public:
-    MessageFeed(QObject *parent = nullptr);
+    MessageFeed(const Element* rosterItem, QObject *parent = nullptr);
     ~MessageFeed();
     
     void addMessage(const Shared::Message& msg);
@@ -55,6 +59,10 @@ public:
     
 signals:
     void requestArchive(const QString& before);
+    void requestStateChange(bool requesting);
+    
+protected:
+    bool sentByMe(const Shared::Message& msg) const;
     
 public:
     enum MessageRoles {
@@ -63,7 +71,8 @@ public:
         Date,
         DeliveryState,
         Correction,
-        SentByMe
+        SentByMe,
+        Avatar
     };
 private:
     enum SyncState {
@@ -104,10 +113,11 @@ private:
     StorageById& indexById;
     StorageByTime& indexByTime;
     
+    const Element* rosterItem;
     SyncState syncState;
     
     static const QHash<int, QByteArray> roles;
-
+};
 };
 
 #endif // MESSAGEFEED_H

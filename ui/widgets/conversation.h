@@ -34,6 +34,7 @@
 #include "ui/utils/flowlayout.h"
 #include "ui/utils/badge.h"
 #include "ui/utils/feedview.h"
+#include "ui/utils/messagedelegate.h"
 #include "shared/icons.h"
 #include "shared/utils.h"
 
@@ -147,6 +148,7 @@ protected:
     QWidget* overlay;
     W::Order<Badge*, Badge::Comparator> filesToAttach;
     FeedView* feed;
+    MessageDelegate* delegate;
     Scroll scroll;
     bool manualSliderChange;
     bool requestingHistory;

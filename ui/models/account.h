@@ -57,7 +57,7 @@ namespace Models {
         QString getError() const;
         
         void setAvatarPath(const QString& path);
-        QString getAvatarPath();
+        QString getAvatarPath() const;
         
         void setAvailability(Shared::Availability p_avail);
         void setAvailability(unsigned int p_avail);

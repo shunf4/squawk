@@ -283,6 +283,15 @@ Shared::ConnectionState Models::Item::getAccountConnectionState() const
     return acc->getState();
 }
 
+QString Models::Item::getAccountAvatarPath() const
+{
+    const Account* acc = getParentAccount();
+    if (acc == nullptr) {
+        return "";
+    }
+    return acc->getAvatarPath();
+}
+
 QString Models::Item::getDisplayedName() const
 {
     return name;

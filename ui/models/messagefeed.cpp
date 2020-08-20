@@ -17,35 +17,39 @@
  */
 
 #include "messagefeed.h"
+#include "element.h"
+#include "room.h"
 
 #include <QDebug>
 
-const QHash<int, QByteArray> MessageFeed::roles = {
+const QHash<int, QByteArray> Models::MessageFeed::roles = {
     {Text, "text"},
     {Sender, "sender"},
     {Date, "date"},
     {DeliveryState, "deliveryState"},
     {Correction, "correction"},
-    {SentByMe,"sentByMe"}
+    {SentByMe,"sentByMe"},
+    {Avatar, "avatar"}
 };
 
-MessageFeed::MessageFeed(QObject* parent):
+Models::MessageFeed::MessageFeed(const Element* ri, QObject* parent):
     QAbstractListModel(parent),
     storage(),
     indexById(storage.get<id>()),
     indexByTime(storage.get<time>()),
+    rosterItem(ri),
     syncState(incomplete)
 {
 }
 
-MessageFeed::~MessageFeed()
+Models::MessageFeed::~MessageFeed()
 {
     for (Shared::Message* message : storage) {
         delete message;
     }
 }
 
-void MessageFeed::addMessage(const Shared::Message& msg)
+void Models::MessageFeed::addMessage(const Shared::Message& msg)
 {
     QString id = msg.getId();
     StorageById::const_iterator itr = indexById.find(id);
@@ -67,15 +71,15 @@ void MessageFeed::addMessage(const Shared::Message& msg)
     endInsertRows();
 }
 
-void MessageFeed::changeMessage(const QString& id, const Shared::Message& msg)
+void Models::MessageFeed::changeMessage(const QString& id, const Shared::Message& msg)
 {
 }
 
-void MessageFeed::removeMessage(const QString& id)
+void Models::MessageFeed::removeMessage(const QString& id)
 {
 }
 
-QVariant MessageFeed::data(const QModelIndex& index, int role) const
+QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
 {
     int i = index.row();
     QVariant answer;
@@ -90,7 +94,19 @@ QVariant MessageFeed::data(const QModelIndex& index, int role) const
                 answer = msg->getBody();
                 break;
             case Sender: 
-                answer = msg->getFrom();
+                if (rosterItem->isRoom()) {
+                    if (sentByMe(*msg)) {
+                        answer = rosterItem->getDisplayedName();
+                    } else {
+                        answer = msg->getFromResource();
+                    }
+                } else {
+                    if (sentByMe(*msg)) {
+                        answer = rosterItem->getAccountName();
+                    } else {
+                        answer = rosterItem->getDisplayedName();
+                    }
+                }
                 break;
             case Date: 
                 answer = msg->getTime();
@@ -102,19 +118,29 @@ QVariant MessageFeed::data(const QModelIndex& index, int role) const
                 answer = msg->getEdited();
                 break;
             case SentByMe: 
-                answer = msg->getOutgoing();
+                answer = sentByMe(*msg);
+                break;
+            case Avatar: {
+                QString path;
+                if (sentByMe(*msg)) {
+                    path = rosterItem->getAccountAvatarPath();
+                } else if (!rosterItem->isRoom()) {
+                    if (rosterItem->getAvatarState() != Shared::Avatar::empty) {
+                        path = rosterItem->getAvatarPath();
+                    }
+                } else {
+                    const Room* room = static_cast<const Room*>(rosterItem);
+                    path = room->getParticipantIconPath(msg->getFromResource());
+                }
+                
+                if (path.size() == 0) {
+                    answer = Shared::iconPath("user", true);
+                } else {
+                    answer = path;
+                }
+            }
                 break;
             default:
-                break;
-        }
-    } else {
-        switch (role) {
-            case Qt::DisplayRole:
-            case Text: 
-                answer = "loading...";
-                break;
-            default:
-                answer = "";
                 break;
         }
     }
@@ -122,31 +148,25 @@ QVariant MessageFeed::data(const QModelIndex& index, int role) const
     return answer;
 }
 
-int MessageFeed::rowCount(const QModelIndex& parent) const
+int Models::MessageFeed::rowCount(const QModelIndex& parent) const
 {
-    int count = storage.size();
-    if (syncState == syncing) {
-        count++;
-    }
-    return count;
+    return storage.size();
 }
 
-unsigned int MessageFeed::unreadMessagesCount() const
+unsigned int Models::MessageFeed::unreadMessagesCount() const
 {
     return storage.size(); //let's say they are all new for now =)
 }
 
-bool MessageFeed::canFetchMore(const QModelIndex& parent) const
+bool Models::MessageFeed::canFetchMore(const QModelIndex& parent) const
 {
     return syncState == incomplete;
 }
 
-void MessageFeed::fetchMore(const QModelIndex& parent)
+void Models::MessageFeed::fetchMore(const QModelIndex& parent)
 {
     if (syncState == incomplete) {
-        beginInsertRows(QModelIndex(), storage.size(), storage.size());
-        syncState = syncing;
-        endInsertRows();
+        emit requestStateChange(true);
         
         if (storage.size() == 0) {
             emit requestArchive("");
@@ -156,13 +176,11 @@ void MessageFeed::fetchMore(const QModelIndex& parent)
     }
 }
 
-void MessageFeed::responseArchive(const std::list<Shared::Message> list)
+void Models::MessageFeed::responseArchive(const std::list<Shared::Message> list)
 {
     Storage::size_type size = storage.size();
     if (syncState == syncing) {
-        beginRemoveRows(QModelIndex(), size, size);
-        syncState = incomplete;
-        endRemoveRows();
+        emit requestStateChange(false);
     }
     
     beginInsertRows(QModelIndex(), size, size + list.size() - 1);
@@ -173,7 +191,17 @@ void MessageFeed::responseArchive(const std::list<Shared::Message> list)
     endInsertRows();
 }
 
-QHash<int, QByteArray> MessageFeed::roleNames() const
+QHash<int, QByteArray> Models::MessageFeed::roleNames() const
 {
     return roles;
+}
+
+bool Models::MessageFeed::sentByMe(const Shared::Message& msg) const
+{
+    if (rosterItem->isRoom()) {
+        const Room* room = static_cast<const Room*>(rosterItem);
+        return room->getNick().toLower() == msg.getFromResource().toLower();
+    } else {
+        return msg.getOutgoing();
+    }
 }

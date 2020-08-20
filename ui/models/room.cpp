@@ -310,7 +310,12 @@ QString Models::Room::getParticipantIconPath(const QString& name) const
 {
     std::map<QString, Models::Participant*>::const_iterator itr = participants.find(name);
     if (itr == participants.end()) {
-        return "";
+        std::map<QString, QString>::const_iterator eitr = exParticipantAvatars.find(name);
+        if (eitr != exParticipantAvatars.end()) {
+            return eitr->second;
+        } else {
+            return "";
+        }
     }
     
     return itr->second->getAvatarPath();

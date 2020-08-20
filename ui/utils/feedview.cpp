@@ -232,3 +232,8 @@ void FeedView::verticalScrollbarValueChanged(int value)
     
     QAbstractItemView::verticalScrollbarValueChanged(vo);
 }
+
+QFont FeedView::getFont() const
+{
+    return viewOptions().font;
+}

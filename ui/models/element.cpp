@@ -27,7 +27,7 @@ Models::Element::Element(Type p_type, const Models::Account* acc, const QString&
     avatarPath(),
     avatarState(Shared::Avatar::empty),
     account(acc),
-    feed(new MessageFeed())
+    feed(new MessageFeed(this))
 {
     connect(feed, &MessageFeed::requestArchive, this, &Element::requestArchive);
     
@@ -148,4 +148,9 @@ void Models::Element::changeMessage(const QString& id, const QMap<QString, QVari
 void Models::Element::responseArchive(const std::list<Shared::Message> list)
 {
     feed->responseArchive(list);
+}
+
+bool Models::Element::isRoom() const
+{
+    return type != contact;
 }

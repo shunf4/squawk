@@ -80,6 +80,7 @@ class Item : public QObject{
         QString getAccountName() const;
         QString getAccountJid() const;
         QString getAccountResource() const;
+        QString getAccountAvatarPath() const;
         Shared::ConnectionState getAccountConnectionState() const;
         Shared::Availability getAccountAvailability() const;
         

@@ -231,7 +231,7 @@ void Models::Account::toOfflineState()
     Item::toOfflineState();
 }
 
-QString Models::Account::getAvatarPath()
+QString Models::Account::getAvatarPath() const
 {
     return avatarPath;
 }
