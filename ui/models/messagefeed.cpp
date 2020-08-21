@@ -166,6 +166,7 @@ bool Models::MessageFeed::canFetchMore(const QModelIndex& parent) const
 void Models::MessageFeed::fetchMore(const QModelIndex& parent)
 {
     if (syncState == incomplete) {
+        syncState = syncing;
         emit requestStateChange(true);
         
         if (storage.size() == 0) {
@@ -176,12 +177,9 @@ void Models::MessageFeed::fetchMore(const QModelIndex& parent)
     }
 }
 
-void Models::MessageFeed::responseArchive(const std::list<Shared::Message> list)
+void Models::MessageFeed::responseArchive(const std::list<Shared::Message> list, bool last)
 {
     Storage::size_type size = storage.size();
-    if (syncState == syncing) {
-        emit requestStateChange(false);
-    }
     
     beginInsertRows(QModelIndex(), size, size + list.size() - 1);
     for (const Shared::Message& msg : list) {
@@ -189,6 +187,15 @@ void Models::MessageFeed::responseArchive(const std::list<Shared::Message> list)
         storage.insert(copy);
     }
     endInsertRows();
+    
+    if (syncState == syncing) {
+        if (last) {
+            syncState = complete;
+        } else {
+            syncState = incomplete;
+        }
+        emit requestStateChange(false);
+    }
 }
 
 QHash<int, QByteArray> Models::MessageFeed::roleNames() const

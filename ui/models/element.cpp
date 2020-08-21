@@ -145,9 +145,9 @@ void Models::Element::changeMessage(const QString& id, const QMap<QString, QVari
     
 }
 
-void Models::Element::responseArchive(const std::list<Shared::Message> list)
+void Models::Element::responseArchive(const std::list<Shared::Message> list, bool last)
 {
-    feed->responseArchive(list);
+    feed->responseArchive(list, last);
 }
 
 bool Models::Element::isRoom() const

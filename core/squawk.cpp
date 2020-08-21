@@ -357,10 +357,10 @@ void Core::Squawk::requestArchive(const QString& account, const QString& jid, in
     itr->second->requestArchive(jid, count, before);
 }
 
-void Core::Squawk::onAccountResponseArchive(const QString& jid, const std::list<Shared::Message>& list)
+void Core::Squawk::onAccountResponseArchive(const QString& jid, const std::list<Shared::Message>& list, bool last)
 {
     Account* acc = static_cast<Account*>(sender());
-    emit responseArchive(acc->getName(), jid, list);
+    emit responseArchive(acc->getName(), jid, list, last);
 }
 
 void Core::Squawk::modifyAccountRequest(const QString& name, const QMap<QString, QVariant>& map)

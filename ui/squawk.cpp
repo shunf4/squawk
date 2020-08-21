@@ -610,9 +610,9 @@ void Squawk::onConversationRequestArchive(const QString& account, const QString&
     emit requestArchive(account, jid, 20, before); //TODO amount as a settings value
 }
 
-void Squawk::responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list)
+void Squawk::responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list, bool last)
 {
-    rosterModel.responseArchive(account, jid, list);
+    rosterModel.responseArchive(account, jid, list, last);
 }
 
 void Squawk::removeAccount(const QString& account)

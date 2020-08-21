@@ -965,16 +965,16 @@ void Models::Roster::onElementRequestArchive(const QString& before)
     emit requestArchive(el->getAccountName(), el->getJid(), before);
 }
 
-void Models::Roster::responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list)
+void Models::Roster::responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list, bool last)
 {
     ElId id(account, jid);
     std::map<ElId, Contact*>::iterator itr = contacts.find(id);
     if (itr != contacts.end()) {
-        itr->second->responseArchive(list);
+        itr->second->responseArchive(list, last);
     } else {
         std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
         if (rItr != rooms.end()) {
-            rItr->second->responseArchive(list);
+            rItr->second->responseArchive(list, last);
         }
     }
 }

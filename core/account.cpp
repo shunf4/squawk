@@ -434,13 +434,13 @@ void Core::Account::requestArchive(const QString& jid, int count, const QString&
     
     if (contact == 0) {
         qDebug() << "An attempt to request archive for" << jid << "in account" << name << ", but the contact with such id wasn't found, skipping";
-        emit responseArchive(jid, std::list<Shared::Message>());
+        emit responseArchive(jid, std::list<Shared::Message>(), true);
         return;
     }
     
     if (state != Shared::ConnectionState::connected) {
         qDebug() << "An attempt to request archive for" << jid << "in account" << name << ", but the account is not online, skipping";
-        emit responseArchive(contact->jid, std::list<Shared::Message>());
+        emit responseArchive(contact->jid, std::list<Shared::Message>(), false);
     }
     
     contact->requestHistory(count, before);
@@ -909,3 +909,13 @@ void Core::Account::handleDisconnection()
     ownVCardRequestInProgress = false;
 }
 
+void Core::Account::onContactHistoryResponse(const std::list<Shared::Message>& list, bool last)
+{
+    RosterItem* contact = static_cast<RosterItem*>(sender());
+    
+    qDebug() << "Collected history for contact " << contact->jid << list.size() << "elements";
+    if (last) {
+        qDebug() << "The response contains the first accounted message";
+    }
+    emit responseArchive(contact->jid, list, last);
+}

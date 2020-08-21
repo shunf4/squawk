@@ -97,7 +97,7 @@ public slots:
     void removePresence(const QString& account, const QString& jid, const QString& name);
     void stateChanged(Shared::Availability state);
     void accountMessage(const QString& account, const Shared::Message& data);
-    void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list);
+    void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list, bool last);
     void addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void changeRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void removeRoom(const QString& account, const QString jid);

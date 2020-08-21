@@ -190,7 +190,7 @@ void Core::RosterHandler::removeContactRequest(const QString& jid)
 void Core::RosterHandler::handleNewRosterItem(Core::RosterItem* contact)
 {
     connect(contact, &RosterItem::needHistory, this->acc, &Account::onContactNeedHistory);
-    connect(contact, &RosterItem::historyResponse, this, &RosterHandler::onContactHistoryResponse);
+    connect(contact, &RosterItem::historyResponse, this->acc, &Account::onContactHistoryResponse);
     connect(contact, &RosterItem::nameChanged, this, &RosterHandler::onContactNameChanged);
     connect(contact, &RosterItem::avatarChanged, this, &RosterHandler::onContactAvatarChanged);
     connect(contact, &RosterItem::requestVCard, this->acc, &Account::requestVCard);
@@ -313,14 +313,6 @@ void Core::RosterHandler::removeFromGroup(const QString& jid, const QString& gro
             groups.erase(group);
         }
     }
-}
-
-void Core::RosterHandler::onContactHistoryResponse(const std::list<Shared::Message>& list)
-{
-    RosterItem* contact = static_cast<RosterItem*>(sender());
-    
-    qDebug() << "Collected history for contact " << contact->jid << list.size() << "elements";
-    emit acc->responseArchive(contact->jid, list);
 }
 
 Core::RosterItem * Core::RosterHandler::getRosterItem(const QString& jid)

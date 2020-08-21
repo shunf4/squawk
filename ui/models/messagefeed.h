@@ -53,7 +53,7 @@ public:
     void fetchMore(const QModelIndex & parent) override;
     QHash<int, QByteArray> roleNames() const override;
     
-    void responseArchive(const std::list<Shared::Message> list);
+    void responseArchive(const std::list<Shared::Message> list, bool last);
     
     unsigned int unreadMessagesCount() const;
     

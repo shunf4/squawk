@@ -86,7 +86,6 @@ private slots:
     void onContactGroupRemoved(const QString& group);
     void onContactNameChanged(const QString& name);
     void onContactSubscriptionStateChanged(Shared::SubscriptionState state);
-    void onContactHistoryResponse(const std::list<Shared::Message>& list);
     void onContactAvatarChanged(Shared::Avatar, const QString& path);
     
 private:

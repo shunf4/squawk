@@ -80,7 +80,7 @@ public:
     Account* getAccount(const QString& name);
     QModelIndex getAccountIndex(const QString& name);
     QModelIndex getGroupIndex(const QString& account, const QString& name);
-    void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list);
+    void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list, bool last);
     
     Accounts* accountsModel;
     

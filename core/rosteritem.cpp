@@ -122,7 +122,20 @@ void Core::RosterItem::nextRequest()
 {
     if (syncronizing) {
         if (requestedCount != -1) {
-            emit historyResponse(responseCache);
+            bool last = false;
+            if (archiveState == beginning || archiveState == complete) {
+                QString firstId = archive->oldestId();
+                if (responseCache.size() == 0) {
+                    if (requestedBefore == firstId) {
+                        last = true;
+                    }
+                } else {
+                    if (responseCache.front().getId() == firstId) {
+                        last = true;
+                    }
+                }
+            }
+            emit historyResponse(responseCache, last);
         }
     }
     if (requestCache.size() > 0) {
@@ -529,7 +542,7 @@ void Core::RosterItem::clearArchiveRequests()
     requestedBefore = "";
     for (const std::pair<int, QString>& pair : requestCache) {
         if (pair.first != -1) {
-            emit historyResponse(responseCache);        //just to notify those who still waits with whatever happened to be left in caches yet
+            emit historyResponse(responseCache, false);        //just to notify those who still waits with whatever happened to be left in caches yet
         }
         responseCache.clear();
     }

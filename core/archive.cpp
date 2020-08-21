@@ -502,8 +502,9 @@ long unsigned int Core::Archive::size() const
     mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
     MDB_stat stat;
     mdb_stat(txn, order, &stat);
+    size_t amount = stat.ms_entries;
     mdb_txn_abort(txn);
-    return stat.ms_entries;
+    return amount;
 }
 
 std::list<Shared::Message> Core::Archive::getBefore(int count, const QString& id)
@@ -603,10 +604,10 @@ void Core::Archive::setFromTheBeginning(bool is)
         MDB_txn *txn;
         mdb_txn_begin(environment, NULL, 0, &txn);
         bool success = setStatValue("beginning", is, txn);
-        if (success != 0) {
-            mdb_txn_abort(txn);
-        } else {
+        if (success) {
             mdb_txn_commit(txn);
+        } else {
+            mdb_txn_abort(txn);
         }
     }
 }

@@ -64,7 +64,7 @@ signals:
     void removePresence(const QString& account, const QString& jid, const QString& name);
     void stateChanged(Shared::Availability state);
     void accountMessage(const QString& account, const Shared::Message& data);
-    void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list);
+    void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list, bool last);
     void addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void changeRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void removeRoom(const QString& account, const QString jid);
@@ -146,7 +146,7 @@ private slots:
     void onAccountAddPresence(const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void onAccountRemovePresence(const QString& jid, const QString& name);
     void onAccountMessage(const Shared::Message& data);
-    void onAccountResponseArchive(const QString& jid, const std::list<Shared::Message>& list);
+    void onAccountResponseArchive(const QString& jid, const std::list<Shared::Message>& list, bool last);
     void onAccountAddRoom(const QString jid, const QMap<QString, QVariant>& data);
     void onAccountChangeRoom(const QString jid, const QMap<QString, QVariant>& data);
     void onAccountRemoveRoom(const QString jid);

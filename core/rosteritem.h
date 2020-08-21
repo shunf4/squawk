@@ -81,7 +81,7 @@ public:
 signals:
     void nameChanged(const QString& name);
     void subscriptionStateChanged(Shared::SubscriptionState state);
-    void historyResponse(const std::list<Shared::Message>& messages);
+    void historyResponse(const std::list<Shared::Message>& messages, bool last);
     void needHistory(const QString& before, const QString& after, const QDateTime& afterTime = QDateTime());
     void avatarChanged(Shared::Avatar, const QString& path);
     void requestVCard(const QString& jid);
