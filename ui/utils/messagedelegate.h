@@ -37,6 +37,7 @@ public:
     //void setModelData(QWidget * editor, QAbstractItemModel * model, const QModelIndex & index) const override;
     
     void initializeFonts(const QFont& font);
+    bool editorEvent(QEvent * event, QAbstractItemModel * model, const QStyleOptionViewItem & option, const QModelIndex & index) override;
     
 private:
     QFont bodyFont;

@@ -33,6 +33,9 @@ FeedView::FeedView(QWidget* parent):
 {
     horizontalScrollBar()->setRange(0, 0);
     verticalScrollBar()->setSingleStep(approximateSingleMessageHeight);
+    setMouseTracking(true);
+    setSelectionBehavior(SelectItems);
+//     viewport()->setAttribute(Qt::WA_Hover, true);
 }
 
 FeedView::~FeedView()
@@ -41,14 +44,12 @@ FeedView::~FeedView()
 
 QModelIndex FeedView::indexAt(const QPoint& point) const
 {
-    int32_t totalHeight = viewport()->height() + vo;
-    if (point.y() <= totalHeight) {                      //if it's bigger - someone wants to know the index below the feed beginning, it's invalid
-        uint32_t y = totalHeight - point.y();
-        
-        for (std::deque<Hint>::size_type i = 0; i < hints.size(); ++i) {
-            if (y > hints[i].offset) {
-                return model()->index(i - 1, 0, rootIndex());
-            }
+    int32_t vh = viewport()->height();
+    uint32_t y = vh - point.y() + vo;
+    
+    for (std::deque<Hint>::size_type i = 0; i < hints.size(); ++i) {
+        if (hints[i].offset >= y) {
+            return model()->index(i - 1, 0, rootIndex());
         }
     }
     
@@ -219,9 +220,11 @@ void FeedView::paintEvent(QPaintEvent* event)
     QPainter painter(vp);
     QStyleOptionViewItem option = viewOptions();
     option.features = QStyleOptionViewItem::WrapText;
+    QPoint cursor = vp->mapFromGlobal(QCursor::pos());
     
     for (const QModelIndex& index : toRener) {
         option.rect = visualRect(index);
+        option.state.setFlag(QStyle::State_MouseOver, option.rect.contains(cursor));
         itemDelegate(index)->paint(&painter, option, index);
     }
 }
@@ -232,6 +235,16 @@ void FeedView::verticalScrollbarValueChanged(int value)
     
     QAbstractItemView::verticalScrollbarValueChanged(vo);
 }
+
+void FeedView::mouseMoveEvent(QMouseEvent* event)
+{
+    if (!isVisible()) {
+        return;
+    }
+    
+    QAbstractItemView::mouseMoveEvent(event);
+}
+
 
 QFont FeedView::getFont() const
 {

@@ -72,7 +72,17 @@ public:
         DeliveryState,
         Correction,
         SentByMe,
-        Avatar
+        Avatar,
+        Attach,
+        Bulk
+    };
+    
+    enum Attachment {
+        none,
+        remote,
+        downloading,
+        uploading,
+        ready
     };
 private:
     enum SyncState {
@@ -80,6 +90,12 @@ private:
         syncing,
         complete
     };
+    struct Attach {
+        Attachment state;
+        qreal progress;
+        QString localPath;
+    };
+    
     //tags
     struct id {};
     struct time {};
@@ -118,6 +134,19 @@ private:
     
     static const QHash<int, QByteArray> roles;
 };
+
+struct FeedItem {
+    QString text;
+    QString sender;
+    QString avatar;
+    bool sentByMe;
+    bool correction;
+    QDateTime date;
+    Shared::Message::State state;
+    MessageFeed::Attachment attach;
 };
+};
+
+Q_DECLARE_METATYPE(Models::FeedItem);
 
 #endif // MESSAGEFEED_H

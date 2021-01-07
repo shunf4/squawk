@@ -29,7 +29,9 @@ const QHash<int, QByteArray> Models::MessageFeed::roles = {
     {DeliveryState, "deliveryState"},
     {Correction, "correction"},
     {SentByMe,"sentByMe"},
-    {Avatar, "avatar"}
+    {Avatar, "avatar"},
+    {Attach, "attach"},
+    {Bulk, "bulk"}
 };
 
 Models::MessageFeed::MessageFeed(const Element* ri, QObject* parent):
@@ -94,15 +96,11 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
                 answer = msg->getBody();
                 break;
             case Sender: 
-                if (rosterItem->isRoom()) {
-                    if (sentByMe(*msg)) {
-                        answer = rosterItem->getDisplayedName();
-                    } else {
-                        answer = msg->getFromResource();
-                    }
+                if (sentByMe(*msg)) {
+                    answer = rosterItem->getAccountName();
                 } else {
-                    if (sentByMe(*msg)) {
-                        answer = rosterItem->getAccountName();
+                    if (rosterItem->isRoom()) {
+                        answer = msg->getFromResource();
                     } else {
                         answer = rosterItem->getDisplayedName();
                     }
@@ -139,7 +137,38 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
                     answer = path;
                 }
             }
+            case Attach:
+                
                 break;
+            case Bulk: {
+                FeedItem item;
+                item.sentByMe = sentByMe(*msg);
+                item.date = msg->getTime();
+                item.state = msg->getState();
+                item.correction = msg->getEdited();
+                item.text = msg->getBody();
+                item.avatar.clear();
+                if (item.sentByMe) {
+                    item.sender = rosterItem->getAccountName();
+                    item.avatar = rosterItem->getAccountAvatarPath();
+                } else {
+                    if (rosterItem->isRoom()) {
+                        item.sender = msg->getFromResource();
+                        const Room* room = static_cast<const Room*>(rosterItem);
+                        item.avatar = room->getParticipantIconPath(msg->getFromResource());
+                    } else {
+                        item.sender = rosterItem->getDisplayedName();
+                        if (rosterItem->getAvatarState() != Shared::Avatar::empty) {
+                            item.avatar = rosterItem->getAvatarPath();
+                        }
+                    }
+                }
+                
+                if (item.avatar.size() == 0) {
+                    item.avatar = Shared::iconPath("user", true);
+                }
+                answer.setValue(item);
+            }
             default:
                 break;
         }

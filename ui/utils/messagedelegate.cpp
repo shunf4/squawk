@@ -16,8 +16,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <QDebug>
 #include <QPainter>
 #include <QApplication>
+
 #include "messagedelegate.h"
 #include "ui/models/messagefeed.h"
 
@@ -41,16 +43,21 @@ MessageDelegate::~MessageDelegate()
 
 void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-    bool sentByMe = false;
-    QVariant sbm = index.data(Models::MessageFeed::SentByMe);
-    if (sbm.isValid()) {
-        sentByMe = sbm.toBool();
+    QVariant vi = index.data(Models::MessageFeed::Bulk);
+    if (!vi.isValid()) {
+        return;
     }
+    Models::FeedItem data = qvariant_cast<Models::FeedItem>(vi);
     painter->save();
     painter->setRenderHint(QPainter::Antialiasing, true);
-    QIcon icon(index.data(Models::MessageFeed::Avatar).toString());
     
-    if (sentByMe) {
+    if (option.state & QStyle::State_MouseOver) {
+        painter->fillRect(option.rect, option.palette.brush(QPalette::Inactive, QPalette::Highlight));
+    }
+    
+    QIcon icon(data.avatar);
+    
+    if (data.sentByMe) {
         painter->drawPixmap(option.rect.width() - avatarHeight - margin,  option.rect.y() + margin / 2, icon.pixmap(avatarHeight, avatarHeight));
     } else {
         painter->drawPixmap(margin, option.rect.y() + margin / 2, icon.pixmap(avatarHeight, avatarHeight));
@@ -58,7 +65,7 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     
     QStyleOptionViewItem opt = option;
     QRect messageRect = option.rect.adjusted(margin, margin / 2, -(avatarHeight + 2 * margin), -margin / 2);
-    if (!sentByMe) {
+    if (!data.sentByMe) {
         opt.displayAlignment = Qt::AlignLeft | Qt::AlignTop;
         messageRect.adjust(avatarHeight + margin, 0, avatarHeight + margin, 0);
     } else {
@@ -66,27 +73,39 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     }
     opt.rect = messageRect;
     
+    QSize messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWordWrap, data.text).size();
+    messageSize.rheight() += nickMetrics.lineSpacing();
+    messageSize.rheight() += dateMetrics.height();
+    if (messageSize.width() < opt.rect.width()) {
+        QSize senderSize = nickMetrics.boundingRect(messageRect, 0, data.sender).size();
+        if (senderSize.width() > messageSize.width()) {
+            messageSize.setWidth(senderSize.width());
+        }
+    } else {
+        messageSize.setWidth(opt.rect.width());
+    }
+    
     QRect rect;
     painter->setFont(nickFont);
-    painter->drawText(opt.rect, opt.displayAlignment, index.data(Models::MessageFeed::Sender).toString(), &rect);
+    painter->drawText(opt.rect, opt.displayAlignment, data.sender, &rect);
     
     opt.rect.adjust(0, rect.height(), 0, 0);
     painter->setFont(bodyFont);
-    painter->drawText(opt.rect, opt.displayAlignment | Qt::TextWordWrap, index.data(Models::MessageFeed::Text).toString(), &rect);
+    painter->drawText(opt.rect, opt.displayAlignment | Qt::TextWordWrap, data.text, &rect);
     
     opt.rect.adjust(0, rect.height(), 0, 0);
     painter->setFont(dateFont);
     QColor q = painter->pen().color();
     q.setAlpha(180);
     painter->setPen(q);
-    painter->drawText(opt.rect, opt.displayAlignment, index.data(Models::MessageFeed::Date).toDateTime().toLocalTime().toString(), &rect);
+    painter->drawText(opt.rect, opt.displayAlignment, data.date.toLocalTime().toString(), &rect);
     
     painter->restore();
 }
 
 QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
-    QRect messageRect = option.rect.adjusted(0, margin / 2, -(avatarHeight + 3 * margin), -margin);
+    QRect messageRect = option.rect.adjusted(0, margin / 2, -(avatarHeight + 3 * margin), -margin / 2);
     QStyleOptionViewItem opt = option;
     opt.rect = messageRect;
     QSize messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWordWrap, index.data(Models::MessageFeed::Text).toString()).size();
@@ -121,6 +140,12 @@ void MessageDelegate::initializeFonts(const QFont& font)
     bodyMetrics = QFontMetrics(bodyFont);
     nickMetrics = QFontMetrics(nickFont);
     dateMetrics = QFontMetrics(dateFont);
+}
+
+bool MessageDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, const QStyleOptionViewItem& option, const QModelIndex& index)
+{
+    //qDebug() << event->type();
+    return QStyledItemDelegate::editorEvent(event, model, option, index);
 }
 
 

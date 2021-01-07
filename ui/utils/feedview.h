@@ -45,6 +45,8 @@ public:
     
     QFont getFont() const;
     
+public slots:
+    
 protected slots:
     void rowsInserted(const QModelIndex & parent, int start, int end) override;
     void verticalScrollbarValueChanged(int value) override;
@@ -54,6 +56,7 @@ protected:
     int horizontalOffset() const override;
     void paintEvent(QPaintEvent * event) override;
     void updateGeometries() override;
+    void mouseMoveEvent(QMouseEvent * event) override;
     
 private:
     bool tryToCalculateGeometriesWithNoScrollbars(const QStyleOptionViewItem& option, const QAbstractItemModel* model, uint32_t totalHeight);
