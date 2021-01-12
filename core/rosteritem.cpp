@@ -134,6 +134,8 @@ void Core::RosterItem::nextRequest()
                         last = true;
                     }
                 }
+            } else if (archiveState == empty && responseCache.size() == 0) {
+                last = true;
             }
             emit historyResponse(responseCache, last);
         }

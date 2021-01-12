@@ -137,8 +137,12 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
                     answer = path;
                 }
             }
-            case Attach:
+                break;
+            case Attach: {
+                ::Models::Attach att;
                 
+                answer.setValue(att);
+            }
                 break;
             case Bulk: {
                 FeedItem item;
@@ -169,6 +173,7 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
                 }
                 answer.setValue(item);
             }
+                break;
             default:
                 break;
         }
