@@ -40,7 +40,9 @@ Models::MessageFeed::MessageFeed(const Element* ri, QObject* parent):
     indexById(storage.get<id>()),
     indexByTime(storage.get<time>()),
     rosterItem(ri),
-    syncState(incomplete)
+    syncState(incomplete),
+    uploads(),
+    downloads()
 {
 }
 
@@ -138,11 +140,8 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
                 }
             }
                 break;
-            case Attach: {
-                ::Models::Attach att;
-                
-                answer.setValue(att);
-            }
+            case Attach: 
+                answer.setValue(fillAttach(*msg));
                 break;
             case Bulk: {
                 FeedItem item;
@@ -171,6 +170,7 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
                 if (item.avatar.size() == 0) {
                     item.avatar = Shared::iconPath("user", true);
                 }
+                item.attach = fillAttach(*msg);
                 answer.setValue(item);
             }
                 break;
@@ -245,4 +245,40 @@ bool Models::MessageFeed::sentByMe(const Shared::Message& msg) const
     } else {
         return msg.getOutgoing();
     }
+}
+
+Models::Attachment Models::MessageFeed::fillAttach(const Shared::Message& msg) const
+{
+    ::Models::Attachment att;
+    
+    att.localPath = msg.getAttachPath();
+    att.remotePath = msg.getOutOfBandUrl();
+    
+    if (att.remotePath.size() == 0) {
+        if (att.localPath.size() == 0) {
+            att.state = none;
+        } else {
+            Progress::const_iterator itr = uploads.find(msg.getId());
+            if (itr == uploads.end()) {
+                att.state = local;
+            } else {
+                att.state = uploading;
+                att.progress = itr->second;
+            }
+        }
+    } else {
+        if (att.localPath.size() == 0) {
+            Progress::const_iterator itr = downloads.find(msg.getId());
+            if (itr == downloads.end()) {
+                att.state = remote;
+            } else {
+                att.state = downloading;
+                att.progress = itr->second;
+            }
+        } else {
+            att.state = ready;
+        }
+    }
+    
+    return att;
 }

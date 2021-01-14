@@ -375,6 +375,10 @@ void Core::RosterItem::flushMessagesToArchive(bool finished, const QString& firs
                 archiveState = complete;
                 archive->setFromTheBeginning(true);
             }
+            if (added == 0 && wasEmpty) {
+                archiveState = empty;
+                break;
+            }
             if (requestedCount != -1) {
                 QString before;
                 if (responseCache.size() > 0) {

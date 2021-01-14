@@ -36,7 +36,8 @@ Shared::Message::Message(Shared::Message::Type p_type):
     errorText(),
     originalMessage(),
     lastModified(),
-    stanzaId()
+    stanzaId(),
+    attachPath()
     {}
 
 Shared::Message::Message():
@@ -56,7 +57,8 @@ Shared::Message::Message():
     errorText(),
     originalMessage(),
     lastModified(),
-    stanzaId()
+    stanzaId(),
+    attachPath()
     {}
 
 QString Shared::Message::getBody() const
@@ -311,6 +313,7 @@ void Shared::Message::serialize(QDataStream& data) const
         data << lastModified;
     }
     data << stanzaId;
+    data << attachPath;
 }
 
 void Shared::Message::deserialize(QDataStream& data)
@@ -341,6 +344,7 @@ void Shared::Message::deserialize(QDataStream& data)
         data >> lastModified;
     }
     data >> stanzaId;
+    data >> attachPath;
 }
 
 bool Shared::Message::change(const QMap<QString, QVariant>& data)
@@ -348,6 +352,16 @@ bool Shared::Message::change(const QMap<QString, QVariant>& data)
     QMap<QString, QVariant>::const_iterator itr = data.find("state");
     if (itr != data.end()) {
         setState(static_cast<State>(itr.value().toUInt()));
+    }
+    
+    itr = data.find("outOfBandUrl");
+    if (itr != data.end()) {
+        setOutOfBandUrl(itr.value().toString());
+    }
+    
+    itr = data.find("attachPath");
+    if (itr != data.end()) {
+        setAttachPath(itr.value().toString());
     }
     
     if (state == State::error) {
@@ -431,4 +445,14 @@ void Shared::Message::setStanzaId(const QString& sid)
 QString Shared::Message::getStanzaId() const
 {
     return stanzaId;
+}
+
+QString Shared::Message::getAttachPath() const
+{
+    return attachPath;
+}
+
+void Shared::Message::setAttachPath(const QString& path)
+{
+    attachPath = path;
 }

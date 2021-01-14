@@ -34,6 +34,7 @@
 
 namespace Models {
     class Element;
+    struct Attachment;
     
 class MessageFeed : public QAbstractListModel
 {
@@ -63,6 +64,7 @@ signals:
     
 protected:
     bool sentByMe(const Shared::Message& msg) const;
+    Attachment fillAttach(const Shared::Message& msg) const;
     
 public:
     enum MessageRoles {
@@ -120,21 +122,27 @@ private:
     const Element* rosterItem;
     SyncState syncState;
     
+    typedef std::map<QString, qreal> Progress;
+    Progress uploads;
+    Progress downloads;
+    
     static const QHash<int, QByteArray> roles;
 };
 
-enum Attachment {
+enum AttachmentType {
     none,
     remote,
+    local,
     downloading,
     uploading,
     ready
 };
 
-struct Attach {
-    Attachment state;
+struct Attachment {
+    AttachmentType state;
     qreal progress;
     QString localPath;
+    QString remotePath;
 };
 
 struct FeedItem {
@@ -145,11 +153,11 @@ struct FeedItem {
     bool correction;
     QDateTime date;
     Shared::Message::State state;
-    Attach attach;
+    Attachment attach;
 };
 };
 
-Q_DECLARE_METATYPE(Models::Attach);
+Q_DECLARE_METATYPE(Models::Attachment);
 Q_DECLARE_METATYPE(Models::FeedItem);
 
 #endif // MESSAGEFEED_H

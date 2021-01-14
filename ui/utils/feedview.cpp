@@ -191,7 +191,7 @@ bool FeedView::tryToCalculateGeometriesWithNoScrollbars(const QStyleOptionViewIt
 
 void FeedView::paintEvent(QPaintEvent* event)
 {
-    qDebug() << "paint" << event->rect();
+    //qDebug() << "paint" << event->rect();
     const QAbstractItemModel* m = model();
     QWidget* vp = viewport();
     QRect zone = event->rect().translated(0, -vo);

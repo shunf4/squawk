@@ -16,14 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef SHAPER_MESSAGE_H
+#define SHAPER_MESSAGE_H
+
 #include <QString>
 #include <QDateTime>
 #include <QVariant>
 #include <QMap>
 #include <QDataStream>
-
-#ifndef SHAPER_MESSAGE_H
-#define SHAPER_MESSAGE_H
 
 namespace Shared {
 
@@ -72,6 +72,7 @@ public:
     void setErrorText(const QString& err);
     bool change(const QMap<QString, QVariant>& data);
     void setStanzaId(const QString& sid);
+    void setAttachPath(const QString& path);
     
     QString getFrom() const;
     QString getFromJid() const;
@@ -100,6 +101,7 @@ public:
     QDateTime getLastModified() const;
     QString getOriginalBody() const;
     QString getStanzaId() const;
+    QString getAttachPath() const;
     
     void serialize(QDataStream& data) const;
     void deserialize(QDataStream& data);
@@ -123,6 +125,7 @@ private:
     QString originalMessage;
     QDateTime lastModified;
     QString stanzaId;
+    QString attachPath;
 };
 
 }

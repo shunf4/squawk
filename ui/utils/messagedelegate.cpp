@@ -33,12 +33,24 @@ nickFont(),
 dateFont(),
 bodyMetrics(bodyFont),
 nickMetrics(nickFont),
-dateMetrics(dateFont)
+dateMetrics(dateFont),
+downloadButton(new QPushButton()),
+uploadButton(new QPushButton())
 {
+    downloadButton->setText(tr("Download"));
+    uploadButton->setText(tr("Retry"));
+    
+    //this is done for the buttons to calculate their acual size for we are going to use them further
+    downloadButton->setAttribute(Qt::WA_DontShowOnScreen);
+    uploadButton->setAttribute(Qt::WA_DontShowOnScreen);
+    downloadButton->show();
+    uploadButton->show();
 }
 
 MessageDelegate::~MessageDelegate()
 {
+    delete uploadButton;
+    delete downloadButton;
 }
 
 void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
@@ -89,7 +101,38 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     painter->setFont(nickFont);
     painter->drawText(opt.rect, opt.displayAlignment, data.sender, &rect);
     
+    
     opt.rect.adjust(0, rect.height(), 0, 0);
+    painter->save();
+    switch (data.attach.state) {
+        case Models::none:
+            break;
+        case Models::uploading:
+        case Models::downloading:
+            break;
+        case Models::remote:
+            if (data.sentByMe) {
+                painter->translate(option.rect.width() - avatarHeight - margin * 2 - downloadButton->width(), opt.rect.top());
+            } else {
+                painter->translate(opt.rect.topLeft());
+            }
+            downloadButton->render(painter, QPoint(), QRegion(), QWidget::DrawChildren);
+            opt.rect.adjust(0, downloadButton->height(), 0, 0);
+            break;
+        case Models::local:
+            if (data.sentByMe) {
+                painter->translate(option.rect.width() - avatarHeight - margin * 2 - uploadButton->width(), opt.rect.top());
+            } else {
+                painter->translate(opt.rect.topLeft());
+            }
+            uploadButton->render(painter, QPoint(), QRegion(), QWidget::DrawChildren);
+            opt.rect.adjust(0, uploadButton->height(), 0, 0);
+            break;
+        case Models::ready:
+            break;
+    }
+    painter->restore();
+    
     painter->setFont(bodyFont);
     painter->drawText(opt.rect, opt.displayAlignment | Qt::TextWordWrap, data.text, &rect);
     
@@ -108,7 +151,23 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
     QRect messageRect = option.rect.adjusted(0, margin / 2, -(avatarHeight + 3 * margin), -margin / 2);
     QStyleOptionViewItem opt = option;
     opt.rect = messageRect;
+    QVariant va = index.data(Models::MessageFeed::Attach);
+    Models::Attachment attach = qvariant_cast<Models::Attachment>(va);
     QSize messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWordWrap, index.data(Models::MessageFeed::Text).toString()).size();
+    
+    switch (attach.state) {
+        case Models::none:
+            break;
+        case Models::uploading:
+        case Models::downloading:
+            break;
+        case Models::remote:
+        case Models::local:
+            messageSize.rheight() += downloadButton->height();
+            break;
+        case Models::ready:
+            break;
+    }
     
     messageSize.rheight() += nickMetrics.lineSpacing();
     messageSize.rheight() += dateMetrics.height();

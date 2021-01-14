@@ -22,6 +22,7 @@
 #include <QStyledItemDelegate>
 #include <QFont>
 #include <QFontMetrics>
+#include <QPushButton>
 
 #include "shared/icons.h"
 
@@ -46,6 +47,9 @@ private:
     QFontMetrics bodyMetrics;
     QFontMetrics nickMetrics;
     QFontMetrics dateMetrics;
+    
+    QPushButton* downloadButton;
+    QPushButton* uploadButton;
 };
 
 #endif // MESSAGEDELEGATE_H
