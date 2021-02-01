@@ -31,6 +31,7 @@ const QHash<int, QByteArray> Models::MessageFeed::roles = {
     {SentByMe,"sentByMe"},
     {Avatar, "avatar"},
     {Attach, "attach"},
+    {Id, "id"},
     {Bulk, "bulk"}
 };
 
@@ -94,8 +95,12 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
         
         switch (role) {
             case Qt::DisplayRole:
-            case Text: 
-                answer = msg->getBody();
+            case Text: {
+                QString body = msg->getBody();
+                if (body != msg->getOutOfBandUrl()) {
+                    answer = body;
+                }
+            }
                 break;
             case Sender: 
                 if (sentByMe(*msg)) {
@@ -143,13 +148,22 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
             case Attach: 
                 answer.setValue(fillAttach(*msg));
                 break;
+            case Id: 
+                answer.setValue(msg->getId());
+                break;
             case Bulk: {
                 FeedItem item;
+                item.id = msg->getId();
                 item.sentByMe = sentByMe(*msg);
                 item.date = msg->getTime();
                 item.state = msg->getState();
                 item.correction = msg->getEdited();
-                item.text = msg->getBody();
+                
+                QString body = msg->getBody();
+                if (body != msg->getOutOfBandUrl()) {
+                    item.text = body;
+                }
+                
                 item.avatar.clear();
                 if (item.sentByMe) {
                     item.sender = rosterItem->getAccountName();

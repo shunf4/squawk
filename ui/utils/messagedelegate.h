@@ -19,12 +19,20 @@
 #ifndef MESSAGEDELEGATE_H
 #define MESSAGEDELEGATE_H
 
+#include <map>
+#include <set>
+
 #include <QStyledItemDelegate>
+#include <QStyleOptionButton>
 #include <QFont>
 #include <QFontMetrics>
 #include <QPushButton>
 
 #include "shared/icons.h"
+
+namespace Models {
+    struct FeedItem;
+};
 
 class MessageDelegate : public QStyledItemDelegate
 {
@@ -39,8 +47,20 @@ public:
     
     void initializeFonts(const QFont& font);
     bool editorEvent(QEvent * event, QAbstractItemModel * model, const QStyleOptionViewItem & option, const QModelIndex & index) override;
+    void endClearWidgets();
+    void beginClearWidgets();
+    
+protected:
+    void paintButton(QPushButton* btn, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const;
+    QPushButton* getButton(const Models::FeedItem& data) const;
     
 private:
+    class FeedButton : public QPushButton {
+    public:
+        QString messageId;
+        bool download;
+    };
+    
     QFont bodyFont;
     QFont nickFont;
     QFont dateFont;
@@ -48,8 +68,11 @@ private:
     QFontMetrics nickMetrics;
     QFontMetrics dateMetrics;
     
-    QPushButton* downloadButton;
-    QPushButton* uploadButton;
+    int buttonHeight;
+    
+    std::map<QString, FeedButton*>* buttons;
+    std::set<QString>* idsToKeep;
+    bool clearingWidgets;
 };
 
 #endif // MESSAGEDELEGATE_H

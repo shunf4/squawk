@@ -23,13 +23,17 @@
 #include <QScrollBar>
 #include <QDebug>
 
+#include "messagedelegate.h"
+
 constexpr int maxMessageHeight = 10000;
 constexpr int approximateSingleMessageHeight = 20;
 
 FeedView::FeedView(QWidget* parent):
     QAbstractItemView(parent),
     hints(),
-    vo(0)
+    vo(0),
+    specialDelegate(false),
+    clearWidgetsMode(false)
 {
     horizontalScrollBar()->setRange(0, 0);
     verticalScrollBar()->setSingleStep(approximateSingleMessageHeight);
@@ -163,6 +167,10 @@ void FeedView::updateGeometries()
         bar->setPageStep(layoutBounds.height());
         bar->setValue(previousOffset - layoutBounds.height() - vo);
     }
+    
+    if (specialDelegate) {
+        clearWidgetsMode = true;
+    }
 }
 
 bool FeedView::tryToCalculateGeometriesWithNoScrollbars(const QStyleOptionViewItem& option, const QAbstractItemModel* m, uint32_t totalHeight)
@@ -222,16 +230,31 @@ void FeedView::paintEvent(QPaintEvent* event)
     option.features = QStyleOptionViewItem::WrapText;
     QPoint cursor = vp->mapFromGlobal(QCursor::pos());
     
+    if (clearWidgetsMode && specialDelegate) {
+        MessageDelegate* del = dynamic_cast<MessageDelegate*>(itemDelegate());
+        del->beginClearWidgets();
+    }
+    
     for (const QModelIndex& index : toRener) {
         option.rect = visualRect(index);
         option.state.setFlag(QStyle::State_MouseOver, option.rect.contains(cursor));
         itemDelegate(index)->paint(&painter, option, index);
+    }
+    
+    if (clearWidgetsMode && specialDelegate) {
+        MessageDelegate* del = dynamic_cast<MessageDelegate*>(itemDelegate());
+        del->endClearWidgets();
+        clearWidgetsMode = false;
     }
 }
 
 void FeedView::verticalScrollbarValueChanged(int value)
 {
     vo = verticalScrollBar()->maximum() - value;
+    
+    if (specialDelegate) {
+        clearWidgetsMode = true;
+    }
     
     QAbstractItemView::verticalScrollbarValueChanged(vo);
 }
@@ -249,4 +272,16 @@ void FeedView::mouseMoveEvent(QMouseEvent* event)
 QFont FeedView::getFont() const
 {
     return viewOptions().font;
+}
+
+void FeedView::setItemDelegate(QAbstractItemDelegate* delegate)
+{
+    QAbstractItemView::setItemDelegate(delegate);
+    
+    MessageDelegate* del = dynamic_cast<MessageDelegate*>(delegate);
+    if (del) {
+        specialDelegate = true;
+    } else {
+        specialDelegate = false;
+    }
 }

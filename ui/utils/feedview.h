@@ -42,6 +42,7 @@ public:
     QModelIndex moveCursor(QAbstractItemView::CursorAction cursorAction, Qt::KeyboardModifiers modifiers) override;
     void setSelection(const QRect & rect, QItemSelectionModel::SelectionFlags command) override;
     QRegion visualRegionForSelection(const QItemSelection & selection) const override;
+    void setItemDelegate(QAbstractItemDelegate* delegate);
     
     QFont getFont() const;
     
@@ -69,6 +70,8 @@ private:
     };
     std::deque<Hint> hints;
     int vo;
+    bool specialDelegate;
+    bool clearWidgetsMode;
     
 };
 

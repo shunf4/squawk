@@ -76,6 +76,7 @@ public:
         SentByMe,
         Avatar,
         Attach,
+        Id,
         Bulk
     };
     
@@ -146,6 +147,7 @@ struct Attachment {
 };
 
 struct FeedItem {
+    QString id;
     QString text;
     QString sender;
     QString avatar;

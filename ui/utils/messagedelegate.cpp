@@ -19,6 +19,7 @@
 #include <QDebug>
 #include <QPainter>
 #include <QApplication>
+#include <QMouseEvent>
 
 #include "messagedelegate.h"
 #include "ui/models/messagefeed.h"
@@ -34,23 +35,23 @@ dateFont(),
 bodyMetrics(bodyFont),
 nickMetrics(nickFont),
 dateMetrics(dateFont),
-downloadButton(new QPushButton()),
-uploadButton(new QPushButton())
+buttonHeight(0),
+buttons(new std::map<QString, FeedButton*>()),
+idsToKeep(new std::set<QString>()),
+clearingWidgets(false)
 {
-    downloadButton->setText(tr("Download"));
-    uploadButton->setText(tr("Retry"));
-    
-    //this is done for the buttons to calculate their acual size for we are going to use them further
-    downloadButton->setAttribute(Qt::WA_DontShowOnScreen);
-    uploadButton->setAttribute(Qt::WA_DontShowOnScreen);
-    downloadButton->show();
-    uploadButton->show();
+    QPushButton btn;
+    buttonHeight = btn.sizeHint().height();
 }
 
 MessageDelegate::~MessageDelegate()
 {
-    delete uploadButton;
-    delete downloadButton;
+    for (const std::pair<const QString, FeedButton*>& pair: *buttons){
+        delete pair.second;
+    }
+    
+    delete idsToKeep;
+    delete buttons;
 }
 
 void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
@@ -85,7 +86,10 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     }
     opt.rect = messageRect;
     
-    QSize messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWordWrap, data.text).size();
+    QSize messageSize(0, 0);
+    if (data.text.size() > 0) {
+        messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWordWrap, data.text).size();
+    }
     messageSize.rheight() += nickMetrics.lineSpacing();
     messageSize.rheight() += dateMetrics.height();
     if (messageSize.width() < opt.rect.width()) {
@@ -111,32 +115,19 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
         case Models::downloading:
             break;
         case Models::remote:
-            if (data.sentByMe) {
-                painter->translate(option.rect.width() - avatarHeight - margin * 2 - downloadButton->width(), opt.rect.top());
-            } else {
-                painter->translate(opt.rect.topLeft());
-            }
-            downloadButton->render(painter, QPoint(), QRegion(), QWidget::DrawChildren);
-            opt.rect.adjust(0, downloadButton->height(), 0, 0);
-            break;
         case Models::local:
-            if (data.sentByMe) {
-                painter->translate(option.rect.width() - avatarHeight - margin * 2 - uploadButton->width(), opt.rect.top());
-            } else {
-                painter->translate(opt.rect.topLeft());
-            }
-            uploadButton->render(painter, QPoint(), QRegion(), QWidget::DrawChildren);
-            opt.rect.adjust(0, uploadButton->height(), 0, 0);
+            paintButton(getButton(data), painter, data.sentByMe, opt);
             break;
         case Models::ready:
             break;
     }
     painter->restore();
     
-    painter->setFont(bodyFont);
-    painter->drawText(opt.rect, opt.displayAlignment | Qt::TextWordWrap, data.text, &rect);
-    
-    opt.rect.adjust(0, rect.height(), 0, 0);
+    if (data.text.size() > 0) {
+        painter->setFont(bodyFont);
+        painter->drawText(opt.rect, opt.displayAlignment | Qt::TextWordWrap, data.text, &rect);
+        opt.rect.adjust(0, rect.height(), 0, 0);
+    }
     painter->setFont(dateFont);
     QColor q = painter->pen().color();
     q.setAlpha(180);
@@ -144,6 +135,10 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     painter->drawText(opt.rect, opt.displayAlignment, data.date.toLocalTime().toString(), &rect);
     
     painter->restore();
+    
+    if (clearingWidgets) {
+        idsToKeep->insert(data.id);
+    }
 }
 
 QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
@@ -153,7 +148,11 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
     opt.rect = messageRect;
     QVariant va = index.data(Models::MessageFeed::Attach);
     Models::Attachment attach = qvariant_cast<Models::Attachment>(va);
-    QSize messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWordWrap, index.data(Models::MessageFeed::Text).toString()).size();
+    QString body = index.data(Models::MessageFeed::Text).toString();
+    QSize messageSize(0, 0);
+    if (body.size() > 0) {
+        messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWordWrap, body).size();
+    }
     
     switch (attach.state) {
         case Models::none:
@@ -163,7 +162,7 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
             break;
         case Models::remote:
         case Models::local:
-            messageSize.rheight() += downloadButton->height();
+            messageSize.rheight() += buttonHeight;
             break;
         case Models::ready:
             break;
@@ -204,7 +203,86 @@ void MessageDelegate::initializeFonts(const QFont& font)
 bool MessageDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, const QStyleOptionViewItem& option, const QModelIndex& index)
 {
     //qDebug() << event->type();
+    
+    
     return QStyledItemDelegate::editorEvent(event, model, option, index);
+}
+
+void MessageDelegate::paintButton(QPushButton* btn, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const
+{
+    QPoint start;
+    if (sentByMe) {
+        start = {option.rect.width() - btn->width(), option.rect.top()};
+    } else {
+        start = option.rect.topLeft();
+    }
+    
+    QWidget* vp = static_cast<QWidget*>(painter->device());
+    btn->setParent(vp);
+    btn->move(start);
+    btn->show();
+    
+    option.rect.adjust(0, buttonHeight, 0, 0);
+}
+
+
+QPushButton * MessageDelegate::getButton(const Models::FeedItem& data) const
+{
+    std::map<QString, FeedButton*>::const_iterator itr = buttons->find(data.id);
+    FeedButton* result = 0;
+    if (itr != buttons->end()) {
+        if (
+            (data.attach.state == Models::remote && itr->second->download) ||
+            (data.attach.state == Models::local && !itr->second->download)
+        ) {
+            result = itr->second;
+        } else {
+            delete itr->second;
+            buttons->erase(itr);
+        }
+    }
+    
+    if (result == 0) {
+        result = new FeedButton();
+        result->messageId = data.id;
+        if (data.attach.state == Models::remote) {
+            result->setText(QCoreApplication::translate("MessageLine", "Download"));
+            result->download = true;
+        } else {
+            result->setText(QCoreApplication::translate("MessageLine", "Upload"));
+            result->download = false;
+        }
+        buttons->insert(std::make_pair(data.id, result));
+    }
+    
+    return result;
+}
+
+
+void MessageDelegate::beginClearWidgets()
+{
+    idsToKeep->clear();
+    clearingWidgets = true;
+}
+
+void MessageDelegate::endClearWidgets()
+{
+    if (clearingWidgets) {
+        std::set<QString> toRemove;
+        for (const std::pair<const QString, FeedButton*>& pair: *buttons){
+            if (idsToKeep->find(pair.first) == idsToKeep->end()) {
+                delete pair.second;
+                toRemove.insert(pair.first);
+            }
+        }
+        
+        for (const QString& key : toRemove) {
+            buttons->erase(key);
+        }
+        
+        idsToKeep->clear();
+        clearingWidgets = false;
+    }
 }
 
 
