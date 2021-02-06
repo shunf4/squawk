@@ -43,6 +43,7 @@ public:
     void setSelection(const QRect & rect, QItemSelectionModel::SelectionFlags command) override;
     QRegion visualRegionForSelection(const QItemSelection & selection) const override;
     void setItemDelegate(QAbstractItemDelegate* delegate);
+    void setModel(QAbstractItemModel * model) override;
     
     QFont getFont() const;
     
@@ -51,6 +52,7 @@ public slots:
 protected slots:
     void rowsInserted(const QModelIndex & parent, int start, int end) override;
     void verticalScrollbarValueChanged(int value) override;
+    void onMessageButtonPushed(const QString& messageId, bool download);
     
 protected:
     int verticalOffset() const override;
@@ -71,6 +73,7 @@ private:
     std::deque<Hint> hints;
     int vo;
     bool specialDelegate;
+    bool specialModel;
     bool clearWidgetsMode;
     
 };

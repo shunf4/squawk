@@ -253,6 +253,7 @@ QPushButton * MessageDelegate::getButton(const Models::FeedItem& data) const
             result->download = false;
         }
         buttons->insert(std::make_pair(data.id, result));
+        connect(result, &QPushButton::clicked, this, &MessageDelegate::onButtonPushed);
     }
     
     return result;
@@ -285,6 +286,11 @@ void MessageDelegate::endClearWidgets()
     }
 }
 
+void MessageDelegate::onButtonPushed() const
+{
+    FeedButton* btn = static_cast<FeedButton*>(sender());
+    emit buttonPushed(btn->messageId, btn->download);
+}
 
 // void MessageDelegate::setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const
 // {

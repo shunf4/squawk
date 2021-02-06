@@ -296,3 +296,13 @@ Models::Attachment Models::MessageFeed::fillAttach(const Shared::Message& msg) c
     
     return att;
 }
+
+void Models::MessageFeed::downloadAttachment(const QString& messageId)
+{
+    qDebug() << "request to download attachment of the message" << messageId;
+}
+
+void Models::MessageFeed::uploadAttachment(const QString& messageId)
+{
+    qDebug() << "request to upload attachment of the message" << messageId;
+}

@@ -50,9 +50,15 @@ public:
     void endClearWidgets();
     void beginClearWidgets();
     
+signals:
+    void buttonPushed(const QString& messageId, bool download) const;
+    
 protected:
     void paintButton(QPushButton* btn, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const;
     QPushButton* getButton(const Models::FeedItem& data) const;
+    
+protected slots:
+    void onButtonPushed() const;
     
 private:
     class FeedButton : public QPushButton {

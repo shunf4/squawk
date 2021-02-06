@@ -55,6 +55,8 @@ public:
     QHash<int, QByteArray> roleNames() const override;
     
     void responseArchive(const std::list<Shared::Message> list, bool last);
+    void downloadAttachment(const QString& messageId);
+    void uploadAttachment(const QString& messageId);
     
     unsigned int unreadMessagesCount() const;
     

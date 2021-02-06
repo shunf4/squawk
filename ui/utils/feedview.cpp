@@ -24,6 +24,7 @@
 #include <QDebug>
 
 #include "messagedelegate.h"
+#include "ui/models/messagefeed.h"
 
 constexpr int maxMessageHeight = 10000;
 constexpr int approximateSingleMessageHeight = 20;
@@ -33,6 +34,7 @@ FeedView::FeedView(QWidget* parent):
     hints(),
     vo(0),
     specialDelegate(false),
+    specialModel(false),
     clearWidgetsMode(false)
 {
     horizontalScrollBar()->setRange(0, 0);
@@ -231,7 +233,7 @@ void FeedView::paintEvent(QPaintEvent* event)
     QPoint cursor = vp->mapFromGlobal(QCursor::pos());
     
     if (clearWidgetsMode && specialDelegate) {
-        MessageDelegate* del = dynamic_cast<MessageDelegate*>(itemDelegate());
+        MessageDelegate* del = static_cast<MessageDelegate*>(itemDelegate());
         del->beginClearWidgets();
     }
     
@@ -242,7 +244,7 @@ void FeedView::paintEvent(QPaintEvent* event)
     }
     
     if (clearWidgetsMode && specialDelegate) {
-        MessageDelegate* del = dynamic_cast<MessageDelegate*>(itemDelegate());
+        MessageDelegate* del = static_cast<MessageDelegate*>(itemDelegate());
         del->endClearWidgets();
         clearWidgetsMode = false;
     }
@@ -276,12 +278,43 @@ QFont FeedView::getFont() const
 
 void FeedView::setItemDelegate(QAbstractItemDelegate* delegate)
 {
+    if (specialDelegate) {
+        MessageDelegate* del = static_cast<MessageDelegate*>(itemDelegate());
+        disconnect(del, &MessageDelegate::buttonPushed, this, &FeedView::onMessageButtonPushed);
+    }
+    
     QAbstractItemView::setItemDelegate(delegate);
     
     MessageDelegate* del = dynamic_cast<MessageDelegate*>(delegate);
     if (del) {
         specialDelegate = true;
+        connect(del, &MessageDelegate::buttonPushed, this, &FeedView::onMessageButtonPushed);
     } else {
         specialDelegate = false;
+    }
+}
+
+void FeedView::setModel(QAbstractItemModel* model)
+{
+    QAbstractItemView::setModel(model);
+    
+    Models::MessageFeed* feed = dynamic_cast<Models::MessageFeed*>(model);
+    if (feed) {
+        specialModel = true;
+    } else {
+        specialModel = false;
+    }
+}
+
+void FeedView::onMessageButtonPushed(const QString& messageId, bool download)
+{
+    if (specialModel) {
+        Models::MessageFeed* feed = static_cast<Models::MessageFeed*>(model());
+        
+        if (download) {
+            feed->downloadAttachment(messageId);
+        } else {
+            feed->uploadAttachment(messageId);
+        }
     }
 }
