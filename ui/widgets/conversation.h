@@ -30,7 +30,6 @@
 #include "ui/models/account.h"
 #include "ui/models/roster.h"
 #include "ui/utils/messageline.h"
-#include "ui/utils/resizer.h"
 #include "ui/utils/flowlayout.h"
 #include "ui/utils/badge.h"
 #include "ui/utils/feedview.h"
@@ -56,19 +55,6 @@ signals:
     void enterPressed();
 };
 
-class VisibilityCatcher : public QObject {
-    Q_OBJECT
-public:
-    VisibilityCatcher(QWidget* parent = nullptr);
-    
-protected:
-    bool eventFilter(QObject* obj, QEvent* event) override;
-
-signals:
-    void hidden();
-    void shown();
-};
-
 class Conversation : public QWidget
 {
     Q_OBJECT
@@ -82,7 +68,6 @@ public:
     Models::Roster::ElId getId() const;
     
     void setPalResource(const QString& res);
-    void responseArchive(const std::list<Shared::Message> list);
     void showEvent(QShowEvent * event) override;
     void responseLocalFile(const QString& messageId, const QString& path);
     void fileError(const QString& messageId, const QString& error);
@@ -90,11 +75,9 @@ public:
     virtual void setAvatar(const QString& path);
     void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     void setFeedFrames(bool top, bool right, bool bottom, bool left);
-    virtual void appendMessageWithUpload(const Shared::Message& data, const QString& path);
     
 signals:
     void sendMessage(const Shared::Message& message);
-    void sendMessage(const Shared::Message& message, const QString& path);
     void requestArchive(const QString& before);
     void shown();
     void requestLocalFile(const QString& messageId, const QString& url);
@@ -114,8 +97,6 @@ protected:
     
 protected slots:
     void onEnterPressed();
-    void onMessagesResize(int amount);
-    void onSliderValueChanged(int value);
     void onAttach();
     void onFileSelected();
     void onScrollResize();
@@ -139,8 +120,6 @@ protected:
     QString activePalResource;
     QScopedPointer<Ui::Conversation> m_ui;
     KeyEnterReceiver ker;
-    Resizer scrollResizeCatcher;
-    VisibilityCatcher vis;
     QString thread;
     QLabel* statusIcon;
     QLabel* statusLabel;

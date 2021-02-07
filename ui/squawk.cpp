@@ -578,31 +578,20 @@ void Squawk::notify(const QString& account, const Shared::Message& msg)
 void Squawk::onConversationMessage(const Shared::Message& msg)
 {
     Conversation* conv = static_cast<Conversation*>(sender());
-    emit sendMessage(conv->getAccount(), msg);
     Models::Roster::ElId id = conv->getId();
     
     rosterModel.addMessage(conv->getAccount(), msg);
-}
-
-void Squawk::onConversationMessage(const Shared::Message& msg, const QString& path)
-{
-    Conversation* conv = static_cast<Conversation*>(sender());
-    Models::Roster::ElId id = conv->getId();
-    std::map<QString, std::set<Models::Roster::ElId>>::iterator itr = requestedFiles.insert(std::make_pair(msg.getId(), std::set<Models::Roster::ElId>())).first;
-    itr->second.insert(id);
     
-    if (currentConversation != 0 && currentConversation->getId() == id) {
-        if (conv == currentConversation) {
-            Conversations::iterator itr = conversations.find(id);
-            if (itr != conversations.end()) {
-                itr->second->appendMessageWithUpload(msg, path);
-            }
-        } else {
-            currentConversation->appendMessageWithUpload(msg, path);
-        }
+    QString ap = msg.getAttachPath();
+    QString oob = msg.getOutOfBandUrl();
+    if ((ap.size() > 0 && oob.size() == 0) || (ap.size() == 0 && oob.size() > 0)) {
+        std::map<QString, std::set<Models::Roster::ElId>>::iterator itr = requestedFiles.insert(std::make_pair(msg.getId(), std::set<Models::Roster::ElId>())).first;
+        itr->second.insert(id);
+        
+        //TODO can also start downloading here if someone attached the message with the remote url
     }
     
-    emit sendMessage(conv->getAccount(), msg, path);
+    emit sendMessage(conv->getAccount(), msg);
 }
 
 void Squawk::onConversationRequestArchive(const QString& account, const QString& jid, const QString& before)
@@ -1052,9 +1041,7 @@ void Squawk::onPasswordPromptRejected()
 void Squawk::subscribeConversation(Conversation* conv)
 {
     connect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
-    connect(conv, qOverload<const Shared::Message&>(&Conversation::sendMessage), this, qOverload<const Shared::Message&>(&Squawk::onConversationMessage));
-    connect(conv, qOverload<const Shared::Message&, const QString&>(&Conversation::sendMessage), 
-            this, qOverload<const Shared::Message&, const QString&>(&Squawk::onConversationMessage));
+    connect(conv, &Conversation::sendMessage, this, &Squawk::onConversationMessage);
     connect(conv, &Conversation::requestLocalFile, this, &Squawk::onConversationRequestLocalFile);
     connect(conv, &Conversation::downloadFile, this, &Squawk::onConversationDownloadFile);
 }

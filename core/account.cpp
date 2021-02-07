@@ -402,9 +402,6 @@ QString Core::Account::getFullJid() const {
 void Core::Account::sendMessage(const Shared::Message& data) {
     mh->sendMessage(data);}
 
-void Core::Account::sendMessage(const Shared::Message& data, const QString& path) {
-    mh->sendMessage(data, path);}
-
 void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMessage& msg)
 {
     if (msg.id().size() > 0 && (msg.body().size() > 0 || msg.outOfBandUrl().size() > 0)) {

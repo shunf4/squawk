@@ -232,7 +232,16 @@ void Core::MessageHandler::onReceiptReceived(const QString& jid, const QString& 
     }
 }
 
-void Core::MessageHandler::sendMessage(Shared::Message data)
+void Core::MessageHandler::sendMessage(const Shared::Message& data)
+{
+    if (data.getOutOfBandUrl().size() == 0 && data.getAttachPath().size() > 0) {
+        prepareUpload(data);
+    } else {
+        performSending(data);
+    }
+}
+
+void Core::MessageHandler::performSending(Shared::Message data)
 {
     QString jid = data.getPenPalJid();
     QString id = data.getId();
@@ -275,9 +284,10 @@ void Core::MessageHandler::sendMessage(Shared::Message data)
     });
 }
 
-void Core::MessageHandler::sendMessage(const Shared::Message& data, const QString& path)
+void Core::MessageHandler::prepareUpload(const Shared::Message& data)
 {
     if (acc->state == Shared::ConnectionState::connected) {
+        QString path = data.getAttachPath();
         QString url = acc->network->getFileRemoteUrl(path);
         if (url.size() != 0) {
             sendMessageWithLocalUploadedFile(data, url);
@@ -366,6 +376,6 @@ void Core::MessageHandler::sendMessageWithLocalUploadedFile(Shared::Message msg,
     if (msg.getBody().size() == 0) {
         msg.setBody(url);
     }
-    sendMessage(msg);
+    performSending(msg);
     //TODO removal/progress update
 }

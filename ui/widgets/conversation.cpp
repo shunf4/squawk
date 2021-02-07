@@ -37,8 +37,6 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     activePalResource(pRes),
     m_ui(new Ui::Conversation()),
     ker(),
-    scrollResizeCatcher(),
-    vis(),
     thread(),
     statusIcon(0),
     statusLabel(0),
@@ -69,11 +67,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     statusLabel = m_ui->statusLabel;
     
     connect(&ker, &KeyEnterReceiver::enterPressed, this, &Conversation::onEnterPressed);
-    connect(&scrollResizeCatcher, &Resizer::resized, this, &Conversation::onScrollResize);
-    connect(&vis, &VisibilityCatcher::shown, this, &Conversation::onScrollResize);
-    connect(&vis, &VisibilityCatcher::hidden, this, &Conversation::onScrollResize);
     connect(m_ui->sendButton, &QPushButton::clicked, this, &Conversation::onEnterPressed);
-    //connect(line, &MessageLine::resize, this, &Conversation::onMessagesResize);
     //connect(line, &MessageLine::downloadFile, this, &Conversation::downloadFile);
     //connect(line, &MessageLine::uploadFile, this, qOverload<const Shared::Message&, const QString&>(&Conversation::sendMessage));
     //connect(line, &MessageLine::requestLocalFile, this, &Conversation::requestLocalFile);
@@ -95,7 +89,6 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
         //m_ui->scrollArea->setBackgroundRole(QPalette::Base);
     //}
     
-    //connect(vs, &QScrollBar::valueChanged, this, &Conversation::onSliderValueChanged);
     //m_ui->scrollArea->installEventFilter(&scrollResizeCatcher);
     
     //line->setMyAvatarPath(acc->getAvatarPath());
@@ -221,76 +214,16 @@ void Conversation::onEnterPressed()
         m_ui->messageEditor->clear();
         Shared::Message msg = createMessage();
         msg.setBody(body);
-        //addMessage(msg);
         emit sendMessage(msg);
     }
     if (filesToAttach.size() > 0) {
-//         for (Badge* badge : filesToAttach) {
-//             Shared::Message msg = createMessage();
-//             line->appendMessageWithUpload(msg, badge->id);
-//             usleep(1000);       //this is required for the messages not to have equal time when appending into messageline
-//         }
-//         clearAttachedFiles();
+        for (Badge* badge : filesToAttach) {
+            Shared::Message msg = createMessage();
+            msg.setAttachPath(badge->id);
+            emit sendMessage(msg);
+        }
+         clearAttachedFiles();
     }
-}
-
-void Conversation::appendMessageWithUpload(const Shared::Message& data, const QString& path)
-{
-//     line->appendMessageWithUploadNoSiganl(data, path);
-}
-
-void Conversation::onMessagesResize(int amount)
-{
-//     manualSliderChange = true;
-//     switch (scroll) {
-//         case down:
-//             m_ui->scrollArea->verticalScrollBar()->setValue(m_ui->scrollArea->verticalScrollBar()->maximum());
-//             break;
-//         case keep: {
-//             int max = m_ui->scrollArea->verticalScrollBar()->maximum();
-//             int value = m_ui->scrollArea->verticalScrollBar()->value() + amount;
-//             m_ui->scrollArea->verticalScrollBar()->setValue(value);
-//             
-//             if (value == max) {
-//                 scroll = down;
-//             } else {
-//                 scroll = nothing;
-//             }
-//         }
-//             break;
-//         default:
-//             break;
-//     }
-//     manualSliderChange = false;
-}
-
-void Conversation::onSliderValueChanged(int value)
-{
-//     if (!manualSliderChange) {
-//         if (value == m_ui->scrollArea->verticalScrollBar()->maximum()) {
-//             scroll = down;
-//         } else {
-//             if (!requestingHistory && value == 0) {
-//                 requestingHistory = true;
-//                  line->showBusyIndicator();
-//                  emit requestArchive(line->firstMessageId());
-//                 scroll = keep;
-//             } else {
-//                 scroll = nothing;
-//             }
-//         }
-//     }
-}
-
-void Conversation::responseArchive(const std::list<Shared::Message> list)
-{
-//     requestingHistory = false;
-//     scroll = keep;
-//     
-//     line->hideBusyIndicator();
-//     for (std::list<Shared::Message>::const_iterator itr = list.begin(), end = list.end(); itr != end; ++itr) {
-//         addMessage(*itr);
-//     }
 }
 
 void Conversation::showEvent(QShowEvent* event)
@@ -333,19 +266,6 @@ void Conversation::onFileSelected()
 void Conversation::setStatus(const QString& status)
 {
     statusLabel->setText(Shared::processMessageBody(status));
-}
-
-void Conversation::onScrollResize()
-{
-//     if (everShown) {
-//         int size = m_ui->scrollArea->width();
-//         QScrollBar* bar = m_ui->scrollArea->verticalScrollBar();
-//         if (bar->isVisible() && !tsb) {
-//             size -= bar->width();
-//             
-//         }
-//          line->setMaximumWidth(size);
-//     }
 }
 
 void Conversation::responseFileProgress(const QString& messageId, qreal progress)
@@ -497,23 +417,5 @@ Shared::Message Conversation::createMessage() const
     msg.setCurrentTime();
     msg.setState(Shared::Message::State::pending);
     return msg;
-}
-
-bool VisibilityCatcher::eventFilter(QObject* obj, QEvent* event)
-{
-    if (event->type() == QEvent::Show) {
-        emit shown();
-    }
-    
-    if (event->type() == QEvent::Hide) {
-        emit hidden();
-    }
-    
-    return false;
-}
-
-VisibilityCatcher::VisibilityCatcher(QWidget* parent):
-QObject(parent)
-{
 }
 

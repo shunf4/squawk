@@ -44,8 +44,7 @@ public:
     MessageHandler(Account* account);
     
 public:
-    void sendMessage(Shared::Message data);
-    void sendMessage(const Shared::Message& data, const QString& path);
+    void sendMessage(const Shared::Message& data);
     void initializeMessage(Shared::Message& target, const QXmppMessage& source, bool outgoing = false, bool forwarded = false, bool guessing = false) const;
     
 public slots:
@@ -63,6 +62,8 @@ private:
     bool handleGroupMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
     void logMessage(const QXmppMessage& msg, const QString& reason = "Message wasn't handled: ");
     void sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url);
+    void performSending(Shared::Message data);
+    void prepareUpload(const Shared::Message& data);
     
 private:
     Account* acc;

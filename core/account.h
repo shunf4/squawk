@@ -88,7 +88,6 @@ public:
     void setPasswordType(Shared::AccountPassword pt);
     QString getFullJid() const;
     void sendMessage(const Shared::Message& data);
-    void sendMessage(const Shared::Message& data, const QString& path);
     void requestArchive(const QString& jid, int count, const QString& before);
     void subscribeToContact(const QString& jid, const QString& reason);
     void unsubscribeFromContact(const QString& jid, const QString& reason);

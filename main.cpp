@@ -96,10 +96,7 @@ int main(int argc, char *argv[])
     QObject::connect(&w, &Squawk::connectAccount, squawk, &Core::Squawk::connectAccount);
     QObject::connect(&w, &Squawk::disconnectAccount, squawk, &Core::Squawk::disconnectAccount);
     QObject::connect(&w, &Squawk::changeState, squawk, &Core::Squawk::changeState);
-    QObject::connect(&w, qOverload<const QString&, const Shared::Message&>(&Squawk::sendMessage), 
-                     squawk, qOverload<const QString&, const Shared::Message&>(&Core::Squawk::sendMessage));
-    QObject::connect(&w, qOverload<const QString&, const Shared::Message&, const QString&>(&Squawk::sendMessage), 
-                     squawk, qOverload<const QString&, const Shared::Message&, const QString&>(&Core::Squawk::sendMessage));
+    QObject::connect(&w, &Squawk::sendMessage, squawk,&Core::Squawk::sendMessage);
     QObject::connect(&w, &Squawk::requestArchive, squawk, &Core::Squawk::requestArchive);
     QObject::connect(&w, &Squawk::subscribeContact, squawk, &Core::Squawk::subscribeContact);
     QObject::connect(&w, &Squawk::unsubscribeContact, squawk, &Core::Squawk::unsubscribeContact);

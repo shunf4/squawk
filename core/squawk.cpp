@@ -336,17 +336,6 @@ void Core::Squawk::sendMessage(const QString& account, const Shared::Message& da
     itr->second->sendMessage(data);
 }
 
-void Core::Squawk::sendMessage(const QString& account, const Shared::Message& data, const QString& path)
-{
-    AccountsMap::const_iterator itr = amap.find(account);
-    if (itr == amap.end()) {
-        qDebug("An attempt to send a message with non existing account, skipping");
-        return;
-    }
-    
-    itr->second->sendMessage(data, path);
-}
-
 void Core::Squawk::requestArchive(const QString& account, const QString& jid, int count, const QString& before)
 {
     AccountsMap::const_iterator itr = amap.find(account);

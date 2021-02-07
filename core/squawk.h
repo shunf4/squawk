@@ -90,7 +90,6 @@ public slots:
     void disconnectAccount(const QString& account);
     void changeState(Shared::Availability state);
     void sendMessage(const QString& account, const Shared::Message& data);
-    void sendMessage(const QString& account, const Shared::Message& data, const QString& path);
     void requestArchive(const QString& account, const QString& jid, int count, const QString& before);
     void subscribeContact(const QString& account, const QString& jid, const QString& reason);
     void unsubscribeContact(const QString& account, const QString& jid, const QString& reason);
