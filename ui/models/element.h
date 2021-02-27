@@ -43,9 +43,11 @@ public:
     unsigned int getMessagesCount() const;
     void responseArchive(const std::list<Shared::Message> list, bool last);
     bool isRoom() const;
+    void fileProgress(const QString& messageId, qreal value);
     
 signals:
     void requestArchive(const QString& before);
+    void fileLocalPathRequest(const QString& messageId, const QString& url);
     
 protected:
     void setJid(const QString& p_jid);

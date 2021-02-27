@@ -30,6 +30,7 @@ Models::Element::Element(Type p_type, const Models::Account* acc, const QString&
     feed(new MessageFeed(this))
 {
     connect(feed, &MessageFeed::requestArchive, this, &Element::requestArchive);
+    connect(feed, &MessageFeed::fileLocalPathRequest, this, &Element::fileLocalPathRequest);
     
     QMap<QString, QVariant>::const_iterator itr = data.find("avatarState");
     if (itr != data.end()) {
@@ -154,3 +155,9 @@ bool Models::Element::isRoom() const
 {
     return type != contact;
 }
+
+void Models::Element::fileProgress(const QString& messageId, qreal value)
+{
+    feed->fileProgress(messageId, value);
+}
+

@@ -59,14 +59,17 @@ public:
     void uploadAttachment(const QString& messageId);
     
     unsigned int unreadMessagesCount() const;
+    void fileProgress(const QString& messageId, qreal value);
     
 signals:
     void requestArchive(const QString& before);
     void requestStateChange(bool requesting);
+    void fileLocalPathRequest(const QString& messageId, const QString& url);
     
 protected:
     bool sentByMe(const Shared::Message& msg) const;
     Attachment fillAttach(const Shared::Message& msg) const;
+    QModelIndex modelIndexById(const QString& id) const;
     
 public:
     enum MessageRoles {

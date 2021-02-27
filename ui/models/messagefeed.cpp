@@ -299,10 +299,46 @@ Models::Attachment Models::MessageFeed::fillAttach(const Shared::Message& msg) c
 
 void Models::MessageFeed::downloadAttachment(const QString& messageId)
 {
-    qDebug() << "request to download attachment of the message" << messageId;
+    QModelIndex ind = modelIndexById(messageId);
+    if (ind.isValid()) {
+        std::pair<Progress::iterator, bool> progressPair = downloads.insert(std::make_pair(messageId, 0));
+        if (!progressPair.second) {     //Only to take action if we weren't already downloading it
+            Shared::Message* msg = static_cast<Shared::Message*>(ind.internalPointer());
+            emit dataChanged(ind, ind);
+            emit fileLocalPathRequest(messageId, msg->getOutOfBandUrl());
+        } else {
+            qDebug() << "Attachment download for message with id" << messageId << "is already in progress, skipping";
+        }
+    } else {
+        qDebug() << "An attempt to download an attachment for the message that doesn't exist. ID:" << messageId;
+    }
 }
 
 void Models::MessageFeed::uploadAttachment(const QString& messageId)
 {
     qDebug() << "request to upload attachment of the message" << messageId;
 }
+
+void Models::MessageFeed::fileProgress(const QString& messageId, qreal value)
+{
+    Progress::iterator itr = downloads.find(messageId);
+    if (itr != downloads.end()) {
+        itr->second = value;
+        QModelIndex ind = modelIndexById(messageId);
+        emit dataChanged(ind, ind);
+    }
+}
+
+QModelIndex Models::MessageFeed::modelIndexById(const QString& id) const
+{
+    StorageById::const_iterator itr = indexById.find(id);
+    if (itr != indexById.end()) {
+        Shared::Message* msg = *itr;
+        StorageByTime::const_iterator tItr = indexByTime.upper_bound(msg->getTime());
+        int position = indexByTime.rank(tItr);
+        return createIndex(position, 0, msg);
+    } else {
+        return QModelIndex();
+    }
+}
+

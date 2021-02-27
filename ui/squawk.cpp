@@ -63,6 +63,7 @@ Squawk::Squawk(QWidget *parent) :
     
     connect(rosterModel.accountsModel, &Models::Accounts::sizeChanged, this, &Squawk::onAccountsSizeChanged);
     connect(&rosterModel, &Models::Roster::requestArchive, this, &Squawk::onConversationRequestArchive);
+    connect(&rosterModel, &Models::Roster::fileLocalPathRequest, this, &Squawk::fileLocalPathRequest);
     connect(contextMenu, &QMenu::aboutToHide, this, &Squawk::onContextAboutToHide);
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
     
@@ -405,23 +406,7 @@ void Squawk::onConversationDownloadFile(const QString& messageId, const QString&
 
 void Squawk::fileProgress(const QString& messageId, qreal value)
 {
-    std::map<QString, std::set<Models::Roster::ElId>>::const_iterator itr = requestedFiles.find(messageId);
-    if (itr == requestedFiles.end()) {
-        qDebug() << "fileProgress in UI Squawk but there is nobody waiting for that id" << messageId << ", skipping";
-        return;
-    } else {
-        const std::set<Models::Roster::ElId>& convs = itr->second;
-        for (std::set<Models::Roster::ElId>::const_iterator cItr = convs.begin(), cEnd = convs.end(); cItr != cEnd; ++cItr) {
-            const Models::Roster::ElId& id = *cItr;
-            Conversations::const_iterator c = conversations.find(id);
-            if (c != conversations.end()) {
-                c->second->responseFileProgress(messageId, value);
-            }
-            if (currentConversation != 0 && currentConversation->getId() == id) {
-                currentConversation->responseFileProgress(messageId, value);
-            }
-        }
-    }
+    rosterModel.fileProgress(messageId, value);
 }
 
 void Squawk::fileError(const QString& messageId, const QString& error)

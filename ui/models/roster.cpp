@@ -27,7 +27,8 @@ Models::Roster::Roster(QObject* parent):
     root(new Item(Item::root, {{"name", "root"}})),
     accounts(),
     groups(),
-    contacts()
+    contacts(),
+    requestedFiles()
 {
     connect(accountsModel, &Accounts::dataChanged, this, &Roster::onAccountDataChanged);
     connect(root, &Item::childChanged, this, &Roster::onChildChanged);
@@ -447,6 +448,7 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
         if (itr == contacts.end()) {
             contact = new Contact(acc, jid, data);
             connect(contact, &Contact::requestArchive, this, &Roster::onElementRequestArchive);
+            connect(contact, &Contact::fileLocalPathRequest, this, &Roster::onElementFileLocalPathRequest);
             contacts.insert(std::make_pair(id, contact));
         } else {
             contact = itr->second;
@@ -806,6 +808,7 @@ void Models::Roster::addRoom(const QString& account, const QString jid, const QM
     
     Room* room = new Room(acc, jid, data);
     connect(room, &Contact::requestArchive, this, &Roster::onElementRequestArchive);
+    connect(room, &Contact::fileLocalPathRequest, this, &Roster::onElementFileLocalPathRequest);
     rooms.insert(std::make_pair(id, room));
     acc->appendChild(room);
 }
@@ -978,3 +981,41 @@ void Models::Roster::responseArchive(const QString& account, const QString& jid,
         }
     }
 }
+
+void Models::Roster::onElementFileLocalPathRequest(const QString& messageId, const QString& url)
+{
+    Element* el = static_cast<Element*>(sender());
+    std::map<QString, std::set<Models::Roster::ElId>>::iterator itr = requestedFiles.find(messageId);
+    bool created = false;
+    if (itr == requestedFiles.end()) {
+        itr = requestedFiles.insert(std::make_pair(messageId, std::set<Models::Roster::ElId>())).first;
+        created = true;
+    }
+    itr->second.insert(Models::Roster::ElId(el->getAccountName(), el->getJid()));
+    if (created) {
+        emit fileLocalPathRequest(messageId, url);
+    }
+}
+
+void Models::Roster::fileProgress(const QString& messageId, qreal value)
+{
+    std::map<QString, std::set<Models::Roster::ElId>>::const_iterator itr = requestedFiles.find(messageId);
+    if (itr == requestedFiles.end()) {
+        qDebug() << "fileProgress in UI but there is nobody waiting for that id:" << messageId << ", skipping";
+        return;
+    } else {
+        const std::set<Models::Roster::ElId>& convs = itr->second;
+        for (const Models::Roster::ElId& id : convs) {
+            std::map<ElId, Contact*>::const_iterator cItr = contacts.find(id);
+            if (cItr != contacts.end()) {
+                cItr->second->fileProgress(messageId, value);
+            } else {
+                std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
+                if (rItr != rooms.end()) {
+                    rItr->second->fileProgress(messageId, value);
+                }
+            }
+        }
+    }
+}
+
