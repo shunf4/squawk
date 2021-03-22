@@ -99,7 +99,6 @@ protected slots:
     void onEnterPressed();
     void onAttach();
     void onFileSelected();
-    void onScrollResize();
     void onBadgeClose();
     void onClearButton();
     void onTextEditDocSizeChanged(const QSizeF& size);

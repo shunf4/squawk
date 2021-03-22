@@ -302,7 +302,7 @@ void Models::MessageFeed::downloadAttachment(const QString& messageId)
     QModelIndex ind = modelIndexById(messageId);
     if (ind.isValid()) {
         std::pair<Progress::iterator, bool> progressPair = downloads.insert(std::make_pair(messageId, 0));
-        if (!progressPair.second) {     //Only to take action if we weren't already downloading it
+        if (progressPair.second) {     //Only to take action if we weren't already downloading it
             Shared::Message* msg = static_cast<Shared::Message*>(ind.internalPointer());
             emit dataChanged(ind, ind);
             emit fileLocalPathRequest(messageId, msg->getOutOfBandUrl());

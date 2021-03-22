@@ -36,12 +36,17 @@ bodyMetrics(bodyFont),
 nickMetrics(nickFont),
 dateMetrics(dateFont),
 buttonHeight(0),
+barHeight(0),
 buttons(new std::map<QString, FeedButton*>()),
+bars(new std::map<QString, QProgressBar*>()),
 idsToKeep(new std::set<QString>()),
 clearingWidgets(false)
 {
     QPushButton btn;
     buttonHeight = btn.sizeHint().height();
+    
+    QProgressBar bar;
+    barHeight = bar.sizeHint().height();
 }
 
 MessageDelegate::~MessageDelegate()
@@ -50,8 +55,13 @@ MessageDelegate::~MessageDelegate()
         delete pair.second;
     }
     
+    for (const std::pair<const QString, QProgressBar*>& pair: *bars){
+        delete pair.second;
+    }
+    
     delete idsToKeep;
     delete buttons;
+    delete bars;
 }
 
 void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
@@ -110,9 +120,11 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     painter->save();
     switch (data.attach.state) {
         case Models::none:
-            break;
+            clearHelperWidget(data);        //i can't imagine the situation where it's gonna be needed
+            break;                          //but it's a possible performance problem
         case Models::uploading:
         case Models::downloading:
+            paintBar(getBar(data), painter, data.sentByMe, opt);
             break;
         case Models::remote:
         case Models::local:
@@ -159,6 +171,7 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
             break;
         case Models::uploading:
         case Models::downloading:
+            messageSize.rheight() += barHeight;
             break;
         case Models::remote:
         case Models::local:
@@ -225,6 +238,18 @@ void MessageDelegate::paintButton(QPushButton* btn, QPainter* painter, bool sent
     option.rect.adjust(0, buttonHeight, 0, 0);
 }
 
+void MessageDelegate::paintBar(QProgressBar* bar, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const
+{
+    QPoint start = option.rect.topLeft();
+    
+    QWidget* vp = static_cast<QWidget*>(painter->device());
+    bar->setParent(vp);
+    bar->move(start);
+    bar->resize(option.rect.width(), barHeight);
+    bar->show();
+    
+    option.rect.adjust(0, barHeight, 0, 0);
+}
 
 QPushButton * MessageDelegate::getButton(const Models::FeedItem& data) const
 {
@@ -239,6 +264,12 @@ QPushButton * MessageDelegate::getButton(const Models::FeedItem& data) const
         } else {
             delete itr->second;
             buttons->erase(itr);
+        }
+    } else {
+        std::map<QString, QProgressBar*>::const_iterator barItr = bars->find(data.id);
+        if (barItr != bars->end()) {
+            delete barItr->second;
+            bars->erase(barItr);
         }
     }
     
@@ -259,6 +290,30 @@ QPushButton * MessageDelegate::getButton(const Models::FeedItem& data) const
     return result;
 }
 
+QProgressBar * MessageDelegate::getBar(const Models::FeedItem& data) const
+{
+    std::map<QString, QProgressBar*>::const_iterator barItr = bars->find(data.id);
+    QProgressBar* result = 0;
+    if (barItr != bars->end()) {
+        result = barItr->second;
+    } else {
+        std::map<QString, FeedButton*>::const_iterator itr = buttons->find(data.id);
+        if (itr != buttons->end()) {
+            delete itr->second;
+            buttons->erase(itr);
+        }
+    }
+    
+    if (result == 0) {
+        result = new QProgressBar();
+        bars->insert(std::make_pair(data.id, result));
+    }
+    
+    result->setValue(data.attach.progress);
+    
+    return result;
+}
+
 
 void MessageDelegate::beginClearWidgets()
 {
@@ -269,16 +324,26 @@ void MessageDelegate::beginClearWidgets()
 void MessageDelegate::endClearWidgets()
 {
     if (clearingWidgets) {
-        std::set<QString> toRemove;
-        for (const std::pair<const QString, FeedButton*>& pair: *buttons){
+        std::set<QString> toRemoveButtons;
+        std::set<QString> toRemoveBars;
+        for (const std::pair<const QString, FeedButton*>& pair: *buttons) {
             if (idsToKeep->find(pair.first) == idsToKeep->end()) {
                 delete pair.second;
-                toRemove.insert(pair.first);
+                toRemoveButtons.insert(pair.first);
+            }
+        }
+        for (const std::pair<const QString, QProgressBar*>& pair: *bars) {
+            if (idsToKeep->find(pair.first) == idsToKeep->end()) {
+                delete pair.second;
+                toRemoveBars.insert(pair.first);
             }
         }
         
-        for (const QString& key : toRemove) {
+        for (const QString& key : toRemoveButtons) {
             buttons->erase(key);
+        }
+        for (const QString& key : toRemoveBars) {
+            bars->erase(key);
         }
         
         idsToKeep->clear();
@@ -291,6 +356,22 @@ void MessageDelegate::onButtonPushed() const
     FeedButton* btn = static_cast<FeedButton*>(sender());
     emit buttonPushed(btn->messageId, btn->download);
 }
+
+void MessageDelegate::clearHelperWidget(const Models::FeedItem& data) const
+{
+    std::map<QString, FeedButton*>::const_iterator itr = buttons->find(data.id);
+    if (itr != buttons->end()) {
+        delete itr->second;
+        buttons->erase(itr);
+    } else {
+        std::map<QString, QProgressBar*>::const_iterator barItr = bars->find(data.id);
+        if (barItr != bars->end()) {
+            delete barItr->second;
+            bars->erase(barItr);
+        }
+    }
+}
+
 
 // void MessageDelegate::setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const
 // {

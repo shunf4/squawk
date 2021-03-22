@@ -27,6 +27,7 @@
 #include <QFont>
 #include <QFontMetrics>
 #include <QPushButton>
+#include <QProgressBar>
 
 #include "shared/icons.h"
 
@@ -55,7 +56,10 @@ signals:
     
 protected:
     void paintButton(QPushButton* btn, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const;
+    void paintBar(QProgressBar* bar, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const;
     QPushButton* getButton(const Models::FeedItem& data) const;
+    QProgressBar* getBar(const Models::FeedItem& data) const;
+    void clearHelperWidget(const Models::FeedItem& data) const;
     
 protected slots:
     void onButtonPushed() const;
@@ -75,8 +79,10 @@ private:
     QFontMetrics dateMetrics;
     
     int buttonHeight;
+    int barHeight;
     
     std::map<QString, FeedButton*>* buttons;
+    std::map<QString, QProgressBar*>* bars;
     std::set<QString>* idsToKeep;
     bool clearingWidgets;
 };

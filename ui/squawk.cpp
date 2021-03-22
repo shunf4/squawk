@@ -431,6 +431,8 @@ void Squawk::fileError(const QString& messageId, const QString& error)
     }
 }
 
+
+//TODO! Need to make it look like a standard message change event!
 void Squawk::fileLocalPathResponse(const QString& messageId, const QString& path)
 {
     std::map<QString, std::set<Models::Roster::ElId>>::const_iterator itr = requestedFiles.find(messageId);
