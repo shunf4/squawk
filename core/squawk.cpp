@@ -32,7 +32,7 @@ Core::Squawk::Squawk(QObject* parent):
     ,kwallet()
 #endif
 {
-    connect(&network, &NetworkAccess::fileLocalPathResponse, this, &Squawk::fileLocalPathResponse);
+    connect(&network, &NetworkAccess::fileLocalPathResponse, this, &Squawk::onNetworkAccessfileLocalPathResponse);
     connect(&network, &NetworkAccess::downloadFileProgress, this, &Squawk::downloadFileProgress);
     connect(&network, &NetworkAccess::downloadFileError, this, &Squawk::downloadFileError);
     connect(&network, &NetworkAccess::uploadFileProgress, this, &Squawk::uploadFileProgress);
@@ -677,7 +677,7 @@ void Core::Squawk::readSettings()
             settings.value("login").toString(), 
             settings.value("server").toString(), 
             settings.value("password", "").toString(), 
-            settings.value("name").toString(), 
+            settings.value("name").toString(),
             settings.value("resource").toString(),
             Shared::Global::fromInt<Shared::AccountPassword>(settings.value("passwordType", static_cast<int>(Shared::AccountPassword::plain)).toInt())
         );
@@ -750,4 +750,9 @@ void Core::Squawk::onWalletResponsePassword(const QString& login, const QString&
     itr->second->setPassword(password);
     emit changeAccount(login, {{"password", password}});
     accountReady();
+}
+
+void Core::Squawk::onNetworkAccessfileLocalPathResponse(const QString& messageId, const QString& path)
+{
+    
 }

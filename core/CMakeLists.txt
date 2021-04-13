@@ -15,7 +15,7 @@ set(squawkCORE_SRC
     rosteritem.cpp
     contact.cpp
     conference.cpp
-    storage.cpp
+    urlstorage.cpp
     networkaccess.cpp
     adapterFuctions.cpp
     handlers/messagehandler.cpp

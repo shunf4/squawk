@@ -29,7 +29,7 @@
 
 #include <set>
 
-#include "storage.h"
+#include "urlstorage.h"
 
 namespace Core {
 
@@ -80,7 +80,7 @@ private slots:
 private:
     bool running;
     QNetworkAccessManager* manager;
-    Storage files;
+    UrlStorage storage;
     std::map<QString, Transfer*> downloads;
     std::map<QString, Transfer*> uploads;
     

@@ -71,7 +71,6 @@ signals:
     void addRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removeRoomParticipant(const QString& account, const QString& jid, const QString& name);
-    void fileLocalPathResponse(const QString& messageId, const QString& path);
     void downloadFileError(const QString& messageId, const QString& error);
     void downloadFileProgress(const QString& messageId, qreal value);
     void uploadFileError(const QString& messageId, const QString& error);
@@ -157,6 +156,8 @@ private slots:
     void onWalletOpened(bool success);
     void onWalletResponsePassword(const QString& login, const QString& password);
     void onWalletRejectPassword(const QString& login);
+    
+    void onNetworkAccessfileLocalPathResponse(const QString& messageId, const QString& path);
     
 private:
     void readSettings();
