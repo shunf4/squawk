@@ -27,8 +27,7 @@ Models::Roster::Roster(QObject* parent):
     root(new Item(Item::root, {{"name", "root"}})),
     accounts(),
     groups(),
-    contacts(),
-    requestedFiles()
+    contacts()
 {
     connect(accountsModel, &Accounts::dataChanged, this, &Roster::onAccountDataChanged);
     connect(root, &Item::childChanged, this, &Roster::onChildChanged);
@@ -448,7 +447,7 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
         if (itr == contacts.end()) {
             contact = new Contact(acc, jid, data);
             connect(contact, &Contact::requestArchive, this, &Roster::onElementRequestArchive);
-            connect(contact, &Contact::fileLocalPathRequest, this, &Roster::onElementFileLocalPathRequest);
+            connect(contact, &Contact::fileDownloadRequest, this, &Roster::fileDownloadRequest);
             contacts.insert(std::make_pair(id, contact));
         } else {
             contact = itr->second;
@@ -534,35 +533,19 @@ void Models::Roster::removeGroup(const QString& account, const QString& name)
 
 void Models::Roster::changeContact(const QString& account, const QString& jid, const QMap<QString, QVariant>& data)
 {
-    ElId id(account, jid);
-    std::map<ElId, Contact*>::iterator cItr = contacts.find(id);
-    
-    if (cItr != contacts.end()) {
+    Element* el = getElement({account, jid});
+    if (el != NULL) {
         for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
-            cItr->second->update(itr.key(), itr.value());
-        }
-    } else {
-        std::map<ElId, Room*>::iterator rItr = rooms.find(id);
-        if (rItr != rooms.end()) {
-            for (QMap<QString, QVariant>::const_iterator itr = data.begin(), end = data.end(); itr != end; ++itr) {
-                rItr->second->update(itr.key(), itr.value());
-            }
+            el->update(itr.key(), itr.value());
         }
     }
 }
 
 void Models::Roster::changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data)
 {
-    ElId elid(account, jid);
-    std::map<ElId, Contact*>::iterator cItr = contacts.find(elid);
-    
-    if (cItr != contacts.end()) {
-        cItr->second->changeMessage(id, data);
-    } else {
-        std::map<ElId, Room*>::iterator rItr = rooms.find(elid);
-        if (rItr != rooms.end()) {
-            rItr->second->changeMessage(id, data);
-        }
+    Element* el = getElement({account, jid});
+    if (el != NULL) {
+        el->changeMessage(id, data);
     }
 }
 
@@ -626,7 +609,6 @@ void Models::Roster::removeContact(const QString& account, const QString& jid, c
     } else {
         delete ref;
     }
-    
     if (gr->childCount() == 0) {
         removeGroup(account, group);
     }
@@ -707,15 +689,9 @@ void Models::Roster::removePresence(const QString& account, const QString& jid, 
 
 void Models::Roster::addMessage(const QString& account, const Shared::Message& data)
 {
-    ElId id(account, data.getPenPalJid());
-    std::map<ElId, Contact*>::iterator itr = contacts.find(id);
-    if (itr != contacts.end()) {
-        itr->second->addMessage(data);
-    } else {
-        std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
-        if (rItr != rooms.end()) {
-            rItr->second->addMessage(data);
-        }
+    Element* el = getElement({account, data.getPenPalJid()});
+    if (el != NULL) {
+        el->addMessage(data);
     }
 }
 
@@ -808,7 +784,7 @@ void Models::Roster::addRoom(const QString& account, const QString jid, const QM
     
     Room* room = new Room(acc, jid, data);
     connect(room, &Contact::requestArchive, this, &Roster::onElementRequestArchive);
-    connect(room, &Contact::fileLocalPathRequest, this, &Roster::onElementFileLocalPathRequest);
+    connect(room, &Contact::fileDownloadRequest, this, &Roster::fileDownloadRequest);
     rooms.insert(std::make_pair(id, room));
     acc->appendChild(room);
 }
@@ -971,51 +947,55 @@ void Models::Roster::onElementRequestArchive(const QString& before)
 void Models::Roster::responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list, bool last)
 {
     ElId id(account, jid);
-    std::map<ElId, Contact*>::iterator itr = contacts.find(id);
-    if (itr != contacts.end()) {
-        itr->second->responseArchive(list, last);
+    Element* el = getElement(id);
+    if (el != NULL) {
+        el->responseArchive(list, last);
+    }
+}
+
+void Models::Roster::fileProgress(const std::list<Shared::MessageInfo>& msgs, qreal value, bool up)
+{
+    for (const Shared::MessageInfo& info : msgs) {
+        Element* el = getElement({info.account, info.jid});
+        if (el != NULL) {
+            el->fileProgress(info.messageId, value, up);
+        }
+    }
+}
+
+void Models::Roster::fileComplete(const std::list<Shared::MessageInfo>& msgs, bool up)
+{
+    for (const Shared::MessageInfo& info : msgs) {
+        Element* el = getElement({info.account, info.jid});
+        if (el != NULL) {
+            el->fileComplete(info.messageId, up);
+        }
+    }
+}
+
+void Models::Roster::fileError(const std::list<Shared::MessageInfo>& msgs, const QString& err, bool up)
+{
+    for (const Shared::MessageInfo& info : msgs) {
+        Element* el = getElement({info.account, info.jid});
+        if (el != NULL) {
+            el->fileError(info.messageId, err, up);
+        }
+    }
+}
+
+Models::Element * Models::Roster::getElement(const Models::Roster::ElId& id)
+{
+    std::map<ElId, Contact*>::iterator cItr = contacts.find(id);
+    
+    if (cItr != contacts.end()) {
+        return cItr->second;
     } else {
-        std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
+        std::map<ElId, Room*>::iterator rItr = rooms.find(id);
         if (rItr != rooms.end()) {
-            rItr->second->responseArchive(list, last);
+            return rItr->second;
         }
     }
-}
-
-void Models::Roster::onElementFileLocalPathRequest(const QString& messageId, const QString& url)
-{
-    Element* el = static_cast<Element*>(sender());
-    std::map<QString, std::set<Models::Roster::ElId>>::iterator itr = requestedFiles.find(messageId);
-    bool created = false;
-    if (itr == requestedFiles.end()) {
-        itr = requestedFiles.insert(std::make_pair(messageId, std::set<Models::Roster::ElId>())).first;
-        created = true;
-    }
-    itr->second.insert(Models::Roster::ElId(el->getAccountName(), el->getJid()));
-    if (created) {
-        emit fileLocalPathRequest(messageId, url);
-    }
-}
-
-void Models::Roster::fileProgress(const QString& messageId, qreal value)
-{
-    std::map<QString, std::set<Models::Roster::ElId>>::const_iterator itr = requestedFiles.find(messageId);
-    if (itr == requestedFiles.end()) {
-        qDebug() << "fileProgress in UI but there is nobody waiting for that id:" << messageId << ", skipping";
-        return;
-    } else {
-        const std::set<Models::Roster::ElId>& convs = itr->second;
-        for (const Models::Roster::ElId& id : convs) {
-            std::map<ElId, Contact*>::const_iterator cItr = contacts.find(id);
-            if (cItr != contacts.end()) {
-                cItr->second->fileProgress(messageId, value);
-            } else {
-                std::map<ElId, Room*>::const_iterator rItr = rooms.find(id);
-                if (rItr != rooms.end()) {
-                    rItr->second->fileProgress(messageId, value);
-                }
-            }
-        }
-    }
+    
+    return NULL;
 }
 

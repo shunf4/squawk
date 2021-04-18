@@ -33,6 +33,7 @@ set(squawk_SRC
   shared/message.cpp
   shared/vcard.cpp
   shared/icons.cpp
+  shared/messageinfo.cpp
 )
 
 set(squawk_HEAD
@@ -45,6 +46,7 @@ set(squawk_HEAD
   shared/utils.h
   shared/vcard.h
   shared/icons.h
+  shared/messageinfo.h
 )
 
 configure_file(resources/images/logo.svg squawk.svg COPYONLY)

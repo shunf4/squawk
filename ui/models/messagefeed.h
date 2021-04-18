@@ -59,12 +59,14 @@ public:
     void uploadAttachment(const QString& messageId);
     
     unsigned int unreadMessagesCount() const;
-    void fileProgress(const QString& messageId, qreal value);
+    void fileProgress(const QString& messageId, qreal value, bool up);
+    void fileError(const QString& messageId, const QString& error, bool up);
+    void fileComplete(const QString& messageId, bool up);
     
 signals:
     void requestArchive(const QString& before);
     void requestStateChange(bool requesting);
-    void fileLocalPathRequest(const QString& messageId, const QString& url);
+    void fileDownloadRequest(const QString& url);
     
 protected:
     bool sentByMe(const Shared::Message& msg) const;
@@ -141,6 +143,8 @@ enum AttachmentType {
     local,
     downloading,
     uploading,
+    errorDownload,
+    errorUpload,
     ready
 };
 

@@ -29,7 +29,6 @@ Squawk::Squawk(QWidget *parent) :
     conversations(),
     contextMenu(new QMenu()),
     dbus("org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", QDBusConnection::sessionBus()),
-    requestedFiles(),
     vCards(),
     requestedAccountsForPasswords(),
     prompt(0),
@@ -62,8 +61,8 @@ Squawk::Squawk(QWidget *parent) :
     connect(m_ui->roster->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &Squawk::onRosterSelectionChanged);
     
     connect(rosterModel.accountsModel, &Models::Accounts::sizeChanged, this, &Squawk::onAccountsSizeChanged);
-    connect(&rosterModel, &Models::Roster::requestArchive, this, &Squawk::onConversationRequestArchive);
-    connect(&rosterModel, &Models::Roster::fileLocalPathRequest, this, &Squawk::fileLocalPathRequest);
+    connect(&rosterModel, &Models::Roster::requestArchive, this, &Squawk::onRequestArchive);
+    connect(&rosterModel, &Models::Roster::fileDownloadRequest, this, &Squawk::fileDownloadRequest);
     connect(contextMenu, &QMenu::aboutToHide, this, &Squawk::onContextAboutToHide);
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
     
@@ -389,86 +388,24 @@ void Squawk::onConversationClosed(QObject* parent)
     }
 }
 
-void Squawk::onConversationDownloadFile(const QString& messageId, const QString& url)
+void Squawk::fileProgress(const std::list<Shared::MessageInfo> msgs, qreal value, bool up)
 {
-    Conversation* conv = static_cast<Conversation*>(sender());
-    std::map<QString, std::set<Models::Roster::ElId>>::iterator itr = requestedFiles.find(messageId);
-    bool created = false;
-    if (itr == requestedFiles.end()) {
-        itr = requestedFiles.insert(std::make_pair(messageId, std::set<Models::Roster::ElId>())).first;
-        created = true;
-    }
-    itr->second.insert(Models::Roster::ElId(conv->getAccount(), conv->getJid()));
-    if (created) {
-        emit downloadFileRequest(messageId, url);
-    }
+    rosterModel.fileProgress(msgs, value, up);
 }
 
-void Squawk::fileProgress(const QString& messageId, qreal value)
+void Squawk::fileDownloadComplete(const std::list<Shared::MessageInfo> msgs, const QString& path)
 {
-    rosterModel.fileProgress(messageId, value);
+    rosterModel.fileComplete(msgs, false);
 }
 
-void Squawk::fileError(const QString& messageId, const QString& error)
+void Squawk::fileError(const std::list<Shared::MessageInfo> msgs, const QString& error, bool up)
 {
-    std::map<QString, std::set<Models::Roster::ElId>>::const_iterator itr = requestedFiles.find(messageId);
-    if (itr == requestedFiles.end()) {
-        qDebug() << "fileError in UI Squawk but there is nobody waiting for that id" << messageId << ", skipping";
-        return;
-    } else {
-        const std::set<Models::Roster::ElId>& convs = itr->second;
-        for (std::set<Models::Roster::ElId>::const_iterator cItr = convs.begin(), cEnd = convs.end(); cItr != cEnd; ++cItr) {
-            const Models::Roster::ElId& id = *cItr;
-            Conversations::const_iterator c = conversations.find(id);
-            if (c != conversations.end()) {
-                c->second->fileError(messageId, error);
-            }
-            if (currentConversation != 0 && currentConversation->getId() == id) {
-                currentConversation->fileError(messageId, error);
-            }
-        }
-        requestedFiles.erase(itr);
-    }
+    rosterModel.fileError(msgs, error, up);
 }
 
-
-//TODO! Need to make it look like a standard message change event!
-void Squawk::fileLocalPathResponse(const QString& messageId, const QString& path)
+void Squawk::fileUploadComplete(const std::list<Shared::MessageInfo> msgs, const QString& path)
 {
-    std::map<QString, std::set<Models::Roster::ElId>>::const_iterator itr = requestedFiles.find(messageId);
-    if (itr == requestedFiles.end()) {
-        qDebug() << "fileLocalPathResponse in UI Squawk but there is nobody waiting for that path, skipping";
-        return;
-    } else {
-        const std::set<Models::Roster::ElId>& convs = itr->second;
-        for (std::set<Models::Roster::ElId>::const_iterator cItr = convs.begin(), cEnd = convs.end(); cItr != cEnd; ++cItr) {
-            const Models::Roster::ElId& id = *cItr;
-            Conversations::const_iterator c = conversations.find(id);
-            if (c != conversations.end()) {
-                c->second->responseLocalFile(messageId, path);
-            }
-            if (currentConversation != 0 && currentConversation->getId() == id) {
-                currentConversation->responseLocalFile(messageId, path);
-            }
-        }
-        
-        requestedFiles.erase(itr);
-    }
-}
-
-void Squawk::onConversationRequestLocalFile(const QString& messageId, const QString& url)
-{
-    Conversation* conv = static_cast<Conversation*>(sender());
-    std::map<QString, std::set<Models::Roster::ElId>>::iterator itr = requestedFiles.find(messageId);
-    bool created = false;
-    if (itr == requestedFiles.end()) {
-        itr = requestedFiles.insert(std::make_pair(messageId, std::set<Models::Roster::ElId>())).first;
-        created = true;
-    }
-    itr->second.insert(Models::Roster::ElId(conv->getAccount(), conv->getJid()));
-    if (created) {
-        emit fileLocalPathRequest(messageId, url);
-    }
+    rosterModel.fileComplete(msgs, true);
 }
 
 void Squawk::accountMessage(const QString& account, const Shared::Message& data)
@@ -565,23 +502,13 @@ void Squawk::notify(const QString& account, const Shared::Message& msg)
 void Squawk::onConversationMessage(const Shared::Message& msg)
 {
     Conversation* conv = static_cast<Conversation*>(sender());
-    Models::Roster::ElId id = conv->getId();
+    QString acc = conv->getAccount();
     
-    rosterModel.addMessage(conv->getAccount(), msg);
-    
-    QString ap = msg.getAttachPath();
-    QString oob = msg.getOutOfBandUrl();
-    if ((ap.size() > 0 && oob.size() == 0) || (ap.size() == 0 && oob.size() > 0)) {
-        std::map<QString, std::set<Models::Roster::ElId>>::iterator itr = requestedFiles.insert(std::make_pair(msg.getId(), std::set<Models::Roster::ElId>())).first;
-        itr->second.insert(id);
-        
-        //TODO can also start downloading here if someone attached the message with the remote url
-    }
-    
-    emit sendMessage(conv->getAccount(), msg);
+    rosterModel.addMessage(acc, msg);
+    emit sendMessage(acc, msg);
 }
 
-void Squawk::onConversationRequestArchive(const QString& account, const QString& jid, const QString& before)
+void Squawk::onRequestArchive(const QString& account, const QString& jid, const QString& before)
 {
     emit requestArchive(account, jid, 20, before); //TODO amount as a settings value
 }
@@ -1029,8 +956,6 @@ void Squawk::subscribeConversation(Conversation* conv)
 {
     connect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
     connect(conv, &Conversation::sendMessage, this, &Squawk::onConversationMessage);
-    connect(conv, &Conversation::requestLocalFile, this, &Squawk::onConversationRequestLocalFile);
-    connect(conv, &Conversation::downloadFile, this, &Squawk::onConversationDownloadFile);
 }
 
 void Squawk::onRosterSelectionChanged(const QModelIndex& current, const QModelIndex& previous)

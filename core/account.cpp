@@ -84,8 +84,9 @@ Account::Account(const QString& p_login, const QString& p_server, const QString&
     QObject::connect(dm, &QXmppDiscoveryManager::itemsReceived, this, &Account::onDiscoveryItemsReceived);
     QObject::connect(dm, &QXmppDiscoveryManager::infoReceived, this, &Account::onDiscoveryInfoReceived);
     
-    QObject::connect(network, &NetworkAccess::uploadFileComplete, mh, &MessageHandler::onFileUploaded);
-    QObject::connect(network, &NetworkAccess::uploadFileError, mh, &MessageHandler::onFileUploadError);
+    QObject::connect(network, &NetworkAccess::uploadFileComplete, mh, &MessageHandler::onUploadFileComplete);
+    QObject::connect(network, &NetworkAccess::downloadFileComplete, mh, &MessageHandler::onDownloadFileComplete);
+    QObject::connect(network, &NetworkAccess::loadFileError, mh, &MessageHandler::onLoadFileError);
     
     client.addExtension(rcpm);
     QObject::connect(rcpm, &QXmppMessageReceiptManager::messageDelivered, mh, &MessageHandler::onReceiptReceived);
@@ -155,8 +156,9 @@ Account::~Account()
         reconnectTimer->stop();
     }
     
-    QObject::disconnect(network, &NetworkAccess::uploadFileComplete, mh, &MessageHandler::onFileUploaded);
-    QObject::disconnect(network, &NetworkAccess::uploadFileError, mh, &MessageHandler::onFileUploadError);
+    QObject::disconnect(network, &NetworkAccess::uploadFileComplete, mh, &MessageHandler::onUploadFileComplete);
+    QObject::disconnect(network, &NetworkAccess::downloadFileComplete, mh, &MessageHandler::onDownloadFileComplete);
+    QObject::disconnect(network, &NetworkAccess::loadFileError, mh, &MessageHandler::onLoadFileError);
     
     delete mh;
     delete rh;
@@ -549,9 +551,11 @@ void Core::Account::onClientError(QXmppClient::Error err)
                 case QXmppStanza::Error::NotAuthorized:
                     errorText = "Authentication error";
                     break;
+#if (QXMPP_VERSION) < QT_VERSION_CHECK(1, 3, 0)
                 case QXmppStanza::Error::PaymentRequired:
                     errorText = "Payment is required";
                     break;
+#endif
                 case QXmppStanza::Error::RecipientUnavailable:
                     errorText = "Recipient is unavailable";
                     break;

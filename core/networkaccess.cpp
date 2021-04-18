@@ -16,13 +16,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+#include <QtWidgets/QApplication>
+#include <QtCore/QDir>
+
 #include "networkaccess.h"
 
 Core::NetworkAccess::NetworkAccess(QObject* parent):
     QObject(parent),
     running(false),
     manager(0),
-    files("files"),
+    storage("fileURLStorage"),
     downloads(),
     uploads()
 {
@@ -33,60 +37,31 @@ Core::NetworkAccess::~NetworkAccess()
     stop();
 }
 
-void Core::NetworkAccess::fileLocalPathRequest(const QString& messageId, const QString& url)
+void Core::NetworkAccess::downladFile(const QString& url)
 {
     std::map<QString, Transfer*>::iterator itr = downloads.find(url);
     if (itr != downloads.end()) {
-        Transfer* dwn = itr->second;
-        std::set<QString>::const_iterator mItr = dwn->messages.find(messageId);
-        if (mItr == dwn->messages.end()) {
-            dwn->messages.insert(messageId);
-        }
-        emit downloadFileProgress(messageId, dwn->progress);
+        qDebug() << "NetworkAccess received a request to download a file" << url << ", but the file is currently downloading, skipping";
     } else {
         try {
-            QString path = files.getRecord(url);
-            QFileInfo info(path);
-            if (info.exists() && info.isFile()) {
-                emit fileLocalPathResponse(messageId, path);
+            std::pair<QString, std::list<Shared::MessageInfo>> p = storage.getPath(url);
+            if (p.first.size() > 0) {
+                QFileInfo info(p.first);
+                if (info.exists() && info.isFile()) {
+                    emit downloadFileComplete(p.second, p.first);
+                } else {
+                    startDownload(p.second, url);
+                }
             } else {
-                files.removeRecord(url);
-                emit fileLocalPathResponse(messageId, "");
+                startDownload(p.second, url);
             }
         } catch (const Archive::NotFound& e) {
-            emit fileLocalPathResponse(messageId, "");
+            qDebug() << "NetworkAccess received a request to download a file" << url << ", but there is now record of which message uses that file, downloading anyway";
+            storage.addFile(url);
+            startDownload(std::list<Shared::MessageInfo>(), url);
         } catch (const Archive::Unknown& e) {
             qDebug() << "Error requesting file path:" << e.what();
-            emit fileLocalPathResponse(messageId, "");
-        }
-    }
-}
-
-void Core::NetworkAccess::downladFileRequest(const QString& messageId, const QString& url)
-{
-    std::map<QString, Transfer*>::iterator itr = downloads.find(url);
-    if (itr != downloads.end()) {
-        Transfer* dwn = itr->second;
-        std::set<QString>::const_iterator mItr = dwn->messages.find(messageId);
-        if (mItr == dwn->messages.end()) {
-            dwn->messages.insert(messageId);
-        }
-        emit downloadFileProgress(messageId, dwn->progress);
-    } else {
-        try {
-            QString path = files.getRecord(url);
-            QFileInfo info(path);
-            if (info.exists() && info.isFile()) {
-                emit fileLocalPathResponse(messageId, path);
-            } else {
-                files.removeRecord(url);
-                startDownload(messageId, url);
-            }
-        } catch (const Archive::NotFound& e) {
-            startDownload(messageId, url);
-        } catch (const Archive::Unknown& e) {
-            qDebug() << "Error requesting file path:" << e.what();
-            emit downloadFileError(messageId, QString("Database error: ") + e.what());
+            emit loadFileError(std::list<Shared::MessageInfo>(), QString("Database error: ") + e.what(), false);
         }
     }
 }
@@ -95,7 +70,7 @@ void Core::NetworkAccess::start()
 {
     if (!running) {
         manager = new QNetworkAccessManager();
-        files.open();
+        storage.open();
         running = true;
     }
 }
@@ -103,7 +78,7 @@ void Core::NetworkAccess::start()
 void Core::NetworkAccess::stop()
 {
     if (running) {
-        files.close();
+        storage.close();
         manager->deleteLater();
         manager = 0;
         running = false;
@@ -128,9 +103,7 @@ void Core::NetworkAccess::onDownloadProgress(qint64 bytesReceived, qint64 bytesT
         qreal total = bytesTotal;
         qreal progress = received/total;
         dwn->progress = progress;
-        for (std::set<QString>::const_iterator mItr = dwn->messages.begin(), end = dwn->messages.end(); mItr != end; ++mItr) {
-            emit downloadFileProgress(*mItr, progress);
-        }
+        emit loadFileProgress(dwn->messages, progress, false);
     }
 }
 
@@ -146,9 +119,7 @@ void Core::NetworkAccess::onDownloadError(QNetworkReply::NetworkError code)
         if (errorText.size() > 0) {
             itr->second->success = false;
             Transfer* dwn = itr->second;
-            for (std::set<QString>::const_iterator mItr = dwn->messages.begin(), end = dwn->messages.end(); mItr != end; ++mItr) {
-                emit downloadFileError(*mItr, errorText);
-            }
+            emit loadFileError(dwn->messages, errorText, false);
         }
     }
 }
@@ -276,50 +247,43 @@ QString Core::NetworkAccess::getErrorText(QNetworkReply::NetworkError code)
 
 void Core::NetworkAccess::onDownloadFinished()
 {
-    QString path("");
     QNetworkReply* rpl = static_cast<QNetworkReply*>(sender());
     QString url = rpl->url().toString();
     std::map<QString, Transfer*>::const_iterator itr = downloads.find(url);
     if (itr == downloads.end()) {
-        qDebug() << "an error downloading" << url << ": the request is done but seems like noone is waiting for it, skipping";
+        qDebug() << "an error downloading" << url << ": the request is done but there is no record of it being downloaded, ignoring";
     } else {
         Transfer* dwn = itr->second;
         if (dwn->success) {
             qDebug() << "download success for" << url;
             QStringList hops = url.split("/");
             QString fileName = hops.back();
-            QStringList parts = fileName.split(".");
-            path = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation) + "/";
-            QString suffix("");
-            QStringList::const_iterator sItr = parts.begin();
-            QString realName = *sItr;
-            ++sItr;
-            for (QStringList::const_iterator sEnd = parts.end(); sItr != sEnd; ++sItr) {
-                suffix += "." + (*sItr);
+            QString jid;
+            if (dwn->messages.size() > 0) {
+                jid = dwn->messages.front().jid;
             }
-            QString postfix("");
-            QFileInfo proposedName(path + realName + postfix + suffix);
-            int counter = 0;
-            while (proposedName.exists()) {
-                postfix = QString("(") + std::to_string(++counter).c_str() + ")";
-                proposedName = QFileInfo(path + realName + postfix + suffix);
+            QString path = prepareDirectory(jid);
+            if (path.size() > 0) {
+                path = checkFileName(fileName, path);
+                
+                QFile file(path);
+                if (file.open(QIODevice::WriteOnly)) {
+                    file.write(dwn->reply->readAll());
+                    file.close();
+                    storage.setPath(url, path);
+                    qDebug() << "file" << path << "was successfully downloaded";
+                } else {
+                    qDebug() << "couldn't save file" << path;
+                    path = QString();
+                }
             }
             
-            path = proposedName.absoluteFilePath();
-            QFile file(path);
-            if (file.open(QIODevice::WriteOnly)) {
-                file.write(dwn->reply->readAll());
-                file.close();
-                files.addRecord(url, path);
-                qDebug() << "file" << path << "was successfully downloaded";
+            if (path.size() > 0) {
+                emit downloadFileComplete(dwn->messages, path);
             } else {
-                qDebug() << "couldn't save file" << path;
-                path = "";
+                //TODO do I need to handle the failure here or it's already being handled in error?
+                //emit loadFileError(dwn->messages, path, false);
             }
-        }
-        
-        for (std::set<QString>::const_iterator mItr = dwn->messages.begin(), end = dwn->messages.end(); mItr != end; ++mItr) {
-            emit fileLocalPathResponse(*mItr, path);
         }
         
         dwn->reply->deleteLater();
@@ -328,9 +292,9 @@ void Core::NetworkAccess::onDownloadFinished()
     }
 }
 
-void Core::NetworkAccess::startDownload(const QString& messageId, const QString& url)
+void Core::NetworkAccess::startDownload(const std::list<Shared::MessageInfo>& msgs, const QString& url)
 {
-    Transfer* dwn = new Transfer({{messageId}, 0, 0, true, "", url, 0});
+    Transfer* dwn = new Transfer({msgs, 0, 0, true, "", url, 0});
     QNetworkRequest req(url);
     dwn->reply = manager->get(req);
     connect(dwn->reply, &QNetworkReply::downloadProgress, this, &NetworkAccess::onDownloadProgress);
@@ -341,7 +305,7 @@ void Core::NetworkAccess::startDownload(const QString& messageId, const QString&
 #endif
     connect(dwn->reply, &QNetworkReply::finished, this, &NetworkAccess::onDownloadFinished);
     downloads.insert(std::make_pair(url, dwn));
-    emit downloadFileProgress(messageId, 0);
+    emit loadFileProgress(dwn->messages, 0, false);
 }
 
 void Core::NetworkAccess::onUploadError(QNetworkReply::NetworkError code)
@@ -350,16 +314,16 @@ void Core::NetworkAccess::onUploadError(QNetworkReply::NetworkError code)
     QString url = rpl->url().toString();
     std::map<QString, Transfer*>::const_iterator itr = uploads.find(url);
     if (itr == uploads.end()) {
-        qDebug() << "an error uploading" << url << ": the request is reporting an error but seems like noone is waiting for it, skipping";
+        qDebug() << "an error uploading" << url << ": the request is reporting an error but there is no record of it being uploading, ignoring";
     } else {
         QString errorText = getErrorText(code);
         if (errorText.size() > 0) {
             itr->second->success = false;
             Transfer* upl = itr->second;
-            for (std::set<QString>::const_iterator mItr = upl->messages.begin(), end = upl->messages.end(); mItr != end; ++mItr) {
-                emit uploadFileError(*mItr, errorText);
-            }
+            emit loadFileError(upl->messages, errorText, true);
         }
+        
+        //TODO deletion?
     }
 }
 
@@ -369,17 +333,14 @@ void Core::NetworkAccess::onUploadFinished()
     QString url = rpl->url().toString();
     std::map<QString, Transfer*>::const_iterator itr = uploads.find(url);
     if (itr == downloads.end()) {
-        qDebug() << "an error uploading" << url << ": the request is done but seems like no one is waiting for it, skipping";
+        qDebug() << "an error uploading" << url << ": the request is done there is no record of it being uploading, ignoring";
     } else {
         Transfer* upl = itr->second;
         if (upl->success) {
             qDebug() << "upload success for" << url;
-            files.addRecord(upl->url, upl->path);
-        
-            for (std::set<QString>::const_iterator mItr = upl->messages.begin(), end = upl->messages.end(); mItr != end; ++mItr) {
-                emit fileLocalPathResponse(*mItr, upl->path);
-                emit uploadFileComplete(*mItr, upl->url);
-            }
+            
+            storage.addFile(upl->messages, upl->url, upl->path);
+            emit uploadFileComplete(upl->messages, upl->url);
         }
         
         upl->reply->deleteLater();
@@ -403,94 +364,29 @@ void Core::NetworkAccess::onUploadProgress(qint64 bytesReceived, qint64 bytesTot
         qreal total = bytesTotal;
         qreal progress = received/total;
         upl->progress = progress;
-        for (std::set<QString>::const_iterator mItr = upl->messages.begin(), end = upl->messages.end(); mItr != end; ++mItr) {
-            emit uploadFileProgress(*mItr, progress);
-        }
-    }
-}
-
-void Core::NetworkAccess::startUpload(const QString& messageId, const QString& url, const QString& path)
-{
-    Transfer* upl = new Transfer({{messageId}, 0, 0, true, path, url, 0});
-    QNetworkRequest req(url);
-    QFile* file = new QFile(path);
-    if (file->open(QIODevice::ReadOnly)) {
-        upl->reply = manager->put(req, file);
-        
-        connect(upl->reply, &QNetworkReply::uploadProgress, this, &NetworkAccess::onUploadProgress);
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-        connect(upl->reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::errorOccurred), this, &NetworkAccess::onUploadError);
-#else
-        connect(upl->reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::error), this, &NetworkAccess::onUploadError);
-#endif
-        
-        connect(upl->reply, &QNetworkReply::finished, this, &NetworkAccess::onUploadFinished);
-        uploads.insert(std::make_pair(url, upl));
-        emit downloadFileProgress(messageId, 0);
-    } else {
-        qDebug() << "couldn't upload file" << path;
-        emit uploadFileError(messageId, "Error opening file");
-        delete file;
-    }
-}
-
-void Core::NetworkAccess::uploadFileRequest(const QString& messageId, const QString& url, const QString& path)
-{
-    std::map<QString, Transfer*>::iterator itr = uploads.find(url);
-    if (itr != uploads.end()) {
-        Transfer* upl = itr->second;
-        std::set<QString>::const_iterator mItr = upl->messages.find(messageId);
-        if (mItr == upl->messages.end()) {
-            upl->messages.insert(messageId);
-        }
-        emit uploadFileProgress(messageId, upl->progress);
-    } else {
-        try {
-            QString ePath = files.getRecord(url);
-            if (ePath == path) {
-                QFileInfo info(path);
-                if (info.exists() && info.isFile()) {
-                    emit fileLocalPathResponse(messageId, path);
-                } else {
-                    files.removeRecord(url);
-                    startUpload(messageId, url, path);
-                }
-            } else {
-                QFileInfo info(path);
-                if (info.exists() && info.isFile()) {
-                    files.changeRecord(url, path);
-                    emit fileLocalPathResponse(messageId, path);
-                } else {
-                    files.removeRecord(url);
-                    startUpload(messageId, url, path);
-                }
-            }
-        } catch (const Archive::NotFound& e) {
-            startUpload(messageId, url, path);
-        } catch (const Archive::Unknown& e) {
-            qDebug() << "Error requesting file path on upload:" << e.what();
-            emit uploadFileError(messageId, QString("Database error: ") + e.what());
-        }
+        emit loadFileProgress(upl->messages, progress, true);
     }
 }
 
 QString Core::NetworkAccess::getFileRemoteUrl(const QString& path)
 {
-    return "";  //TODO this is a way not to upload some file more then 1 time, here I'm supposed to return that file GET url
+    QString p;
+    
+    try {
+        QString p = storage.getUrl(path);
+    } catch (const Archive::NotFound& err) {
+        
+    } catch (...) {
+        throw;
+    }
+    
+    return p;
 }
 
-bool Core::NetworkAccess::isUploading(const QString& path, const QString& messageId)
-{
-    return false; //TODO this is a way to avoid parallel uploading of the same files by different chats
-                    //   message is is supposed to be added to the uploading messageids list 
-                    //   the result should be true if there was an uploading file with this path
-                    //   message id can be empty, then it's just to check and not to add
-}
-
-void Core::NetworkAccess::uploadFile(const QString& messageId, const QString& path, const QUrl& put, const QUrl& get, const QMap<QString, QString> headers)
+void Core::NetworkAccess::uploadFile(const Shared::MessageInfo& info, const QString& path, const QUrl& put, const QUrl& get, const QMap<QString, QString> headers)
 {
     QFile* file = new QFile(path);
-    Transfer* upl = new Transfer({{messageId}, 0, 0, true, path, get.toString(), file});
+    Transfer* upl = new Transfer({{info}, 0, 0, true, path, get.toString(), file});
     QNetworkRequest req(put);
     for (QMap<QString, QString>::const_iterator itr = headers.begin(), end = headers.end(); itr != end; itr++) {
         req.setRawHeader(itr.key().toUtf8(), itr.value().toUtf8());
@@ -506,10 +402,94 @@ void Core::NetworkAccess::uploadFile(const QString& messageId, const QString& pa
 #endif
         connect(upl->reply, &QNetworkReply::finished, this, &NetworkAccess::onUploadFinished);
         uploads.insert(std::make_pair(put.toString(), upl));
-        emit downloadFileProgress(messageId, 0);
+        emit loadFileProgress(upl->messages, 0, true);
     } else {
         qDebug() << "couldn't upload file" << path;
-        emit uploadFileError(messageId, "Error opening file");
+        emit loadFileError(upl->messages, "Error opening file", true);
         delete file;
+        delete upl;
     }
+}
+
+void Core::NetworkAccess::registerFile(const QString& url, const QString& account, const QString& jid, const QString& id)
+{
+    storage.addFile(url, account, jid, id);
+    std::map<QString, Transfer*>::iterator itr = downloads.find(url);
+    if (itr != downloads.end()) {
+        itr->second->messages.emplace_back(account, jid, id);   //TODO notification is going to happen the next tick, is that okay?
+    }
+}
+
+void Core::NetworkAccess::registerFile(const QString& url, const QString& path, const QString& account, const QString& jid, const QString& id)
+{
+    storage.addFile(url, path, account, jid, id);
+}
+
+bool Core::NetworkAccess::checkAndAddToUploading(const QString& acc, const QString& jid, const QString id, const QString path)
+{
+    for (const std::pair<const QString, Transfer*>& pair : uploads) {
+        Transfer* info = pair.second;
+        if (pair.second->path == path) {
+            std::list<Shared::MessageInfo>& messages = info->messages;
+            bool dup = false;
+            for (const Shared::MessageInfo& info : messages) {
+                if (info.account == acc && info.jid == jid && info.messageId == id) {
+                    dup = true;
+                    break;
+                }
+            }
+            if (!dup) {
+                info->messages.emplace_back(acc, jid, id);   //TODO notification is going to happen the next tick, is that okay?
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+QString Core::NetworkAccess::prepareDirectory(const QString& jid)
+{
+    QString path = QStandardPaths::writableLocation(QStandardPaths::DownloadLocation);
+    path += "/" + QApplication::applicationName();
+    if (jid.size() > 0) {
+        path += "/" + jid;
+    }
+    QDir location(path);
+    
+    if (!location.exists()) {
+        bool res = location.mkpath(path);
+        if (!res) {
+            return "";
+        } else {
+            return path;
+        }
+    }
+    return path;
+}
+
+QString Core::NetworkAccess::checkFileName(const QString& name, const QString& path)
+{
+    QStringList parts = name.split(".");
+    QString suffix("");
+    QStringList::const_iterator sItr = parts.begin();
+    QString realName = *sItr;
+    ++sItr;
+    for (QStringList::const_iterator sEnd = parts.end(); sItr != sEnd; ++sItr) {
+        suffix += "." + (*sItr);
+    }
+    QString postfix("");
+    QFileInfo proposedName(path + realName + suffix);
+    int counter = 0;
+    while (proposedName.exists()) {
+        QString count = QString("(") + std::to_string(++counter).c_str() + ")";
+        proposedName = QFileInfo(path + realName + count + suffix);
+    }
+    
+    return proposedName.absoluteFilePath();
+}
+
+QString Core::NetworkAccess::addMessageAndCheckForPath(const QString& url, const QString& account, const QString& jid, const QString& id)
+{
+    return storage.addMessageAndCheckForPath(url, account, jid, id);
 }

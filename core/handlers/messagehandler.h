@@ -28,6 +28,7 @@
 #include <QXmppHttpUploadIq.h>
 
 #include <shared/message.h>
+#include <shared/messageinfo.h>
 
 namespace Core {
 
@@ -54,8 +55,9 @@ public slots:
     void onReceiptReceived(const QString& jid, const QString& id);    
     void onUploadSlotReceived(const QXmppHttpUploadSlotIq& slot);
     void onUploadSlotRequestFailed(const QXmppHttpUploadRequestIq& request);
-    void onFileUploaded(const QString& messageId, const QString& url);
-    void onFileUploadError(const QString& messageId, const QString& errMsg);
+    void onDownloadFileComplete(const std::list<Shared::MessageInfo>& msgs, const QString& path);
+    void onUploadFileComplete(const std::list<Shared::MessageInfo>& msgs, const QString& path);
+    void onLoadFileError(const std::list<Shared::MessageInfo>& msgs, const QString& path, bool up);
     
 private:
     bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
@@ -64,6 +66,7 @@ private:
     void sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url);
     void performSending(Shared::Message data);
     void prepareUpload(const Shared::Message& data);
+    void handleUploadError(const QString& jid, const QString& messageId, const QString& errorText);
     
 private:
     Account* acc;

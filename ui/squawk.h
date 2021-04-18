@@ -75,8 +75,7 @@ signals:
     void setRoomAutoJoin(const QString& account, const QString& jid, bool joined);
     void addRoomRequest(const QString& account, const QString& jid, const QString& nick, const QString& password, bool autoJoin);
     void removeRoomRequest(const QString& account, const QString& jid);
-    void fileLocalPathRequest(const QString& messageId, const QString& url);
-    void downloadFileRequest(const QString& messageId, const QString& url);
+    void fileDownloadRequest(const QString& url);
     void requestVCard(const QString& account, const QString& jid);
     void uploadVCard(const QString& account, const Shared::VCard& card);
     void responsePassword(const QString& account, const QString& password);
@@ -103,9 +102,10 @@ public slots:
     void addRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removeRoomParticipant(const QString& account, const QString& jid, const QString& name);
-    void fileLocalPathResponse(const QString& messageId, const QString& path);
-    void fileError(const QString& messageId, const QString& error);
-    void fileProgress(const QString& messageId, qreal value);
+    void fileError(const std::list<Shared::MessageInfo> msgs, const QString& error, bool up);
+    void fileProgress(const std::list<Shared::MessageInfo> msgs, qreal value, bool up);
+    void fileDownloadComplete(const std::list<Shared::MessageInfo> msgs, const QString& path);
+    void fileUploadComplete(const std::list<Shared::MessageInfo> msgs, const QString& path);
     void responseVCard(const QString& jid, const Shared::VCard& card);
     void changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
     void requestPassword(const QString& account);
@@ -119,7 +119,6 @@ private:
     Conversations conversations;
     QMenu* contextMenu;
     QDBusInterface dbus;
-    std::map<QString, std::set<Models::Roster::ElId>> requestedFiles;
     std::map<QString, VCard*> vCards;
     std::deque<QString> requestedAccountsForPasswords;
     QInputDialog* prompt;
@@ -146,10 +145,8 @@ private slots:
     void onComboboxActivated(int index);
     void onRosterItemDoubleClicked(const QModelIndex& item);
     void onConversationMessage(const Shared::Message& msg);
-    void onConversationRequestArchive(const QString& account, const QString& jid, const QString& before);
+    void onRequestArchive(const QString& account, const QString& jid, const QString& before);
     void onRosterContextMenu(const QPoint& point);
-    void onConversationRequestLocalFile(const QString& messageId, const QString& url);
-    void onConversationDownloadFile(const QString& messageId, const QString& url);
     void onItemCollepsed(const QModelIndex& index);
     void onPasswordPromptAccepted();
     void onPasswordPromptRejected();

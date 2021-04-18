@@ -26,6 +26,7 @@
 
 #include "shared/message.h"
 #include "shared/global.h"
+#include "shared/messageinfo.h"
 #include "accounts.h"
 #include "item.h"
 #include "account.h"
@@ -81,21 +82,19 @@ public:
     QModelIndex getAccountIndex(const QString& name);
     QModelIndex getGroupIndex(const QString& account, const QString& name);
     void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list, bool last);
-    void fileProgress(const QString& messageId, qreal value);
+    
+    void fileProgress(const std::list<Shared::MessageInfo>& msgs, qreal value, bool up);
+    void fileError(const std::list<Shared::MessageInfo>& msgs, const QString& err, bool up);
+    void fileComplete(const std::list<Shared::MessageInfo>& msgs, bool up);
     
     Accounts* accountsModel;
     
 signals:
     void requestArchive(const QString& account, const QString& jid, const QString& before);
-    void fileLocalPathRequest(const QString& messageId, const QString& url);
+    void fileDownloadRequest(const QString& url);
     
 private:
-    Item* root;
-    std::map<QString, Account*> accounts;
-    std::map<ElId, Group*> groups;
-    std::map<ElId, Contact*> contacts;
-    std::map<ElId, Room*> rooms;
-    std::map<QString, std::set<Models::Roster::ElId>> requestedFiles;
+    Element* getElement(const ElId& id);
     
 private slots:
     void onAccountDataChanged(const QModelIndex& tl, const QModelIndex& br, const QVector<int>& roles);
@@ -107,7 +106,13 @@ private slots:
     void onChildIsAboutToBeMoved(Item* source, int first, int last, Item* destination, int newIndex);
     void onChildMoved();
     void onElementRequestArchive(const QString& before);
-    void onElementFileLocalPathRequest(const QString& messageId, const QString& url);
+    
+private:
+    Item* root;
+    std::map<QString, Account*> accounts;
+    std::map<ElId, Group*> groups;
+    std::map<ElId, Contact*> contacts;
+    std::map<ElId, Room*> rooms;
     
 public:
     class ElId {

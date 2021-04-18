@@ -51,30 +51,39 @@ public:
 signals:
     void quit();
     void ready();
+    
     void newAccount(const QMap<QString, QVariant>&);
     void changeAccount(const QString& account, const QMap<QString, QVariant>& data);
     void removeAccount(const QString& account);
+    
     void addGroup(const QString& account, const QString& name);
     void removeGroup(const QString& account, const QString& name);
+    
     void addContact(const QString& account, const QString& jid, const QString& group, const QMap<QString, QVariant>& data);
     void removeContact(const QString& account, const QString& jid);
     void removeContact(const QString& account, const QString& jid, const QString& group);
     void changeContact(const QString& account, const QString& jid, const QMap<QString, QVariant>& data);
+    
     void addPresence(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removePresence(const QString& account, const QString& jid, const QString& name);
+    
     void stateChanged(Shared::Availability state);
+    
     void accountMessage(const QString& account, const Shared::Message& data);
     void responseArchive(const QString& account, const QString& jid, const std::list<Shared::Message>& list, bool last);
+    
     void addRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void changeRoom(const QString& account, const QString jid, const QMap<QString, QVariant>& data);
     void removeRoom(const QString& account, const QString jid);
     void addRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void changeRoomParticipant(const QString& account, const QString& jid, const QString& name, const QMap<QString, QVariant>& data);
     void removeRoomParticipant(const QString& account, const QString& jid, const QString& name);
-    void downloadFileError(const QString& messageId, const QString& error);
-    void downloadFileProgress(const QString& messageId, qreal value);
-    void uploadFileError(const QString& messageId, const QString& error);
-    void uploadFileProgress(const QString& messageId, qreal value);
+    
+    void fileError(const std::list<Shared::MessageInfo> msgs, const QString& error, bool up);
+    void fileProgress(const std::list<Shared::MessageInfo> msgs, qreal value, bool up);
+    void fileDownloadComplete(const std::list<Shared::MessageInfo> msgs, const QString& path);
+    void fileUploadComplete(const std::list<Shared::MessageInfo> msgs, const QString& path);
+    
     void responseVCard(const QString& jid, const Shared::VCard& card);
     void changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
     void requestPassword(const QString& account);
@@ -82,14 +91,18 @@ signals:
 public slots:
     void start();
     void stop();
+    
     void newAccountRequest(const QMap<QString, QVariant>& map);
     void modifyAccountRequest(const QString& name, const QMap<QString, QVariant>& map);
     void removeAccountRequest(const QString& name);
     void connectAccount(const QString& account);
     void disconnectAccount(const QString& account);
+    
     void changeState(Shared::Availability state);
+    
     void sendMessage(const QString& account, const Shared::Message& data);
     void requestArchive(const QString& account, const QString& jid, int count, const QString& before);
+    
     void subscribeContact(const QString& account, const QString& jid, const QString& reason);
     void unsubscribeContact(const QString& account, const QString& jid, const QString& reason);
     void addContactToGroupRequest(const QString& account, const QString& jid, const QString& groupName);
@@ -97,12 +110,14 @@ public slots:
     void removeContactRequest(const QString& account, const QString& jid);
     void renameContactRequest(const QString& account, const QString& jid, const QString& newName);
     void addContactRequest(const QString& account, const QString& jid, const QString& name, const QSet<QString>& groups);
+    
     void setRoomJoined(const QString& account, const QString& jid, bool joined);
     void setRoomAutoJoin(const QString& account, const QString& jid, bool joined);
     void addRoomRequest(const QString& account, const QString& jid, const QString& nick, const QString& password, bool autoJoin);
     void removeRoomRequest(const QString& account, const QString& jid);
-    void fileLocalPathRequest(const QString& messageId, const QString& url);
-    void downloadFileRequest(const QString& messageId, const QString& url);
+    
+    void fileDownloadRequest(const QString& url);
+    
     void requestVCard(const QString& account, const QString& jid);
     void uploadVCard(const QString& account, const Shared::VCard& card);
     void responsePassword(const QString& account, const QString& password);
@@ -153,11 +168,11 @@ private slots:
     void onAccountRemoveRoomPresence(const QString& jid, const QString& nick);
     void onAccountChangeMessage(const QString& jid, const QString& id, const QMap<QString, QVariant>& data);
     
+    void onAccountUploadFileError(const QString& jid, const QString id, const QString& errorText);
+    
     void onWalletOpened(bool success);
     void onWalletResponsePassword(const QString& login, const QString& password);
     void onWalletRejectPassword(const QString& login);
-    
-    void onNetworkAccessfileLocalPathResponse(const QString& messageId, const QString& path);
     
 private:
     void readSettings();

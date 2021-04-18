@@ -168,14 +168,16 @@ void Core::MessageHandler::initializeMessage(Shared::Message& target, const QXmp
     id = source.id();
 #endif
     target.setId(id);
-    if (target.getId().size() == 0) {
+    QString messageId = target.getId();
+    if (messageId.size() == 0) {
         target.generateRandomId();          //TODO out of desperation, I need at least a random ID
+        messageId = target.getId();
     }
     target.setFrom(source.from());
     target.setTo(source.to());
     target.setBody(source.body());
     target.setForwarded(forwarded);
-    target.setOutOfBandUrl(source.outOfBandUrl());
+    
     if (guessing) {
         if (target.getFromJid() == acc->getLogin() + "@" + acc->getServer()) {
             outgoing = true;
@@ -189,6 +191,12 @@ void Core::MessageHandler::initializeMessage(Shared::Message& target, const QXmp
     } else {
         target.setCurrentTime();
     }
+    
+    QString oob = source.outOfBandUrl();
+    if (oob.size() > 0) {
+        target.setAttachPath(acc->network->addMessageAndCheckForPath(oob, acc->getName(), target.getPenPalJid(), messageId));
+    }
+    target.setOutOfBandUrl(oob);
 }
 
 void Core::MessageHandler::logMessage(const QXmppMessage& msg, const QString& reason)
@@ -292,7 +300,7 @@ void Core::MessageHandler::prepareUpload(const Shared::Message& data)
         if (url.size() != 0) {
             sendMessageWithLocalUploadedFile(data, url);
         } else {
-            if (acc->network->isUploading(path, data.getId())) {
+            if (acc->network->checkAndAddToUploading(acc->getName(), data.getPenPalJid(), data.getId(), path)) {
                 pendingMessages.emplace(data.getId(), data);
             } else {
                 if (acc->um->serviceFound()) {
@@ -303,17 +311,17 @@ void Core::MessageHandler::prepareUpload(const Shared::Message& data)
                             acc->um->requestUploadSlot(file);
                         }
                     } else {
-                        onFileUploadError(data.getId(), "Uploading file no longer exists or your system user has no permission to read it");
+                        handleUploadError(data.getPenPalJid(), data.getId(), "Uploading file no longer exists or your system user has no permission to read it");
                         qDebug() << "Requested upload slot in account" << acc->name << "for file" << path << "but the file doesn't exist or is not readable";
                     }
                 } else {
-                    onFileUploadError(data.getId(), "Your server doesn't support file upload service, or it's prohibited for your account");
+                    handleUploadError(data.getPenPalJid(), data.getId(), "Your server doesn't support file upload service, or it's prohibited for your account");
                     qDebug() << "Requested upload slot in account" << acc->name << "for file" << path << "but upload manager didn't discover any upload services";
                 }
             }
         }
     } else {
-        onFileUploadError(data.getId(), "Account is offline or reconnecting");
+        handleUploadError(data.getPenPalJid(), data.getId(), "Account is offline or reconnecting");
         qDebug() << "An attempt to send message with not connected account " << acc->name << ", skipping";
     }
 }
@@ -326,10 +334,10 @@ void Core::MessageHandler::onUploadSlotReceived(const QXmppHttpUploadSlotIq& slo
     } else {
         const std::pair<QString, Shared::Message>& pair = uploadingSlotsQueue.front();
         const QString& mId = pair.second.getId();
-        acc->network->uploadFile(mId, pair.first, slot.putUrl(), slot.getUrl(), slot.putHeaders());
+        acc->network->uploadFile({acc->name, pair.second.getPenPalJid(), mId}, pair.first, slot.putUrl(), slot.getUrl(), slot.putHeaders());
         pendingMessages.emplace(mId, pair.second);
-        uploadingSlotsQueue.pop_front();
         
+        uploadingSlotsQueue.pop_front();
         if (uploadingSlotsQueue.size() > 0) {
             acc->um->requestUploadSlot(uploadingSlotsQueue.front().first);
         }
@@ -338,35 +346,69 @@ void Core::MessageHandler::onUploadSlotReceived(const QXmppHttpUploadSlotIq& slo
 
 void Core::MessageHandler::onUploadSlotRequestFailed(const QXmppHttpUploadRequestIq& request)
 {
+    QString err(request.error().text());
     if (uploadingSlotsQueue.size() == 0) {
         qDebug() << "HTTP Upload manager of account" << acc->name << "reports about an error requesting upload slot, but none was requested";
-        qDebug() << request.error().text();
+        qDebug() << err;
     } else {
         const std::pair<QString, Shared::Message>& pair = uploadingSlotsQueue.front();
-        qDebug() << "Error requesting upload slot for file" << pair.first << "in account" << acc->name << ":" << request.error().text();
-        emit acc->uploadFileError(pair.second.getId(), "Error requesting slot to upload file: " + request.error().text());
+        qDebug() << "Error requesting upload slot for file" << pair.first << "in account" << acc->name << ":" << err;
+        emit acc->uploadFileError(pair.second.getPenPalJid(), pair.second.getId(), "Error requesting slot to upload file: " + err);
         
+        uploadingSlotsQueue.pop_front();
         if (uploadingSlotsQueue.size() > 0) {
             acc->um->requestUploadSlot(uploadingSlotsQueue.front().first);
         }
-        uploadingSlotsQueue.pop_front();
     }
 }
 
-void Core::MessageHandler::onFileUploaded(const QString& messageId, const QString& url)
+void Core::MessageHandler::onDownloadFileComplete(const std::list<Shared::MessageInfo>& msgs, const QString& path)
 {
-    std::map<QString, Shared::Message>::const_iterator itr = pendingMessages.find(messageId);
-    if (itr != pendingMessages.end()) {
-        sendMessageWithLocalUploadedFile(itr->second, url);
-        pendingMessages.erase(itr);
+    QMap<QString, QVariant> cData = {
+        {"attachPath", path}
+    };
+    for (const Shared::MessageInfo& info : msgs) {
+        if (info.account == acc->getName()) {
+            Contact* cnt = acc->rh->getContact(info.jid);
+            if (cnt != 0) {
+                if (cnt->changeMessage(info.messageId, cData)) {
+                    emit acc->changeMessage(info.jid, info.messageId, cData);
+                }
+            }
+        }
     }
 }
 
-void Core::MessageHandler::onFileUploadError(const QString& messageId, const QString& errMsg)
+void Core::MessageHandler::onLoadFileError(const std::list<Shared::MessageInfo>& msgs, const QString& text, bool up)
+{
+    if (up) {
+        for (const Shared::MessageInfo& info : msgs) {
+            if (info.account == acc->getName()) {
+                handleUploadError(info.jid, info.messageId, text);
+            }
+        }
+    }
+}
+
+void Core::MessageHandler::handleUploadError(const QString& jid, const QString& messageId, const QString& errorText)
 {
     std::map<QString, Shared::Message>::const_iterator itr = pendingMessages.find(messageId);
     if (itr != pendingMessages.end()) {
         pendingMessages.erase(itr);
+        //TODO move the storage of pending messages to the database and change them there
+    }
+}
+
+void Core::MessageHandler::onUploadFileComplete(const std::list<Shared::MessageInfo>& msgs, const QString& path)
+{
+    for (const Shared::MessageInfo& info : msgs) {
+        if (info.account == acc->getName()) {
+            std::map<QString, Shared::Message>::const_iterator itr = pendingMessages.find(info.messageId);
+            if (itr != pendingMessages.end()) {
+                sendMessageWithLocalUploadedFile(itr->second, path);
+                pendingMessages.erase(itr);
+            }
+        }
     }
 }
 

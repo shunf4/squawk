@@ -32,11 +32,10 @@ Core::Squawk::Squawk(QObject* parent):
     ,kwallet()
 #endif
 {
-    connect(&network, &NetworkAccess::fileLocalPathResponse, this, &Squawk::onNetworkAccessfileLocalPathResponse);
-    connect(&network, &NetworkAccess::downloadFileProgress, this, &Squawk::downloadFileProgress);
-    connect(&network, &NetworkAccess::downloadFileError, this, &Squawk::downloadFileError);
-    connect(&network, &NetworkAccess::uploadFileProgress, this, &Squawk::uploadFileProgress);
-    connect(&network, &NetworkAccess::uploadFileError, this, &Squawk::uploadFileError);
+    connect(&network, &NetworkAccess::loadFileProgress, this, &Squawk::fileProgress);
+    connect(&network, &NetworkAccess::loadFileError, this, &Squawk::fileError);
+    connect(&network, &NetworkAccess::downloadFileComplete, this, &Squawk::fileDownloadComplete);
+    connect(&network, &NetworkAccess::uploadFileComplete, this, &Squawk::fileUploadComplete);
     
 #ifdef WITH_KWALLET
     if (kwallet.supportState() == PSE::KWallet::success) {
@@ -168,7 +167,7 @@ void Core::Squawk::addAccount(
     
     connect(acc, &Account::receivedVCard, this, &Squawk::responseVCard);
     
-    connect(acc, &Account::uploadFileError, this, &Squawk::uploadFileError);
+    connect(acc, &Account::uploadFileError, this, &Squawk::onAccountUploadFileError);
     
     QMap<QString, QVariant> map = {
         {"login", login},
@@ -593,14 +592,9 @@ void Core::Squawk::addRoomRequest(const QString& account, const QString& jid, co
     itr->second->addRoomRequest(jid, nick, password, autoJoin);
 }
 
-void Core::Squawk::fileLocalPathRequest(const QString& messageId, const QString& url)
+void Core::Squawk::fileDownloadRequest(const QString& url)
 {
-    network.fileLocalPathRequest(messageId, url);
-}
-
-void Core::Squawk::downloadFileRequest(const QString& messageId, const QString& url)
-{
-    network.downladFileRequest(messageId, url);
+    network.downladFile(url);
 }
 
 void Core::Squawk::addContactToGroupRequest(const QString& account, const QString& jid, const QString& groupName)
@@ -752,7 +746,8 @@ void Core::Squawk::onWalletResponsePassword(const QString& login, const QString&
     accountReady();
 }
 
-void Core::Squawk::onNetworkAccessfileLocalPathResponse(const QString& messageId, const QString& path)
+void Core::Squawk::onAccountUploadFileError(const QString& jid, const QString id, const QString& errorText)
 {
-    
+    Account* acc = static_cast<Account*>(sender());
+    emit fileError({{acc->getName(), jid, id}}, errorText, true);
 }

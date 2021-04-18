@@ -36,6 +36,8 @@ namespace Core {
 /**
  * @todo write docs
  */
+
+//TODO Need to describe how to get rid of records when file is no longer reachable;
 class NetworkAccess : public QObject
 {
     Q_OBJECT
@@ -48,26 +50,26 @@ public:
     void stop();
     
     QString getFileRemoteUrl(const QString& path);
-    bool isUploading(const QString& path, const QString& messageId = "");
-    void uploadFile(const QString& messageId, const QString& path, const QUrl& put, const QUrl& get, const QMap<QString, QString> headers);
+    QString addMessageAndCheckForPath(const QString& url, const QString& account, const QString& jid, const QString& id);
+    void uploadFile(const Shared::MessageInfo& info, const QString& path, const QUrl& put, const QUrl& get, const QMap<QString, QString> headers);
+    bool checkAndAddToUploading(const QString& acc, const QString& jid, const QString id, const QString path);
     
 signals:
-    void fileLocalPathResponse(const QString& messageId, const QString& path);
-    void downloadFileProgress(const QString& messageId, qreal value);
-    void downloadFileError(const QString& messageId, const QString& path);
-    void uploadFileProgress(const QString& messageId, qreal value);
-    void uploadFileError(const QString& messageId, const QString& path);
-    void uploadFileComplete(const QString& messageId, const QString& url);
+    void loadFileProgress(const std::list<Shared::MessageInfo>& msgs, qreal value, bool up);
+    void loadFileError(const std::list<Shared::MessageInfo>& msgs, const QString& text, bool up);
+    void uploadFileComplete(const std::list<Shared::MessageInfo>& msgs, const QString& url);
+    void downloadFileComplete(const std::list<Shared::MessageInfo>& msgs, const QString& path);
     
 public slots:
-    void fileLocalPathRequest(const QString& messageId, const QString& url);
-    void downladFileRequest(const QString& messageId, const QString& url);
-    void uploadFileRequest(const QString& messageId, const QString& url, const QString& path);
+    void downladFile(const QString& url);
+    void registerFile(const QString& url, const QString& account, const QString& jid, const QString& id);
+    void registerFile(const QString& url, const QString& path, const QString& account, const QString& jid, const QString& id);
     
 private:
-    void startDownload(const QString& messageId, const QString& url);
-    void startUpload(const QString& messageId, const QString& url, const QString& path);
+    void startDownload(const std::list<Shared::MessageInfo>& msgs, const QString& url);
     QString getErrorText(QNetworkReply::NetworkError code);
+    QString prepareDirectory(const QString& jid);
+    QString checkFileName(const QString& name, const QString& path);
     
 private slots:
     void onDownloadProgress(qint64 bytesReceived, qint64 bytesTotal);
@@ -85,7 +87,7 @@ private:
     std::map<QString, Transfer*> uploads;
     
     struct Transfer {
-        std::set<QString> messages;
+        std::list<Shared::MessageInfo> messages;
         qreal progress;
         QNetworkReply* reply;
         bool success;

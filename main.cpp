@@ -20,6 +20,7 @@
 #include "core/squawk.h"
 #include "signalcatcher.h"
 #include "shared/global.h"
+#include "shared/messageinfo.h"
 #include <QtWidgets/QApplication>
 #include <QtCore/QThread>
 #include <QtCore/QObject>
@@ -31,8 +32,10 @@
 int main(int argc, char *argv[])
 {
     qRegisterMetaType<Shared::Message>("Shared::Message");
+    qRegisterMetaType<Shared::MessageInfo>("Shared::MessageInfo");
     qRegisterMetaType<Shared::VCard>("Shared::VCard");
     qRegisterMetaType<std::list<Shared::Message>>("std::list<Shared::Message>");
+    qRegisterMetaType<std::list<Shared::MessageInfo>>("std::list<Shared::MessageInfo>");
     qRegisterMetaType<QSet<QString>>("QSet<QString>");
     qRegisterMetaType<Shared::ConnectionState>("Shared::ConnectionState");
     qRegisterMetaType<Shared::Availability>("Shared::Availability");
@@ -106,8 +109,7 @@ int main(int argc, char *argv[])
     QObject::connect(&w, &Squawk::setRoomAutoJoin, squawk, &Core::Squawk::setRoomAutoJoin);
     QObject::connect(&w, &Squawk::removeRoomRequest, squawk, &Core::Squawk::removeRoomRequest);
     QObject::connect(&w, &Squawk::addRoomRequest, squawk, &Core::Squawk::addRoomRequest);
-    QObject::connect(&w, &Squawk::fileLocalPathRequest, squawk, &Core::Squawk::fileLocalPathRequest);
-    QObject::connect(&w, &Squawk::downloadFileRequest, squawk, &Core::Squawk::downloadFileRequest);
+    QObject::connect(&w, &Squawk::fileDownloadRequest, squawk, &Core::Squawk::fileDownloadRequest);
     QObject::connect(&w, &Squawk::addContactToGroupRequest, squawk, &Core::Squawk::addContactToGroupRequest);
     QObject::connect(&w, &Squawk::removeContactFromGroupRequest, squawk, &Core::Squawk::removeContactFromGroupRequest);
     QObject::connect(&w, &Squawk::renameContactRequest, squawk, &Core::Squawk::renameContactRequest);
@@ -138,11 +140,10 @@ int main(int argc, char *argv[])
     QObject::connect(squawk, &Core::Squawk::addRoomParticipant, &w, &Squawk::addRoomParticipant);
     QObject::connect(squawk, &Core::Squawk::changeRoomParticipant, &w, &Squawk::changeRoomParticipant);
     QObject::connect(squawk, &Core::Squawk::removeRoomParticipant, &w, &Squawk::removeRoomParticipant);
-    QObject::connect(squawk, &Core::Squawk::fileLocalPathResponse, &w, &Squawk::fileLocalPathResponse);
-    QObject::connect(squawk, &Core::Squawk::downloadFileProgress, &w, &Squawk::fileProgress);
-    QObject::connect(squawk, &Core::Squawk::downloadFileError, &w, &Squawk::fileError);
-    QObject::connect(squawk, &Core::Squawk::uploadFileProgress, &w, &Squawk::fileProgress);
-    QObject::connect(squawk, &Core::Squawk::uploadFileError, &w, &Squawk::fileError);
+    QObject::connect(squawk, &Core::Squawk::fileDownloadComplete, &w, &Squawk::fileDownloadComplete);
+    QObject::connect(squawk, &Core::Squawk::fileUploadComplete, &w, &Squawk::fileUploadComplete);
+    QObject::connect(squawk, &Core::Squawk::fileProgress, &w, &Squawk::fileProgress);
+    QObject::connect(squawk, &Core::Squawk::fileError, &w, &Squawk::fileError);
     QObject::connect(squawk, &Core::Squawk::responseVCard, &w, &Squawk::responseVCard);
     QObject::connect(squawk, &Core::Squawk::requestPassword, &w, &Squawk::requestPassword);
     QObject::connect(squawk, &Core::Squawk::ready, &w, &Squawk::readSettings);

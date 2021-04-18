@@ -305,7 +305,7 @@ void Models::MessageFeed::downloadAttachment(const QString& messageId)
         if (progressPair.second) {     //Only to take action if we weren't already downloading it
             Shared::Message* msg = static_cast<Shared::Message*>(ind.internalPointer());
             emit dataChanged(ind, ind);
-            emit fileLocalPathRequest(messageId, msg->getOutOfBandUrl());
+            emit fileDownloadRequest(msg->getOutOfBandUrl());
         } else {
             qDebug() << "Attachment download for message with id" << messageId << "is already in progress, skipping";
         }
@@ -319,15 +319,33 @@ void Models::MessageFeed::uploadAttachment(const QString& messageId)
     qDebug() << "request to upload attachment of the message" << messageId;
 }
 
-void Models::MessageFeed::fileProgress(const QString& messageId, qreal value)
+void Models::MessageFeed::fileProgress(const QString& messageId, qreal value, bool up)
 {
-    Progress::iterator itr = downloads.find(messageId);
-    if (itr != downloads.end()) {
+    Progress* pr = 0;
+    if (up) {
+        pr = &uploads;
+    } else {
+        pr = &downloads;
+    }
+    
+    Progress::iterator itr = pr->find(messageId);
+    if (itr != pr->end()) {
         itr->second = value;
         QModelIndex ind = modelIndexById(messageId);
         emit dataChanged(ind, ind);
     }
 }
+
+void Models::MessageFeed::fileComplete(const QString& messageId, bool up)
+{
+    //TODO
+}
+
+void Models::MessageFeed::fileError(const QString& messageId, const QString& error, bool up)
+{
+    //TODO
+}
+
 
 QModelIndex Models::MessageFeed::modelIndexById(const QString& id) const
 {

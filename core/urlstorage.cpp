@@ -165,8 +165,7 @@ void Core::UrlStorage::addFile(const QString& url)
         throw Archive::Closed("addFile(no message, no path)", name.toStdString());
     }
     
-    UrlInfo info;
-    writeInfo(url, info);
+    addToInfo(url, "", "", "");
 }
 
 void Core::UrlStorage::addFile(const QString& url, const QString& path)
@@ -175,8 +174,7 @@ void Core::UrlStorage::addFile(const QString& url, const QString& path)
         throw Archive::Closed("addFile(no message, with path)", name.toStdString());
     }
     
-    UrlInfo info(path);
-    writeInfo(url, info);
+    addToInfo(url, "", "", "", path);
 }
 
 void Core::UrlStorage::addFile(const QString& url, const QString& account, const QString& jid, const QString& id)
@@ -185,9 +183,7 @@ void Core::UrlStorage::addFile(const QString& url, const QString& account, const
         throw Archive::Closed("addFile(with message, no path)", name.toStdString());
     }
     
-    UrlInfo info;
-    info.addMessage(account, jid, id);
-    writeInfo(url, info);
+    addToInfo(url, account, jid, id);
 }
 
 void Core::UrlStorage::addFile(const QString& url, const QString& path, const QString& account, const QString& jid, const QString& id)
@@ -196,50 +192,74 @@ void Core::UrlStorage::addFile(const QString& url, const QString& path, const QS
         throw Archive::Closed("addFile(with message, with path)", name.toStdString());
     }
     
-    UrlInfo info(path);
-    info.addMessage(account, jid, id);
-    writeInfo(url, info);
+    addToInfo(url, account, jid, id, path);
+}
+
+void Core::UrlStorage::addFile(const std::list<Shared::MessageInfo>& msgs, const QString& url, const QString& path)
+{
+    if (!opened) {
+        throw Archive::Closed("addFile(with list)", name.toStdString());
+    }
+    
+    UrlInfo info (path, msgs);
+    writeInfo(url, info, true);;
 }
 
 QString Core::UrlStorage::addMessageAndCheckForPath(const QString& url, const QString& account, const QString& jid, const QString& id)
 {
-    QString path;
+    if (!opened) {
+        throw Archive::Closed("addMessageAndCheckForPath", name.toStdString());
+    }
     
+    return addToInfo(url, account, jid, id).getPath();
+}
+
+Core::UrlStorage::UrlInfo Core::UrlStorage::addToInfo(const QString& url, const QString& account, const QString& jid, const QString& id, const QString& path)
+{
+    UrlInfo info;
     MDB_txn *txn;
     mdb_txn_begin(environment, NULL, 0, &txn);
-    UrlInfo info;
     
     try {
         readInfo(url, info, txn);
-        path = info.getPath();
-        info.addMessage(account, jid, id);
-        try {
-            writeInfo(url, info, txn, true);
-            mdb_txn_commit(txn);
-        } catch (...) {
-            mdb_txn_abort(txn);
-            throw;
-        }
     } catch (const Archive::NotFound& e) {
-        info.addMessage(account, jid, id);
-        try {
-            writeInfo(url, info, txn, true);
-            mdb_txn_commit(txn);
-        } catch (...) {
-            mdb_txn_abort(txn);
-            throw;
-        }
+        
     } catch (...) {
         mdb_txn_abort(txn);
         throw;
     }
     
-    return path;
+    bool pathChange = false;
+    bool listChange = false;
+    if (path != "-s") {
+        if (info.getPath() != path) {
+            info.setPath(path);
+            pathChange = true;
+        }
+    }
+    
+    if (account.size() > 0 && jid.size() > 0 && id.size() > 0) {
+        listChange = info.addMessage(account, jid, id);
+    }
+    
+    if (pathChange || listChange) {
+        try {
+            writeInfo(url, info, txn, true);
+            mdb_txn_commit(txn);
+        } catch (...) {
+            mdb_txn_abort(txn);
+            throw;
+        }
+    } else {
+        mdb_txn_abort(txn);
+    }
+    
+    return info;
 }
 
-std::list<Core::UrlStorage::MessageInfo> Core::UrlStorage::setPath(const QString& url, const QString& path)
+std::list<Shared::MessageInfo> Core::UrlStorage::setPath(const QString& url, const QString& path)
 {
-    std::list<MessageInfo> list;
+    std::list<Shared::MessageInfo> list;
     
     MDB_txn *txn;
     mdb_txn_begin(environment, NULL, 0, &txn);
@@ -247,24 +267,17 @@ std::list<Core::UrlStorage::MessageInfo> Core::UrlStorage::setPath(const QString
     
     try {
         readInfo(url, info, txn);
-        info.setPath(path);
         info.getMessages(list);
-        try {
-            writeInfo(url, info, txn, true);
-            mdb_txn_commit(txn);
-        } catch (...) {
-            mdb_txn_abort(txn);
-            throw;
-        }
     } catch (const Archive::NotFound& e) {
-        info.setPath(path);
-        try {
-            writeInfo(url, info, txn, true);
-            mdb_txn_commit(txn);
-        } catch (...) {
-            mdb_txn_abort(txn);
-            throw;
-        }
+    } catch (...) {
+        mdb_txn_abort(txn);
+        throw;
+    }
+    
+    info.setPath(path);
+    try {
+        writeInfo(url, info, txn, true);
+        mdb_txn_commit(txn);
     } catch (...) {
         mdb_txn_abort(txn);
         throw;
@@ -273,9 +286,9 @@ std::list<Core::UrlStorage::MessageInfo> Core::UrlStorage::setPath(const QString
     return list;
 }
 
-std::list<Core::UrlStorage::MessageInfo> Core::UrlStorage::removeFile(const QString& url)
+std::list<Shared::MessageInfo> Core::UrlStorage::removeFile(const QString& url)
 {
-    std::list<MessageInfo> list;
+    std::list<Shared::MessageInfo> list;
     
     MDB_txn *txn;
     mdb_txn_begin(environment, NULL, 0, &txn);
@@ -313,9 +326,9 @@ std::list<Core::UrlStorage::MessageInfo> Core::UrlStorage::removeFile(const QStr
     return list;
 }
 
-std::list<Core::UrlStorage::MessageInfo> Core::UrlStorage::deletedFile(const QString& path)
+std::list<Shared::MessageInfo> Core::UrlStorage::deletedFile(const QString& path)
 {
-    std::list<MessageInfo> list;
+    std::list<Shared::MessageInfo> list;
     
     MDB_txn *txn;
     mdb_txn_begin(environment, NULL, 0, &txn);
@@ -362,6 +375,46 @@ std::list<Core::UrlStorage::MessageInfo> Core::UrlStorage::deletedFile(const QSt
 }
 
 
+QString Core::UrlStorage::getUrl(const QString& path)
+{
+    std::list<Shared::MessageInfo> list;
+    
+    MDB_txn *txn;
+    mdb_txn_begin(environment, NULL, MDB_RDONLY, &txn);
+    
+    std::string spath = path.toStdString();
+    
+    MDB_val lmdbKey, lmdbData;
+    lmdbKey.mv_size = spath.size();
+    lmdbKey.mv_data = (char*)spath.c_str();
+    
+    QString url;
+    int rc = mdb_get(txn, map, &lmdbKey, &lmdbData);
+    
+    if (rc == 0) {
+        std::string surl((char*)lmdbData.mv_data, lmdbData.mv_size);
+        url = QString(surl.c_str());
+        
+        mdb_txn_abort(txn);
+        return url;
+    } else if (rc == MDB_NOTFOUND) {
+        mdb_txn_abort(txn);
+        throw Archive::NotFound(spath, name.toStdString());
+    } else {
+        mdb_txn_abort(txn);
+        throw Archive::Unknown(name.toStdString(), mdb_strerror(rc));
+    }
+}
+
+std::pair<QString, std::list<Shared::MessageInfo>> Core::UrlStorage::getPath(const QString& url)
+{
+    UrlInfo info;
+    readInfo(url, info);
+    std::list<Shared::MessageInfo> container;
+    info.getMessages(container);
+    return std::make_pair(info.getPath(), container);
+}
+
 Core::UrlStorage::UrlInfo::UrlInfo():
     localPath(),
     messages() {}
@@ -370,19 +423,29 @@ Core::UrlStorage::UrlInfo::UrlInfo(const QString& path):
     localPath(path),
     messages() {}
  
+Core::UrlStorage::UrlInfo::UrlInfo(const QString& path, const std::list<Shared::MessageInfo>& msgs):
+    localPath(path),
+    messages(msgs) {}
+ 
 Core::UrlStorage::UrlInfo::~UrlInfo() {}
  
-void Core::UrlStorage::UrlInfo::addMessage(const QString& acc, const QString& jid, const QString& id)
+bool Core::UrlStorage::UrlInfo::addMessage(const QString& acc, const QString& jid, const QString& id)
 {
+    for (const Shared::MessageInfo& info : messages) {
+        if (info.account == acc && info.jid == jid && info.messageId == id) {
+            return false;
+        }
+    }
     messages.emplace_back(acc, jid, id);
+    return true;
 }
 
 void Core::UrlStorage::UrlInfo::serialize(QDataStream& data) const
 {
     data << localPath;
-    std::list<MessageInfo>::size_type size = messages.size();
+    std::list<Shared::MessageInfo>::size_type size = messages.size();
     data << quint32(size);
-    for (const MessageInfo& info : messages) {
+    for (const Shared::MessageInfo& info : messages) {
         data << info.account;
         data << info.jid;
         data << info.messageId;
@@ -396,16 +459,18 @@ void Core::UrlStorage::UrlInfo::deserialize(QDataStream& data)
     data >> size;
     for (quint32 i = 0; i < size; ++i) {
         messages.emplace_back();
-        MessageInfo& info = messages.back();
+        Shared::MessageInfo& info = messages.back();
         data >> info.account;
         data >> info.jid;
         data >> info.messageId;
     }
 }
 
-void Core::UrlStorage::UrlInfo::getMessages(std::list<MessageInfo>& container) const
+void Core::UrlStorage::UrlInfo::getMessages(std::list<Shared::MessageInfo>& container) const
 {
-    std::copy(messages.begin(), messages.end(), container.end());
+    for (const Shared::MessageInfo& info : messages) {
+        container.emplace_back(info);
+    }
 }
 
 QString Core::UrlStorage::UrlInfo::getPath() const
@@ -423,13 +488,3 @@ void Core::UrlStorage::UrlInfo::setPath(const QString& path)
 {
     localPath = path;
 }
-
-Core::UrlStorage::MessageInfo::MessageInfo():
-    account(),
-    jid(),
-    messageId() {}
-
-Core::UrlStorage::MessageInfo::MessageInfo(const QString& acc, const QString& j, const QString& id):
-    account(acc),
-    jid(j),
-    messageId(id) {}
