@@ -479,11 +479,11 @@ QString Core::NetworkAccess::checkFileName(const QString& name, const QString& p
         suffix += "." + (*sItr);
     }
     QString postfix("");
-    QFileInfo proposedName(path + realName + suffix);
+    QFileInfo proposedName(path + "/" + realName + suffix);
     int counter = 0;
     while (proposedName.exists()) {
         QString count = QString("(") + std::to_string(++counter).c_str() + ")";
-        proposedName = QFileInfo(path + realName + count + suffix);
+        proposedName = QFileInfo(path + "/" + realName + count + suffix);
     }
     
     return proposedName.absoluteFilePath();

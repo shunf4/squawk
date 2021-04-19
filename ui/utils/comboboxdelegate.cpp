@@ -37,7 +37,7 @@ QWidget* ComboboxDelegate::createEditor(QWidget *parent, const QStyleOptionViewI
 {
     QComboBox *cb = new QComboBox(parent);
     
-    for (const std::pair<QString, QIcon> pair : entries) {
+    for (const std::pair<QString, QIcon>& pair : entries) {
         cb->addItem(pair.second, pair.first);
     }
     

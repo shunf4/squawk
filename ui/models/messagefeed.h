@@ -44,7 +44,7 @@ public:
     ~MessageFeed();
     
     void addMessage(const Shared::Message& msg);
-    void changeMessage(const QString& id, const Shared::Message& msg);
+    void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     void removeMessage(const QString& id);
     
     QVariant data(const QModelIndex & index, int role = Qt::DisplayRole) const override;
@@ -72,6 +72,7 @@ protected:
     bool sentByMe(const Shared::Message& msg) const;
     Attachment fillAttach(const Shared::Message& msg) const;
     QModelIndex modelIndexById(const QString& id) const;
+    QModelIndex modelIndexByTime(const QString& id, const QDateTime& time) const;
     
 public:
     enum MessageRoles {

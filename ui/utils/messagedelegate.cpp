@@ -179,6 +179,9 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
             break;
         case Models::ready:
             break;
+        case Models::errorDownload:
+        case Models::errorUpload:
+            break;
     }
     
     messageSize.rheight() += nickMetrics.lineSpacing();
@@ -306,10 +309,11 @@ QProgressBar * MessageDelegate::getBar(const Models::FeedItem& data) const
     
     if (result == 0) {
         result = new QProgressBar();
+        result->setRange(0, 100);
         bars->insert(std::make_pair(data.id, result));
     }
     
-    result->setValue(data.attach.progress);
+    result->setValue(data.attach.progress * 100);
     
     return result;
 }

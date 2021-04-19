@@ -456,3 +456,23 @@ void Shared::Message::setAttachPath(const QString& path)
 {
     attachPath = path;
 }
+
+Shared::Message::Change::Change(const QMap<QString, QVariant>& _data):
+    data(_data),
+    idModified(false) {}
+    
+void Shared::Message::Change::operator()(Shared::Message& msg)
+{
+    idModified = msg.change(data);
+}
+
+void Shared::Message::Change::operator()(Shared::Message* msg)
+{
+    idModified = msg->change(data);
+}
+
+bool Shared::Message::Change::hasIdBeenModified() const
+{
+    return idModified;
+}
+

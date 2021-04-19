@@ -143,7 +143,7 @@ void Models::Element::addMessage(const Shared::Message& data)
 
 void Models::Element::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
 {
-    
+    feed->changeMessage(id, data);
 }
 
 void Models::Element::responseArchive(const std::list<Shared::Message> list, bool last)

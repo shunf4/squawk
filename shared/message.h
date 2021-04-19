@@ -49,6 +49,18 @@ public:
     static const State StateHighest = State::error;
     static const State StateLowest = State::pending;
     
+    struct Change       //change functor, stores in idModified if ID has been modified during change
+    {
+        Change(const QMap<QString, QVariant>& _data);
+        void operator() (Message& msg);
+        void operator() (Message* msg);
+        bool hasIdBeenModified() const;
+        
+    private:
+        const QMap<QString, QVariant>& data;
+        bool idModified;
+    };
+    
     Message(Type p_type);
     Message();
     

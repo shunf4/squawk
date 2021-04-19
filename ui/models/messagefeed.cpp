@@ -76,8 +76,44 @@ void Models::MessageFeed::addMessage(const Shared::Message& msg)
     endInsertRows();
 }
 
-void Models::MessageFeed::changeMessage(const QString& id, const Shared::Message& msg)
+void Models::MessageFeed::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
 {
+    StorageById::iterator itr = indexById.find(id);
+    if (itr == indexById.end()) {
+        qDebug() << "received a command to change a message, but the message couldn't be found, skipping";
+        return;
+    }
+    
+    Shared::Message* msg = *itr;
+    QModelIndex index = modelIndexByTime(id, msg->getTime());
+    Shared::Message::Change functor(data);
+    bool success = indexById.modify(itr, functor);
+    if (!success) {
+        qDebug() << "received a command to change a message, but something went wrong modifying message in the feed, throwing error";
+        throw 872;
+    }
+    
+    if (functor.hasIdBeenModified()) {
+        
+    }
+    
+    //change message is a final event in download/upload event train
+    //only after changeMessage we can consider the download is done
+    Progress::const_iterator dItr = downloads.find(id);
+    if (dItr != downloads.end()) {
+        if (dItr->second == 1) {
+            downloads.erase(dItr);
+        }
+    } else {
+        dItr = uploads.find(id);
+        if (dItr != uploads.end()) {
+            if (dItr->second == 1) {
+                uploads.erase(dItr);
+            }
+        }
+    }
+    
+    emit dataChanged(index, index);
 }
 
 void Models::MessageFeed::removeMessage(const QString& id)
@@ -338,7 +374,7 @@ void Models::MessageFeed::fileProgress(const QString& messageId, qreal value, bo
 
 void Models::MessageFeed::fileComplete(const QString& messageId, bool up)
 {
-    //TODO
+    fileProgress(messageId, 1, up);
 }
 
 void Models::MessageFeed::fileError(const QString& messageId, const QString& error, bool up)
@@ -352,11 +388,29 @@ QModelIndex Models::MessageFeed::modelIndexById(const QString& id) const
     StorageById::const_iterator itr = indexById.find(id);
     if (itr != indexById.end()) {
         Shared::Message* msg = *itr;
-        StorageByTime::const_iterator tItr = indexByTime.upper_bound(msg->getTime());
-        int position = indexByTime.rank(tItr);
-        return createIndex(position, 0, msg);
-    } else {
-        return QModelIndex();
+        return modelIndexByTime(id, msg->getTime());
     }
+    
+    return QModelIndex();
 }
 
+QModelIndex Models::MessageFeed::modelIndexByTime(const QString& id, const QDateTime& time) const
+{
+    StorageByTime::const_iterator tItr = indexByTime.upper_bound(time);
+    StorageByTime::const_iterator tBeg = indexByTime.begin();
+    bool found = false;
+    while (tItr != tBeg) {
+        if (id == (*tItr)->getId()) {
+            found = true;
+            break;
+        }
+        --tItr;
+    }
+    
+    if (found) {
+        int position = indexByTime.rank(tItr);
+        return createIndex(position, 0, *tItr);
+    }
+    
+    return QModelIndex();
+}

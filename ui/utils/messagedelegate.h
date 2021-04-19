@@ -85,6 +85,8 @@ private:
     std::map<QString, QProgressBar*>* bars;
     std::set<QString>* idsToKeep;
     bool clearingWidgets;
+    
+    
 };
 
 #endif // MESSAGEDELEGATE_H

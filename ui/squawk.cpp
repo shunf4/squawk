@@ -444,28 +444,7 @@ void Squawk::accountMessage(const QString& account, const Shared::Message& data)
 
 void Squawk::changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data)
 {
-    Models::Roster::ElId eid({account, jid});
-    bool found = false;
-    
-    if (currentConversation != 0 && currentConversation->getId() == eid) {
-        currentConversation->changeMessage(id, data);
-        QApplication::alert(this);
-        found = true;
-    }
-    
-    Conversations::iterator itr = conversations.find(eid);
-    if (itr != conversations.end()) {
-        Conversation* conv = itr->second;
-        conv->changeMessage(id, data);
-        if (!found && conv->isMinimized()) {
-            rosterModel.changeMessage(account, jid, id, data);
-        }
-        found = true;
-    } 
-    
-    if (!found) {
-        rosterModel.changeMessage(account, jid, id, data);
-    }
+    rosterModel.changeMessage(account, jid, id, data);
 }
 
 void Squawk::notify(const QString& account, const Shared::Message& msg)
