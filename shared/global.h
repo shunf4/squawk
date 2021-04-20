@@ -29,6 +29,11 @@
 
 #include <QCoreApplication>
 #include <QDebug>
+#include <QMimeType>
+#include <QMimeDatabase>
+#include <QFileInfo>
+#include <QImage>
+#include <QSize>
 
 namespace Shared {
     
@@ -36,6 +41,19 @@ namespace Shared {
         Q_DECLARE_TR_FUNCTIONS(Global)
         
     public:
+        struct FileInfo {
+            enum class Preview {
+                none,
+                picture,
+                movie
+            };
+            
+            QString name;
+            QSize size;
+            QMimeType mime;
+            Preview preview;
+        };
+        
         Global();
         
         static Global* getInstance();
@@ -64,6 +82,8 @@ namespace Shared {
         
         static const std::set<QString> supportedImagesExts;
         
+        static FileInfo getFileInfo(const QString& path);
+        
         template<typename T>
         static T fromInt(int src);
         
@@ -87,6 +107,7 @@ namespace Shared {
         static Global* instance;
         
         std::map<QString, bool> pluginSupport;
+        std::map<QString, FileInfo> fileCache;
     };
 }
 

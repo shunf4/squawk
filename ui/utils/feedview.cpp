@@ -113,6 +113,13 @@ void FeedView::rowsInserted(const QModelIndex& parent, int start, int end)
     QAbstractItemView::rowsInserted(parent, start, end);
 }
 
+void FeedView::dataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles)
+{
+    //TODO make optimisations! There are some roles but not all that change geometry!
+    updateGeometries();
+    QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
+}
+
 void FeedView::updateGeometries()
 {
     qDebug() << "updateGeometries";

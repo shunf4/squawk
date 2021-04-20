@@ -115,7 +115,6 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     painter->setFont(nickFont);
     painter->drawText(opt.rect, opt.displayAlignment, data.sender, &rect);
     
-    
     opt.rect.adjust(0, rect.height(), 0, 0);
     painter->save();
     switch (data.attach.state) {
@@ -131,6 +130,11 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
             paintButton(getButton(data), painter, data.sentByMe, opt);
             break;
         case Models::ready:
+            clearHelperWidget(data);
+            paintPreview(data, painter, opt);
+            break;
+        case Models::errorDownload:
+        case Models::errorUpload:
             break;
     }
     painter->restore();
@@ -178,6 +182,7 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
             messageSize.rheight() += buttonHeight;
             break;
         case Models::ready:
+            messageSize.rheight() += calculateAttachSize(attach.localPath, messageRect).height();
             break;
         case Models::errorDownload:
         case Models::errorUpload:
@@ -245,13 +250,39 @@ void MessageDelegate::paintBar(QProgressBar* bar, QPainter* painter, bool sentBy
 {
     QPoint start = option.rect.topLeft();
     
-    QWidget* vp = static_cast<QWidget*>(painter->device());
-    bar->setParent(vp);
-    bar->move(start);
+    //QWidget* vp = static_cast<QWidget*>(painter->device());
+    
+//     if (bar->parent() != vp) {
+//         bar->setParent(vp);
+//     }
+//     bar->move(start);
     bar->resize(option.rect.width(), barHeight);
-    bar->show();
+    //     bar->show();      
+    
+    painter->translate(start);
+    bar->render(painter, QPoint(), QRegion(), QWidget::DrawChildren);
     
     option.rect.adjust(0, barHeight, 0, 0);
+}
+
+void MessageDelegate::paintPreview(const Models::FeedItem& data, QPainter* painter, QStyleOptionViewItem& option) const
+{
+    Shared::Global::FileInfo info = Shared::Global::getFileInfo(data.attach.localPath);
+    if (info.preview == Shared::Global::FileInfo::Preview::picture) {
+        QSize size = constrainAttachSize(info.size, option.rect.size());
+        
+        QPoint start;
+        if (data.sentByMe) {
+            start = {option.rect.width() - size.width(), option.rect.top()};
+            start.rx() += margin;
+        } else {
+            start = option.rect.topLeft();
+        }
+        QImage img(data.attach.localPath);
+        painter->drawImage(QRect(start, size), img);
+        
+        option.rect.adjust(0, size.height(), 0, 0);
+    }
 }
 
 QPushButton * MessageDelegate::getButton(const Models::FeedItem& data) const
@@ -374,6 +405,24 @@ void MessageDelegate::clearHelperWidget(const Models::FeedItem& data) const
             bars->erase(barItr);
         }
     }
+}
+
+QSize MessageDelegate::calculateAttachSize(const QString& path, const QRect& bounds) const
+{
+    Shared::Global::FileInfo info = Shared::Global::getFileInfo(path);
+    
+    return constrainAttachSize(info.size, bounds.size());
+}
+
+QSize MessageDelegate::constrainAttachSize(QSize src, QSize bounds) const
+{
+    bounds.setHeight(500);
+    
+    if (src.width() > bounds.width() || src.height() > bounds.height()) {
+        src.scale(bounds, Qt::KeepAspectRatio);
+    }
+    
+    return src;
 }
 
 

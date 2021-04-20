@@ -30,6 +30,7 @@
 #include <QProgressBar>
 
 #include "shared/icons.h"
+#include "shared/global.h"
 
 namespace Models {
     struct FeedItem;
@@ -57,9 +58,12 @@ signals:
 protected:
     void paintButton(QPushButton* btn, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const;
     void paintBar(QProgressBar* bar, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const;
+    void paintPreview(const Models::FeedItem& data, QPainter* painter, QStyleOptionViewItem& option) const;
     QPushButton* getButton(const Models::FeedItem& data) const;
     QProgressBar* getBar(const Models::FeedItem& data) const;
     void clearHelperWidget(const Models::FeedItem& data) const;
+    QSize calculateAttachSize(const QString& path, const QRect& bounds) const;
+    QSize constrainAttachSize(QSize src, QSize bounds) const;
     
 protected slots:
     void onButtonPushed() const;
@@ -85,7 +89,6 @@ private:
     std::map<QString, QProgressBar*>* bars;
     std::set<QString>* idsToKeep;
     bool clearingWidgets;
-    
     
 };
 

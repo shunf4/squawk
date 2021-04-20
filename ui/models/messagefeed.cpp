@@ -407,7 +407,7 @@ QModelIndex Models::MessageFeed::modelIndexByTime(const QString& id, const QDate
         --tItr;
     }
     
-    if (found) {
+    if (found || id == (*tItr)->getId()) {
         int position = indexByTime.rank(tItr);
         return createIndex(position, 0, *tItr);
     }

@@ -81,7 +81,8 @@ Shared::Global::Global():
     }),
     pluginSupport({
         {"KWallet", false}
-    })
+    }),
+    fileCache()
 {
     if (instance != 0) {
         throw 551;
@@ -89,6 +90,34 @@ Shared::Global::Global():
     
     instance = this;
 }
+
+Shared::Global::FileInfo Shared::Global::getFileInfo(const QString& path)
+{
+    std::map<QString, FileInfo>::const_iterator itr = instance->fileCache.find(path);
+    if (itr == instance->fileCache.end()) {
+        QMimeDatabase db;
+        QMimeType type = db.mimeTypeForFile(path);
+        QStringList parts = type.name().split("/");
+        QString big = parts.front();
+        QFileInfo info(path);
+        
+        FileInfo::Preview p = FileInfo::Preview::none;
+        QSize size;
+        if (big == "image") {
+            if (parts.back() == "gif") {
+                //TODO need to consider GIF as a movie
+            }
+            p = FileInfo::Preview::picture;
+            QImage img(path);
+            size = img.size();
+        }
+        
+        itr = instance->fileCache.insert(std::make_pair(path, FileInfo({info.fileName(), size, type, p}))).first;
+    } 
+    
+    return itr->second;
+}
+
 
 Shared::Global * Shared::Global::getInstance()
 {

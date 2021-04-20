@@ -52,6 +52,7 @@ public slots:
 protected slots:
     void rowsInserted(const QModelIndex & parent, int start, int end) override;
     void verticalScrollbarValueChanged(int value) override;
+    void dataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight, const QVector<int> & roles) override;
     void onMessageButtonPushed(const QString& messageId, bool download);
     
 protected:
