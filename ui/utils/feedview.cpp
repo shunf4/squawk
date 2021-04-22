@@ -29,6 +29,14 @@
 constexpr int maxMessageHeight = 10000;
 constexpr int approximateSingleMessageHeight = 20;
 
+const std::set<int> FeedView::geometryChangingRoles = {
+    Models::MessageFeed::Attach,
+    Models::MessageFeed::Text,
+    Models::MessageFeed::Id,
+    Models::MessageFeed::Error
+    
+};
+
 FeedView::FeedView(QWidget* parent):
     QAbstractItemView(parent),
     hints(),
@@ -115,8 +123,14 @@ void FeedView::rowsInserted(const QModelIndex& parent, int start, int end)
 
 void FeedView::dataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles)
 {
-    //TODO make optimisations! There are some roles but not all that change geometry!
-    updateGeometries();
+    if (specialDelegate) {
+        for (int role : roles) {
+            if (geometryChangingRoles.count(role) != 0) {
+                updateGeometries();                         //to recalculate layout only if there are some geometry changing modifications
+                break;
+            }
+        }
+    }
     QAbstractItemView::dataChanged(topLeft, bottomRight, roles);
 }
 

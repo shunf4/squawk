@@ -26,6 +26,8 @@
 
 constexpr int avatarHeight = 50;
 constexpr int margin = 6;
+constexpr int textMargin = 2;
+constexpr int statusIconSize = 16;
 
 MessageDelegate::MessageDelegate(QObject* parent):
 QStyledItemDelegate(parent),
@@ -115,7 +117,7 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     painter->setFont(nickFont);
     painter->drawText(opt.rect, opt.displayAlignment, data.sender, &rect);
     
-    opt.rect.adjust(0, rect.height(), 0, 0);
+    opt.rect.adjust(0, rect.height() + textMargin, 0, 0);
     painter->save();
     switch (data.attach.state) {
         case Models::none:
@@ -139,16 +141,28 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     }
     painter->restore();
     
+    int messageLeft = 10000; //TODO
     if (data.text.size() > 0) {
         painter->setFont(bodyFont);
         painter->drawText(opt.rect, opt.displayAlignment | Qt::TextWordWrap, data.text, &rect);
-        opt.rect.adjust(0, rect.height(), 0, 0);
+        opt.rect.adjust(0, rect.height() + textMargin, 0, 0);
+        messageLeft = rect.x();
     }
     painter->setFont(dateFont);
     QColor q = painter->pen().color();
     q.setAlpha(180);
     painter->setPen(q);
     painter->drawText(opt.rect, opt.displayAlignment, data.date.toLocalTime().toString(), &rect);
+    if (data.sentByMe) {
+        if (messageLeft > rect.x() - statusIconSize - margin) {
+            messageLeft = rect.x() - statusIconSize - margin;
+        }
+        QIcon q(Shared::icon(Shared::messageStateThemeIcons[static_cast<uint8_t>(data.state)]));
+        if (data.state == Shared::Message::State::error) {
+            //TODO handle error tooltip
+        }
+        painter->drawPixmap(messageLeft, opt.rect.y(), q.pixmap(statusIconSize, statusIconSize));
+    }
     
     painter->restore();
     
@@ -168,6 +182,7 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
     QSize messageSize(0, 0);
     if (body.size() > 0) {
         messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWordWrap, body).size();
+        messageSize.rheight() += textMargin;
     }
     
     switch (attach.state) {
@@ -175,14 +190,14 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
             break;
         case Models::uploading:
         case Models::downloading:
-            messageSize.rheight() += barHeight;
+            messageSize.rheight() += barHeight + textMargin;
             break;
         case Models::remote:
         case Models::local:
-            messageSize.rheight() += buttonHeight;
+            messageSize.rheight() += buttonHeight + textMargin;
             break;
         case Models::ready:
-            messageSize.rheight() += calculateAttachSize(attach.localPath, messageRect).height();
+            messageSize.rheight() += calculateAttachSize(attach.localPath, messageRect).height() + textMargin;
             break;
         case Models::errorDownload:
         case Models::errorUpload:
@@ -190,7 +205,8 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
     }
     
     messageSize.rheight() += nickMetrics.lineSpacing();
-    messageSize.rheight() += dateMetrics.height();
+    messageSize.rheight() += textMargin;
+    messageSize.rheight() += dateMetrics.height() > statusIconSize ? dateMetrics.height() : statusIconSize;
     
     if (messageSize.height() < avatarHeight) {
         messageSize.setHeight(avatarHeight);
@@ -208,10 +224,18 @@ void MessageDelegate::initializeFonts(const QFont& font)
     dateFont = font;
     
     nickFont.setBold(true);
+    
+    float ndps = nickFont.pointSizeF();
+    if (ndps != -1) {
+        nickFont.setPointSizeF(ndps * 1.2);
+    } else {
+        nickFont.setPointSize(nickFont.pointSize() + 2);
+    }
+    
     dateFont.setItalic(true);
     float dps = dateFont.pointSizeF();
     if (dps != -1) {
-        dateFont.setPointSizeF(dps * 0.7);
+        dateFont.setPointSizeF(dps * 0.8);
     } else {
         dateFont.setPointSize(dateFont.pointSize() - 2);
     }
@@ -243,7 +267,7 @@ void MessageDelegate::paintButton(QPushButton* btn, QPainter* painter, bool sent
     btn->move(start);
     btn->show();
     
-    option.rect.adjust(0, buttonHeight, 0, 0);
+    option.rect.adjust(0, buttonHeight + textMargin, 0, 0);
 }
 
 void MessageDelegate::paintBar(QProgressBar* bar, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const
@@ -262,7 +286,7 @@ void MessageDelegate::paintBar(QProgressBar* bar, QPainter* painter, bool sentBy
     painter->translate(start);
     bar->render(painter, QPoint(), QRegion(), QWidget::DrawChildren);
     
-    option.rect.adjust(0, barHeight, 0, 0);
+    option.rect.adjust(0, barHeight + textMargin, 0, 0);
 }
 
 void MessageDelegate::paintPreview(const Models::FeedItem& data, QPainter* painter, QStyleOptionViewItem& option) const
@@ -281,7 +305,7 @@ void MessageDelegate::paintPreview(const Models::FeedItem& data, QPainter* paint
         QImage img(data.attach.localPath);
         painter->drawImage(QRect(start, size), img);
         
-        option.rect.adjust(0, size.height(), 0, 0);
+        option.rect.adjust(0, size.height() + textMargin, 0, 0);
     }
 }
 

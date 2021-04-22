@@ -369,7 +369,7 @@ void Core::MessageHandler::onDownloadFileComplete(const std::list<Shared::Messag
     };
     for (const Shared::MessageInfo& info : msgs) {
         if (info.account == acc->getName()) {
-            Contact* cnt = acc->rh->getContact(info.jid);
+            RosterItem* cnt = acc->rh->getRosterItem(info.jid);
             if (cnt != 0) {
                 if (cnt->changeMessage(info.messageId, cData)) {
                     emit acc->changeMessage(info.jid, info.messageId, cData);

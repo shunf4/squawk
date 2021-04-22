@@ -73,6 +73,7 @@ protected:
     Attachment fillAttach(const Shared::Message& msg) const;
     QModelIndex modelIndexById(const QString& id) const;
     QModelIndex modelIndexByTime(const QString& id, const QDateTime& time) const;
+    QVector<int> detectChanges(const Shared::Message& msg, const QMap<QString, QVariant>& data) const;
     
 public:
     enum MessageRoles {
@@ -85,6 +86,7 @@ public:
         Avatar,
         Attach,
         Id,
+        Error,
         Bulk
     };
     
@@ -161,6 +163,7 @@ struct FeedItem {
     QString text;
     QString sender;
     QString avatar;
+    QString error;
     bool sentByMe;
     bool correction;
     QDateTime date;

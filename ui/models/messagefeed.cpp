@@ -32,6 +32,7 @@ const QHash<int, QByteArray> Models::MessageFeed::roles = {
     {Avatar, "avatar"},
     {Attach, "attach"},
     {Id, "id"},
+    {Error, "error"},
     {Bulk, "bulk"}
 };
 
@@ -85,6 +86,7 @@ void Models::MessageFeed::changeMessage(const QString& id, const QMap<QString, Q
     }
     
     Shared::Message* msg = *itr;
+    QVector<int> changeRoles = detectChanges(*msg, data);
     QModelIndex index = modelIndexByTime(id, msg->getTime());
     Shared::Message::Change functor(data);
     bool success = indexById.modify(itr, functor);
@@ -94,7 +96,7 @@ void Models::MessageFeed::changeMessage(const QString& id, const QMap<QString, Q
     }
     
     if (functor.hasIdBeenModified()) {
-        
+        changeRoles.push_back(MessageRoles::Id);
     }
     
     //change message is a final event in download/upload event train
@@ -113,7 +115,55 @@ void Models::MessageFeed::changeMessage(const QString& id, const QMap<QString, Q
         }
     }
     
-    emit dataChanged(index, index);
+    emit dataChanged(index, index, changeRoles);
+}
+
+QVector<int> Models::MessageFeed::detectChanges(const Shared::Message& msg, const QMap<QString, QVariant>& data) const
+{
+    QVector<int> roles;
+    Shared::Message::State state = msg.getState();
+    QMap<QString, QVariant>::const_iterator itr = data.find("state");
+    if (itr != data.end() && static_cast<Shared::Message::State>(itr.value().toUInt()) != state) {
+        roles.push_back(MessageRoles::DeliveryState);
+    }
+    
+    itr = data.find("outOfBandUrl");
+    bool att = false;
+    if (itr != data.end() && itr.value().toString() != msg.getOutOfBandUrl()) {
+        roles.push_back(MessageRoles::Attach);
+        att = true;
+    }
+    
+    if (!att) {
+        itr = data.find("attachPath");
+        if (itr != data.end() && itr.value().toString() != msg.getAttachPath()) {
+            roles.push_back(MessageRoles::Attach);
+        }
+    }
+    
+    if (state == Shared::Message::State::error) {
+        itr = data.find("errorText");
+        if (itr != data.end()) {
+            roles.push_back(MessageRoles::Error);
+        }
+    }
+    
+    itr = data.find("body");
+    if (itr != data.end()) {
+        QMap<QString, QVariant>::const_iterator dItr = data.find("stamp");
+        QDateTime correctionDate;
+        if (dItr != data.end()) {
+            correctionDate = dItr.value().toDateTime();
+        } else {
+            correctionDate = QDateTime::currentDateTimeUtc();      //in case there is no information about time of this correction it's applied
+        }
+        if (!msg.getEdited() || msg.getLastModified() < correctionDate) {
+            roles.push_back(MessageRoles::Text);
+            roles.push_back(MessageRoles::Correction);
+        }
+    }
+    
+    return roles;
 }
 
 void Models::MessageFeed::removeMessage(const QString& id)
@@ -187,12 +237,17 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
             case Id: 
                 answer.setValue(msg->getId());
                 break;
+                break;
+            case Error: 
+                answer.setValue(msg->getErrorText());
+                break;
             case Bulk: {
                 FeedItem item;
                 item.id = msg->getId();
                 item.sentByMe = sentByMe(*msg);
                 item.date = msg->getTime();
                 item.state = msg->getState();
+                item.error = msg->getErrorText();
                 item.correction = msg->getEdited();
                 
                 QString body = msg->getBody();
@@ -340,7 +395,7 @@ void Models::MessageFeed::downloadAttachment(const QString& messageId)
         std::pair<Progress::iterator, bool> progressPair = downloads.insert(std::make_pair(messageId, 0));
         if (progressPair.second) {     //Only to take action if we weren't already downloading it
             Shared::Message* msg = static_cast<Shared::Message*>(ind.internalPointer());
-            emit dataChanged(ind, ind);
+            emit dataChanged(ind, ind, {MessageRoles::Attach});
             emit fileDownloadRequest(msg->getOutOfBandUrl());
         } else {
             qDebug() << "Attachment download for message with id" << messageId << "is already in progress, skipping";
@@ -368,7 +423,7 @@ void Models::MessageFeed::fileProgress(const QString& messageId, qreal value, bo
     if (itr != pr->end()) {
         itr->second = value;
         QModelIndex ind = modelIndexById(messageId);
-        emit dataChanged(ind, ind);
+        emit dataChanged(ind, ind);                     //the type of the attach didn't change, so, there is no need to relayout, there is no role in event
     }
 }
 

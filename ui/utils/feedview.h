@@ -22,6 +22,7 @@
 #include <QAbstractItemView>
 
 #include <deque>
+#include <set>
 
 #include <ui/models/messagefeed.h>
 
@@ -76,6 +77,8 @@ private:
     bool specialDelegate;
     bool specialModel;
     bool clearWidgetsMode;
+    
+    static const std::set<int> geometryChangingRoles;
     
 };
 
