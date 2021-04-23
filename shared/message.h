@@ -46,6 +46,7 @@ public:
         delivered,
         error
     };
+    
     static const State StateHighest = State::error;
     static const State StateLowest = State::pending;
     

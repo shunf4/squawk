@@ -253,7 +253,9 @@ void Core::MessageHandler::performSending(Shared::Message data)
 {
     QString jid = data.getPenPalJid();
     QString id = data.getId();
+    QString oob = data.getOutOfBandUrl();
     RosterItem* ri = acc->rh->getRosterItem(jid);
+    QMap<QString, QVariant> changes;
     if (acc->state == Shared::ConnectionState::connected) {
         QXmppMessage msg(acc->getFullJid(), data.getTo(), data.getBody(), data.getThread());
         
@@ -262,7 +264,7 @@ void Core::MessageHandler::performSending(Shared::Message data)
 #endif
         msg.setId(id);
         msg.setType(static_cast<QXmppMessage::Type>(data.getType()));       //it is safe here, my type is compatible
-        msg.setOutOfBandUrl(data.getOutOfBandUrl());
+        msg.setOutOfBandUrl(oob);
         msg.setReceiptRequested(true);
         
         bool sent = acc->client.sendPacket(msg);
@@ -286,10 +288,16 @@ void Core::MessageHandler::performSending(Shared::Message data)
         data.setErrorText("You are is offline or reconnecting");
     }
     
-    emit acc->changeMessage(jid, id, {
-        {"state", static_cast<uint>(data.getState())},
-        {"errorText", data.getErrorText()}
-    });
+    Shared::Message::State mstate = data.getState();
+    changes.insert("state", static_cast<uint>(mstate));
+    if (mstate == Shared::Message::State::error) {
+        changes.insert("errorText", data.getErrorText());
+    }
+    if (oob.size() > 0) {
+        changes.insert("outOfBandUrl", oob);
+    }
+    
+    emit acc->changeMessage(jid, id, changes);
 }
 
 void Core::MessageHandler::prepareUpload(const Shared::Message& data)

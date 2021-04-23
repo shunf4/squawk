@@ -33,6 +33,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     QWidget(parent),
     isMuc(muc),
     account(acc),
+    element(el),
     palJid(pJid),
     activePalResource(pRes),
     m_ui(new Ui::Conversation()),
@@ -162,11 +163,6 @@ QString Conversation::getJid() const
     return palJid;
 }
 
-void Conversation::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
-{
-//     line->changeMessage(id, data);
-}
-
 KeyEnterReceiver::KeyEnterReceiver(QObject* parent): QObject(parent), ownEvent(false) {}
 
 bool KeyEnterReceiver::eventFilter(QObject* obj, QEvent* event)
@@ -220,6 +216,7 @@ void Conversation::onEnterPressed()
         for (Badge* badge : filesToAttach) {
             Shared::Message msg = createMessage();
             msg.setAttachPath(badge->id);
+            element->feed->registerUpload(msg.getId());
             emit sendMessage(msg);
         }
          clearAttachedFiles();

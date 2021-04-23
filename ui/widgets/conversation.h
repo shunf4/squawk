@@ -73,7 +73,6 @@ public:
     void fileError(const QString& messageId, const QString& error);
     void responseFileProgress(const QString& messageId, qreal progress);
     virtual void setAvatar(const QString& path);
-    void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     void setFeedFrames(bool top, bool right, bool bottom, bool left);
     
 signals:

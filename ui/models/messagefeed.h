@@ -23,6 +23,8 @@
 #include <QDateTime>
 #include <QString>
 
+#include <set>
+
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/ranked_index.hpp>
@@ -57,6 +59,7 @@ public:
     void responseArchive(const std::list<Shared::Message> list, bool last);
     void downloadAttachment(const QString& messageId);
     void uploadAttachment(const QString& messageId);
+    bool registerUpload(const QString& messageId);
     
     unsigned int unreadMessagesCount() const;
     void fileProgress(const QString& messageId, qreal value, bool up);
@@ -67,13 +70,6 @@ signals:
     void requestArchive(const QString& before);
     void requestStateChange(bool requesting);
     void fileDownloadRequest(const QString& url);
-    
-protected:
-    bool sentByMe(const Shared::Message& msg) const;
-    Attachment fillAttach(const Shared::Message& msg) const;
-    QModelIndex modelIndexById(const QString& id) const;
-    QModelIndex modelIndexByTime(const QString& id, const QDateTime& time) const;
-    QVector<int> detectChanges(const Shared::Message& msg, const QMap<QString, QVariant>& data) const;
     
 public:
     enum MessageRoles {
@@ -89,6 +85,13 @@ public:
         Error,
         Bulk
     };
+    
+protected:
+    bool sentByMe(const Shared::Message& msg) const;
+    Attachment fillAttach(const Shared::Message& msg) const;
+    QModelIndex modelIndexById(const QString& id) const;
+    QModelIndex modelIndexByTime(const QString& id, const QDateTime& time) const;
+    std::set<MessageRoles> detectChanges(const Shared::Message& msg, const QMap<QString, QVariant>& data) const;
     
 private:
     enum SyncState {

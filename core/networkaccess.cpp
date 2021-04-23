@@ -373,7 +373,7 @@ QString Core::NetworkAccess::getFileRemoteUrl(const QString& path)
     QString p;
     
     try {
-        QString p = storage.getUrl(path);
+        p = storage.getUrl(path);
     } catch (const Archive::NotFound& err) {
         
     } catch (...) {
