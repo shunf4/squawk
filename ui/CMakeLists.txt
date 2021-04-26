@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.3)
 project(squawkUI)
 
 # Instruct CMake to run moc automatically when needed.
@@ -8,7 +8,8 @@ set(CMAKE_AUTOUIC ON)
 
 # Find the QtWidgets library
 find_package(Qt5 CONFIG REQUIRED COMPONENTS Widgets DBus Core)
-find_package(Boost 1.36.0 CONFIG REQUIRED)
+find_package(Boost 1.36.0 CONFIG REQUIRED COMPONENTS
+             date_time filesystem iostreams)
 if(Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
 endif()

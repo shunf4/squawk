@@ -28,6 +28,7 @@ constexpr int avatarHeight = 50;
 constexpr int margin = 6;
 constexpr int textMargin = 2;
 constexpr int statusIconSize = 16;
+constexpr int maxAttachmentHeight = 500;
 
 MessageDelegate::MessageDelegate(QObject* parent):
 QStyledItemDelegate(parent),
@@ -41,6 +42,7 @@ buttonHeight(0),
 barHeight(0),
 buttons(new std::map<QString, FeedButton*>()),
 bars(new std::map<QString, QProgressBar*>()),
+statusIcons(new std::map<QString, QLabel*>()),
 idsToKeep(new std::set<QString>()),
 clearingWidgets(false)
 {
@@ -58,6 +60,10 @@ MessageDelegate::~MessageDelegate()
     }
     
     for (const std::pair<const QString, QProgressBar*>& pair: *bars){
+        delete pair.second;
+    }
+    
+    for (const std::pair<const QString, QLabel*>& pair: *statusIcons){
         delete pair.second;
     }
     
@@ -116,7 +122,6 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     QRect rect;
     painter->setFont(nickFont);
     painter->drawText(opt.rect, opt.displayAlignment, data.sender, &rect);
-    
     opt.rect.adjust(0, rect.height() + textMargin, 0, 0);
     painter->save();
     switch (data.attach.state) {
@@ -157,11 +162,13 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
         if (messageLeft > rect.x() - statusIconSize - margin) {
             messageLeft = rect.x() - statusIconSize - margin;
         }
-        QIcon q(Shared::icon(Shared::messageStateThemeIcons[static_cast<uint8_t>(data.state)]));
-        if (data.state == Shared::Message::State::error) {
-            //TODO handle error tooltip
-        }
-        painter->drawPixmap(messageLeft, opt.rect.y(), q.pixmap(statusIconSize, statusIconSize));
+        QLabel* statusIcon = getStatusIcon(data);
+        
+        QWidget* vp = static_cast<QWidget*>(painter->device());
+        statusIcon->setParent(vp);
+        statusIcon->move(messageLeft, opt.rect.y());
+        statusIcon->show();
+        opt.rect.adjust(0, statusIconSize + textMargin, 0, 0);
     }
     
     painter->restore();
@@ -373,6 +380,31 @@ QProgressBar * MessageDelegate::getBar(const Models::FeedItem& data) const
     return result;
 }
 
+QLabel * MessageDelegate::getStatusIcon(const Models::FeedItem& data) const
+{
+    std::map<QString, QLabel*>::const_iterator itr = statusIcons->find(data.id);
+    QLabel* result = 0;
+    
+    if (itr != statusIcons->end()) {
+        result = itr->second;
+    } else {
+        result = new QLabel();
+        statusIcons->insert(std::make_pair(data.id, result));
+    }
+    
+    QIcon q(Shared::icon(Shared::messageStateThemeIcons[static_cast<uint8_t>(data.state)]));
+    QString tt = Shared::Global::getName(data.state);
+    if (data.state == Shared::Message::State::error) {
+        if (data.error > 0) {
+            tt += ": " + data.error;
+        }
+    }
+    
+    result->setToolTip(tt);
+    result->setPixmap(q.pixmap(statusIconSize));
+    
+    return result;
+}
 
 void MessageDelegate::beginClearWidgets()
 {
@@ -385,6 +417,7 @@ void MessageDelegate::endClearWidgets()
     if (clearingWidgets) {
         std::set<QString> toRemoveButtons;
         std::set<QString> toRemoveBars;
+        std::set<QString> toRemoveIcons;
         for (const std::pair<const QString, FeedButton*>& pair: *buttons) {
             if (idsToKeep->find(pair.first) == idsToKeep->end()) {
                 delete pair.second;
@@ -397,12 +430,21 @@ void MessageDelegate::endClearWidgets()
                 toRemoveBars.insert(pair.first);
             }
         }
+        for (const std::pair<const QString, QLabel*>& pair: *statusIcons) {
+            if (idsToKeep->find(pair.first) == idsToKeep->end()) {
+                delete pair.second;
+                toRemoveIcons.insert(pair.first);
+            }
+        }
         
         for (const QString& key : toRemoveButtons) {
             buttons->erase(key);
         }
         for (const QString& key : toRemoveBars) {
             bars->erase(key);
+        }
+        for (const QString& key : toRemoveIcons) {
+            statusIcons->erase(key);
         }
         
         idsToKeep->clear();
@@ -440,7 +482,7 @@ QSize MessageDelegate::calculateAttachSize(const QString& path, const QRect& bou
 
 QSize MessageDelegate::constrainAttachSize(QSize src, QSize bounds) const
 {
-    bounds.setHeight(500);
+    bounds.setHeight(maxAttachmentHeight);
     
     if (src.width() > bounds.width() || src.height() > bounds.height()) {
         src.scale(bounds, Qt::KeepAspectRatio);

@@ -253,9 +253,11 @@ void FeedView::paintEvent(QPaintEvent* event)
     option.features = QStyleOptionViewItem::WrapText;
     QPoint cursor = vp->mapFromGlobal(QCursor::pos());
     
-    if (clearWidgetsMode && specialDelegate) {
+    if (specialDelegate) {
         MessageDelegate* del = static_cast<MessageDelegate*>(itemDelegate());
-        del->beginClearWidgets();
+        if (clearWidgetsMode) {
+            del->beginClearWidgets();
+        }
     }
     
     for (const QModelIndex& index : toRener) {
