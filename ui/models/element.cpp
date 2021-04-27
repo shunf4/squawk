@@ -31,6 +31,8 @@ Models::Element::Element(Type p_type, const Models::Account* acc, const QString&
 {
     connect(feed, &MessageFeed::requestArchive, this, &Element::requestArchive);
     connect(feed, &MessageFeed::fileDownloadRequest, this, &Element::fileDownloadRequest);
+    connect(feed, &MessageFeed::unreadMessagesCountChanged, this, &Element::onFeedUnreadMessagesCountChanged);
+    connect(feed, &MessageFeed::unnoticedMessage, this, &Element::onFeedUnnoticedMessage);
     
     QMap<QString, QVariant>::const_iterator itr = data.find("avatarState");
     if (itr != data.end()) {
@@ -134,11 +136,6 @@ unsigned int Models::Element::getMessagesCount() const
 void Models::Element::addMessage(const Shared::Message& data)
 {
     feed->addMessage(data);
-    if (type == contact) {
-        changed(4);
-    } else if (type == room) {
-        changed(5);
-    }
 }
 
 void Models::Element::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
@@ -169,4 +166,18 @@ void Models::Element::fileComplete(const QString& messageId, bool up)
 void Models::Element::fileError(const QString& messageId, const QString& error, bool up)
 {
     feed->fileError(messageId, error, up);
+}
+
+void Models::Element::onFeedUnreadMessagesCountChanged()
+{
+    if (type == contact) {
+        changed(4);
+    } else if (type == room) {
+        changed(5);
+    }
+}
+
+void Models::Element::onFeedUnnoticedMessage(const Shared::Message& msg)
+{
+    emit unnoticedMessage(getAccountName(), msg);
 }

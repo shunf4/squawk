@@ -50,6 +50,7 @@ public:
 signals:
     void requestArchive(const QString& before);
     void fileDownloadRequest(const QString& url);
+    void unnoticedMessage(const QString& account, const Shared::Message& msg);
     
 protected:
     void setJid(const QString& p_jid);
@@ -58,6 +59,10 @@ protected:
     void setAvatarPath(const QString& path);
     bool columnInvolvedInDisplay(int col) override;
     const Account* getParentAccount() const override;
+    
+protected slots:
+    void onFeedUnreadMessagesCountChanged();
+    void onFeedUnnoticedMessage(const Shared::Message& msg);
     
 protected:
     QString jid;

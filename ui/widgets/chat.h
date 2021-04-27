@@ -34,14 +34,13 @@ class Chat : public Conversation
 public:
     Chat(Models::Account* acc, Models::Contact* p_contact, QWidget* parent = 0);
     ~Chat();
-    
-    //void addMessage(const Shared::Message & data) override;
 
 protected slots:
     void onContactChanged(Models::Item* item, int row, int col);
     
 protected:
     Shared::Message createMessage() const override;
+    void onMessage(const Shared::Message& msg) override;
     
 private:
     void updateState();

@@ -448,6 +448,7 @@ void Models::Roster::addContact(const QString& account, const QString& jid, cons
             contact = new Contact(acc, jid, data);
             connect(contact, &Contact::requestArchive, this, &Roster::onElementRequestArchive);
             connect(contact, &Contact::fileDownloadRequest, this, &Roster::fileDownloadRequest);
+            connect(contact, &Contact::unnoticedMessage, this, &Roster::unnoticedMessage);
             contacts.insert(std::make_pair(id, contact));
         } else {
             contact = itr->second;
@@ -785,6 +786,7 @@ void Models::Roster::addRoom(const QString& account, const QString jid, const QM
     Room* room = new Room(acc, jid, data);
     connect(room, &Contact::requestArchive, this, &Roster::onElementRequestArchive);
     connect(room, &Contact::fileDownloadRequest, this, &Roster::fileDownloadRequest);
+    connect(room, &Contact::unnoticedMessage, this, &Roster::unnoticedMessage);
     rooms.insert(std::make_pair(id, room));
     acc->appendChild(room);
 }

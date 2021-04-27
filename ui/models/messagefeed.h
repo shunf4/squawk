@@ -66,10 +66,16 @@ public:
     void fileError(const QString& messageId, const QString& error, bool up);
     void fileComplete(const QString& messageId, bool up);
     
+    void incrementObservers();
+    void decrementObservers();
+    
 signals:
     void requestArchive(const QString& before);
     void requestStateChange(bool requesting);
     void fileDownloadRequest(const QString& url);
+    void unreadMessagesCountChanged();
+    void newMessage(const Shared::Message& msg);
+    void unnoticedMessage(const Shared::Message& msg);
     
 public:
     enum MessageRoles {
@@ -139,6 +145,9 @@ private:
     typedef std::map<QString, qreal> Progress;
     Progress uploads;
     Progress downloads;
+    
+    std::set<QString>* unreadMessages;
+    uint16_t observersAmount;
     
     static const QHash<int, QByteArray> roles;
 };

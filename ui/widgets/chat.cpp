@@ -71,15 +71,14 @@ Shared::Message Chat::createMessage() const
     return msg;
 }
 
-// TODO
-// void Chat::addMessage(const Shared::Message& data)
-// {
-//     Conversation::addMessage(data);
-//     
-//     if (!data.getOutgoing()) {                          //TODO need to check if that was the last message
-//         const QString& res = data.getPenPalResource();
-//         if (res.size() > 0) {
-//             setPalResource(res);
-//         }
-//     }
-// }
+void Chat::onMessage(const Shared::Message& data)
+{
+    Conversation::onMessage(data);
+    
+    if (!data.getOutgoing()) {
+        const QString& res = data.getPenPalResource();
+        if (res.size() > 0) {
+            setPalResource(res);
+        }
+    }
+}

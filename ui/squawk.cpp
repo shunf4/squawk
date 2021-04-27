@@ -59,6 +59,7 @@ Squawk::Squawk(QWidget *parent) :
     connect(m_ui->roster, &QTreeView::customContextMenuRequested, this, &Squawk::onRosterContextMenu);
     connect(m_ui->roster, &QTreeView::collapsed, this, &Squawk::onItemCollepsed);
     connect(m_ui->roster->selectionModel(), &QItemSelectionModel::currentRowChanged, this, &Squawk::onRosterSelectionChanged);
+    connect(&rosterModel, &Models::Roster::unnoticedMessage, this, &Squawk::onUnnoticedMessage);
     
     connect(rosterModel.accountsModel, &Models::Accounts::sizeChanged, this, &Squawk::onAccountsSizeChanged);
     connect(&rosterModel, &Models::Roster::requestArchive, this, &Squawk::onRequestArchive);
@@ -410,36 +411,13 @@ void Squawk::fileUploadComplete(const std::list<Shared::MessageInfo> msgs, const
 
 void Squawk::accountMessage(const QString& account, const Shared::Message& data)
 {
-    const QString& from = data.getPenPalJid();
-    Models::Roster::ElId id({account, from});
-    Conversations::iterator itr = conversations.find(id);
-    bool found = false;
-    
     rosterModel.addMessage(account, data);
-    
-    if (currentConversation != 0 && currentConversation->getId() == id) {
-        QApplication::alert(this);
-        if (!isVisible() && !data.getForwarded()) {
-            notify(account, data);
-        }
-        found = true;
-    }
-    
-    if (itr != conversations.end()) {
-        Conversation* conv = itr->second;
-        QApplication::alert(conv);
-        if (!conv->isVisible() && !data.getForwarded()) {
-            notify(account, data);
-        }
-        found = true;
-    }
-    
-    if (!found) {
-        if (!data.getForwarded()) {
-            QApplication::alert(this);
-            notify(account, data);
-        }
-    }
+}
+
+void Squawk::onUnnoticedMessage(const QString& account, const Shared::Message& msg)
+{
+    notify(account, msg);             //Telegram does this way - notifies even if the app is visible
+    QApplication::alert(this);
 }
 
 void Squawk::changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data)
@@ -935,6 +913,7 @@ void Squawk::subscribeConversation(Conversation* conv)
 {
     connect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
     connect(conv, &Conversation::sendMessage, this, &Squawk::onConversationMessage);
+    connect(conv, &Conversation::notifyableMessage, this, &Squawk::notify);
 }
 
 void Squawk::onRosterSelectionChanged(const QModelIndex& current, const QModelIndex& previous)

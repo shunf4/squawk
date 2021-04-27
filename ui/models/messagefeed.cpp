@@ -44,12 +44,16 @@ Models::MessageFeed::MessageFeed(const Element* ri, QObject* parent):
     rosterItem(ri),
     syncState(incomplete),
     uploads(),
-    downloads()
+    downloads(),
+    unreadMessages(new std::set<QString>()),
+    observersAmount(0)
 {
 }
 
 Models::MessageFeed::~MessageFeed()
 {
+    delete unreadMessages;
+    
     for (Shared::Message* message : storage) {
         delete message;
     }
@@ -75,6 +79,14 @@ void Models::MessageFeed::addMessage(const Shared::Message& msg)
     beginInsertRows(QModelIndex(), position, position);
     storage.insert(copy);
     endInsertRows();
+    
+    emit newMessage(msg);
+    
+    if (observersAmount == 0 && !msg.getForwarded()) {      //not to notify when the message is delivered by the carbon copy
+        unreadMessages->insert(msg.getId());                //cuz it could be my own one or the one I read on another device
+        emit unreadMessagesCountChanged();
+        emit unnoticedMessage(msg);
+    }
 }
 
 void Models::MessageFeed::changeMessage(const QString& id, const QMap<QString, QVariant>& data)
@@ -97,6 +109,11 @@ void Models::MessageFeed::changeMessage(const QString& id, const QMap<QString, Q
     
     if (functor.hasIdBeenModified()) {
         changeRoles.insert(MessageRoles::Id);
+        std::set<QString>::const_iterator umi = unreadMessages->find(id);
+        if (umi != unreadMessages->end()) {
+            unreadMessages->erase(umi);
+            unreadMessages->insert(msg->getId());
+        }
     }
     
     //change message is a final event in download/upload event train
@@ -258,6 +275,13 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
             case Bulk: {
                 FeedItem item;
                 item.id = msg->getId();
+                
+                std::set<QString>::const_iterator umi = unreadMessages->find(item.id);
+                if (umi != unreadMessages->end()) {
+                    unreadMessages->erase(umi);
+                    emit unreadMessagesCount();
+                }
+                
                 item.sentByMe = sentByMe(*msg);
                 item.date = msg->getTime();
                 item.state = msg->getState();
@@ -308,7 +332,7 @@ int Models::MessageFeed::rowCount(const QModelIndex& parent) const
 
 unsigned int Models::MessageFeed::unreadMessagesCount() const
 {
-    return storage.size(); //let's say they are all new for now =)
+    return unreadMessages->size();
 }
 
 bool Models::MessageFeed::canFetchMore(const QModelIndex& parent) const
@@ -454,6 +478,16 @@ void Models::MessageFeed::fileComplete(const QString& messageId, bool up)
 void Models::MessageFeed::fileError(const QString& messageId, const QString& error, bool up)
 {
     //TODO
+}
+
+void Models::MessageFeed::incrementObservers()
+{
+    ++observersAmount;
+}
+
+void Models::MessageFeed::decrementObservers()
+{
+    --observersAmount;
 }
 
 

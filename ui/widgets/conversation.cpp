@@ -48,8 +48,6 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     delegate(new MessageDelegate(this)),
     scroll(down),
     manualSliderChange(false),
-    requestingHistory(false),
-    everShown(false),
     tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1)
 {
     m_ui->setupUi(this);
@@ -57,7 +55,10 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     feed->setItemDelegate(delegate);
     delegate->initializeFonts(feed->getFont());
     feed->setModel(el->feed);
+    el->feed->incrementObservers();
     m_ui->widget->layout()->addWidget(feed);
+    
+    connect(el->feed, &Models::MessageFeed::newMessage, this, &Conversation::onFeedMessage);
     
     connect(acc, &Models::Account::childChanged, this, &Conversation::onAccountChanged);
     
@@ -69,9 +70,6 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     
     connect(&ker, &KeyEnterReceiver::enterPressed, this, &Conversation::onEnterPressed);
     connect(m_ui->sendButton, &QPushButton::clicked, this, &Conversation::onEnterPressed);
-    //connect(line, &MessageLine::downloadFile, this, &Conversation::downloadFile);
-    //connect(line, &MessageLine::uploadFile, this, qOverload<const Shared::Message&, const QString&>(&Conversation::sendMessage));
-    //connect(line, &MessageLine::requestLocalFile, this, &Conversation::requestLocalFile);
     connect(m_ui->attachButton, &QPushButton::clicked, this, &Conversation::onAttach);
     connect(m_ui->clearButton, &QPushButton::clicked, this, &Conversation::onClearButton);
     connect(m_ui->messageEditor->document()->documentLayout(), &QAbstractTextDocumentLayout::documentSizeChanged, 
@@ -121,18 +119,19 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
 
 Conversation::~Conversation()
 {
+    element->feed->decrementObservers();
 }
 
 void Conversation::onAccountChanged(Models::Item* item, int row, int col)
 {
     if (item == account) {
-        if (col == 2 && account->getState() == Shared::ConnectionState::connected) {
-            if (!requestingHistory) {
-                requestingHistory = true;
+        if (col == 2 && account->getState() == Shared::ConnectionState::connected) {        //to request the history when we're back online after reconnect
+            //if (!requestingHistory) {
+                //requestingHistory = true;
                 //line->showBusyIndicator();
                 //emit requestArchive("");
                 //scroll = down;
-            }
+            //}
         }
     }
 }
@@ -223,21 +222,6 @@ void Conversation::onEnterPressed()
     }
 }
 
-void Conversation::showEvent(QShowEvent* event)
-{
-    if (!everShown) {
-        everShown = true;
-//         line->showBusyIndicator();
-        requestingHistory = true;
-        scroll = keep;
-        emit requestArchive("");
-    }
-    emit shown();
-    
-    QWidget::showEvent(event);
-    
-}
-
 void Conversation::onAttach()
 {
     QFileDialog* d = new QFileDialog(this, tr("Chose a file to send"));
@@ -263,21 +247,6 @@ void Conversation::onFileSelected()
 void Conversation::setStatus(const QString& status)
 {
     statusLabel->setText(Shared::processMessageBody(status));
-}
-
-void Conversation::responseFileProgress(const QString& messageId, qreal progress)
-{
-//     line->fileProgress(messageId, progress);
-}
-
-void Conversation::fileError(const QString& messageId, const QString& error)
-{
-//     line->fileError(messageId, error);
-}
-
-void Conversation::responseLocalFile(const QString& messageId, const QString& path)
-{
-//     line->responseLocalFile(messageId, path);
 }
 
 Models::Roster::ElId Conversation::getId() const
@@ -416,3 +385,18 @@ Shared::Message Conversation::createMessage() const
     return msg;
 }
 
+void Conversation::onFeedMessage(const Shared::Message& msg)
+{
+    this->onMessage(msg);
+}
+
+void Conversation::onMessage(const Shared::Message& msg)
+{
+    qDebug() << window()->windowState();
+    if (!msg.getForwarded()) {
+        QApplication::alert(this);
+        if (window()->windowState().testFlag(Qt::WindowMinimized)) {
+            emit notifyableMessage(getAccount(), msg);
+        }
+    }
+}

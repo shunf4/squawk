@@ -128,6 +128,8 @@ private:
     
 protected:
     void closeEvent(QCloseEvent * event) override;
+    
+protected slots:
     void notify(const QString& account, const Shared::Message& msg);
     
 private slots:
@@ -152,6 +154,8 @@ private slots:
     void onPasswordPromptRejected();
     void onRosterSelectionChanged(const QModelIndex& current, const QModelIndex& previous);
     void onContextAboutToHide();
+    
+    void onUnnoticedMessage(const QString& account, const Shared::Message& msg);
     
 private:
     void checkNextAccountForPassword();

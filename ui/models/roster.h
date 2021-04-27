@@ -92,6 +92,7 @@ public:
 signals:
     void requestArchive(const QString& account, const QString& jid, const QString& before);
     void fileDownloadRequest(const QString& url);
+    void unnoticedMessage(const QString& account, const Shared::Message& msg);
     
 private:
     Element* getElement(const ElId& id);

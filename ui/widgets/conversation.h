@@ -68,10 +68,6 @@ public:
     Models::Roster::ElId getId() const;
     
     void setPalResource(const QString& res);
-    void showEvent(QShowEvent * event) override;
-    void responseLocalFile(const QString& messageId, const QString& path);
-    void fileError(const QString& messageId, const QString& error);
-    void responseFileProgress(const QString& messageId, qreal progress);
     virtual void setAvatar(const QString& path);
     void setFeedFrames(bool top, bool right, bool bottom, bool left);
     
@@ -81,6 +77,7 @@ signals:
     void shown();
     void requestLocalFile(const QString& messageId, const QString& url);
     void downloadFile(const QString& messageId, const QString& url);
+    void notifyableMessage(const QString& account, const Shared::Message& msg);
     
 protected:
     virtual void setName(const QString& name);
@@ -93,6 +90,7 @@ protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dragLeaveEvent(QDragLeaveEvent* event) override;
     void dropEvent(QDropEvent* event) override;
+    virtual void onMessage(const Shared::Message& msg);
     
 protected slots:
     void onEnterPressed();
@@ -102,6 +100,7 @@ protected slots:
     void onClearButton();
     void onTextEditDocSizeChanged(const QSizeF& size);
     void onAccountChanged(Models::Item* item, int row, int col);
+    void onFeedMessage(const Shared::Message& msg);
     
 public:
     const bool isMuc;
@@ -128,8 +127,6 @@ protected:
     MessageDelegate* delegate;
     Scroll scroll;
     bool manualSliderChange;
-    bool requestingHistory;
-    bool everShown;
     bool tsb;           //transient scroll bars
 };
 
