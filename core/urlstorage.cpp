@@ -348,6 +348,7 @@ std::list<Shared::MessageInfo> Core::UrlStorage::deletedFile(const QString& path
             url = QString(surl.c_str());
         } else if (rc == MDB_NOTFOUND) {
             qDebug() << "Have been asked to remove file" << path << ", which isn't in the database, skipping";
+            mdb_txn_abort(txn);
             return list;
         } else {
             throw Archive::Unknown(name.toStdString(), mdb_strerror(rc));

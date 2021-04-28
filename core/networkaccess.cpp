@@ -493,3 +493,8 @@ QString Core::NetworkAccess::addMessageAndCheckForPath(const QString& url, const
 {
     return storage.addMessageAndCheckForPath(url, account, jid, id);
 }
+
+std::list<Shared::MessageInfo> Core::NetworkAccess::reportPathInvalid(const QString& path)
+{
+    return storage.deletedFile(path);
+}

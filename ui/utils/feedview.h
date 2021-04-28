@@ -55,6 +55,7 @@ protected slots:
     void verticalScrollbarValueChanged(int value) override;
     void dataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight, const QVector<int> & roles) override;
     void onMessageButtonPushed(const QString& messageId, bool download);
+    void onMessageInvalidPath(const QString& messageId);
     
 protected:
     int verticalOffset() const override;

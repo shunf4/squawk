@@ -60,6 +60,7 @@ public:
     void downloadAttachment(const QString& messageId);
     void uploadAttachment(const QString& messageId);
     bool registerUpload(const QString& messageId);
+    void reportLocalPathInvalid(const QString& messageId);
     
     unsigned int unreadMessagesCount() const;
     void fileProgress(const QString& messageId, qreal value, bool up);
@@ -76,6 +77,7 @@ signals:
     void unreadMessagesCountChanged();
     void newMessage(const Shared::Message& msg);
     void unnoticedMessage(const Shared::Message& msg);
+    void localPathInvalid(const QString& path);
     
 public:
     enum MessageRoles {

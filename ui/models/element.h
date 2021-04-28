@@ -51,6 +51,7 @@ signals:
     void requestArchive(const QString& before);
     void fileDownloadRequest(const QString& url);
     void unnoticedMessage(const QString& account, const Shared::Message& msg);
+    void localPathInvalid(const QString& path);
     
 protected:
     void setJid(const QString& p_jid);

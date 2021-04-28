@@ -53,6 +53,7 @@ public:
     QString addMessageAndCheckForPath(const QString& url, const QString& account, const QString& jid, const QString& id);
     void uploadFile(const Shared::MessageInfo& info, const QString& path, const QUrl& put, const QUrl& get, const QMap<QString, QString> headers);
     bool checkAndAddToUploading(const QString& acc, const QString& jid, const QString id, const QString path);
+    std::list<Shared::MessageInfo> reportPathInvalid(const QString& path);
     
 signals:
     void loadFileProgress(const std::list<Shared::MessageInfo>& msgs, qreal value, bool up);

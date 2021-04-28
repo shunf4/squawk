@@ -310,7 +310,11 @@ void MessageDelegate::paintPreview(const Models::FeedItem& data, QPainter* paint
             start = option.rect.topLeft();
         }
         QImage img(data.attach.localPath);
-        painter->drawImage(QRect(start, size), img);
+        if (img.isNull()) {
+            emit invalidPath(data.id);
+        } else {
+            painter->drawImage(QRect(start, size), img);
+        }
         
         option.rect.adjust(0, size.height() + textMargin, 0, 0);
     }

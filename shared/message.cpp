@@ -394,18 +394,21 @@ bool Shared::Message::change(const QMap<QString, QVariant>& data)
     
     itr = data.find("body");
     if (itr != data.end()) {
-        QMap<QString, QVariant>::const_iterator dItr = data.find("stamp");
-        QDateTime correctionDate;
-        if (dItr != data.end()) {
-            correctionDate = dItr.value().toDateTime();
-        } else {
-            correctionDate = QDateTime::currentDateTimeUtc();      //in case there is no information about time of this correction it's applied
-        }
-        if (!edited || lastModified < correctionDate) {
-            originalMessage = body;
-            lastModified = correctionDate;
-            setBody(itr.value().toString());
-            setEdited(true);
+        QString b = itr.value().toString();
+        if (body != b) {
+            QMap<QString, QVariant>::const_iterator dItr = data.find("stamp");
+            QDateTime correctionDate;
+            if (dItr != data.end()) {
+                correctionDate = dItr.value().toDateTime();
+            } else {
+                correctionDate = QDateTime::currentDateTimeUtc();      //in case there is no information about time of this correction it's applied
+            }
+            if (!edited || lastModified < correctionDate) {
+                originalMessage = body;
+                lastModified = correctionDate;
+                setBody(body);
+                setEdited(true);
+            }
         }
     }
     

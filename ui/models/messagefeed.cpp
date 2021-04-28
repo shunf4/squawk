@@ -116,37 +116,39 @@ void Models::MessageFeed::changeMessage(const QString& id, const QMap<QString, Q
         }
     }
     
-    //change message is a final event in download/upload event train
-    //only after changeMessage we can consider the download is done
-    Progress::const_iterator dItr = downloads.find(id);
-    bool attachOrError = changeRoles.count(MessageRoles::Attach) > 0 || changeRoles.count(MessageRoles::Error);
-    if (dItr != downloads.end()) {
-        if (attachOrError) {
-            downloads.erase(dItr);
-        } else if (changeRoles.count(MessageRoles::Id) > 0) {
-            qreal progress = dItr->second;
-            downloads.erase(dItr);
-            downloads.insert(std::make_pair(msg->getId(), progress));
-        }
-    } else {
-        dItr = uploads.find(id);
-        if (dItr != uploads.end()) {
+    if (changeRoles.size() > 0) {
+        //change message is a final event in download/upload event train
+        //only after changeMessage we can consider the download is done
+        Progress::const_iterator dItr = downloads.find(id);
+        bool attachOrError = changeRoles.count(MessageRoles::Attach) > 0 || changeRoles.count(MessageRoles::Error);
+        if (dItr != downloads.end()) {
             if (attachOrError) {
-                uploads.erase(dItr);
+                downloads.erase(dItr);
             } else if (changeRoles.count(MessageRoles::Id) > 0) {
                 qreal progress = dItr->second;
-                uploads.erase(dItr);
-                uploads.insert(std::make_pair(msg->getId(), progress));
+                downloads.erase(dItr);
+                downloads.insert(std::make_pair(msg->getId(), progress));
+            }
+        } else {
+            dItr = uploads.find(id);
+            if (dItr != uploads.end()) {
+                if (attachOrError) {
+                    uploads.erase(dItr);
+                } else if (changeRoles.count(MessageRoles::Id) > 0) {
+                    qreal progress = dItr->second;
+                    uploads.erase(dItr);
+                    uploads.insert(std::make_pair(msg->getId(), progress));
+                }
             }
         }
+        
+        QVector<int> cr;
+        for (MessageRoles role : changeRoles) {
+            cr.push_back(role);
+        }
+        
+        emit dataChanged(index, index, cr);
     }
-    
-    QVector<int> cr;
-    for (MessageRoles role : changeRoles) {
-        cr.push_back(role);
-    }
-    
-    emit dataChanged(index, index, cr);
 }
 
 std::set<Models::MessageFeed::MessageRoles> Models::MessageFeed::detectChanges(const Shared::Message& msg, const QMap<QString, QVariant>& data) const
@@ -174,13 +176,13 @@ std::set<Models::MessageFeed::MessageRoles> Models::MessageFeed::detectChanges(c
     
     if (state == Shared::Message::State::error) {
         itr = data.find("errorText");
-        if (itr != data.end()) {
+        if (itr != data.end() && itr.value().toString() != msg.getErrorText()) {
             roles.insert(MessageRoles::Error);
         }
     }
     
     itr = data.find("body");
-    if (itr != data.end()) {
+    if (itr != data.end() && itr.value().toString() != msg.getBody()) {
         QMap<QString, QVariant>::const_iterator dItr = data.find("stamp");
         QDateTime correctionDate;
         if (dItr != data.end()) {
@@ -521,4 +523,23 @@ QModelIndex Models::MessageFeed::modelIndexByTime(const QString& id, const QDate
     }
     
     return QModelIndex();
+}
+
+void Models::MessageFeed::reportLocalPathInvalid(const QString& messageId)
+{
+    StorageById::iterator itr = indexById.find(messageId);
+    if (itr == indexById.end()) {
+        qDebug() << "received a command to change a message, but the message couldn't be found, skipping";
+        return;
+    }
+    
+    Shared::Message* msg = *itr;
+    
+    emit localPathInvalid(msg->getAttachPath());
+    
+    //gonna change the message in current model right away, to prevent spam on each attemt to draw element
+    QModelIndex index = modelIndexByTime(messageId, msg->getTime());
+    msg->setAttachPath("");
+    
+    emit dataChanged(index, index, {MessageRoles::Attach});
 }

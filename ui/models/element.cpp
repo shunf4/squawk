@@ -33,6 +33,7 @@ Models::Element::Element(Type p_type, const Models::Account* acc, const QString&
     connect(feed, &MessageFeed::fileDownloadRequest, this, &Element::fileDownloadRequest);
     connect(feed, &MessageFeed::unreadMessagesCountChanged, this, &Element::onFeedUnreadMessagesCountChanged);
     connect(feed, &MessageFeed::unnoticedMessage, this, &Element::onFeedUnnoticedMessage);
+    connect(feed, &MessageFeed::localPathInvalid, this, &Element::localPathInvalid);
     
     QMap<QString, QVariant>::const_iterator itr = data.find("avatarState");
     if (itr != data.end()) {

@@ -96,6 +96,7 @@ public:
     void addContactToGroupRequest(const QString& jid, const QString& groupName);
     void removeContactFromGroupRequest(const QString& jid, const QString& groupName);
     void renameContactRequest(const QString& jid, const QString& newName);
+    void requestChangeMessage(const QString& jid, const QString& messageId, const QMap<QString, QVariant>& data);
     
     void setRoomJoined(const QString& jid, bool joined);
     void setRoomAutoJoin(const QString& jid, bool joined);

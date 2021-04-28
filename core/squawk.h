@@ -121,6 +121,7 @@ public slots:
     void requestVCard(const QString& account, const QString& jid);
     void uploadVCard(const QString& account, const Shared::VCard& card);
     void responsePassword(const QString& account, const QString& password);
+    void onLocalPathInvalid(const QString& path);
     
 private:
     typedef std::deque<Account*> Accounts;

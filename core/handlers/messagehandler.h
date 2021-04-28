@@ -58,6 +58,7 @@ public slots:
     void onDownloadFileComplete(const std::list<Shared::MessageInfo>& msgs, const QString& path);
     void onUploadFileComplete(const std::list<Shared::MessageInfo>& msgs, const QString& path);
     void onLoadFileError(const std::list<Shared::MessageInfo>& msgs, const QString& path, bool up);
+    void requestChangeMessage(const QString& jid, const QString& messageId, const QMap<QString, QVariant>& data);
     
 private:
     bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);

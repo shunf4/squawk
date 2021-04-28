@@ -64,6 +64,7 @@ Squawk::Squawk(QWidget *parent) :
     connect(rosterModel.accountsModel, &Models::Accounts::sizeChanged, this, &Squawk::onAccountsSizeChanged);
     connect(&rosterModel, &Models::Roster::requestArchive, this, &Squawk::onRequestArchive);
     connect(&rosterModel, &Models::Roster::fileDownloadRequest, this, &Squawk::fileDownloadRequest);
+    connect(&rosterModel, &Models::Roster::localPathInvalid, this, &Squawk::localPathInvalid);
     connect(contextMenu, &QMenu::aboutToHide, this, &Squawk::onContextAboutToHide);
     //m_ui->mainToolBar->addWidget(m_ui->comboBox);
     

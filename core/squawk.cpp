@@ -751,3 +751,20 @@ void Core::Squawk::onAccountUploadFileError(const QString& jid, const QString id
     Account* acc = static_cast<Account*>(sender());
     emit fileError({{acc->getName(), jid, id}}, errorText, true);
 }
+
+void Core::Squawk::onLocalPathInvalid(const QString& path)
+{
+    std::list<Shared::MessageInfo> list = network.reportPathInvalid(path);
+    
+    QMap<QString, QVariant> data({
+        {"attachPath", ""}
+    });
+    for (const Shared::MessageInfo& info : list) {
+        AccountsMap::const_iterator itr = amap.find(info.account);
+        if (itr != amap.end()) {
+            itr->second->requestChangeMessage(info.jid, info.messageId, data);
+        } else {
+            qDebug() << "Reacting on failure to reach file" << path << "there was an attempt to change message in account" << info.account << "which doesn't exist, skipping";
+        }
+    }
+}

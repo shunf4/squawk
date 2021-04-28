@@ -116,6 +116,7 @@ int main(int argc, char *argv[])
     QObject::connect(&w, &Squawk::requestVCard, squawk, &Core::Squawk::requestVCard);
     QObject::connect(&w, &Squawk::uploadVCard, squawk, &Core::Squawk::uploadVCard);
     QObject::connect(&w, &Squawk::responsePassword, squawk, &Core::Squawk::responsePassword);
+    QObject::connect(&w, &Squawk::localPathInvalid, squawk, &Core::Squawk::onLocalPathInvalid);
     
     QObject::connect(squawk, &Core::Squawk::newAccount, &w, &Squawk::newAccount);
     QObject::connect(squawk, &Core::Squawk::addContact, &w, &Squawk::addContact);

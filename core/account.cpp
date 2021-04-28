@@ -920,3 +920,6 @@ void Core::Account::onContactHistoryResponse(const std::list<Shared::Message>& l
     }
     emit responseArchive(contact->jid, list, last);
 }
+
+void Core::Account::requestChangeMessage(const QString& jid, const QString& messageId, const QMap<QString, QVariant>& data){
+    mh->requestChangeMessage(jid, messageId, data);}

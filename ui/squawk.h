@@ -79,6 +79,7 @@ signals:
     void requestVCard(const QString& account, const QString& jid);
     void uploadVCard(const QString& account, const Shared::VCard& card);
     void responsePassword(const QString& account, const QString& password);
+    void localPathInvalid(const QString& path);
     
 public slots:
     void readSettings();

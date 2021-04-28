@@ -429,3 +429,18 @@ void Core::MessageHandler::sendMessageWithLocalUploadedFile(Shared::Message msg,
     performSending(msg);
     //TODO removal/progress update
 }
+
+void Core::MessageHandler::requestChangeMessage(const QString& jid, const QString& messageId, const QMap<QString, QVariant>& data)
+{
+    RosterItem* cnt = acc->rh->getRosterItem(jid);
+    if (cnt != 0) {
+        QMap<QString, QVariant>::const_iterator itr = data.find("attachPath");
+        if (data.size() == 1 && itr != data.end()) {
+            cnt->changeMessage(messageId, data);
+            emit acc->changeMessage(jid, messageId, data);
+        } else {
+            qDebug() << "A request to change message" << messageId << "of conversation" << jid << "with following data" << data;
+            qDebug() << "nothing but the changing of the local path is supported yet in this method, skipping";
+        }
+    }
+}

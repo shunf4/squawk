@@ -55,6 +55,7 @@ public:
     
 signals:
     void buttonPushed(const QString& messageId, bool download) const;
+    void invalidPath(const QString& messageId) const;
     
 protected:
     void paintButton(QPushButton* btn, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const;

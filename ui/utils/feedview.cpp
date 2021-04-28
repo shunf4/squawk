@@ -304,6 +304,7 @@ void FeedView::setItemDelegate(QAbstractItemDelegate* delegate)
     if (specialDelegate) {
         MessageDelegate* del = static_cast<MessageDelegate*>(itemDelegate());
         disconnect(del, &MessageDelegate::buttonPushed, this, &FeedView::onMessageButtonPushed);
+        disconnect(del, &MessageDelegate::invalidPath, this, &FeedView::onMessageInvalidPath);
     }
     
     QAbstractItemView::setItemDelegate(delegate);
@@ -312,6 +313,7 @@ void FeedView::setItemDelegate(QAbstractItemDelegate* delegate)
     if (del) {
         specialDelegate = true;
         connect(del, &MessageDelegate::buttonPushed, this, &FeedView::onMessageButtonPushed);
+        connect(del, &MessageDelegate::invalidPath, this, &FeedView::onMessageInvalidPath);
     } else {
         specialDelegate = false;
     }
@@ -341,3 +343,12 @@ void FeedView::onMessageButtonPushed(const QString& messageId, bool download)
         }
     }
 }
+
+void FeedView::onMessageInvalidPath(const QString& messageId)
+{
+    if (specialModel) {
+        Models::MessageFeed* feed = static_cast<Models::MessageFeed*>(model());
+        feed->reportLocalPathInvalid(messageId);
+    }
+}
+
