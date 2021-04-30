@@ -346,6 +346,7 @@ void Models::MessageFeed::fetchMore(const QModelIndex& parent)
 {
     if (syncState == incomplete) {
         syncState = syncing;
+        emit syncStateChange(syncState);
         emit requestStateChange(true);
         
         if (storage.size() == 0) {
@@ -373,6 +374,7 @@ void Models::MessageFeed::responseArchive(const std::list<Shared::Message> list,
         } else {
             syncState = incomplete;
         }
+        emit syncStateChange(syncState);
         emit requestStateChange(false);
     }
 }
@@ -542,4 +544,9 @@ void Models::MessageFeed::reportLocalPathInvalid(const QString& messageId)
     msg->setAttachPath("");
     
     emit dataChanged(index, index, {MessageRoles::Attach});
+}
+
+Models::MessageFeed::SyncState Models::MessageFeed::getSyncState() const
+{
+    return syncState;
 }

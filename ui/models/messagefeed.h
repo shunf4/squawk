@@ -41,7 +41,13 @@ namespace Models {
 class MessageFeed : public QAbstractListModel
 {
     Q_OBJECT
-public:
+public:    
+    enum SyncState {
+        incomplete,
+        syncing,
+        complete
+    };
+    
     MessageFeed(const Element* rosterItem, QObject *parent = nullptr);
     ~MessageFeed();
     
@@ -69,6 +75,7 @@ public:
     
     void incrementObservers();
     void decrementObservers();
+    SyncState getSyncState() const;
     
 signals:
     void requestArchive(const QString& before);
@@ -78,6 +85,7 @@ signals:
     void newMessage(const Shared::Message& msg);
     void unnoticedMessage(const Shared::Message& msg);
     void localPathInvalid(const QString& path);
+    void syncStateChange(SyncState state);
     
 public:
     enum MessageRoles {
@@ -102,12 +110,6 @@ protected:
     std::set<MessageRoles> detectChanges(const Shared::Message& msg, const QMap<QString, QVariant>& data) const;
     
 private:
-    enum SyncState {
-        incomplete,
-        syncing,
-        complete
-    };
-    
     //tags
     struct id {};
     struct time {};

@@ -28,6 +28,7 @@
 
 constexpr int maxMessageHeight = 10000;
 constexpr int approximateSingleMessageHeight = 20;
+constexpr int progressSize = 70;
 
 const std::set<int> FeedView::geometryChangingRoles = {
     Models::MessageFeed::Attach,
@@ -43,13 +44,18 @@ FeedView::FeedView(QWidget* parent):
     vo(0),
     specialDelegate(false),
     specialModel(false),
-    clearWidgetsMode(false)
+    clearWidgetsMode(false),
+    modelState(Models::MessageFeed::complete),
+    progress()
 {
     horizontalScrollBar()->setRange(0, 0);
     verticalScrollBar()->setSingleStep(approximateSingleMessageHeight);
     setMouseTracking(true);
     setSelectionBehavior(SelectItems);
 //     viewport()->setAttribute(Qt::WA_Hover, true);
+    
+    progress.setParent(viewport());
+    progress.resize(progressSize, progressSize);
 }
 
 FeedView::~FeedView()
@@ -293,6 +299,13 @@ void FeedView::mouseMoveEvent(QMouseEvent* event)
     QAbstractItemView::mouseMoveEvent(event);
 }
 
+void FeedView::resizeEvent(QResizeEvent* event)
+{
+    progress.move((width() - progressSize) / 2, 0);
+    
+    QAbstractItemView::resizeEvent(event);
+}
+
 
 QFont FeedView::getFont() const
 {
@@ -319,14 +332,22 @@ void FeedView::setItemDelegate(QAbstractItemDelegate* delegate)
     }
 }
 
-void FeedView::setModel(QAbstractItemModel* model)
+void FeedView::setModel(QAbstractItemModel* p_model)
 {
-    QAbstractItemView::setModel(model);
+    if (specialModel) {
+        Models::MessageFeed* feed = static_cast<Models::MessageFeed*>(model());
+        disconnect(feed, &Models::MessageFeed::syncStateChange, this, &FeedView::onModelSyncStateChange);
+    }
     
-    Models::MessageFeed* feed = dynamic_cast<Models::MessageFeed*>(model);
+    QAbstractItemView::setModel(p_model);
+    
+    Models::MessageFeed* feed = dynamic_cast<Models::MessageFeed*>(p_model);
     if (feed) {
+        onModelSyncStateChange(feed->getSyncState());
         specialModel = true;
+        connect(feed, &Models::MessageFeed::syncStateChange, this, &FeedView::onModelSyncStateChange);
     } else {
+        onModelSyncStateChange(Models::MessageFeed::complete);
         specialModel = false;
     }
 }
@@ -352,3 +373,17 @@ void FeedView::onMessageInvalidPath(const QString& messageId)
     }
 }
 
+void FeedView::onModelSyncStateChange(Models::MessageFeed::SyncState state)
+{
+    if (modelState != state) {
+        modelState = state;
+        
+        if (state == Models::MessageFeed::syncing) {
+            progress.show();
+            progress.start();
+        } else {
+            progress.stop();
+            progress.hide();
+        }
+    }
+}

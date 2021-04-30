@@ -25,6 +25,7 @@
 #include <set>
 
 #include <ui/models/messagefeed.h>
+#include "progress.h"
 
 /**
  * @todo write docs
@@ -56,6 +57,7 @@ protected slots:
     void dataChanged(const QModelIndex & topLeft, const QModelIndex & bottomRight, const QVector<int> & roles) override;
     void onMessageButtonPushed(const QString& messageId, bool download);
     void onMessageInvalidPath(const QString& messageId);
+    void onModelSyncStateChange(Models::MessageFeed::SyncState state);
     
 protected:
     int verticalOffset() const override;
@@ -63,6 +65,7 @@ protected:
     void paintEvent(QPaintEvent * event) override;
     void updateGeometries() override;
     void mouseMoveEvent(QMouseEvent * event) override;
+    void resizeEvent(QResizeEvent * event) override;
     
 private:
     bool tryToCalculateGeometriesWithNoScrollbars(const QStyleOptionViewItem& option, const QAbstractItemModel* model, uint32_t totalHeight);
@@ -78,6 +81,8 @@ private:
     bool specialDelegate;
     bool specialModel;
     bool clearWidgetsMode;
+    Models::MessageFeed::SyncState modelState;
+    Progress progress;
     
     static const std::set<int> geometryChangingRoles;
     
