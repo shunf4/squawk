@@ -69,6 +69,7 @@ protected:
     
 private:
     bool tryToCalculateGeometriesWithNoScrollbars(const QStyleOptionViewItem& option, const QAbstractItemModel* model, uint32_t totalHeight);
+    void positionProgress();
     
 private:
     struct Hint {

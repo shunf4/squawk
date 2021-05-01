@@ -392,7 +392,6 @@ void Conversation::onFeedMessage(const Shared::Message& msg)
 
 void Conversation::onMessage(const Shared::Message& msg)
 {
-    qDebug() << window()->windowState();
     if (!msg.getForwarded()) {
         QApplication::alert(this);
         if (window()->windowState().testFlag(Qt::WindowMinimized)) {

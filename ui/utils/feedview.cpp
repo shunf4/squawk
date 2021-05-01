@@ -68,8 +68,8 @@ QModelIndex FeedView::indexAt(const QPoint& point) const
     uint32_t y = vh - point.y() + vo;
     
     for (std::deque<Hint>::size_type i = 0; i < hints.size(); ++i) {
-        if (hints[i].offset >= y) {
-            return model()->index(i - 1, 0, rootIndex());
+        if (hints[i].offset + hints[i].height >= y) {
+            return model()->index(i, 0, rootIndex());
         }
     }
     
@@ -82,11 +82,12 @@ void FeedView::scrollTo(const QModelIndex& index, QAbstractItemView::ScrollHint 
 
 QRect FeedView::visualRect(const QModelIndex& index) const
 {
-    if (!index.isValid() || index.row() >= hints.size()) {
-        qDebug() << "visualRect for" << index.row();
+    unsigned int row = index.row();
+    if (!index.isValid() || row >= hints.size()) {
+        qDebug() << "visualRect for" << row;
         return QRect();
     } else {
-        const Hint& hint = hints.at(index.row());
+        const Hint& hint = hints.at(row);
         const QWidget* vp = viewport();
         return QRect(0, vp->height() - hint.height - hint.offset + vo, vp->width(), hint.height);
     }
@@ -123,8 +124,9 @@ QRegion FeedView::visualRegionForSelection(const QItemSelection& selection) cons
 
 void FeedView::rowsInserted(const QModelIndex& parent, int start, int end)
 {
-    updateGeometries();
     QAbstractItemView::rowsInserted(parent, start, end);
+    
+    scheduleDelayedItemsLayout();
 }
 
 void FeedView::dataChanged(const QModelIndex& topLeft, const QModelIndex& bottomRight, const QVector<int>& roles)
@@ -132,7 +134,7 @@ void FeedView::dataChanged(const QModelIndex& topLeft, const QModelIndex& bottom
     if (specialDelegate) {
         for (int role : roles) {
             if (geometryChangingRoles.count(role) != 0) {
-                updateGeometries();                         //to recalculate layout only if there are some geometry changing modifications
+                scheduleDelayedItemsLayout();                         //to recalculate layout only if there are some geometry changing modifications
                 break;
             }
         }
@@ -145,11 +147,9 @@ void FeedView::updateGeometries()
     qDebug() << "updateGeometries";
     QScrollBar* bar = verticalScrollBar();
     
-    QAbstractItemView::updateGeometries();
-    
     const QStyle* st = style();
     const QAbstractItemModel* m = model();
-    QRect layoutBounds = QRect(QPoint(), maximumViewportSize());
+    QSize layoutBounds = maximumViewportSize();
     QStyleOptionViewItem option = viewOptions();
     option.rect.setHeight(maxMessageHeight);
     option.rect.setWidth(layoutBounds.width());
@@ -164,6 +164,7 @@ void FeedView::updateGeometries()
     
     if (layedOut) {
         bar->setRange(0, 0);
+        vo = 0;
     } else {
         int verticalMargin = 0;
         if (st->styleHint(QStyle::SH_ScrollView_FrameOnlyAroundContents)) {
@@ -174,7 +175,7 @@ void FeedView::updateGeometries()
             verticalMargin = verticalScrollBarExtent + frameAroundContents;
         }
         
-        layoutBounds.adjust(0, 0, -verticalMargin, 0);
+        layoutBounds.rwidth() -= verticalMargin;
         
         option.features |= QStyleOptionViewItem::WrapText;
         option.rect.setWidth(layoutBounds.width());
@@ -192,14 +193,24 @@ void FeedView::updateGeometries()
             previousOffset += height;
         }
         
-        bar->setRange(0, previousOffset - layoutBounds.height());
+        int totalHeight = previousOffset - layoutBounds.height();
+        if (modelState != Models::MessageFeed::complete) {
+            totalHeight += progressSize;
+        }
+        vo = qMax(qMin(vo, totalHeight), 0);
+        bar->setRange(0, totalHeight);
         bar->setPageStep(layoutBounds.height());
-        bar->setValue(previousOffset - layoutBounds.height() - vo);
+        bar->setValue(totalHeight - vo);
     }
+    
+    positionProgress();
     
     if (specialDelegate) {
         clearWidgetsMode = true;
     }
+    
+    
+    QAbstractItemView::updateGeometries();
 }
 
 bool FeedView::tryToCalculateGeometriesWithNoScrollbars(const QStyleOptionViewItem& option, const QAbstractItemModel* m, uint32_t totalHeight)
@@ -283,6 +294,8 @@ void FeedView::verticalScrollbarValueChanged(int value)
 {
     vo = verticalScrollBar()->maximum() - value;
     
+    positionProgress();
+    
     if (specialDelegate) {
         clearWidgetsMode = true;
     }
@@ -301,11 +314,24 @@ void FeedView::mouseMoveEvent(QMouseEvent* event)
 
 void FeedView::resizeEvent(QResizeEvent* event)
 {
-    progress.move((width() - progressSize) / 2, 0);
-    
     QAbstractItemView::resizeEvent(event);
+    
+    positionProgress();
 }
 
+void FeedView::positionProgress()
+{
+    QSize layoutBounds = maximumViewportSize();
+    int progressPosition = layoutBounds.height() - progressSize;
+    std::deque<Hint>::size_type size = hints.size();
+    if (size > 0) {
+        const Hint& hint = hints[size - 1];
+        progressPosition -= hint.offset + hint.height;
+    }
+    progressPosition += vo;
+    
+    progress.move((width() - progressSize) / 2, progressPosition);
+}
 
 QFont FeedView::getFont() const
 {
@@ -375,7 +401,11 @@ void FeedView::onMessageInvalidPath(const QString& messageId)
 
 void FeedView::onModelSyncStateChange(Models::MessageFeed::SyncState state)
 {
+    bool needToUpdateGeometry = false;
     if (modelState != state) {
+        if (state == Models::MessageFeed::complete || modelState == Models::MessageFeed::complete) {
+            needToUpdateGeometry = true;
+        }
         modelState = state;
         
         if (state == Models::MessageFeed::syncing) {
@@ -385,5 +415,9 @@ void FeedView::onModelSyncStateChange(Models::MessageFeed::SyncState state)
             progress.stop();
             progress.hide();
         }
+    }
+    
+    if (needToUpdateGeometry) {
+        scheduleDelayedItemsLayout();
     }
 }
