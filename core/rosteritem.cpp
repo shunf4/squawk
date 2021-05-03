@@ -377,6 +377,7 @@ void Core::RosterItem::flushMessagesToArchive(bool finished, const QString& firs
             }
             if (added == 0 && wasEmpty) {
                 archiveState = empty;
+                nextRequest();
                 break;
             }
             if (requestedCount != -1) {
@@ -397,7 +398,7 @@ void Core::RosterItem::flushMessagesToArchive(bool finished, const QString& firs
                 } catch (const Archive::Empty& e) {
                     
                 }
-                if (!found || requestedCount > responseCache.size()) {
+                if (!found || requestedCount > int(responseCache.size())) {
                     if (archiveState == complete) {
                         nextRequest();
                     } else {

@@ -18,7 +18,6 @@
 
 #include "conversation.h"
 #include "ui_conversation.h"
-#include "ui/utils/dropshadoweffect.h"
 
 #include <QDebug>
 #include <QScrollBar>

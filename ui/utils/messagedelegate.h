@@ -32,6 +32,7 @@
 
 #include "shared/icons.h"
 #include "shared/global.h"
+#include "shared/utils.h"
 
 namespace Models {
     struct FeedItem;
@@ -64,6 +65,7 @@ protected:
     QPushButton* getButton(const Models::FeedItem& data) const;
     QProgressBar* getBar(const Models::FeedItem& data) const;
     QLabel* getStatusIcon(const Models::FeedItem& data) const;
+    QLabel* getBody(const Models::FeedItem& data) const;
     void clearHelperWidget(const Models::FeedItem& data) const;
     QSize calculateAttachSize(const QString& path, const QRect& bounds) const;
     QSize constrainAttachSize(QSize src, QSize bounds) const;
@@ -91,6 +93,7 @@ private:
     std::map<QString, FeedButton*>* buttons;
     std::map<QString, QProgressBar*>* bars;
     std::map<QString, QLabel*>* statusIcons;
+    std::map<QString, QLabel*>* bodies;
     std::set<QString>* idsToKeep;
     bool clearingWidgets;
     

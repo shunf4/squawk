@@ -16,8 +16,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef EB_H
-#define EB_H
+#ifndef EXPONENTIALBLUR_H
+#define EXPONENTIALBLUR_H
 
 #include <QObject>
 #include <QImage>
@@ -31,4 +31,4 @@ namespace Utils {
     void exponentialblur(QImage &img, qreal radius, bool improvedQuality = false, int transposed = 0);
 };
 
-#endif // EB_H
+#endif // EXPONENTIALBLUR_H

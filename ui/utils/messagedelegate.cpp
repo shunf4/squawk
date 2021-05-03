@@ -31,20 +31,21 @@ constexpr int statusIconSize = 16;
 constexpr int maxAttachmentHeight = 500;
 
 MessageDelegate::MessageDelegate(QObject* parent):
-QStyledItemDelegate(parent),
-bodyFont(),
-nickFont(),
-dateFont(),
-bodyMetrics(bodyFont),
-nickMetrics(nickFont),
-dateMetrics(dateFont),
-buttonHeight(0),
-barHeight(0),
-buttons(new std::map<QString, FeedButton*>()),
-bars(new std::map<QString, QProgressBar*>()),
-statusIcons(new std::map<QString, QLabel*>()),
-idsToKeep(new std::set<QString>()),
-clearingWidgets(false)
+    QStyledItemDelegate(parent),
+    bodyFont(),
+    nickFont(),
+    dateFont(),
+    bodyMetrics(bodyFont),
+    nickMetrics(nickFont),
+    dateMetrics(dateFont),
+    buttonHeight(0),
+    barHeight(0),
+    buttons(new std::map<QString, FeedButton*>()),
+    bars(new std::map<QString, QProgressBar*>()),
+    statusIcons(new std::map<QString, QLabel*>()),
+    bodies(new std::map<QString, QLabel*>()),
+    idsToKeep(new std::set<QString>()),
+    clearingWidgets(false)
 {
     QPushButton btn;
     buttonHeight = btn.sizeHint().height();
@@ -67,9 +68,14 @@ MessageDelegate::~MessageDelegate()
         delete pair.second;
     }
     
+    for (const std::pair<const QString, QLabel*>& pair: *bodies){
+        delete pair.second;
+    }
+    
     delete idsToKeep;
     delete buttons;
     delete bars;
+    delete bodies;
 }
 
 void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
@@ -105,8 +111,10 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     opt.rect = messageRect;
     
     QSize messageSize(0, 0);
+    QSize bodySize(0, 0);
     if (data.text.size() > 0) {
         messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWordWrap, data.text).size();
+        bodySize = messageSize;
     }
     messageSize.rheight() += nickMetrics.lineSpacing();
     messageSize.rheight() += dateMetrics.height();
@@ -146,12 +154,21 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     }
     painter->restore();
     
-    int messageLeft = 10000; //TODO
+    int messageLeft = INT16_MAX;
+    QWidget* vp = static_cast<QWidget*>(painter->device());
     if (data.text.size() > 0) {
-        painter->setFont(bodyFont);
-        painter->drawText(opt.rect, opt.displayAlignment | Qt::TextWordWrap, data.text, &rect);
-        opt.rect.adjust(0, rect.height() + textMargin, 0, 0);
-        messageLeft = rect.x();
+        QLabel* body = getBody(data);
+        body->setParent(vp);
+        body->setMaximumWidth(bodySize.width());
+        body->setMinimumWidth(bodySize.width());
+        body->setAlignment(opt.displayAlignment);
+        messageLeft = opt.rect.x();
+        if (data.sentByMe) {
+            messageLeft = opt.rect.topRight().x() - bodySize.width();
+        }
+        body->move(messageLeft, opt.rect.y());
+        body->show();
+        opt.rect.adjust(0, bodySize.height() + textMargin, 0, 0);
     }
     painter->setFont(dateFont);
     QColor q = painter->pen().color();
@@ -164,7 +181,6 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
         }
         QLabel* statusIcon = getStatusIcon(data);
         
-        QWidget* vp = static_cast<QWidget*>(painter->device());
         statusIcon->setParent(vp);
         statusIcon->move(messageLeft, opt.rect.y());
         statusIcon->show();
@@ -280,15 +296,7 @@ void MessageDelegate::paintButton(QPushButton* btn, QPainter* painter, bool sent
 void MessageDelegate::paintBar(QProgressBar* bar, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const
 {
     QPoint start = option.rect.topLeft();
-    
-    //QWidget* vp = static_cast<QWidget*>(painter->device());
-    
-//     if (bar->parent() != vp) {
-//         bar->setParent(vp);
-//     }
-//     bar->move(start);
-    bar->resize(option.rect.width(), barHeight);
-    //     bar->show();      
+    bar->resize(option.rect.width(), barHeight);   
     
     painter->translate(start);
     bar->render(painter, QPoint(), QRegion(), QWidget::DrawChildren);
@@ -410,6 +418,27 @@ QLabel * MessageDelegate::getStatusIcon(const Models::FeedItem& data) const
     return result;
 }
 
+QLabel * MessageDelegate::getBody(const Models::FeedItem& data) const
+{
+    std::map<QString, QLabel*>::const_iterator itr = bodies->find(data.id);
+    QLabel* result = 0;
+    
+    if (itr != bodies->end()) {
+        result = itr->second;
+    } else {
+        result = new QLabel();
+        result->setFont(bodyFont);
+        result->setWordWrap(true);
+        result->setOpenExternalLinks(true);
+        result->setTextInteractionFlags(result->textInteractionFlags() | Qt::TextSelectableByMouse | Qt::LinksAccessibleByMouse);
+        bodies->insert(std::make_pair(data.id, result));
+    }
+    
+    result->setText(Shared::processMessageBody(data.text));
+    
+    return result;
+}
+
 void MessageDelegate::beginClearWidgets()
 {
     idsToKeep->clear();
@@ -422,6 +451,7 @@ void MessageDelegate::endClearWidgets()
         std::set<QString> toRemoveButtons;
         std::set<QString> toRemoveBars;
         std::set<QString> toRemoveIcons;
+        std::set<QString> toRemoveBodies;
         for (const std::pair<const QString, FeedButton*>& pair: *buttons) {
             if (idsToKeep->find(pair.first) == idsToKeep->end()) {
                 delete pair.second;
@@ -440,6 +470,12 @@ void MessageDelegate::endClearWidgets()
                 toRemoveIcons.insert(pair.first);
             }
         }
+        for (const std::pair<const QString, QLabel*>& pair: *bodies) {
+            if (idsToKeep->find(pair.first) == idsToKeep->end()) {
+                delete pair.second;
+                toRemoveBodies.insert(pair.first);
+            }
+        }
         
         for (const QString& key : toRemoveButtons) {
             buttons->erase(key);
@@ -449,6 +485,9 @@ void MessageDelegate::endClearWidgets()
         }
         for (const QString& key : toRemoveIcons) {
             statusIcons->erase(key);
+        }
+        for (const QString& key : toRemoveBodies) {
+            bodies->erase(key);
         }
         
         idsToKeep->clear();

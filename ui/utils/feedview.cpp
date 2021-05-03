@@ -25,7 +25,6 @@
 
 #include "messagedelegate.h"
 #include "ui/models/messagefeed.h"
-#include "eb.h"
 
 constexpr int maxMessageHeight = 10000;
 constexpr int approximateSingleMessageHeight = 20;
@@ -339,6 +338,7 @@ void FeedView::positionProgress()
         progressPosition -= hint.offset + hint.height;
     }
     progressPosition += vo;
+    progressPosition = qMin(progressPosition, 0);
     
     progress.move((width() - progressSize) / 2, progressPosition);
 }

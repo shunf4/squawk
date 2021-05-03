@@ -26,7 +26,7 @@
 #include <QPaintEvent>
 #include <QResizeEvent>
 
-#include <ui/utils/eb.h>
+#include <ui/utils/exponentialblur.h>
 
 /**
  * @todo write docs

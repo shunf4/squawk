@@ -16,7 +16,7 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "eb.h"
+#include "exponentialblur.h"
 
 static const int tileSize = 32;
 template <class T>

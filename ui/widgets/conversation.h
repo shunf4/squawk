@@ -24,12 +24,12 @@
 #include <QMap>
 #include <QMimeData>
 #include <QFileInfo>
+#include <QGraphicsOpacityEffect>
 
 #include "shared/message.h"
 #include "order.h"
 #include "ui/models/account.h"
 #include "ui/models/roster.h"
-#include "ui/utils/messageline.h"
 #include "ui/utils/flowlayout.h"
 #include "ui/utils/badge.h"
 #include "ui/utils/feedview.h"

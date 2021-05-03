@@ -25,7 +25,7 @@ add_library(squawkWidgets ${squawkWidgets_SRC})
 
 # Use the Widgets module from Qt 5.
 target_link_libraries(squawkWidgets vCardUI)
+target_link_libraries(squawkWidgets squawkUIUtils)
 target_link_libraries(squawkWidgets Qt5::Widgets)
-target_link_libraries(squawkWidgets squawkUI)
 
 qt5_use_modules(squawkWidgets Core Widgets)
