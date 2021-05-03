@@ -25,6 +25,7 @@
 
 #include "messagedelegate.h"
 #include "ui/models/messagefeed.h"
+#include "eb.h"
 
 constexpr int maxMessageHeight = 10000;
 constexpr int approximateSingleMessageHeight = 20;
@@ -288,6 +289,10 @@ void FeedView::paintEvent(QPaintEvent* event)
         del->endClearWidgets();
         clearWidgetsMode = false;
     }
+    
+    if (event->rect().height() == vp->height()) {
+        // draw the blurred drop shadow...
+    }
 }
 
 void FeedView::verticalScrollbarValueChanged(int value)
@@ -298,6 +303,10 @@ void FeedView::verticalScrollbarValueChanged(int value)
     
     if (specialDelegate) {
         clearWidgetsMode = true;
+    }
+    
+    if (modelState == Models::MessageFeed::incomplete && value < progressSize) {
+        model()->fetchMore(rootIndex());
     }
     
     QAbstractItemView::verticalScrollbarValueChanged(vo);
@@ -317,6 +326,7 @@ void FeedView::resizeEvent(QResizeEvent* event)
     QAbstractItemView::resizeEvent(event);
     
     positionProgress();
+    emit resized();
 }
 
 void FeedView::positionProgress()

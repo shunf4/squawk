@@ -46,19 +46,23 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     filesToAttach(),
     feed(new FeedView()),
     delegate(new MessageDelegate(this)),
-    scroll(down),
     manualSliderChange(false),
-    tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1)
+    tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1),
+    shadow(10, 1, Qt::black, this)
 {
     m_ui->setupUi(this);
     
+    shadow.setFrames(true, false, true, false);
+    
     feed->setItemDelegate(delegate);
+    feed->setFrameShape(QFrame::NoFrame);
     delegate->initializeFonts(feed->getFont());
     feed->setModel(el->feed);
     el->feed->incrementObservers();
     m_ui->widget->layout()->addWidget(feed);
     
     connect(el->feed, &Models::MessageFeed::newMessage, this, &Conversation::onFeedMessage);
+    connect(feed, &FeedView::resized, this, &Conversation::positionShadow);
     
     connect(acc, &Models::Account::childChanged, this, &Conversation::onAccountChanged);
     
@@ -77,9 +81,6 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     
     m_ui->messageEditor->installEventFilter(&ker);
     
-    //QScrollBar* vs = m_ui->scrollArea->verticalScrollBar();
-    //m_ui->scrollArea->setWidget(line);
-    //vs->installEventFilter(&vis);
     
     //line->setAutoFillBackground(false);
     //if (testAttribute(Qt::WA_TranslucentBackground)) {
@@ -93,28 +94,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     //line->setMyAvatarPath(acc->getAvatarPath());
     //line->setMyName(acc->getName());
     
-    QGridLayout* gr = static_cast<QGridLayout*>(layout());
-    QLabel* progressLabel = new QLabel(tr("Drop files here to attach them to your message"));
-    gr->addWidget(overlay, 0, 0, 2, 1);
-    QVBoxLayout* nl = new QVBoxLayout();
-    QGraphicsOpacityEffect* opacity = new QGraphicsOpacityEffect();
-    opacity->setOpacity(0.8);
-    overlay->setLayout(nl);
-    overlay->setBackgroundRole(QPalette::Base);
-    overlay->setAutoFillBackground(true);
-    overlay->setGraphicsEffect(opacity);
-    progressLabel->setAlignment(Qt::AlignCenter);
-    QFont pf = progressLabel->font();
-    pf.setBold(true);
-    pf.setPointSize(26);
-    progressLabel->setWordWrap(true);
-    progressLabel->setFont(pf);
-    nl->addStretch();
-    nl->addWidget(progressLabel);
-    nl->addStretch();
-    overlay->hide();
-    
-    applyVisualEffects();
+    initializeOverlay();
 }
 
 Conversation::~Conversation()
@@ -136,14 +116,28 @@ void Conversation::onAccountChanged(Models::Item* item, int row, int col)
     }
 }
 
-void Conversation::applyVisualEffects()
+void Conversation::initializeOverlay()
 {
-//     DropShadowEffect *e1 = new DropShadowEffect;
-//     e1->setBlurRadius(10);
-//     e1->setColor(Qt::black);
-//     e1->setThickness(1);
-//     e1->setFrame(true, false, true, false);
-//     m_ui->scrollArea->setGraphicsEffect(e1);
+    QGridLayout* gr = static_cast<QGridLayout*>(layout());
+    QLabel* progressLabel = new QLabel(tr("Drop files here to attach them to your message"));
+    gr->addWidget(overlay, 0, 0, 2, 1);
+    QVBoxLayout* nl = new QVBoxLayout();
+    QGraphicsOpacityEffect* opacity = new QGraphicsOpacityEffect();
+    opacity->setOpacity(0.8);
+    overlay->setLayout(nl);
+    overlay->setBackgroundRole(QPalette::Base);
+    overlay->setAutoFillBackground(true);
+    overlay->setGraphicsEffect(opacity);
+    progressLabel->setAlignment(Qt::AlignCenter);
+    QFont pf = progressLabel->font();
+    pf.setBold(true);
+    pf.setPointSize(26);
+    progressLabel->setWordWrap(true);
+    progressLabel->setFont(pf);
+    nl->addStretch();
+    nl->addWidget(progressLabel);
+    nl->addStretch();
+    overlay->hide();
 }
 
 void Conversation::setName(const QString& name)
@@ -325,7 +319,7 @@ void Conversation::onTextEditDocSizeChanged(const QSizeF& size)
 
 void Conversation::setFeedFrames(bool top, bool right, bool bottom, bool left)
 {
-    //static_cast<DropShadowEffect*>(m_ui->scrollArea->graphicsEffect())->setFrame(top, right, bottom, left);
+    shadow.setFrames(top, right, bottom, left);
 }
 
 void Conversation::dragEnterEvent(QDragEnterEvent* event)
@@ -398,4 +392,14 @@ void Conversation::onMessage(const Shared::Message& msg)
             emit notifyableMessage(getAccount(), msg);
         }
     }
+}
+
+void Conversation::positionShadow()
+{
+    int w = width();
+    int h = feed->height();
+    
+    shadow.resize(w, h);
+    shadow.move(feed->pos());
+    shadow.raise();
 }

@@ -34,6 +34,7 @@
 #include "ui/utils/badge.h"
 #include "ui/utils/feedview.h"
 #include "ui/utils/messagedelegate.h"
+#include "ui/utils/shadowoverlay.h"
 #include "shared/icons.h"
 #include "shared/utils.h"
 
@@ -81,7 +82,6 @@ signals:
     
 protected:
     virtual void setName(const QString& name);
-    void applyVisualEffects();
     virtual Shared::Message createMessage() const;
     void setStatus(const QString& status);
     void addAttachedFile(const QString& path);
@@ -90,6 +90,7 @@ protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dragLeaveEvent(QDragLeaveEvent* event) override;
     void dropEvent(QDropEvent* event) override;
+    void initializeOverlay();
     virtual void onMessage(const Shared::Message& msg);
     
 protected slots:
@@ -101,16 +102,12 @@ protected slots:
     void onTextEditDocSizeChanged(const QSizeF& size);
     void onAccountChanged(Models::Item* item, int row, int col);
     void onFeedMessage(const Shared::Message& msg);
+    void positionShadow();
     
 public:
     const bool isMuc;
     
 protected:
-    enum Scroll {
-        nothing,
-        keep,
-        down
-    };
     Models::Account* account;
     Models::Element* element;
     QString palJid;
@@ -125,9 +122,10 @@ protected:
     W::Order<Badge*, Badge::Comparator> filesToAttach;
     FeedView* feed;
     MessageDelegate* delegate;
-    Scroll scroll;
     bool manualSliderChange;
     bool tsb;           //transient scroll bars
+    
+    ShadowOverlay shadow;
 };
 
 #endif // CONVERSATION_H

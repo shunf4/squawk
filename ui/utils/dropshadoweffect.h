@@ -24,6 +24,8 @@
 #include <QPointF>
 #include <QColor>
 
+#include "eb.h"
+
 class PixmapFilter : public QObject
 {
     Q_OBJECT

@@ -49,6 +49,9 @@ public:
     
     QFont getFont() const;
     
+signals:
+    void resized();
+    
 public slots:
     
 protected slots:

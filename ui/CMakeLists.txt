@@ -32,7 +32,7 @@ set(squawkUI_SRC
   models/messagefeed.cpp
   models/element.cpp
   utils/messageline.cpp
-  utils//message.cpp
+  utils/message.cpp
   utils/resizer.cpp
   utils/image.cpp
   utils/flowlayout.cpp
@@ -42,6 +42,8 @@ set(squawkUI_SRC
   utils/dropshadoweffect.cpp
   utils/feedview.cpp
   utils/messagedelegate.cpp
+  utils/eb.cpp
+  utils/shadowoverlay.cpp
 )
 
 # Tell CMake to create the helloworld executable
