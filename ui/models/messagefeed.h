@@ -61,6 +61,7 @@ public:
     bool canFetchMore(const QModelIndex & parent) const override;
     void fetchMore(const QModelIndex & parent) override;
     QHash<int, QByteArray> roleNames() const override;
+    QModelIndex index(int row, int column, const QModelIndex & parent) const override;
     
     void responseArchive(const std::list<Shared::Message> list, bool last);
     void downloadAttachment(const QString& messageId);

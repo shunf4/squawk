@@ -20,8 +20,13 @@
 #define SHARED_UTILS_H
 
 #include <QString>
+#include <QStringList>
 #include <QColor>
 #include <QRegularExpression>
+#include <QFileInfo>
+#include <QProcess>
+#include <QDesktopServices>
+#include <QUrl>
 
 #include <uuid/uuid.h>
 #include <vector>
@@ -30,6 +35,7 @@ namespace Shared {
 
 QString generateUUID();
 QString processMessageBody(const QString& msg);
+void showInDirectory(const QString& path);
 
 static const std::vector<QColor> colorPalette = {
     QColor(244, 27, 63),

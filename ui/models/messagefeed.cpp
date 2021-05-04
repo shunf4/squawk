@@ -379,6 +379,22 @@ void Models::MessageFeed::responseArchive(const std::list<Shared::Message> list,
     }
 }
 
+QModelIndex Models::MessageFeed::index(int row, int column, const QModelIndex& parent) const
+{
+    if (!hasIndex(row, column, parent)) {
+        return QModelIndex();
+    }
+    
+    StorageByTime::iterator itr = indexByTime.nth(row);
+    if (itr != indexByTime.end()) {
+        Shared::Message* msg = *itr;
+        
+        return createIndex(row, column, msg);
+    } else {
+        return QModelIndex();
+    }
+}
+
 QHash<int, QByteArray> Models::MessageFeed::roleNames() const
 {
     return roles;

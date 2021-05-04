@@ -68,8 +68,13 @@ QModelIndex FeedView::indexAt(const QPoint& point) const
     uint32_t y = vh - point.y() + vo;
     
     for (std::deque<Hint>::size_type i = 0; i < hints.size(); ++i) {
-        if (hints[i].offset + hints[i].height >= y) {
-            return model()->index(i, 0, rootIndex());
+        const Hint& hint = hints[i];
+        if (y <= hint.offset + hint.height) {
+            if (y > hint.offset) {
+                return model()->index(i, 0, rootIndex());
+            } else {
+                break;
+            }
         }
     }
     
@@ -279,7 +284,8 @@ void FeedView::paintEvent(QPaintEvent* event)
     
     for (const QModelIndex& index : toRener) {
         option.rect = visualRect(index);
-        option.state.setFlag(QStyle::State_MouseOver, option.rect.contains(cursor));
+        bool mouseOver = option.rect.contains(cursor) && vp->rect().contains(cursor);
+        option.state.setFlag(QStyle::State_MouseOver, mouseOver);
         itemDelegate(index)->paint(&painter, option, index);
     }
     

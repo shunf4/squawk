@@ -25,6 +25,9 @@
 #include <QMimeData>
 #include <QFileInfo>
 #include <QGraphicsOpacityEffect>
+#include <QMenu>
+#include <QAction>
+#include <QDesktopServices>
 
 #include "shared/message.h"
 #include "order.h"
@@ -103,6 +106,7 @@ protected slots:
     void onAccountChanged(Models::Item* item, int row, int col);
     void onFeedMessage(const Shared::Message& msg);
     void positionShadow();
+    void onFeedContext(const QPoint &pos);
     
 public:
     const bool isMuc;
@@ -126,6 +130,7 @@ protected:
     bool tsb;           //transient scroll bars
     
     ShadowOverlay shadow;
+    QMenu* contextMenu;
 };
 
 #endif // CONVERSATION_H

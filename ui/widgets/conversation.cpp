@@ -47,7 +47,8 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     delegate(new MessageDelegate(this)),
     manualSliderChange(false),
     tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1),
-    shadow(10, 1, Qt::black, this)
+    shadow(10, 1, Qt::black, this),
+    contextMenu(new QMenu())
 {
     m_ui->setupUi(this);
     
@@ -55,6 +56,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     
     feed->setItemDelegate(delegate);
     feed->setFrameShape(QFrame::NoFrame);
+    feed->setContextMenuPolicy(Qt::CustomContextMenu);
     delegate->initializeFonts(feed->getFont());
     feed->setModel(el->feed);
     el->feed->incrementObservers();
@@ -62,6 +64,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     
     connect(el->feed, &Models::MessageFeed::newMessage, this, &Conversation::onFeedMessage);
     connect(feed, &FeedView::resized, this, &Conversation::positionShadow);
+    connect(feed, &FeedView::customContextMenuRequested, this, &Conversation::onFeedContext);
     
     connect(acc, &Models::Account::childChanged, this, &Conversation::onAccountChanged);
     
@@ -88,8 +91,6 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
         //m_ui->scrollArea->setBackgroundRole(QPalette::Base);
     //}
     
-    //m_ui->scrollArea->installEventFilter(&scrollResizeCatcher);
-    
     //line->setMyAvatarPath(acc->getAvatarPath());
     //line->setMyName(acc->getName());
     
@@ -98,6 +99,8 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
 
 Conversation::~Conversation()
 {
+    delete contextMenu;
+    
     element->feed->decrementObservers();
 }
 
@@ -401,4 +404,32 @@ void Conversation::positionShadow()
     shadow.resize(w, h);
     shadow.move(feed->pos());
     shadow.raise();
+}
+
+void Conversation::onFeedContext(const QPoint& pos)
+{
+    QModelIndex index = feed->indexAt(pos);
+    if (index.isValid()) {
+        Shared::Message* item = static_cast<Shared::Message*>(index.internalPointer());
+        
+        contextMenu->clear();
+        bool showMenu = false;
+        QString path = item->getAttachPath();
+        if (path.size() > 0) {
+            showMenu = true;
+            QAction* open = contextMenu->addAction(Shared::icon("document-new-from-template"), tr("Open")); 
+            connect(open, &QAction::triggered, [path]() {
+                QDesktopServices::openUrl(QUrl::fromLocalFile(path));
+            });
+            
+            QAction* show = contextMenu->addAction(Shared::icon("document-new-from-template"), tr("Show in folder")); 
+            connect(show, &QAction::triggered, [path]() {
+                Shared::showInDirectory(path);
+            });
+        }
+        
+        if (showMenu) {
+            contextMenu->popup(feed->viewport()->mapToGlobal(pos));
+        }
+    }
 }
