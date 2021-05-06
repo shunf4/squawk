@@ -170,6 +170,8 @@ static const std::map<QString, std::pair<QString, QString>> icons = {
     {"favorite", {"favorite", "favorite"}},
     {"unfavorite", {"draw-star", "unfavorite"}},
     {"list-add", {"list-add", "add"}},
+    {"folder", {"folder", "folder"}},
+    {"document-preview", {"document-preview", "document-preview"}}
 };
 }
 

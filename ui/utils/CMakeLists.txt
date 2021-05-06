@@ -25,7 +25,7 @@ set(squawkUIUtils_SRC
 )
 
 # Tell CMake to create the helloworld executable
-add_library(squawkUIUtils ${squawkUIUtils_SRC})
+add_library(squawkUIUtils STATIC ${squawkUIUtils_SRC})
 
 # Use the Widgets module from Qt 5.
 target_link_libraries(squawkUIUtils squawkWidgets)

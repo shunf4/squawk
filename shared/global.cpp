@@ -23,6 +23,11 @@
 Shared::Global* Shared::Global::instance = 0;
 const std::set<QString> Shared::Global::supportedImagesExts = {"png", "jpg", "webp", "jpeg", "gif", "svg"};
 
+#ifdef WITH_KIO
+QLibrary Shared::Global::openFileManagerWindowJob("openFileManagerWindowJob");
+Shared::Global::HighlightInFileManager Shared::Global::hfm = 0;
+#endif
+
 Shared::Global::Global():
     availability({
         tr("Online", "Availability"), 
@@ -80,7 +85,8 @@ Shared::Global::Global():
         tr("Your password is going to be stored in KDE wallet storage (KWallet). You're going to be queried for permissions", "AccountPasswordDescription")
     }),
     pluginSupport({
-        {"KWallet", false}
+        {"KWallet", false},
+        {"openFileManagerWindowJob", false}
     }),
     fileCache()
 {
@@ -89,6 +95,21 @@ Shared::Global::Global():
     }
     
     instance = this;
+    
+#ifdef WITH_KIO
+    openFileManagerWindowJob.load();
+    if (openFileManagerWindowJob.isLoaded()) {
+        hfm = (HighlightInFileManager) openFileManagerWindowJob.resolve("highlightInFileManager");
+        if (hfm) {
+            setSupported("openFileManagerWindowJob", true);
+            qDebug() << "KIO::OpenFileManagerWindow support enabled";
+        } else {
+            qDebug() << "KIO::OpenFileManagerWindow support disabled: couldn't resolve required methods in the library";
+        }
+    } else {
+        qDebug() << "KIO::OpenFileManagerWindow support disabled: couldn't load the library" << openFileManagerWindowJob.errorString();
+    }
+#endif
 }
 
 Shared::Global::FileInfo Shared::Global::getFileInfo(const QString& path)
@@ -180,6 +201,69 @@ QString Shared::Global::getDescription(Shared::AccountPassword ap)
 {
     return instance->accountPasswordDescription[static_cast<int>(ap)];
 }
+
+
+static const QStringList query = {"query", "default", "inode/directory"};
+static const QRegularExpression dolphinReg("[Dd]olphin");
+static const QRegularExpression nautilusReg("[Nn]autilus");
+static const QRegularExpression cajaReg("[Cc]aja");
+static const QRegularExpression nemoReg("[Nn]emo");
+static const QRegularExpression konquerorReg("kfmclient");
+static const QRegularExpression pcmanfmQtReg("pcmanfm-qt");
+static const QRegularExpression pcmanfmReg("pcmanfm");
+static const QRegularExpression thunarReg("thunar");
+
+void Shared::Global::highlightInFileManager(const QString& path)
+{
+#ifdef WITH_KIO
+    if (supported("openFileManagerWindowJob")) {
+        hfm(path);
+        return;
+    } else {
+        qDebug() << "requested to highlight in file manager url" << path << "but it's not supported: KIO plugin isn't loaded, trying fallback";
+    }
+#else
+    qDebug() << "requested to highlight in file manager url" << path << "but it's not supported: squawk wasn't compiled to support it, trying fallback";
+#endif
+    
+    QFileInfo info = path;
+    if (info.exists()) {
+        QProcess proc;
+        proc.start("xdg-mime", query);
+        proc.waitForFinished();
+        QString output = proc.readLine().simplified();
+        
+        QString folder;
+        if (info.isDir()) {
+            folder = info.canonicalFilePath();
+        } else {
+            folder = info.canonicalPath();
+        }
+        
+        if (output.contains(dolphinReg)) {
+            //there is a bug on current (21.04.0) dolphin, it works correct only if you already have dolphin launched
+            proc.startDetached("dolphin", QStringList() << "--select" << info.canonicalFilePath());
+            //KIO::highlightInFileManager({QUrl(info.canonicalFilePath())});
+        } else if (output.contains(nautilusReg)) {
+            proc.startDetached("nautilus", QStringList() << "--select" << info.canonicalFilePath());    //this worked on nautilus
+        } else if (output.contains(cajaReg)) {
+            proc.startDetached("caja", QStringList() << folder);  //caja doesn't seem to support file selection command line, gonna just open directory
+        } else if (output.contains(nemoReg)) {
+            proc.startDetached("nemo", QStringList() << info.canonicalFilePath());      //nemo supports selecting files without keys
+        } else if (output.contains(konquerorReg)) {
+            proc.startDetached("konqueror", QStringList() << "--select" << info.canonicalFilePath());   //this worked on konqueror
+        } else if (output.contains(pcmanfmQtReg)) {
+            proc.startDetached("pcmanfm-qt", QStringList() << folder);   //pcmanfm-qt doesn't seem to support open with selection, gonna just open directory
+        } else if (output.contains(pcmanfmReg)) {
+            proc.startDetached("pcmanfm", QStringList() << folder);   //pcmanfm also doesn't seem to support open with selection, gonna just open directory
+        } else if (output.contains(thunarReg)) {
+            proc.startDetached("thunar", QStringList() << folder);   //thunar doesn't seem to support open with selection, gonna just open directory
+        } else {
+            QDesktopServices::openUrl(QUrl::fromLocalFile(folder));
+        }
+    }
+}
+
 
 #define FROM_INT_INPL(Enum)                                                                 \
 template<>                                                                                  \

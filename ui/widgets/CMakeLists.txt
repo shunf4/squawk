@@ -21,7 +21,7 @@ set(squawkWidgets_SRC
   joinconference.cpp
 )
 
-add_library(squawkWidgets ${squawkWidgets_SRC})
+add_library(squawkWidgets STATIC ${squawkWidgets_SRC})
 
 # Use the Widgets module from Qt 5.
 target_link_libraries(squawkWidgets vCardUI)

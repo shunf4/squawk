@@ -417,14 +417,14 @@ void Conversation::onFeedContext(const QPoint& pos)
         QString path = item->getAttachPath();
         if (path.size() > 0) {
             showMenu = true;
-            QAction* open = contextMenu->addAction(Shared::icon("document-new-from-template"), tr("Open")); 
+            QAction* open = contextMenu->addAction(Shared::icon("document-preview"), tr("Open")); 
             connect(open, &QAction::triggered, [path]() {
                 QDesktopServices::openUrl(QUrl::fromLocalFile(path));
             });
             
-            QAction* show = contextMenu->addAction(Shared::icon("document-new-from-template"), tr("Show in folder")); 
+            QAction* show = contextMenu->addAction(Shared::icon("folder"), tr("Show in folder")); 
             connect(show, &QAction::triggered, [path]() {
-                Shared::showInDirectory(path);
+                Shared::Global::highlightInFileManager(path);
             });
         }
         

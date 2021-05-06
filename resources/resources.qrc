@@ -40,6 +40,8 @@
     <file>images/fallback/dark/big/favorite.svg</file>
     <file>images/fallback/dark/big/unfavorite.svg</file>
     <file>images/fallback/dark/big/add.svg</file>
+    <file>images/fallback/dark/big/folder.svg</file>
+    <file>images/fallback/dark/big/document-preview.svg</file>
     
     
     <file>images/fallback/dark/small/absent.svg</file>
@@ -80,6 +82,8 @@
     <file>images/fallback/dark/small/favorite.svg</file>
     <file>images/fallback/dark/small/unfavorite.svg</file>
     <file>images/fallback/dark/small/add.svg</file>
+    <file>images/fallback/dark/small/folder.svg</file>
+    <file>images/fallback/dark/small/document-preview.svg</file>
     
     
     <file>images/fallback/light/big/absent.svg</file>
@@ -120,6 +124,8 @@
     <file>images/fallback/light/big/favorite.svg</file>
     <file>images/fallback/light/big/unfavorite.svg</file>
     <file>images/fallback/light/big/add.svg</file>
+    <file>images/fallback/light/big/folder.svg</file>
+    <file>images/fallback/light/big/document-preview.svg</file>
     
     
     <file>images/fallback/light/small/absent.svg</file>
@@ -160,5 +166,7 @@
     <file>images/fallback/light/small/favorite.svg</file>
     <file>images/fallback/light/small/unfavorite.svg</file>
     <file>images/fallback/light/small/add.svg</file>
+    <file>images/fallback/light/small/folder.svg</file>
+    <file>images/fallback/light/small/document-preview.svg</file>
 </qresource>
 </RCC>

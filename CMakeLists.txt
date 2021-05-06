@@ -67,6 +67,7 @@ qt5_add_resources(RCC resources/resources.qrc)
 
 option(SYSTEM_QXMPP "Use system qxmpp lib" ON) 
 option(WITH_KWALLET "Build KWallet support module" ON) 
+option(WITH_KIO "Build KIO support module" ON) 
 
 if (SYSTEM_QXMPP) 
     find_package(QXmpp CONFIG)
@@ -98,14 +99,29 @@ endif()
 add_executable(squawk ${squawk_SRC} ${squawk_HEAD} ${RCC})
 target_link_libraries(squawk Qt5::Widgets)
 
+if (WITH_KIO)
+    find_package(KF5KIO CONFIG)
+    
+    if (NOT KF5KIO_FOUND)
+        set(WITH_KIO OFF)
+        message("KIO package wasn't found, KIO support modules wouldn't be built")
+    else()
+        add_definitions(-DWITH_KIO)
+        message("Building with support of KIO")
+    endif()
+endif()
+
 add_subdirectory(ui)
 add_subdirectory(core)
+add_subdirectory(plugins)
 
 add_subdirectory(external/simpleCrypt)
 
 target_link_libraries(squawk squawkUI)
 target_link_libraries(squawk squawkCORE)
 target_link_libraries(squawk uuid)
+
+
 
 add_dependencies(${CMAKE_PROJECT_NAME} translations)
 

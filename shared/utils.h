@@ -23,19 +23,16 @@
 #include <QStringList>
 #include <QColor>
 #include <QRegularExpression>
-#include <QFileInfo>
-#include <QProcess>
-#include <QDesktopServices>
-#include <QUrl>
+
+//#include "KIO/OpenFileManagerWindowJob"
 
 #include <uuid/uuid.h>
-#include <vector>
+#include <vector> 
 
 namespace Shared {
 
 QString generateUUID();
 QString processMessageBody(const QString& msg);
-void showInDirectory(const QString& path);
 
 static const std::vector<QColor> colorPalette = {
     QColor(244, 27, 63),

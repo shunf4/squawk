@@ -34,6 +34,12 @@
 #include <QFileInfo>
 #include <QImage>
 #include <QSize>
+#include <QUrl>
+#include <QLibrary>
+#include <QFileInfo>
+#include <QProcess>
+#include <QDesktopServices>
+#include <QRegularExpression>
 
 namespace Shared {
     
@@ -83,6 +89,7 @@ namespace Shared {
         static const std::set<QString> supportedImagesExts;
         
         static FileInfo getFileInfo(const QString& path);
+        static void highlightInFileManager(const QString& path);
         
         template<typename T>
         static T fromInt(int src);
@@ -108,6 +115,14 @@ namespace Shared {
         
         std::map<QString, bool> pluginSupport;
         std::map<QString, FileInfo> fileCache;
+        
+#ifdef WITH_KIO
+        static QLibrary openFileManagerWindowJob;
+        
+        typedef void (*HighlightInFileManager)(const QUrl &);
+        
+        static HighlightInFileManager hfm;
+#endif
     };
 }
 

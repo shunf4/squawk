@@ -6,10 +6,14 @@
 - requesting the history of the current chat after reconnection
 - global availability (in drop down list) gets restored after reconnection
 - status icon in active chat changes when presence of the pen pal changes
+- infinite progress when open the dialogue with something that has no history to show
 
 ### Improvements
 - slightly reduced the traffic on the startup by not requesting history of all MUCs
-
+- completely rewritten message feed, now it works way faster
+- OPTIONAL RUNTIME dependency: "KIO Widgets" that is supposed to allow you to open a file in your default file manager
+- show in folder now is supposed to try it's best to show file in folder, even you don't have KIO installed
+- once uploaded local files don't get second time uploaded - the remote URL is reused
 
 ## Squawk 0.1.5 (Jul 29, 2020)
 ### Bug fixes
