@@ -23,7 +23,6 @@ Core::MessageHandler::MessageHandler(Core::Account* account):
     QObject(),
     acc(account),
     pendingStateMessages(),
-    pendingMessages(),
     uploadingSlotsQueue()
 {
 }
@@ -249,12 +248,13 @@ void Core::MessageHandler::sendMessage(const Shared::Message& data)
     }
 }
 
-void Core::MessageHandler::performSending(Shared::Message data)
+void Core::MessageHandler::performSending(Shared::Message data, bool newMessage)
 {
     QString jid = data.getPenPalJid();
     QString id = data.getId();
     QString oob = data.getOutOfBandUrl();
     RosterItem* ri = acc->rh->getRosterItem(jid);
+    bool sent = false;
     QMap<QString, QVariant> changes;
     if (acc->state == Shared::ConnectionState::connected) {
         QXmppMessage msg(acc->getFullJid(), data.getTo(), data.getBody(), data.getThread());
@@ -267,20 +267,13 @@ void Core::MessageHandler::performSending(Shared::Message data)
         msg.setOutOfBandUrl(oob);
         msg.setReceiptRequested(true);
         
-        bool sent = acc->client.sendPacket(msg);
+        sent = acc->client.sendPacket(msg);
         
         if (sent) {
             data.setState(Shared::Message::State::sent);
         } else {
             data.setState(Shared::Message::State::error);
-            data.setErrorText("Couldn't send message via QXMPP library check out logs");
-        }
-        
-        if (ri != 0) {
-            ri->appendMessageToArchive(data);
-            if (sent) {
-                pendingStateMessages.insert(std::make_pair(id, jid));
-            }
+            data.setErrorText("Couldn't send message: internal QXMPP library error, probably need to check out the logs");
         }
         
     } else {
@@ -296,6 +289,22 @@ void Core::MessageHandler::performSending(Shared::Message data)
     if (oob.size() > 0) {
         changes.insert("outOfBandUrl", oob);
     }
+    if (!newMessage) {
+        changes.insert("stamp", data.getTime());
+    }
+    
+    if (ri != 0) {
+        if (newMessage) {
+            ri->appendMessageToArchive(data);
+        } else {
+            ri->changeMessage(id, changes);
+        }
+        if (sent) {
+            pendingStateMessages.insert(std::make_pair(id, jid));
+        } else {
+            pendingStateMessages.erase(id);
+        }
+    }
     
     emit acc->changeMessage(jid, id, changes);
 }
@@ -303,27 +312,37 @@ void Core::MessageHandler::performSending(Shared::Message data)
 void Core::MessageHandler::prepareUpload(const Shared::Message& data)
 {
     if (acc->state == Shared::ConnectionState::connected) {
+        QString jid = data.getPenPalJid();
+        QString id = data.getId();
+        RosterItem* ri = acc->rh->getRosterItem(jid);
+        if (!ri) {
+            qDebug() << "An attempt to initialize upload in" << acc->name << "for pal" << jid << "but the object for this pal wasn't found, something went terrebly wrong, skipping send";
+            return;
+        }
         QString path = data.getAttachPath();
         QString url = acc->network->getFileRemoteUrl(path);
         if (url.size() != 0) {
             sendMessageWithLocalUploadedFile(data, url);
         } else {
-            if (acc->network->checkAndAddToUploading(acc->getName(), data.getPenPalJid(), data.getId(), path)) {
-                pendingMessages.emplace(data.getId(), data);
+            if (acc->network->checkAndAddToUploading(acc->getName(), jid, id, path)) {
+                ri->appendMessageToArchive(data);
+                pendingStateMessages.insert(std::make_pair(id, jid));
             } else {
                 if (acc->um->serviceFound()) {
                     QFileInfo file(path);
                     if (file.exists() && file.isReadable()) {
-                        uploadingSlotsQueue.emplace_back(path, data);
+                        ri->appendMessageToArchive(data);
+                        pendingStateMessages.insert(std::make_pair(id, jid));
+                        uploadingSlotsQueue.emplace_back(path, id);
                         if (uploadingSlotsQueue.size() == 1) {
                             acc->um->requestUploadSlot(file);
                         }
                     } else {
-                        handleUploadError(data.getPenPalJid(), data.getId(), "Uploading file no longer exists or your system user has no permission to read it");
+                        handleUploadError(jid, id, "Uploading file no longer exists or your system user has no permission to read it");
                         qDebug() << "Requested upload slot in account" << acc->name << "for file" << path << "but the file doesn't exist or is not readable";
                     }
                 } else {
-                    handleUploadError(data.getPenPalJid(), data.getId(), "Your server doesn't support file upload service, or it's prohibited for your account");
+                    handleUploadError(jid, id, "Your server doesn't support file upload service, or it's prohibited for your account");
                     qDebug() << "Requested upload slot in account" << acc->name << "for file" << path << "but upload manager didn't discover any upload services";
                 }
             }
@@ -340,10 +359,10 @@ void Core::MessageHandler::onUploadSlotReceived(const QXmppHttpUploadSlotIq& slo
     if (uploadingSlotsQueue.size() == 0) {
         qDebug() << "HTTP Upload manager of account" << acc->name << "reports about success requesting upload slot, but none was requested";
     } else {
-        const std::pair<QString, Shared::Message>& pair = uploadingSlotsQueue.front();
-        const QString& mId = pair.second.getId();
-        acc->network->uploadFile({acc->name, pair.second.getPenPalJid(), mId}, pair.first, slot.putUrl(), slot.getUrl(), slot.putHeaders());
-        pendingMessages.emplace(mId, pair.second);
+        const std::pair<QString, QString>& pair = uploadingSlotsQueue.front();
+        const QString& mId = pair.second;
+        QString palJid = pendingStateMessages.at(mId);
+        acc->network->uploadFile({acc->name, palJid, mId}, pair.first, slot.putUrl(), slot.getUrl(), slot.putHeaders());
         
         uploadingSlotsQueue.pop_front();
         if (uploadingSlotsQueue.size() > 0) {
@@ -359,9 +378,9 @@ void Core::MessageHandler::onUploadSlotRequestFailed(const QXmppHttpUploadReques
         qDebug() << "HTTP Upload manager of account" << acc->name << "reports about an error requesting upload slot, but none was requested";
         qDebug() << err;
     } else {
-        const std::pair<QString, Shared::Message>& pair = uploadingSlotsQueue.front();
+        const std::pair<QString, QString>& pair = uploadingSlotsQueue.front();
         qDebug() << "Error requesting upload slot for file" << pair.first << "in account" << acc->name << ":" << err;
-        emit acc->uploadFileError(pair.second.getPenPalJid(), pair.second.getId(), "Error requesting slot to upload file: " + err);
+        handleUploadError(pendingStateMessages.at(pair.second), pair.second, err);
         
         uploadingSlotsQueue.pop_front();
         if (uploadingSlotsQueue.size() > 0) {
@@ -400,47 +419,65 @@ void Core::MessageHandler::onLoadFileError(const std::list<Shared::MessageInfo>&
 
 void Core::MessageHandler::handleUploadError(const QString& jid, const QString& messageId, const QString& errorText)
 {
-    std::map<QString, Shared::Message>::const_iterator itr = pendingMessages.find(messageId);
-    if (itr != pendingMessages.end()) {
-        pendingMessages.erase(itr);
-        //TODO move the storage of pending messages to the database and change them there
-    }
+    emit acc->uploadFileError(jid, messageId, "Error requesting slot to upload file: " + errorText);
+    pendingStateMessages.erase(jid);
+    requestChangeMessage(jid, messageId, {
+        {"state", static_cast<uint>(Shared::Message::State::error)},
+        {"errorText", errorText}
+    });
 }
 
 void Core::MessageHandler::onUploadFileComplete(const std::list<Shared::MessageInfo>& msgs, const QString& path)
 {
     for (const Shared::MessageInfo& info : msgs) {
         if (info.account == acc->getName()) {
-            std::map<QString, Shared::Message>::const_iterator itr = pendingMessages.find(info.messageId);
-            if (itr != pendingMessages.end()) {
-                sendMessageWithLocalUploadedFile(itr->second, path);
-                pendingMessages.erase(itr);
+            RosterItem* ri = acc->rh->getRosterItem(info.jid);
+            if (ri != 0) {
+                Shared::Message msg = ri->getMessage(info.messageId);
+                sendMessageWithLocalUploadedFile(msg, path, false);
+            } else {
+                qDebug() << "A signal received about complete upload to" << acc->name << "for pal" << info.jid << "but the object for this pal wasn't found, something went terrebly wrong, skipping send";
             }
         }
     }
 }
 
-void Core::MessageHandler::sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url)
+void Core::MessageHandler::sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url, bool newMessage)
 {
     msg.setOutOfBandUrl(url);
-    if (msg.getBody().size() == 0) {
-        msg.setBody(url);
-    }
-    performSending(msg);
+    if (msg.getBody().size() == 0) {    //not sure why, but most messages do that
+        msg.setBody(url);               //they duplicate oob in body, some of them wouldn't even show an attachment if you don't do that
+    }                                   
+    performSending(msg, newMessage);
     //TODO removal/progress update
 }
+
+static const std::set<QString> allowerToChangeKeys({
+    "attachPath",
+    "outOfBandUrl",
+    "state",
+    "errorText"
+});
 
 void Core::MessageHandler::requestChangeMessage(const QString& jid, const QString& messageId, const QMap<QString, QVariant>& data)
 {
     RosterItem* cnt = acc->rh->getRosterItem(jid);
     if (cnt != 0) {
-        QMap<QString, QVariant>::const_iterator itr = data.find("attachPath");
-        if (data.size() == 1 && itr != data.end()) {
+        bool allSupported = true;
+        QString unsupportedString;
+        for (QMap<QString, QVariant>::const_iterator itr = data.begin(); itr != data.end(); ++itr) {        //I need all this madness 
+            if (allowerToChangeKeys.count(itr.key()) != 1) {                                                //to not allow this method
+                allSupported = false;                                                                       //to make a message to look like if it was edited
+                unsupportedString = itr.key();                                                              //basically I needed to control who exaclty calls this method
+                break;                                                                                      //because the underlying tech assumes that the change is initiated by user
+            }                                                                                               //not by system
+        }
+        if (allSupported) {
             cnt->changeMessage(messageId, data);
             emit acc->changeMessage(jid, messageId, data);
         } else {
             qDebug() << "A request to change message" << messageId << "of conversation" << jid << "with following data" << data;
-            qDebug() << "nothing but the changing of the local path is supported yet in this method, skipping";
+            qDebug() << "only limited set of dataFields are supported yet here, and" << unsupportedString << "isn't one of them, skipping";
         }
     }
 }

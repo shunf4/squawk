@@ -78,6 +78,8 @@ public:
     void clearArchiveRequests();
     void downgradeDatabaseState();
     
+    Shared::Message getMessage(const QString& id);
+    
 signals:
     void nameChanged(const QString& name);
     void subscriptionStateChanged(Shared::SubscriptionState state);

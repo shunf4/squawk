@@ -271,6 +271,8 @@ void Core::Archive::changeMessage(const QString& id, const QMap<QString, QVarian
         bool hadStanzaId = msg.getStanzaId().size() > 0;
         QDateTime oTime = msg.getTime();
         bool idChange = msg.change(data);
+        QDateTime nTime = msg.getTime();
+        bool orderChange = oTime != nTime;
         
         MDB_val lmdbKey, lmdbData;
         QByteArray ba;
@@ -280,15 +282,21 @@ void Core::Archive::changeMessage(const QString& id, const QMap<QString, QVarian
         lmdbKey.mv_size = strId.size();
         lmdbKey.mv_data = (char*)strId.c_str();
         int rc;
-        if (idChange) {
-            rc = mdb_del(txn, main, &lmdbKey, &lmdbData);
+        if (idChange || orderChange) {
+            if (idChange) {
+                rc = mdb_del(txn, main, &lmdbKey, &lmdbData);
+            } else {
+                quint64 ostamp = oTime.toMSecsSinceEpoch();
+                lmdbData.mv_data = (quint8*)&ostamp;
+                lmdbData.mv_size = 8;
+                rc = mdb_del(txn, order, &lmdbData, &lmdbKey);
+            }
             if (rc == 0) {
                 strId = msg.getId().toStdString();
                 lmdbKey.mv_size = strId.size();
                 lmdbKey.mv_data = (char*)strId.c_str();
                 
-                
-                quint64 stamp = oTime.toMSecsSinceEpoch();
+                quint64 stamp = nTime.toMSecsSinceEpoch();
                 lmdbData.mv_data = (quint8*)&stamp;
                 lmdbData.mv_size = 8;
                 rc = mdb_put(txn, order, &lmdbData, &lmdbKey, 0);

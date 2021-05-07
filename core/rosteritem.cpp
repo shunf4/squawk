@@ -569,3 +569,20 @@ void Core::RosterItem::downgradeDatabaseState()
         archiveState = ArchiveState::chunk;
     }
 }
+
+Shared::Message Core::RosterItem::getMessage(const QString& id)
+{
+    for (const Shared::Message& msg : appendCache) {
+        if (msg.getId() == id) {
+            return msg;
+        }
+    }
+    
+    for (Shared::Message& msg : hisoryCache) {
+        if (msg.getId() == id) {
+            return msg;
+        }
+    }
+    
+    return archive->getElement(id);
+}

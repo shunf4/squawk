@@ -194,6 +194,14 @@ std::set<Models::MessageFeed::MessageRoles> Models::MessageFeed::detectChanges(c
             roles.insert(MessageRoles::Text);
             roles.insert(MessageRoles::Correction);
         }
+    } else {
+        QMap<QString, QVariant>::const_iterator dItr = data.find("stamp");
+        if (dItr != data.end()) {
+            QDateTime ntime = dItr.value().toDateTime();
+            if (msg.getTime() != ntime) {
+                roles.insert(MessageRoles::Date);
+            }
+        }
     }
     
     return roles;

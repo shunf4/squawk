@@ -64,16 +64,15 @@ private:
     bool handleChatMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
     bool handleGroupMessage(const QXmppMessage& msg, bool outgoing = false, bool forwarded = false, bool guessing = false);
     void logMessage(const QXmppMessage& msg, const QString& reason = "Message wasn't handled: ");
-    void sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url);
-    void performSending(Shared::Message data);
+    void sendMessageWithLocalUploadedFile(Shared::Message msg, const QString& url, bool newMessage = true);
+    void performSending(Shared::Message data, bool newMessage = true);
     void prepareUpload(const Shared::Message& data);
     void handleUploadError(const QString& jid, const QString& messageId, const QString& errorText);
     
 private:
     Account* acc;
-    std::map<QString, QString> pendingStateMessages;
-    std::map<QString, Shared::Message> pendingMessages;
-    std::deque<std::pair<QString, Shared::Message>> uploadingSlotsQueue;
+    std::map<QString, QString> pendingStateMessages;        //key is message id, value is JID
+    std::deque<std::pair<QString, QString>> uploadingSlotsQueue;
 };
 
 }

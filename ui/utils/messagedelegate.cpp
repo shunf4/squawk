@@ -397,13 +397,6 @@ QLabel * MessageDelegate::getStatusIcon(const Models::FeedItem& data) const
     std::map<QString, QLabel*>::const_iterator itr = statusIcons->find(data.id);
     QLabel* result = 0;
     
-    if (itr != statusIcons->end()) {
-        result = itr->second;
-    } else {
-        result = new QLabel();
-        statusIcons->insert(std::make_pair(data.id, result));
-    }
-    
     QIcon q(Shared::icon(Shared::messageStateThemeIcons[static_cast<uint8_t>(data.state)]));
     QString tt = Shared::Global::getName(data.state);
     if (data.state == Shared::Message::State::error) {
@@ -412,8 +405,23 @@ QLabel * MessageDelegate::getStatusIcon(const Models::FeedItem& data) const
         }
     }
     
+    if (itr != statusIcons->end()) {
+        result = itr->second;
+        if (result->toolTip() != tt) {                      //If i just assign pixmap every time unconditionally
+            result->setPixmap(q.pixmap(statusIconSize));    //it involves into an infinite cycle of repaint
+            result->setToolTip(tt);                         //may be it's better to subclass and store last condition in int?
+        }
+    } else {
+        result = new QLabel();
+        statusIcons->insert(std::make_pair(data.id, result));
+        result->setPixmap(q.pixmap(statusIconSize));
+        result->setToolTip(tt);
+    }
+    
+    
+    
     result->setToolTip(tt);
-    result->setPixmap(q.pixmap(statusIconSize));
+    //result->setText(std::to_string((int)data.state).c_str());
     
     return result;
 }

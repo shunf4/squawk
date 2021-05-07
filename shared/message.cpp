@@ -410,6 +410,14 @@ bool Shared::Message::change(const QMap<QString, QVariant>& data)
                 setEdited(true);
             }
         }
+    } else {
+        QMap<QString, QVariant>::const_iterator dItr = data.find("stamp");
+        if (dItr != data.end()) {
+            QDateTime ntime = dItr.value().toDateTime();
+            if (time != ntime) {
+                setTime(ntime);
+            }
+        }
     }
     
     return idChanged;
@@ -437,7 +445,7 @@ void Shared::Message::setOutOfBandUrl(const QString& url)
 
 bool Shared::Message::storable() const
 {
-    return id.size() > 0 && (body.size() > 0 || oob.size()) > 0;
+    return id.size() > 0 && (body.size() > 0 || oob.size() > 0 || attachPath.size() > 0);
 }
 
 void Shared::Message::setStanzaId(const QString& sid)

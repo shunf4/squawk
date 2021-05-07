@@ -34,8 +34,8 @@ const std::set<int> FeedView::geometryChangingRoles = {
     Models::MessageFeed::Attach,
     Models::MessageFeed::Text,
     Models::MessageFeed::Id,
-    Models::MessageFeed::Error
-    
+    Models::MessageFeed::Error,
+    Models::MessageFeed::Date
 };
 
 FeedView::FeedView(QWidget* parent):
