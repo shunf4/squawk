@@ -16,7 +16,7 @@ set(vCardUI_SRC
 )
 
 # Tell CMake to create the helloworld executable
-add_library(vCardUI ${vCardUI_SRC})
+add_library(vCardUI STATIC ${vCardUI_SRC})
 
 # Use the Widgets module from Qt 5.
 target_link_libraries(vCardUI Qt5::Widgets)

@@ -12,7 +12,6 @@ include(GNUInstallDirs)
 include_directories(.)
 
 find_package(Qt5Widgets CONFIG REQUIRED)
-find_package(Qt5QuickCompiler CONFIG REQUIRED)
 find_package(Qt5LinguistTools)
 
 if(NOT CMAKE_BUILD_TYPE)

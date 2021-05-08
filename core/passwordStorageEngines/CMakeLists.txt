@@ -14,7 +14,7 @@ if (WITH_KWALLET)
         kwallet.cpp
     )
     
-    add_library(kwalletPSE ${kwalletPSE_SRC})
+    add_library(kwalletPSE STATIC ${kwalletPSE_SRC})
     
     target_include_directories(kwalletPSE PUBLIC ${KWALLET_INTERFACE_INCLUDE_DIRECTORIES})
     target_include_directories(kwalletPSE PUBLIC ${Qt5GUI_INTERFACE_INCLUDE_DIRECTORIES})

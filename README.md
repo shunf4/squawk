@@ -13,7 +13,8 @@
 - lmdb
 - CMake 3.0 or higher
 - qxmpp 1.1.0 or higher
-- kwallet (optional)
+- KDE Frameworks: kwallet (optional)
+- KDE Frameworks: KIO (optional)
 
 ### Getting
 

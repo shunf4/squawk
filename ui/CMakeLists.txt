@@ -8,8 +8,7 @@ set(CMAKE_AUTOUIC ON)
 
 # Find the QtWidgets library
 find_package(Qt5 CONFIG REQUIRED COMPONENTS Widgets DBus Core)
-find_package(Boost 1.36.0 CONFIG REQUIRED COMPONENTS
-             date_time filesystem iostreams)
+find_package(Boost 1.36.0 REQUIRED)
 if(Boost_FOUND)
   include_directories(${Boost_INCLUDE_DIRS})
 endif()
@@ -35,7 +34,7 @@ set(squawkUI_SRC
 )
 
 # Tell CMake to create the helloworld executable
-add_library(squawkUI ${squawkUI_SRC})
+add_library(squawkUI STATIC ${squawkUI_SRC})
 
 # Use the Widgets module from Qt 5.
 target_link_libraries(squawkUI squawkWidgets)

@@ -1,5 +1,7 @@
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.3)
 project(squawkCORE)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 set(CMAKE_AUTOMOC ON)
 
@@ -7,6 +9,7 @@ find_package(Qt5Core CONFIG REQUIRED)
 find_package(Qt5Gui CONFIG REQUIRED)
 find_package(Qt5Network CONFIG REQUIRED)
 find_package(Qt5Xml CONFIG REQUIRED)
+find_package(LMDB REQUIRED)
 
 set(squawkCORE_SRC
     squawk.cpp
@@ -25,7 +28,7 @@ set(squawkCORE_SRC
 add_subdirectory(passwordStorageEngines)
 
 # Tell CMake to create the helloworld executable
-add_library(squawkCORE ${squawkCORE_SRC})
+add_library(squawkCORE STATIC ${squawkCORE_SRC})
 
 
 if(SYSTEM_QXMPP)
