@@ -532,20 +532,23 @@ QModelIndex Models::MessageFeed::modelIndexById(const QString& id) const
 
 QModelIndex Models::MessageFeed::modelIndexByTime(const QString& id, const QDateTime& time) const
 {
-    StorageByTime::const_iterator tItr = indexByTime.upper_bound(time);
-    StorageByTime::const_iterator tBeg = indexByTime.begin();
-    bool found = false;
-    while (tItr != tBeg) {
-        if (id == (*tItr)->getId()) {
-            found = true;
-            break;
+    if (indexByTime.size() > 0) {
+        StorageByTime::const_iterator tItr = indexByTime.upper_bound(time);
+        StorageByTime::const_iterator tBeg = indexByTime.begin();
+        StorageByTime::const_iterator tEnd = indexByTime.end();
+        bool found = false;
+        while (tItr != tBeg) {
+            if (tItr != tEnd && id == (*tItr)->getId()) {
+                found = true;
+                break;
+            }
+            --tItr;
         }
-        --tItr;
-    }
-    
-    if (found || id == (*tItr)->getId()) {
-        int position = indexByTime.rank(tItr);
-        return createIndex(position, 0, *tItr);
+        
+        if (found && tItr != tEnd && id == (*tItr)->getId()) {
+            int position = indexByTime.rank(tItr);
+            return createIndex(position, 0, *tItr);
+        }
     }
     
     return QModelIndex();

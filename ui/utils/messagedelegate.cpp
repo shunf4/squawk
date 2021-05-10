@@ -307,25 +307,48 @@ void MessageDelegate::paintBar(QProgressBar* bar, QPainter* painter, bool sentBy
 void MessageDelegate::paintPreview(const Models::FeedItem& data, QPainter* painter, QStyleOptionViewItem& option) const
 {
     Shared::Global::FileInfo info = Shared::Global::getFileInfo(data.attach.localPath);
-    if (info.preview == Shared::Global::FileInfo::Preview::picture) {
-        QSize size = constrainAttachSize(info.size, option.rect.size());
-        
-        QPoint start;
-        if (data.sentByMe) {
-            start = {option.rect.width() - size.width(), option.rect.top()};
-            start.rx() += margin;
-        } else {
-            start = option.rect.topLeft();
-        }
-        QImage img(data.attach.localPath);
-        if (img.isNull()) {
-            emit invalidPath(data.id);
-        } else {
-            painter->drawImage(QRect(start, size), img);
-        }
-        
-        option.rect.adjust(0, size.height() + textMargin, 0, 0);
+    QSize size = constrainAttachSize(info.size, option.rect.size());
+    
+    QPoint start;
+    if (data.sentByMe) {
+        start = {option.rect.width() - size.width(), option.rect.top()};
+        start.rx() += margin;
+    } else {
+        start = option.rect.topLeft();
     }
+    QRect rect(start, size);
+    switch (info.preview) {
+        case Shared::Global::FileInfo::Preview::picture: {
+            QImage img(data.attach.localPath);
+            if (img.isNull()) {
+                emit invalidPath(data.id);
+            } else {
+                painter->drawImage(rect, img);
+            }
+        }
+        break;
+        default: {
+            QIcon icon = QIcon::fromTheme(info.mime.iconName());
+            
+            painter->save();
+            
+            painter->setFont(bodyFont);
+            int labelWidth = option.rect.width() - size.width() - margin;
+            QString elidedName = bodyMetrics.elidedText(info.name, Qt::ElideMiddle, labelWidth);
+            QSize nameSize = bodyMetrics.boundingRect(QRect(start, QSize(labelWidth, 0)), 0, elidedName).size();
+            if (data.sentByMe) {
+                start.rx() -= nameSize.width() + margin;
+            }
+            painter->drawPixmap({start, size}, icon.pixmap(info.size));
+            start.rx() += size.width() + margin;
+            start.ry() += nameSize.height() + (size.height() - nameSize.height()) / 2;
+            painter->drawText(start, elidedName);
+    
+            painter->restore();
+        }
+    }
+    
+    option.rect.adjust(0, size.height() + textMargin, 0, 0);
 }
 
 QPushButton * MessageDelegate::getButton(const Models::FeedItem& data) const

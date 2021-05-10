@@ -112,6 +112,8 @@ Shared::Global::Global():
 #endif
 }
 
+
+static const QSize defaultIconFileInfoHeight(50, 50);
 Shared::Global::FileInfo Shared::Global::getFileInfo(const QString& path)
 {
     std::map<QString, FileInfo>::const_iterator itr = instance->fileCache.find(path);
@@ -131,6 +133,8 @@ Shared::Global::FileInfo Shared::Global::getFileInfo(const QString& path)
             p = FileInfo::Preview::picture;
             QImage img(path);
             size = img.size();
+        } else {
+            size = defaultIconFileInfoHeight;
         }
         
         itr = instance->fileCache.insert(std::make_pair(path, FileInfo({info.fileName(), size, type, p}))).first;
