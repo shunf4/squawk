@@ -1,49 +1,27 @@
-cmake_minimum_required(VERSION 3.3)
-project(squawkCORE)
+target_sources(squawk PRIVATE
+  account.cpp
+  account.h
+  adapterFuctions.cpp
+  archive.cpp
+  archive.h
+  conference.cpp
+  conference.h
+  contact.cpp
+  contact.h
+  main.cpp
+  networkaccess.cpp
+  networkaccess.h
+  rosteritem.cpp
+  rosteritem.h
+  signalcatcher.cpp
+  signalcatcher.h
+  squawk.cpp
+  squawk.h
+  storage.cpp
+  storage.h
+  urlstorage.cpp
+  urlstorage.h
+  )
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
-
-set(CMAKE_AUTOMOC ON)
-
-find_package(Qt5Core CONFIG REQUIRED)
-find_package(Qt5Gui CONFIG REQUIRED)
-find_package(Qt5Network CONFIG REQUIRED)
-find_package(Qt5Xml CONFIG REQUIRED)
-find_package(LMDB REQUIRED)
-
-set(squawkCORE_SRC
-    squawk.cpp
-    account.cpp
-    archive.cpp
-    rosteritem.cpp
-    contact.cpp
-    conference.cpp
-    urlstorage.cpp
-    networkaccess.cpp
-    adapterFuctions.cpp
-    handlers/messagehandler.cpp
-    handlers/rosterhandler.cpp
-)
-
+add_subdirectory(handlers)
 add_subdirectory(passwordStorageEngines)
-
-# Tell CMake to create the helloworld executable
-add_library(squawkCORE STATIC ${squawkCORE_SRC})
-
-
-if(SYSTEM_QXMPP)
-    get_target_property(QXMPP_INTERFACE_INCLUDE_DIRECTORIES QXmpp::QXmpp INTERFACE_INCLUDE_DIRECTORIES)
-    target_include_directories(squawkCORE PUBLIC ${QXMPP_INTERFACE_INCLUDE_DIRECTORIES})
-endif()
-
-# Use the Widgets module from Qt 5.
-target_link_libraries(squawkCORE Qt5::Core)
-target_link_libraries(squawkCORE Qt5::Network)
-target_link_libraries(squawkCORE Qt5::Gui)
-target_link_libraries(squawkCORE Qt5::Xml)
-target_link_libraries(squawkCORE qxmpp)
-target_link_libraries(squawkCORE lmdb)
-target_link_libraries(squawkCORE simpleCrypt)
-if (WITH_KWALLET)
-    target_link_libraries(squawkCORE kwalletPSE)
-endif()

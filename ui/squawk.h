@@ -39,7 +39,7 @@
 #include "models/roster.h"
 #include "widgets/vcard/vcard.h"
 
-#include "shared.h"
+#include "shared/shared.h"
 
 namespace Ui {
 class Squawk;

@@ -43,7 +43,7 @@
 #include <QXmppVCardManager.h>
 #include <QXmppMessageReceiptManager.h>
 
-#include "shared.h"
+#include "shared/shared.h"
 #include "contact.h"
 #include "conference.h"
 #include "networkaccess.h"

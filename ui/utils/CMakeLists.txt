@@ -1,32 +1,26 @@
-cmake_minimum_required(VERSION 3.3)
-project(squawkUIUtils)
-
-# Instruct CMake to run moc automatically when needed.
-set(CMAKE_AUTOMOC ON)
-# Instruct CMake to create code from Qt designer ui files
-set(CMAKE_AUTOUIC ON)
-
-# Find the QtWidgets library
-find_package(Qt5 CONFIG REQUIRED COMPONENTS Widgets Core)
-
-set(squawkUIUtils_SRC
-#  messageline.cpp
-#  message.cpp
-  resizer.cpp
-#  image.cpp
-  flowlayout.cpp
+target_sources(squawk PRIVATE
   badge.cpp
-  progress.cpp
+  badge.h
   comboboxdelegate.cpp
-  feedview.cpp
-  messagedelegate.cpp
+  comboboxdelegate.h
   exponentialblur.cpp
+  exponentialblur.h
+  feedview.cpp
+  feedview.h
+  flowlayout.cpp
+  flowlayout.h
+  image.cpp
+  image.h
+  message.cpp
+  message.h
+  messagedelegate.cpp
+  messagedelegate.h
+  messageline.cpp
+  messageline.h
+  progress.cpp
+  progress.h
+  resizer.cpp
+  resizer.h
   shadowoverlay.cpp
-)
-
-# Tell CMake to create the helloworld executable
-add_library(squawkUIUtils STATIC ${squawkUIUtils_SRC})
-
-# Use the Widgets module from Qt 5.
-target_link_libraries(squawkUIUtils squawkWidgets)
-target_link_libraries(squawkUIUtils Qt5::Widgets)
+  shadowoverlay.h
+  )

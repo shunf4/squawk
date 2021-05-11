@@ -25,7 +25,7 @@
 #include <QMimeType>
 
 #include "shared/message.h"
-#include "exception.h"
+#include "shared/exception.h"
 #include <lmdb.h>
 #include <list>
 
