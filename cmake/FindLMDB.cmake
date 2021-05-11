@@ -21,27 +21,27 @@
 #  LMDB_INCLUDE_DIRS        The location of LMDB headers.
 
 find_path(LMDB_ROOT_DIR
-    NAMES include/lmdb.h
-)
+  NAMES include/lmdb.h
+  )
 
 find_library(LMDB_LIBRARIES
-    NAMES lmdb
-    HINTS ${LMDB_ROOT_DIR}/lib
-)
+  NAMES lmdb
+  HINTS ${LMDB_ROOT_DIR}/lib
+  )
 
 find_path(LMDB_INCLUDE_DIRS
-    NAMES lmdb.h
-    HINTS ${LMDB_ROOT_DIR}/include
-)
+  NAMES lmdb.h
+  HINTS ${LMDB_ROOT_DIR}/include
+  )
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(LMDB DEFAULT_MSG
-    LMDB_LIBRARIES
-    LMDB_INCLUDE_DIRS
-)
+  LMDB_LIBRARIES
+  LMDB_INCLUDE_DIRS
+  )
 
 mark_as_advanced(
-    LMDB_ROOT_DIR
-    LMDB_LIBRARIES
-    LMDB_INCLUDE_DIRS
+  LMDB_ROOT_DIR
+  LMDB_LIBRARIES
+  LMDB_INCLUDE_DIRS
 )

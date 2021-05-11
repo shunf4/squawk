@@ -30,17 +30,17 @@ if (SYSTEM_QXMPP)
   if (NOT QXmpp_FOUND)
     set(SYSTEM_QXMPP OFF)
     message("QXmpp package wasn't found, trying to build with bundled QXmpp")
-  else()
+  else ()
     message("Building with system QXmpp")
-  endif()
-endif()
+  endif ()
+endif ()
 
-if(NOT SYSTEM_QXMPP)
+if (NOT SYSTEM_QXMPP)
   target_link_libraries(squawk PRIVATE qxmpp)
   add_subdirectory(external/qxmpp)
-else()
+else ()
   target_link_libraries(squawk PRIVATE QXmpp::QXmpp)
-endif()
+endif ()
 
 ## KIO
 if (WITH_KIO)
@@ -49,11 +49,11 @@ if (WITH_KIO)
   if (NOT KF5KIO_FOUND)
     set(WITH_KIO OFF)
     message("KIO package wasn't found, KIO support modules wouldn't be built")
-  else()
+  else ()
     target_compile_definitions(squawk PRIVATE WITH_KIO)
     message("Building with support of KIO")
-  endif()
-endif()
+  endif ()
+endif ()
 
 ## KWallet
 if (WITH_KWALLET)
@@ -62,11 +62,11 @@ if (WITH_KWALLET)
   if (NOT KF5Wallet_FOUND)
     set(WITH_KWALLET OFF)
     message("KWallet package wasn't found, KWallet support module wouldn't be built")
-  else()
+  else ()
     target_compile_definitions(squawk PRIVATE WITH_KWALLET)
     message("Building with support of KWallet")
-  endif()
-endif()
+  endif ()
+endif ()
 
 ## Signal (TODO)
 # find_package(Signal REQUIRED)
@@ -81,9 +81,9 @@ target_link_libraries(squawk PRIVATE simpleCrypt)
 target_link_libraries(squawk PRIVATE uuid)
 
 # Build type
-if(NOT CMAKE_BUILD_TYPE)
+if (NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
-endif()
+endif ()
 
 message("Build type: ${CMAKE_BUILD_TYPE}")
 
@@ -91,7 +91,7 @@ target_compile_options(squawk PRIVATE
   "-Wall;-Wextra"
   "$<$<CONFIG:DEBUG>:-g>"
   "$<$<CONFIG:RELEASE>:-O3>"
-)
+  )
 
 add_subdirectory(core)
 add_subdirectory(external/simpleCrypt)
