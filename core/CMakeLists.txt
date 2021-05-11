@@ -25,10 +25,3 @@ target_sources(squawk PRIVATE
 
 add_subdirectory(handlers)
 add_subdirectory(passwordStorageEngines)
-
-#if(SYSTEM_QXMPP)
-#    get_target_property(QXMPP_INTERFACE_INCLUDE_DIRECTORIES QXmpp::QXmpp INTERFACE_INCLUDE_DIRECTORIES)
-#    target_include_directories(squawk PRIVATE ${QXMPP_INTERFACE_INCLUDE_DIRECTORIES})
-#endif()
-
-# Use the Widgets module from Qt 5.

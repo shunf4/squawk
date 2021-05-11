@@ -15,13 +15,77 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 include(GNUInstallDirs)
 
+option(SYSTEM_QXMPP "Use system qxmpp lib" ON)
+option(WITH_KWALLET "Build KWallet support module" ON)
+option(WITH_KIO "Build KIO support module" ON)
+
+# Dependencies
+
+## Qt
 find_package(Qt5Widgets CONFIG REQUIRED COMPONENTS Widgets DBus Core)
-find_package(Qt5LinguistTools)
 find_package(Qt5Core CONFIG REQUIRED)
 find_package(Qt5Gui CONFIG REQUIRED)
 find_package(Qt5Network CONFIG REQUIRED)
 find_package(Qt5Xml CONFIG REQUIRED)
+find_package(Qt5LinguistTools)
+
 find_package(LMDB REQUIRED)
+find_package(Signal REQUIRED)
+
+## QXmpp
+if (SYSTEM_QXMPP)
+  find_package(QXmpp CONFIG)
+
+  if (NOT QXmpp_FOUND)
+    set(SYSTEM_QXMPP OFF)
+    message("QXmpp package wasn't found, trying to build with bundled QXmpp")
+  else()
+    message("Building with system QXmpp")
+  endif()
+endif()
+
+if(NOT SYSTEM_QXMPP)
+  add_subdirectory(external/qxmpp)
+endif()
+
+## KIO
+if (WITH_KIO)
+  find_package(KF5KIO CONFIG)
+
+  if (NOT KF5KIO_FOUND)
+    set(WITH_KIO OFF)
+    message("KIO package wasn't found, KIO support modules wouldn't be built")
+  else()
+    add_definitions(-DWITH_KIO)
+    message("Building with support of KIO")
+  endif()
+endif()
+
+## KWallet
+if (WITH_KWALLET)
+  find_package(KF5Wallet CONFIG)
+
+  if (NOT KF5Wallet_FOUND)
+    set(WITH_KWALLET OFF)
+    message("KWallet package wasn't found, KWallet support module wouldn't be built")
+  else()
+    add_definitions(-DWITH_KWALLET)
+    message("Building with support of KWallet")
+  endif()
+endif()
+
+# Linking
+target_link_libraries(squawk PRIVATE Qt5::Widgets)
+target_link_libraries(squawk PRIVATE Qt5::DBus)
+target_link_libraries(squawk PRIVATE Qt5::Network)
+target_link_libraries(squawk PRIVATE Qt5::Gui)
+target_link_libraries(squawk PRIVATE Qt5::Xml)
+target_link_libraries(squawk PRIVATE qxmpp)
+target_link_libraries(squawk PRIVATE lmdb)
+target_link_libraries(squawk PRIVATE simpleCrypt)
+target_link_libraries(squawk PRIVATE uuid)
+
+# Build type
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
@@ -51,69 +115,15 @@ set(TS_FILES
 qt5_add_translation(QM_FILES ${TS_FILES})
 add_custom_target(translations ALL DEPENDS ${QM_FILES})
 
-qt5_use_modules(squawk LINK_PUBLIC Core Widgets)
 qt5_add_resources(RCC resources/resources.qrc)
 
-option(SYSTEM_QXMPP "Use system qxmpp lib" ON)
-option(WITH_KWALLET "Build KWallet support module" ON)
-option(WITH_KIO "Build KIO support module" ON)
-
-if (SYSTEM_QXMPP)
-    find_package(QXmpp CONFIG)
-
-    if (NOT QXmpp_FOUND)
-        set(SYSTEM_QXMPP OFF)
-        message("QXmpp package wasn't found, trying to build with bundled QXmpp")
-    else()
-        message("Building with system QXmpp")
-    endif()
-endif()
-
-if(NOT SYSTEM_QXMPP)
-    add_subdirectory(external/qxmpp)
-endif()
-
-if (WITH_KWALLET)
-    find_package(KF5Wallet CONFIG)
-
-    if (NOT KF5Wallet_FOUND)
-        set(WITH_KWALLET OFF)
-        message("KWallet package wasn't found, KWallet support module wouldn't be built")
-    else()
-        add_definitions(-DWITH_KWALLET)
-        message("Building with support of KWallet")
-    endif()
-endif()
-
 target_sources(squawk PRIVATE ${RCC})
-target_link_libraries(squawk PRIVATE Qt5::Widgets)
-target_link_libraries(squawk PRIVATE Qt5::DBus)
-target_link_libraries(squawk PRIVATE Qt5::Network)
-target_link_libraries(squawk PRIVATE Qt5::Gui)
-target_link_libraries(squawk PRIVATE Qt5::Xml)
-target_link_libraries(squawk PRIVATE qxmpp)
-target_link_libraries(squawk PRIVATE lmdb)
-target_link_libraries(squawk PRIVATE simpleCrypt)
-
-if (WITH_KIO)
-    find_package(KF5KIO CONFIG)
-
-    if (NOT KF5KIO_FOUND)
-        set(WITH_KIO OFF)
-        message("KIO package wasn't found, KIO support modules wouldn't be built")
-    else()
-        add_definitions(-DWITH_KIO)
-        message("Building with support of KIO")
-    endif()
-endif()
 
 add_subdirectory(ui)
 add_subdirectory(core)
 add_subdirectory(plugins)
 
 add_subdirectory(external/simpleCrypt)
-
-target_link_libraries(squawk PRIVATE uuid)
 
 add_dependencies(${CMAKE_PROJECT_NAME} translations)
 
