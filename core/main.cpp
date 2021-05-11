@@ -16,18 +16,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "ui/squawk.h"
-#include "core/squawk.h"
+#include "../shared/global.h"
+#include "../shared/messageinfo.h"
+#include "../ui/squawk.h"
 #include "signalcatcher.h"
-#include "shared/global.h"
-#include "shared/messageinfo.h"
-#include <QtWidgets/QApplication>
-#include <QtCore/QThread>
-#include <QtCore/QObject>
-#include <QSettings>
-#include <QTranslator>
+#include "squawk.h"
 #include <QLibraryInfo>
+#include <QSettings>
 #include <QStandardPaths>
+#include <QTranslator>
+#include <QtCore/QObject>
+#include <QtCore/QThread>
+#include <QtWidgets/QApplication>
 
 int main(int argc, char *argv[])
 {

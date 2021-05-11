@@ -1,52 +1,41 @@
 cmake_minimum_required(VERSION 3.4)
-project(squawk)
+project(squawk VERSION 0.1.6 LANGUAGES CXX)
 
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
+cmake_policy(SET CMP0076 NEW)
+cmake_policy(SET CMP0079 NEW)
 set(CMAKE_CXX_STANDARD 17)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-include(GNUInstallDirs)
-include_directories(.)
+add_executable(squawk)
+target_include_directories(squawk PRIVATE ${CMAKE_SOURCE_DIR})
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-find_package(Qt5Widgets CONFIG REQUIRED)
+include(GNUInstallDirs)
+
+find_package(Qt5Widgets CONFIG REQUIRED COMPONENTS Widgets DBus Core)
 find_package(Qt5LinguistTools)
+find_package(Qt5Core CONFIG REQUIRED)
+find_package(Qt5Gui CONFIG REQUIRED)
+find_package(Qt5Network CONFIG REQUIRED)
+find_package(Qt5Xml CONFIG REQUIRED)
+find_package(LMDB REQUIRED)
 
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-set(CMAKE_CXX_FLAGS_DEBUG "-g -Wall -Wextra")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 message("Build type: ${CMAKE_BUILD_TYPE}")
 
-
-set(squawk_SRC
-  main.cpp
-  exception.cpp
-  signalcatcher.cpp
-  shared/global.cpp
-  shared/utils.cpp
-  shared/message.cpp
-  shared/vcard.cpp
-  shared/icons.cpp
-  shared/messageinfo.cpp
+target_compile_options(squawk PRIVATE
+  "-Wall;-Wextra"
+  "$<$<CONFIG:DEBUG>:-g>"
+  "$<$<CONFIG:RELEASE>:-O3>"
 )
 
-set(squawk_HEAD
-  exception.h
-  signalcatcher.h
-  shared.h
-  shared/enums.h
-  shared/message.h
-  shared/global.h
-  shared/utils.h
-  shared/vcard.h
-  shared/icons.h
-  shared/messageinfo.h
-)
+add_subdirectory(shared)
 
 configure_file(resources/images/logo.svg squawk.svg COPYONLY)
 execute_process(COMMAND convert -background none -size 48x48 squawk.svg squawk48.png WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
@@ -56,21 +45,22 @@ execute_process(COMMAND convert -background none -size 256x256 squawk.svg squawk
 
 configure_file(packaging/squawk.desktop squawk.desktop COPYONLY)
 
-set(TS_FILES 
+set(TS_FILES
     translations/squawk.ru.ts
 )
 qt5_add_translation(QM_FILES ${TS_FILES})
 add_custom_target(translations ALL DEPENDS ${QM_FILES})
 
+qt5_use_modules(squawk LINK_PUBLIC Core Widgets)
 qt5_add_resources(RCC resources/resources.qrc)
 
-option(SYSTEM_QXMPP "Use system qxmpp lib" ON) 
-option(WITH_KWALLET "Build KWallet support module" ON) 
-option(WITH_KIO "Build KIO support module" ON) 
+option(SYSTEM_QXMPP "Use system qxmpp lib" ON)
+option(WITH_KWALLET "Build KWallet support module" ON)
+option(WITH_KIO "Build KIO support module" ON)
 
-if (SYSTEM_QXMPP) 
+if (SYSTEM_QXMPP)
     find_package(QXmpp CONFIG)
-    
+
     if (NOT QXmpp_FOUND)
         set(SYSTEM_QXMPP OFF)
         message("QXmpp package wasn't found, trying to build with bundled QXmpp")
@@ -85,7 +75,7 @@ endif()
 
 if (WITH_KWALLET)
     find_package(KF5Wallet CONFIG)
-    
+
     if (NOT KF5Wallet_FOUND)
         set(WITH_KWALLET OFF)
         message("KWallet package wasn't found, KWallet support module wouldn't be built")
@@ -95,12 +85,19 @@ if (WITH_KWALLET)
     endif()
 endif()
 
-add_executable(squawk ${squawk_SRC} ${squawk_HEAD} ${RCC})
-target_link_libraries(squawk Qt5::Widgets)
+target_sources(squawk PRIVATE ${RCC})
+target_link_libraries(squawk PRIVATE Qt5::Widgets)
+target_link_libraries(squawk PRIVATE Qt5::DBus)
+target_link_libraries(squawk PRIVATE Qt5::Network)
+target_link_libraries(squawk PRIVATE Qt5::Gui)
+target_link_libraries(squawk PRIVATE Qt5::Xml)
+target_link_libraries(squawk PRIVATE qxmpp)
+target_link_libraries(squawk PRIVATE lmdb)
+target_link_libraries(squawk PRIVATE simpleCrypt)
 
 if (WITH_KIO)
     find_package(KF5KIO CONFIG)
-    
+
     if (NOT KF5KIO_FOUND)
         set(WITH_KIO OFF)
         message("KIO package wasn't found, KIO support modules wouldn't be built")
@@ -116,11 +113,7 @@ add_subdirectory(plugins)
 
 add_subdirectory(external/simpleCrypt)
 
-target_link_libraries(squawk squawkUI)
-target_link_libraries(squawk squawkCORE)
-target_link_libraries(squawk uuid)
-
-
+target_link_libraries(squawk PRIVATE uuid)
 
 add_dependencies(${CMAKE_PROJECT_NAME} translations)
 

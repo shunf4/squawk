@@ -1,0 +1,19 @@
+target_sources(squawk PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/enums.h
+  ${CMAKE_CURRENT_LIST_DIR}/global.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/global.h
+  ${CMAKE_CURRENT_LIST_DIR}/exception.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/exception.h
+  ${CMAKE_CURRENT_LIST_DIR}/icons.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/icons.h
+  ${CMAKE_CURRENT_LIST_DIR}/message.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/message.h
+  ${CMAKE_CURRENT_LIST_DIR}/messageinfo.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/messageinfo.h
+  ${CMAKE_CURRENT_LIST_DIR}/order.h
+  ${CMAKE_CURRENT_LIST_DIR}/shared.h
+  ${CMAKE_CURRENT_LIST_DIR}/utils.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/utils.h
+  ${CMAKE_CURRENT_LIST_DIR}/vcard.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/vcard.h
+)

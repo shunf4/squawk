@@ -1,31 +1,23 @@
-cmake_minimum_required(VERSION 3.0)
-project(squawkWidgets)
-
-# Instruct CMake to run moc automatically when needed.
-set(CMAKE_AUTOMOC ON)
-# Instruct CMake to create code from Qt designer ui files
-set(CMAKE_AUTOUIC ON)
-
-# Find the QtWidgets library
-find_package(Qt5Widgets CONFIG REQUIRED COMPONENTS Widgets Core)
+target_sources(squawk PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/account.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/account.h
+  ${CMAKE_CURRENT_LIST_DIR}/account.ui
+  ${CMAKE_CURRENT_LIST_DIR}/accounts.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/accounts.h
+  ${CMAKE_CURRENT_LIST_DIR}/accounts.ui
+  ${CMAKE_CURRENT_LIST_DIR}/chat.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/chat.h
+  ${CMAKE_CURRENT_LIST_DIR}/conversation.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/conversation.h
+  ${CMAKE_CURRENT_LIST_DIR}/conversation.ui
+  ${CMAKE_CURRENT_LIST_DIR}/joinconference.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/joinconference.h
+  ${CMAKE_CURRENT_LIST_DIR}/joinconference.ui
+  ${CMAKE_CURRENT_LIST_DIR}/newcontact.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/newcontact.h
+  ${CMAKE_CURRENT_LIST_DIR}/newcontact.ui
+  ${CMAKE_CURRENT_LIST_DIR}/room.cpp
+  ${CMAKE_CURRENT_LIST_DIR}/room.h
+  )
 
 add_subdirectory(vcard)
-
-set(squawkWidgets_SRC
-  conversation.cpp
-  chat.cpp
-  room.cpp
-  newcontact.cpp
-  accounts.cpp
-  account.cpp
-  joinconference.cpp
-)
-
-add_library(squawkWidgets STATIC ${squawkWidgets_SRC})
-
-# Use the Widgets module from Qt 5.
-target_link_libraries(squawkWidgets vCardUI)
-target_link_libraries(squawkWidgets squawkUIUtils)
-target_link_libraries(squawkWidgets Qt5::Widgets)
-
-qt5_use_modules(squawkWidgets Core Widgets)

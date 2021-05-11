@@ -30,7 +30,7 @@
 #include <QDesktopServices>
 
 #include "shared/message.h"
-#include "order.h"
+#include "shared/order.h"
 #include "ui/models/account.h"
 #include "ui/models/roster.h"
 #include "ui/utils/flowlayout.h"

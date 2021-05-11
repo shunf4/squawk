@@ -19,12 +19,12 @@
 #ifndef SHARED_H
 #define SHARED_H
 
-#include "shared/enums.h"
-#include "shared/utils.h"
-#include "shared/icons.h"
-#include "shared/message.h"
-#include "shared/vcard.h"
-#include "shared/global.h"
-#include "shared/messageinfo.h"
+#include "enums.h"
+#include "global.h"
+#include "icons.h"
+#include "message.h"
+#include "messageinfo.h"
+#include "utils.h"
+#include "vcard.h"
 
 #endif // SHARED_H
