@@ -5,5 +5,5 @@ if (WITH_KWALLET)
     kwallet.h
     )
 
-  target_link_libraries(squawk PUBLIC KF5::Wallet)
+  target_link_libraries(squawk PRIVATE KF5::Wallet)
 endif ()
