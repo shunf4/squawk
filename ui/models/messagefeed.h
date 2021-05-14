@@ -65,7 +65,6 @@ public:
     
     void responseArchive(const std::list<Shared::Message> list, bool last);
     void downloadAttachment(const QString& messageId);
-    void uploadAttachment(const QString& messageId);
     bool registerUpload(const QString& messageId);
     void reportLocalPathInvalid(const QString& messageId);
     
@@ -148,11 +147,15 @@ private:
     SyncState syncState;
     
     typedef std::map<QString, qreal> Progress;
+    typedef std::map<QString, QString> Err;
     Progress uploads;
     Progress downloads;
+    Err failedDownloads;
+    Err failedUploads;
     
     std::set<QString>* unreadMessages;
     uint16_t observersAmount;
+    
     
     static const QHash<int, QByteArray> roles;
 };
@@ -173,6 +176,7 @@ struct Attachment {
     qreal progress;
     QString localPath;
     QString remotePath;
+    QString error;
 };
 
 struct FeedItem {

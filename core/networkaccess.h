@@ -75,6 +75,7 @@ private:
 private slots:
     void onDownloadProgress(qint64 bytesReceived, qint64 bytesTotal);
     void onDownloadError(QNetworkReply::NetworkError code);
+    void onDownloadSSLError(const QList<QSslError> &errors);
     void onDownloadFinished();
     void onUploadProgress(qint64 bytesReceived, qint64 bytesTotal);
     void onUploadError(QNetworkReply::NetworkError code);

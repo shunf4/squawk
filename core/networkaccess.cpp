@@ -70,6 +70,9 @@ void Core::NetworkAccess::start()
 {
     if (!running) {
         manager = new QNetworkAccessManager();
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+        manager->setTransferTimeout();
+#endif
         storage.open();
         running = true;
     }
@@ -99,30 +102,55 @@ void Core::NetworkAccess::onDownloadProgress(qint64 bytesReceived, qint64 bytesT
         qDebug() << "an error downloading" << url << ": the request had some progress but seems like no one is waiting for it, skipping";
     } else {
         Transfer* dwn = itr->second;
-        qreal received = bytesReceived;
-        qreal total = bytesTotal;
-        qreal progress = received/total;
-        dwn->progress = progress;
-        emit loadFileProgress(dwn->messages, progress, false);
+        if (dwn->success) {
+            qreal received = bytesReceived;
+            qreal total = bytesTotal;
+            qreal progress = received/total;
+            dwn->progress = progress;
+            emit loadFileProgress(dwn->messages, progress, false);
+        }
     }
 }
 
 void Core::NetworkAccess::onDownloadError(QNetworkReply::NetworkError code)
 {
+    qDebug() << "DEBUG: DOWNLOAD ERROR";
     QNetworkReply* rpl = static_cast<QNetworkReply*>(sender());
+    qDebug() << rpl->errorString();
     QString url = rpl->url().toString();
     std::map<QString, Transfer*>::const_iterator itr = downloads.find(url);
     if (itr == downloads.end()) {
         qDebug() << "an error downloading" << url << ": the request is reporting an error but seems like no one is waiting for it, skipping";
     } else {
         QString errorText = getErrorText(code);
-        if (errorText.size() > 0) {
+        //if (errorText.size() > 0) {
             itr->second->success = false;
             Transfer* dwn = itr->second;
             emit loadFileError(dwn->messages, errorText, false);
-        }
+        //}
     }
 }
+
+void Core::NetworkAccess::onDownloadSSLError(const QList<QSslError>& errors)
+{
+    qDebug() << "DEBUG: DOWNLOAD SSL ERRORS";
+    for (const QSslError& err : errors) {
+        qDebug() << err.errorString();
+    }
+    QNetworkReply* rpl = static_cast<QNetworkReply*>(sender());
+    QString url = rpl->url().toString();
+    std::map<QString, Transfer*>::const_iterator itr = downloads.find(url);
+    if (itr == downloads.end()) {
+        qDebug() << "an SSL error downloading" << url << ": the request is reporting an error but seems like no one is waiting for it, skipping";
+    } else {
+        //if (errorText.size() > 0) {
+        itr->second->success = false;
+        Transfer* dwn = itr->second;
+        emit loadFileError(dwn->messages, "SSL errors occured", false);
+        //}
+    }
+}
+
 
 QString Core::NetworkAccess::getErrorText(QNetworkReply::NetworkError code)
 {
@@ -146,7 +174,11 @@ QString Core::NetworkAccess::getErrorText(QNetworkReply::NetworkError code)
             errorText = "Connection was closed because it timed out";
             break;
         case QNetworkReply::OperationCanceledError:
-            //this means I closed it myself by abort() or close(), don't think I need to notify here
+            //this means I closed it myself by abort() or close()
+            //I don't call them directory, but this is the error code
+            //Qt returns when it can not resume donwload after the network failure
+            //or when the download is canceled by the timout; 
+            errorText = "Connection lost";
             break;
         case QNetworkReply::SslHandshakeFailedError:
             errorText = "Security error";           //TODO need to handle sslErrors signal to get a better description here
@@ -247,6 +279,7 @@ QString Core::NetworkAccess::getErrorText(QNetworkReply::NetworkError code)
 
 void Core::NetworkAccess::onDownloadFinished()
 {
+    qDebug() << "DEBUG: DOWNLOAD FINISHED";
     QNetworkReply* rpl = static_cast<QNetworkReply*>(sender());
     QString url = rpl->url().toString();
     std::map<QString, Transfer*>::const_iterator itr = downloads.find(url);
@@ -256,11 +289,14 @@ void Core::NetworkAccess::onDownloadFinished()
         Transfer* dwn = itr->second;
         if (dwn->success) {
             qDebug() << "download success for" << url;
+            QString err;
             QStringList hops = url.split("/");
             QString fileName = hops.back();
             QString jid;
             if (dwn->messages.size() > 0) {
                 jid = dwn->messages.front().jid;
+            } else {
+                qDebug() << "An attempt to save the file but it doesn't seem to belong to any message, download is definately going to be broken";
             }
             QString path = prepareDirectory(jid);
             if (path.size() > 0) {
@@ -274,15 +310,16 @@ void Core::NetworkAccess::onDownloadFinished()
                     qDebug() << "file" << path << "was successfully downloaded";
                 } else {
                     qDebug() << "couldn't save file" << path;
-                    path = QString();
+                    err = "Error opening file to write:" + file.errorString();
                 }
+            } else {
+                err = "Couldn't prepare a directory for file";
             }
             
             if (path.size() > 0) {
                 emit downloadFileComplete(dwn->messages, path);
             } else {
-                //TODO do I need to handle the failure here or it's already being handled in error?
-                //emit loadFileError(dwn->messages, path, false);
+                emit loadFileError(dwn->messages, "Error saving file " + url + "; " + err, false);
             }
         }
         
@@ -298,6 +335,7 @@ void Core::NetworkAccess::startDownload(const std::list<Shared::MessageInfo>& ms
     QNetworkRequest req(url);
     dwn->reply = manager->get(req);
     connect(dwn->reply, &QNetworkReply::downloadProgress, this, &NetworkAccess::onDownloadProgress);
+    connect(dwn->reply, &QNetworkReply::sslErrors, this, &NetworkAccess::onDownloadSSLError);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
     connect(dwn->reply, qOverload<QNetworkReply::NetworkError>(&QNetworkReply::errorOccurred), this, &NetworkAccess::onDownloadError);
 #else
@@ -317,11 +355,11 @@ void Core::NetworkAccess::onUploadError(QNetworkReply::NetworkError code)
         qDebug() << "an error uploading" << url << ": the request is reporting an error but there is no record of it being uploading, ignoring";
     } else {
         QString errorText = getErrorText(code);
-        if (errorText.size() > 0) {
+        //if (errorText.size() > 0) {
             itr->second->success = false;
             Transfer* upl = itr->second;
             emit loadFileError(upl->messages, errorText, true);
-        }
+        //}
         
         //TODO deletion?
     }
@@ -360,11 +398,13 @@ void Core::NetworkAccess::onUploadProgress(qint64 bytesReceived, qint64 bytesTot
         qDebug() << "an error downloading" << url << ": the request had some progress but seems like no one is waiting for it, skipping";
     } else {
         Transfer* upl = itr->second;
-        qreal received = bytesReceived;
-        qreal total = bytesTotal;
-        qreal progress = received/total;
-        upl->progress = progress;
-        emit loadFileProgress(upl->messages, progress, true);
+        if (upl->success) {
+            qreal received = bytesReceived;
+            qreal total = bytesTotal;
+            qreal progress = received/total;
+            upl->progress = progress;
+            emit loadFileProgress(upl->messages, progress, true);
+        }
     }
 }
 

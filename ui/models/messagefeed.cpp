@@ -45,6 +45,8 @@ Models::MessageFeed::MessageFeed(const Element* ri, QObject* parent):
     syncState(incomplete),
     uploads(),
     downloads(),
+    failedDownloads(),
+    failedUploads(),
     unreadMessages(new std::set<QString>()),
     observersAmount(0)
 {
@@ -139,6 +141,18 @@ void Models::MessageFeed::changeMessage(const QString& id, const QMap<QString, Q
                     uploads.erase(dItr);
                     uploads.insert(std::make_pair(msg->getId(), progress));
                 }
+            }
+        }
+        
+        Err::const_iterator eitr = failedDownloads.find(id);
+        if (eitr != failedDownloads.end()) {
+            failedDownloads.erase(eitr);
+            changeRoles.insert(MessageRoles::Attach);
+        } else {
+            eitr = failedUploads.find(id);
+            if (eitr != failedUploads.end()) {
+                failedUploads.erase(eitr);
+                changeRoles.insert(MessageRoles::Attach);
             }
         }
         
@@ -421,6 +435,7 @@ bool Models::MessageFeed::sentByMe(const Shared::Message& msg) const
 Models::Attachment Models::MessageFeed::fillAttach(const Shared::Message& msg) const
 {
     ::Models::Attachment att;
+    QString id = msg.getId();
     
     att.localPath = msg.getAttachPath();
     att.remotePath = msg.getOutOfBandUrl();
@@ -429,22 +444,34 @@ Models::Attachment Models::MessageFeed::fillAttach(const Shared::Message& msg) c
         if (att.localPath.size() == 0) {
             att.state = none;
         } else {
-            Progress::const_iterator itr = uploads.find(msg.getId());
-            if (itr == uploads.end()) {
-                att.state = local;
+            Err::const_iterator eitr = failedUploads.find(id);
+            if (eitr != failedUploads.end()) {
+                att.state = errorUpload;
+                att.error = eitr->second;
             } else {
-                att.state = uploading;
-                att.progress = itr->second;
+                Progress::const_iterator itr = uploads.find(id);
+                if (itr == uploads.end()) {
+                    att.state = local;
+                } else {
+                    att.state = uploading;
+                    att.progress = itr->second;
+                }
             }
         }
     } else {
         if (att.localPath.size() == 0) {
-            Progress::const_iterator itr = downloads.find(msg.getId());
-            if (itr == downloads.end()) {
-                att.state = remote;
+            Err::const_iterator eitr = failedDownloads.find(id);
+            if (eitr != failedDownloads.end()) {
+                att.state = errorDownload;
+                att.error = eitr->second;
             } else {
-                att.state = downloading;
-                att.progress = itr->second;
+                Progress::const_iterator itr = downloads.find(id);
+                if (itr == downloads.end()) {
+                    att.state = remote;
+                } else {
+                    att.state = downloading;
+                    att.progress = itr->second;
+                }
             }
         } else {
             att.state = ready;
@@ -456,12 +483,19 @@ Models::Attachment Models::MessageFeed::fillAttach(const Shared::Message& msg) c
 
 void Models::MessageFeed::downloadAttachment(const QString& messageId)
 {
+    bool notify = false;
+    Err::const_iterator eitr = failedDownloads.find(messageId);
+    if (eitr != failedDownloads.end()) {
+        failedDownloads.erase(eitr);
+        notify = true;
+    }
+    
     QModelIndex ind = modelIndexById(messageId);
     if (ind.isValid()) {
         std::pair<Progress::iterator, bool> progressPair = downloads.insert(std::make_pair(messageId, 0));
         if (progressPair.second) {     //Only to take action if we weren't already downloading it
             Shared::Message* msg = static_cast<Shared::Message*>(ind.internalPointer());
-            emit dataChanged(ind, ind, {MessageRoles::Attach});
+            notify = true;
             emit fileDownloadRequest(msg->getOutOfBandUrl());
         } else {
             qDebug() << "Attachment download for message with id" << messageId << "is already in progress, skipping";
@@ -469,32 +503,55 @@ void Models::MessageFeed::downloadAttachment(const QString& messageId)
     } else {
         qDebug() << "An attempt to download an attachment for the message that doesn't exist. ID:" << messageId;
     }
-}
-
-void Models::MessageFeed::uploadAttachment(const QString& messageId)
-{
-    qDebug() << "request to upload attachment of the message" << messageId;
+    
+    if (notify) {
+        emit dataChanged(ind, ind, {MessageRoles::Attach});
+    }
 }
 
 bool Models::MessageFeed::registerUpload(const QString& messageId)
 {
-    return uploads.insert(std::make_pair(messageId, 0)).second;
+    bool success = uploads.insert(std::make_pair(messageId, 0)).second; 
+    
+    QVector<int> roles({});
+    Err::const_iterator eitr = failedUploads.find(messageId);
+    if (eitr != failedUploads.end()) {
+        failedUploads.erase(eitr);
+        roles.push_back(MessageRoles::Attach);
+    } else if (success) {
+        roles.push_back(MessageRoles::Attach);
+    }
+    
+    QModelIndex ind = modelIndexById(messageId);
+    emit dataChanged(ind, ind, roles);
+    
+    return success;
 }
 
 void Models::MessageFeed::fileProgress(const QString& messageId, qreal value, bool up)
 {
     Progress* pr = 0;
+    Err* err = 0;
     if (up) {
         pr = &uploads;
+        err = &failedUploads;
     } else {
         pr = &downloads;
+        err = &failedDownloads;
+    }
+    
+    QVector<int> roles({});
+    Err::const_iterator eitr = err->find(messageId);
+    if (eitr != err->end() && value != 1) {         //like I want to clear this state when the download is started anew
+        err->erase(eitr);
+        roles.push_back(MessageRoles::Attach);
     }
     
     Progress::iterator itr = pr->find(messageId);
     if (itr != pr->end()) {
         itr->second = value;
         QModelIndex ind = modelIndexById(messageId);
-        emit dataChanged(ind, ind);                     //the type of the attach didn't change, so, there is no need to relayout, there is no role in event
+        emit dataChanged(ind, ind, roles);
     }
 }
 
@@ -505,7 +562,29 @@ void Models::MessageFeed::fileComplete(const QString& messageId, bool up)
 
 void Models::MessageFeed::fileError(const QString& messageId, const QString& error, bool up)
 {
-    //TODO
+    Err* failed;
+    Progress* loads;
+    if (up) {
+        failed = &failedUploads;
+        loads = &uploads;
+    } else {
+        failed = &failedDownloads;
+        loads = &downloads;
+    }
+    
+    Progress::iterator pitr = loads->find(messageId);
+    if (pitr != loads->end()) {
+        loads->erase(pitr);
+    }
+    
+    std::pair<Err::iterator, bool> pair = failed->insert(std::make_pair(messageId, error));
+    if (!pair.second) {
+        pair.first->second = error;
+    }
+    QModelIndex ind = modelIndexById(messageId);
+    if (ind.isValid()) {
+        emit dataChanged(ind, ind, {MessageRoles::Attach});
+    }
 }
 
 void Models::MessageFeed::incrementObservers()
@@ -533,19 +612,18 @@ QModelIndex Models::MessageFeed::modelIndexById(const QString& id) const
 QModelIndex Models::MessageFeed::modelIndexByTime(const QString& id, const QDateTime& time) const
 {
     if (indexByTime.size() > 0) {
-        StorageByTime::const_iterator tItr = indexByTime.upper_bound(time);
-        StorageByTime::const_iterator tBeg = indexByTime.begin();
-        StorageByTime::const_iterator tEnd = indexByTime.end();
+        StorageByTime::const_iterator tItr = indexByTime.lower_bound(time);
+        StorageByTime::const_iterator tEnd = indexByTime.upper_bound(time);
         bool found = false;
-        while (tItr != tBeg) {
-            if (tItr != tEnd && id == (*tItr)->getId()) {
+        while (tItr != tEnd) {
+            if (id == (*tItr)->getId()) {
                 found = true;
                 break;
             }
-            --tItr;
+            ++tItr;
         }
         
-        if (found && tItr != tEnd && id == (*tItr)->getId()) {
+        if (found) {
             int position = indexByTime.rank(tItr);
             return createIndex(position, 0, *tItr);
         }
@@ -566,7 +644,7 @@ void Models::MessageFeed::reportLocalPathInvalid(const QString& messageId)
     
     emit localPathInvalid(msg->getAttachPath());
     
-    //gonna change the message in current model right away, to prevent spam on each attemt to draw element
+    //gonna change the message in current model right away, to prevent spam on each attempt to draw element
     QModelIndex index = modelIndexByTime(messageId, msg->getTime());
     msg->setAttachPath("");
     

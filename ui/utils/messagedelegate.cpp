@@ -137,19 +137,39 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
             clearHelperWidget(data);        //i can't imagine the situation where it's gonna be needed
             break;                          //but it's a possible performance problem
         case Models::uploading:
+            paintPreview(data, painter, opt);
         case Models::downloading:
             paintBar(getBar(data), painter, data.sentByMe, opt);
             break;
         case Models::remote:
-        case Models::local:
             paintButton(getButton(data), painter, data.sentByMe, opt);
             break;
         case Models::ready:
+        case Models::local:
             clearHelperWidget(data);
             paintPreview(data, painter, opt);
             break;
-        case Models::errorDownload:
-        case Models::errorUpload:
+        case Models::errorDownload: {
+            paintButton(getButton(data), painter, data.sentByMe, opt);
+            painter->setFont(dateFont);
+            QColor q = painter->pen().color();
+            q.setAlpha(180);
+            painter->setPen(q);
+            painter->drawText(opt.rect, opt.displayAlignment, data.attach.error, &rect);
+            opt.rect.adjust(0, rect.height() + textMargin, 0, 0);
+        }
+            
+            break;
+        case Models::errorUpload:{
+            clearHelperWidget(data);
+            paintPreview(data, painter, opt);
+            painter->setFont(dateFont);
+            QColor q = painter->pen().color();
+            q.setAlpha(180);
+            painter->setPen(q);
+            painter->drawText(opt.rect, opt.displayAlignment, data.attach.error, &rect);
+            opt.rect.adjust(0, rect.height() + textMargin, 0, 0);
+        }
             break;
     }
     painter->restore();
@@ -212,18 +232,24 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
         case Models::none:
             break;
         case Models::uploading:
+            messageSize.rheight() += calculateAttachSize(attach.localPath, messageRect).height() + textMargin;
         case Models::downloading:
             messageSize.rheight() += barHeight + textMargin;
             break;
         case Models::remote:
-        case Models::local:
             messageSize.rheight() += buttonHeight + textMargin;
             break;
         case Models::ready:
+        case Models::local:
             messageSize.rheight() += calculateAttachSize(attach.localPath, messageRect).height() + textMargin;
             break;
         case Models::errorDownload:
+            messageSize.rheight() += buttonHeight + textMargin;
+            messageSize.rheight() += dateMetrics.boundingRect(messageRect, Qt::TextWordWrap, attach.error).size().height() + textMargin;
+            break;
         case Models::errorUpload:
+            messageSize.rheight() += calculateAttachSize(attach.localPath, messageRect).height() + textMargin;
+            messageSize.rheight() += dateMetrics.boundingRect(messageRect, Qt::TextWordWrap, attach.error).size().height() + textMargin;
             break;
     }
     
@@ -356,15 +382,7 @@ QPushButton * MessageDelegate::getButton(const Models::FeedItem& data) const
     std::map<QString, FeedButton*>::const_iterator itr = buttons->find(data.id);
     FeedButton* result = 0;
     if (itr != buttons->end()) {
-        if (
-            (data.attach.state == Models::remote && itr->second->download) ||
-            (data.attach.state == Models::local && !itr->second->download)
-        ) {
-            result = itr->second;
-        } else {
-            delete itr->second;
-            buttons->erase(itr);
-        }
+        result = itr->second;
     } else {
         std::map<QString, QProgressBar*>::const_iterator barItr = bars->find(data.id);
         if (barItr != bars->end()) {
@@ -376,13 +394,7 @@ QPushButton * MessageDelegate::getButton(const Models::FeedItem& data) const
     if (result == 0) {
         result = new FeedButton();
         result->messageId = data.id;
-        if (data.attach.state == Models::remote) {
-            result->setText(QCoreApplication::translate("MessageLine", "Download"));
-            result->download = true;
-        } else {
-            result->setText(QCoreApplication::translate("MessageLine", "Upload"));
-            result->download = false;
-        }
+        result->setText(QCoreApplication::translate("MessageLine", "Download"));
         buttons->insert(std::make_pair(data.id, result));
         connect(result, &QPushButton::clicked, this, &MessageDelegate::onButtonPushed);
     }
@@ -529,7 +541,7 @@ void MessageDelegate::endClearWidgets()
 void MessageDelegate::onButtonPushed() const
 {
     FeedButton* btn = static_cast<FeedButton*>(sender());
-    emit buttonPushed(btn->messageId, btn->download);
+    emit buttonPushed(btn->messageId);
 }
 
 void MessageDelegate::clearHelperWidget(const Models::FeedItem& data) const

@@ -55,7 +55,7 @@ public:
     void beginClearWidgets();
     
 signals:
-    void buttonPushed(const QString& messageId, bool download) const;
+    void buttonPushed(const QString& messageId) const;
     void invalidPath(const QString& messageId) const;
     
 protected:
@@ -77,7 +77,6 @@ private:
     class FeedButton : public QPushButton {
     public:
         QString messageId;
-        bool download;
     };
     
     QFont bodyFont;

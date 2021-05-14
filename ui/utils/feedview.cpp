@@ -394,16 +394,11 @@ void FeedView::setModel(QAbstractItemModel* p_model)
     }
 }
 
-void FeedView::onMessageButtonPushed(const QString& messageId, bool download)
+void FeedView::onMessageButtonPushed(const QString& messageId)
 {
     if (specialModel) {
         Models::MessageFeed* feed = static_cast<Models::MessageFeed*>(model());
-        
-        if (download) {
-            feed->downloadAttachment(messageId);
-        } else {
-            feed->uploadAttachment(messageId);
-        }
+        feed->downloadAttachment(messageId);
     }
 }
 
