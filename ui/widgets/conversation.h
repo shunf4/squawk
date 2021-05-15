@@ -31,15 +31,18 @@
 
 #include "shared/message.h"
 #include "shared/order.h"
-#include "ui/models/account.h"
-#include "ui/models/roster.h"
-#include "ui/utils/flowlayout.h"
-#include "ui/utils/badge.h"
-#include "ui/utils/feedview.h"
-#include "ui/utils/messagedelegate.h"
-#include "ui/utils/shadowoverlay.h"
 #include "shared/icons.h"
 #include "shared/utils.h"
+
+#include "ui/models/account.h"
+#include "ui/models/roster.h"
+
+#include "ui/utils/flowlayout.h"
+#include "ui/utils/badge.h"
+#include "ui/utils/shadowoverlay.h"
+
+#include "ui/widgets/messageline/feedview.h"
+#include "ui/widgets/messageline/messagedelegate.h"
 
 namespace Ui
 {

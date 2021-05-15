@@ -24,8 +24,8 @@
 #include <deque>
 #include <set>
 
-#include <ui/models/messagefeed.h>
-#include "progress.h"
+#include <ui/widgets/messageline/messagefeed.h>
+#include <ui/utils/progress.h>
 
 /**
  * @todo write docs

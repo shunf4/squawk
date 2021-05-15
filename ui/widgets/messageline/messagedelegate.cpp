@@ -22,13 +22,12 @@
 #include <QMouseEvent>
 
 #include "messagedelegate.h"
-#include "ui/models/messagefeed.h"
+#include "messagefeed.h"
 
 constexpr int avatarHeight = 50;
 constexpr int margin = 6;
 constexpr int textMargin = 2;
 constexpr int statusIconSize = 16;
-constexpr int maxAttachmentHeight = 500;
 
 MessageDelegate::MessageDelegate(QObject* parent):
     QStyledItemDelegate(parent),
@@ -44,6 +43,7 @@ MessageDelegate::MessageDelegate(QObject* parent):
     bars(new std::map<QString, QProgressBar*>()),
     statusIcons(new std::map<QString, QLabel*>()),
     bodies(new std::map<QString, QLabel*>()),
+    previews(new std::map<QString, Preview*>()),
     idsToKeep(new std::set<QString>()),
     clearingWidgets(false)
 {
@@ -72,10 +72,15 @@ MessageDelegate::~MessageDelegate()
         delete pair.second;
     }
     
+    for (const std::pair<const QString, Preview*>& pair: *previews){
+        delete pair.second;
+    }
+    
     delete idsToKeep;
     delete buttons;
     delete bars;
     delete bodies;
+    delete previews;
 }
 
 void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& option, const QModelIndex& index) const
@@ -151,24 +156,14 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
             break;
         case Models::errorDownload: {
             paintButton(getButton(data), painter, data.sentByMe, opt);
-            painter->setFont(dateFont);
-            QColor q = painter->pen().color();
-            q.setAlpha(180);
-            painter->setPen(q);
-            painter->drawText(opt.rect, opt.displayAlignment, data.attach.error, &rect);
-            opt.rect.adjust(0, rect.height() + textMargin, 0, 0);
+            paintComment(data, painter, opt);
         }
             
             break;
         case Models::errorUpload:{
             clearHelperWidget(data);
             paintPreview(data, painter, opt);
-            painter->setFont(dateFont);
-            QColor q = painter->pen().color();
-            q.setAlpha(180);
-            painter->setPen(q);
-            painter->drawText(opt.rect, opt.displayAlignment, data.attach.error, &rect);
-            opt.rect.adjust(0, rect.height() + textMargin, 0, 0);
+            paintComment(data, painter, opt);
         }
             break;
     }
@@ -181,6 +176,8 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
         body->setParent(vp);
         body->setMaximumWidth(bodySize.width());
         body->setMinimumWidth(bodySize.width());
+        body->setMinimumHeight(bodySize.height());
+        body->setMaximumHeight(bodySize.height());
         body->setAlignment(opt.displayAlignment);
         messageLeft = opt.rect.x();
         if (data.sentByMe) {
@@ -232,7 +229,7 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
         case Models::none:
             break;
         case Models::uploading:
-            messageSize.rheight() += calculateAttachSize(attach.localPath, messageRect).height() + textMargin;
+            messageSize.rheight() += Preview::calculateAttachSize(attach.localPath, messageRect).height() + textMargin;
         case Models::downloading:
             messageSize.rheight() += barHeight + textMargin;
             break;
@@ -241,14 +238,14 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
             break;
         case Models::ready:
         case Models::local:
-            messageSize.rheight() += calculateAttachSize(attach.localPath, messageRect).height() + textMargin;
+            messageSize.rheight() += Preview::calculateAttachSize(attach.localPath, messageRect).height() + textMargin;
             break;
         case Models::errorDownload:
             messageSize.rheight() += buttonHeight + textMargin;
             messageSize.rheight() += dateMetrics.boundingRect(messageRect, Qt::TextWordWrap, attach.error).size().height() + textMargin;
             break;
         case Models::errorUpload:
-            messageSize.rheight() += calculateAttachSize(attach.localPath, messageRect).height() + textMargin;
+            messageSize.rheight() += Preview::calculateAttachSize(attach.localPath, messageRect).height() + textMargin;
             messageSize.rheight() += dateMetrics.boundingRect(messageRect, Qt::TextWordWrap, attach.error).size().height() + textMargin;
             break;
     }
@@ -319,6 +316,17 @@ void MessageDelegate::paintButton(QPushButton* btn, QPainter* painter, bool sent
     option.rect.adjust(0, buttonHeight + textMargin, 0, 0);
 }
 
+void MessageDelegate::paintComment(const Models::FeedItem& data, QPainter* painter, QStyleOptionViewItem& option) const
+{
+    painter->setFont(dateFont);
+    QColor q = painter->pen().color();
+    q.setAlpha(180);
+    painter->setPen(q);
+    QRect rect;
+    painter->drawText(option.rect, option.displayAlignment, data.attach.error, &rect);
+    option.rect.adjust(0, rect.height() + textMargin, 0, 0);
+}
+
 void MessageDelegate::paintBar(QProgressBar* bar, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const
 {
     QPoint start = option.rect.topLeft();
@@ -332,49 +340,20 @@ void MessageDelegate::paintBar(QProgressBar* bar, QPainter* painter, bool sentBy
 
 void MessageDelegate::paintPreview(const Models::FeedItem& data, QPainter* painter, QStyleOptionViewItem& option) const
 {
-    Shared::Global::FileInfo info = Shared::Global::getFileInfo(data.attach.localPath);
-    QSize size = constrainAttachSize(info.size, option.rect.size());
-    
-    QPoint start;
-    if (data.sentByMe) {
-        start = {option.rect.width() - size.width(), option.rect.top()};
-        start.rx() += margin;
+    Preview* preview = 0;
+    std::map<QString, Preview*>::iterator itr = previews->find(data.id);
+
+    QSize size = option.rect.size();
+    if (itr != previews->end()) {
+        preview = itr->second;
+        preview->actualize(data.attach.localPath, size, option.rect.topLeft());
     } else {
-        start = option.rect.topLeft();
-    }
-    QRect rect(start, size);
-    switch (info.preview) {
-        case Shared::Global::FileInfo::Preview::picture: {
-            QImage img(data.attach.localPath);
-            if (img.isNull()) {
-                emit invalidPath(data.id);
-            } else {
-                painter->drawImage(rect, img);
-            }
-        }
-        break;
-        default: {
-            QIcon icon = QIcon::fromTheme(info.mime.iconName());
-            
-            painter->save();
-            
-            painter->setFont(bodyFont);
-            int labelWidth = option.rect.width() - size.width() - margin;
-            QString elidedName = bodyMetrics.elidedText(info.name, Qt::ElideMiddle, labelWidth);
-            QSize nameSize = bodyMetrics.boundingRect(QRect(start, QSize(labelWidth, 0)), 0, elidedName).size();
-            if (data.sentByMe) {
-                start.rx() -= nameSize.width() + margin;
-            }
-            painter->drawPixmap({start, size}, icon.pixmap(info.size));
-            start.rx() += size.width() + margin;
-            start.ry() += nameSize.height() + (size.height() - nameSize.height()) / 2;
-            painter->drawText(start, elidedName);
-    
-            painter->restore();
-        }
+        QWidget* vp = static_cast<QWidget*>(painter->device());
+        preview = new Preview(data.attach.localPath, size, option.rect.topLeft(), data.sentByMe, vp);
+        previews->insert(std::make_pair(data.id, preview));
     }
     
-    option.rect.adjust(0, size.height() + textMargin, 0, 0);
+    option.rect.adjust(0, preview->size().height() + textMargin, 0, 0);
 }
 
 QPushButton * MessageDelegate::getButton(const Models::FeedItem& data) const
@@ -432,6 +411,13 @@ QLabel * MessageDelegate::getStatusIcon(const Models::FeedItem& data) const
     std::map<QString, QLabel*>::const_iterator itr = statusIcons->find(data.id);
     QLabel* result = 0;
     
+    if (itr != statusIcons->end()) {
+        result = itr->second;
+    } else {
+        result = new QLabel();
+        statusIcons->insert(std::make_pair(data.id, result));
+    }
+    
     QIcon q(Shared::icon(Shared::messageStateThemeIcons[static_cast<uint8_t>(data.state)]));
     QString tt = Shared::Global::getName(data.state);
     if (data.state == Shared::Message::State::error) {
@@ -439,24 +425,10 @@ QLabel * MessageDelegate::getStatusIcon(const Models::FeedItem& data) const
             tt += ": " + data.error;
         }
     }
-    
-    if (itr != statusIcons->end()) {
-        result = itr->second;
-        if (result->toolTip() != tt) {                      //If i just assign pixmap every time unconditionally
-            result->setPixmap(q.pixmap(statusIconSize));    //it involves into an infinite cycle of repaint
-            result->setToolTip(tt);                         //may be it's better to subclass and store last condition in int?
-        }
-    } else {
-        result = new QLabel();
-        statusIcons->insert(std::make_pair(data.id, result));
-        result->setPixmap(q.pixmap(statusIconSize));
-        result->setToolTip(tt);
+    if (result->toolTip() != tt) {                      //If i just assign pixmap every time unconditionally
+        result->setPixmap(q.pixmap(statusIconSize));    //it invokes an infinite cycle of repaint
+        result->setToolTip(tt);                         //may be it's better to subclass and store last condition in int?
     }
-    
-    
-    
-    result->setToolTip(tt);
-    //result->setText(std::to_string((int)data.state).c_str());
     
     return result;
 }
@@ -488,50 +460,28 @@ void MessageDelegate::beginClearWidgets()
     clearingWidgets = true;
 }
 
+template <typename T>
+void removeElements(std::map<QString, T*>* elements, std::set<QString>* idsToKeep) {
+    std::set<QString> toRemove;
+    for (const std::pair<const QString, T*>& pair: *elements) {
+        if (idsToKeep->find(pair.first) == idsToKeep->end()) {
+            delete pair.second;
+            toRemove.insert(pair.first);
+        }
+    }
+    for (const QString& key : toRemove) {
+        elements->erase(key);
+    }
+}
+
 void MessageDelegate::endClearWidgets()
 {
     if (clearingWidgets) {
-        std::set<QString> toRemoveButtons;
-        std::set<QString> toRemoveBars;
-        std::set<QString> toRemoveIcons;
-        std::set<QString> toRemoveBodies;
-        for (const std::pair<const QString, FeedButton*>& pair: *buttons) {
-            if (idsToKeep->find(pair.first) == idsToKeep->end()) {
-                delete pair.second;
-                toRemoveButtons.insert(pair.first);
-            }
-        }
-        for (const std::pair<const QString, QProgressBar*>& pair: *bars) {
-            if (idsToKeep->find(pair.first) == idsToKeep->end()) {
-                delete pair.second;
-                toRemoveBars.insert(pair.first);
-            }
-        }
-        for (const std::pair<const QString, QLabel*>& pair: *statusIcons) {
-            if (idsToKeep->find(pair.first) == idsToKeep->end()) {
-                delete pair.second;
-                toRemoveIcons.insert(pair.first);
-            }
-        }
-        for (const std::pair<const QString, QLabel*>& pair: *bodies) {
-            if (idsToKeep->find(pair.first) == idsToKeep->end()) {
-                delete pair.second;
-                toRemoveBodies.insert(pair.first);
-            }
-        }
-        
-        for (const QString& key : toRemoveButtons) {
-            buttons->erase(key);
-        }
-        for (const QString& key : toRemoveBars) {
-            bars->erase(key);
-        }
-        for (const QString& key : toRemoveIcons) {
-            statusIcons->erase(key);
-        }
-        for (const QString& key : toRemoveBodies) {
-            bodies->erase(key);
-        }
+        removeElements(buttons, idsToKeep);
+        removeElements(bars, idsToKeep);
+        removeElements(statusIcons, idsToKeep);
+        removeElements(bodies, idsToKeep);
+        removeElements(previews, idsToKeep);
         
         idsToKeep->clear();
         clearingWidgets = false;
@@ -558,25 +508,6 @@ void MessageDelegate::clearHelperWidget(const Models::FeedItem& data) const
         }
     }
 }
-
-QSize MessageDelegate::calculateAttachSize(const QString& path, const QRect& bounds) const
-{
-    Shared::Global::FileInfo info = Shared::Global::getFileInfo(path);
-    
-    return constrainAttachSize(info.size, bounds.size());
-}
-
-QSize MessageDelegate::constrainAttachSize(QSize src, QSize bounds) const
-{
-    bounds.setHeight(maxAttachmentHeight);
-    
-    if (src.width() > bounds.width() || src.height() > bounds.height()) {
-        src.scale(bounds, Qt::KeepAspectRatio);
-    }
-    
-    return src;
-}
-
 
 // void MessageDelegate::setModelData(QWidget* editor, QAbstractItemModel* model, const QModelIndex& index) const
 // {

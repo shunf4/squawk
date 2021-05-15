@@ -20,7 +20,8 @@
 #define ELEMENT_H
 
 #include "item.h"
-#include "messagefeed.h"
+
+#include "ui/widgets/messageline/messagefeed.h"
 
 namespace Models {
     

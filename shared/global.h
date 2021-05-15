@@ -33,6 +33,7 @@
 #include <QMimeDatabase>
 #include <QFileInfo>
 #include <QImage>
+#include <QMovie>
 #include <QSize>
 #include <QUrl>
 #include <QLibrary>
@@ -51,7 +52,7 @@ namespace Shared {
             enum class Preview {
                 none,
                 picture,
-                movie
+                animation
             };
             
             QString name;

@@ -5,18 +5,10 @@ target_sources(squawk PRIVATE
   comboboxdelegate.h
   exponentialblur.cpp
   exponentialblur.h
-  feedview.cpp
-  feedview.h
   flowlayout.cpp
   flowlayout.h
   image.cpp
   image.h
-  message.cpp
-  message.h
-  messagedelegate.cpp
-  messagedelegate.h
-  messageline.cpp
-  messageline.h
   progress.cpp
   progress.h
   resizer.cpp

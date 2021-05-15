@@ -127,12 +127,19 @@ Shared::Global::FileInfo Shared::Global::getFileInfo(const QString& path)
         FileInfo::Preview p = FileInfo::Preview::none;
         QSize size;
         if (big == "image") {
-            if (parts.back() == "gif") {
-                //TODO need to consider GIF as a movie
+            QMovie mov(path);
+            if (mov.isValid()) {
+                p = FileInfo::Preview::animation;
+            } else {
+                p = FileInfo::Preview::picture;
             }
-            p = FileInfo::Preview::picture;
             QImage img(path);
             size = img.size();
+//         } else if (big == "video") {
+//             p = FileInfo::Preview::movie;
+//             QMovie mov(path);
+//             size = mov.scaledSize();
+//             qDebug() << mov.isValid();
         } else {
             size = defaultIconFileInfoHeight;
         }

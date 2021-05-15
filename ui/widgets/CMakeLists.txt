@@ -21,3 +21,4 @@ target_sources(squawk PRIVATE
   )
 
 add_subdirectory(vcard)
+add_subdirectory(messageline)

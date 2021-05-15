@@ -17,8 +17,9 @@
  */
 
 #include "messagefeed.h"
-#include "element.h"
-#include "room.h"
+
+#include <ui/models/element.h>
+#include <ui/models/room.h>
 
 #include <QDebug>
 

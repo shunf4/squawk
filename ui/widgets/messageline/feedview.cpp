@@ -24,7 +24,7 @@
 #include <QDebug>
 
 #include "messagedelegate.h"
-#include "ui/models/messagefeed.h"
+#include "messagefeed.h"
 
 constexpr int maxMessageHeight = 10000;
 constexpr int approximateSingleMessageHeight = 20;

@@ -13,8 +13,6 @@ target_sources(squawk PRIVATE
   group.h
   item.cpp
   item.h
-  messagefeed.cpp
-  messagefeed.h
   participant.cpp
   participant.h
   presence.cpp
