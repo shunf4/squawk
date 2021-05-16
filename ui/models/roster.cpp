@@ -48,6 +48,7 @@ Models::Roster::~Roster()
 void Models::Roster::addAccount(const QMap<QString, QVariant>& data)
 {
     Account* acc = new Account(data);
+    connect(acc, &Account::reconnected, this, &Roster::onAccountReconnected);
     root->appendChild(acc);
     accounts.insert(std::make_pair(acc->getName(), acc));
     accountsModel->addAccount(acc);
@@ -744,6 +745,7 @@ void Models::Roster::removeAccount(const QString& account)
         }
     }
     
+    disconnect(acc, &Account::reconnected, this, &Roster::onAccountReconnected);
     acc->deleteLater();
 }
 
@@ -1001,5 +1003,17 @@ Models::Element * Models::Roster::getElement(const Models::Roster::ElId& id)
     }
     
     return NULL;
+}
+
+void Models::Roster::onAccountReconnected()
+{
+    Account* acc = static_cast<Account*>(sender());
+    
+    QString accName = acc->getName();
+    for (const std::pair<const ElId, Contact*>& pair : contacts) {
+        if (pair.first.account == accName) {
+            pair.second->handleRecconnect();
+        }
+    }
 }
 

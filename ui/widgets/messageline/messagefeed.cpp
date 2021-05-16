@@ -304,7 +304,7 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
                 std::set<QString>::const_iterator umi = unreadMessages->find(item.id);
                 if (umi != unreadMessages->end()) {
                     unreadMessages->erase(umi);
-                    emit unreadMessagesCount();
+                    emit unreadMessagesCountChanged();
                 }
                 
                 item.sentByMe = sentByMe(*msg);
@@ -370,7 +370,6 @@ void Models::MessageFeed::fetchMore(const QModelIndex& parent)
     if (syncState == incomplete) {
         syncState = syncing;
         emit syncStateChange(syncState);
-        emit requestStateChange(true);
         
         if (storage.size() == 0) {
             emit requestArchive("");
@@ -398,7 +397,6 @@ void Models::MessageFeed::responseArchive(const std::list<Shared::Message> list,
             syncState = incomplete;
         }
         emit syncStateChange(syncState);
-        emit requestStateChange(false);
     }
 }
 
@@ -655,4 +653,14 @@ void Models::MessageFeed::reportLocalPathInvalid(const QString& messageId)
 Models::MessageFeed::SyncState Models::MessageFeed::getSyncState() const
 {
     return syncState;
+}
+
+void Models::MessageFeed::requestLatestMessages()
+{
+    if (syncState != syncing) {
+        syncState = syncing;
+        emit syncStateChange(syncState);
+        
+        emit requestArchive("");
+    }
 }

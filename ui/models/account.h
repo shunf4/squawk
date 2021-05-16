@@ -77,6 +77,9 @@ namespace Models {
         QString getBareJid() const;
         QString getFullJid() const;
         
+    signals:
+        void reconnected();
+        
     private:
         QString login;
         QString password;
@@ -87,6 +90,7 @@ namespace Models {
         Shared::ConnectionState state;
         Shared::Availability availability;
         Shared::AccountPassword passwordType;
+        bool wasEverConnected;
         
     protected slots:
         void toOfflineState() override;

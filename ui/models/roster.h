@@ -100,6 +100,7 @@ private:
     
 private slots:
     void onAccountDataChanged(const QModelIndex& tl, const QModelIndex& br, const QVector<int>& roles);
+    void onAccountReconnected();
     void onChildChanged(Models::Item* item, int row, int col);
     void onChildIsAboutToBeInserted(Item* parent, int first, int last);
     void onChildInserted();

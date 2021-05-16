@@ -31,7 +31,8 @@ Models::Account::Account(const QMap<QString, QVariant>& data, Models::Item* pare
     avatarPath(data.value("avatarPath").toString()),
     state(Shared::ConnectionState::disconnected),
     availability(Shared::Availability::offline),
-    passwordType(Shared::AccountPassword::plain)
+    passwordType(Shared::AccountPassword::plain),
+    wasEverConnected(false)
 {
     QMap<QString, QVariant>::const_iterator sItr = data.find("state");
     if (sItr != data.end()) {
@@ -56,8 +57,19 @@ void Models::Account::setState(Shared::ConnectionState p_state)
     if (state != p_state) {
         state = p_state;
         changed(2);
-        if (state == Shared::ConnectionState::disconnected) {
-            toOfflineState();
+        switch (state) {
+            case Shared::ConnectionState::disconnected:
+                toOfflineState();
+                break;
+            case Shared::ConnectionState::connected:
+                if (wasEverConnected) {
+                    emit reconnected();
+                } else {
+                    wasEverConnected = true;
+                }
+                break;
+            default:
+                break;
         }
     }
 }

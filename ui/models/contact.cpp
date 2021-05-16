@@ -240,3 +240,9 @@ QString Models::Contact::getDisplayedName() const
     return getContactName();
 }
 
+void Models::Contact::handleRecconnect()
+{
+    if (getMessagesCount() > 0) {
+        feed->requestLatestMessages();
+    }
+}

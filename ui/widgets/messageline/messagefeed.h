@@ -77,11 +77,12 @@ public:
     void decrementObservers();
     SyncState getSyncState() const;
     
+    void requestLatestMessages();       //this method is used by Models::Contact to request latest messages after reconnection
+    
 signals:
     void requestArchive(const QString& before);
-    void requestStateChange(bool requesting);
     void fileDownloadRequest(const QString& url);
-    void unreadMessagesCountChanged();
+    void unreadMessagesCountChanged() const;
     void newMessage(const Shared::Message& msg);
     void unnoticedMessage(const Shared::Message& msg);
     void localPathInvalid(const QString& path);

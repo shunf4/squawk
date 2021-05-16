@@ -56,6 +56,8 @@ public:
     QString getStatus() const;
     QString getDisplayedName() const override;
     
+    void handleRecconnect();        //this is a special method Models::Roster calls when reconnect happens
+    
 protected:
     void _removeChild(int index) override;
     void _appendChild(Models::Item * child) override;

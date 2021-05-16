@@ -104,6 +104,8 @@ void Models::Reference::onChildChanged(Models::Item* item, int row, int col)
 {
     if (item == original) {
         emit childChanged(this, row, col);
+    } else {
+        emit childChanged(item, row, col);
     }
 }
 

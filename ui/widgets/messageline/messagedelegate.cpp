@@ -353,6 +353,10 @@ void MessageDelegate::paintPreview(const Models::FeedItem& data, QPainter* paint
         previews->insert(std::make_pair(data.id, preview));
     }
     
+    if (!preview->isFileReachable()) {      //this is the situation when the file preview couldn't be painted because the file was moved 
+        emit invalidPath(data.id);          //or deleted. This signal notifies the model, and the model notifies the core, preview can 
+    }                                       //handle being invalid for as long as I need and can be even become valid again with a new path
+    
     option.rect.adjust(0, preview->size().height() + textMargin, 0, 0);
 }
 
