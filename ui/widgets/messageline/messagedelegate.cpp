@@ -289,6 +289,8 @@ void MessageDelegate::initializeFonts(const QFont& font)
     bodyMetrics = QFontMetrics(bodyFont);
     nickMetrics = QFontMetrics(nickFont);
     dateMetrics = QFontMetrics(dateFont);
+    
+    Preview::initializeFont(bodyFont);
 }
 
 bool MessageDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, const QStyleOptionViewItem& option, const QModelIndex& index)

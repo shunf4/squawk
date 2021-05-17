@@ -22,7 +22,6 @@
 constexpr int margin = 6;
 constexpr int maxAttachmentHeight = 500;
 
-bool Preview::fontInitialized = false;
 QFont Preview::font;
 QFontMetrics Preview::metrics(Preview::font);
 
@@ -41,17 +40,18 @@ Preview::Preview(const QString& pPath, const QSize& pMaxSize, const QPoint& pos,
     actualPreview(false),
     right(pRight)
 {
-    if (!fontInitialized) {
-        font.setBold(true);
-        font.setPixelSize(14);
-        metrics = QFontMetrics(font);
-        fontInitialized = true;
-    }
     
     initializeElements();
     if (fileReachable) {
         positionElements();
     }
+}
+
+void Preview::initializeFont(const QFont& newFont)
+{
+    font = newFont;
+    font.setBold(true);
+    metrics = QFontMetrics(font);
 }
 
 Preview::~Preview()
@@ -104,6 +104,9 @@ void Preview::actualize(const QString& newPath, const QSize& newSize, const QPoi
             }
         } else if (maxSizeChanged) {
             applyNewMaxSize();
+            if (right) {
+                positionChanged = true;
+            }
         }
         if (positionChanged || !actualPreview) {
             positionElements();
@@ -132,6 +135,9 @@ void Preview::setSize(const QSize& newSize)
         }
         if (maxSizeChanged || !actualPreview) {
             applyNewMaxSize();
+            if (right) {
+                positionElements();
+            }
         }
     }
 }
@@ -140,13 +146,14 @@ void Preview::applyNewSize()
 {
     switch (info.preview) {
         case Shared::Global::FileInfo::Preview::picture: {
-            QPixmap img(path);
-            if (img.isNull()) {
+            QImageReader img(path);
+            if (!img.canRead()) {
+                delete widget;
                 fileReachable = false;
             } else {
-                img = img.scaled(actualSize, Qt::KeepAspectRatio);
+                img.setScaledSize(actualSize);
                 widget->resize(actualSize);
-                widget->setPixmap(img);
+                widget->setPixmap(QPixmap::fromImage(img.read()));
             }
         }
             break;
@@ -172,7 +179,7 @@ void Preview::applyNewMaxSize()
         default: {
             int labelWidth = maxSize.width() - actualSize.width() - margin;
             QString elidedName = metrics.elidedText(info.name, Qt::ElideMiddle, labelWidth);
-            cachedLabelSize = metrics.size(0, elidedName);
+            cachedLabelSize = metrics.boundingRect(elidedName).size();
             label->setText(elidedName);
             label->resize(cachedLabelSize);
         }
@@ -225,20 +232,23 @@ void Preview::initializeElements()
 {
     switch (info.preview) {
         case Shared::Global::FileInfo::Preview::picture: {
-            QPixmap img(path);
-            if (img.isNull()) {
+            QImageReader img(path);
+            if (!img.canRead()) {
                 fileReachable = false;
             } else {
                 actualPreview = true;
-                img = img.scaled(actualSize, Qt::KeepAspectRatio);
+                img.setScaledSize(actualSize);
                 widget = new QLabel(parent);
-                widget->setPixmap(img);
+                widget->setPixmap(QPixmap::fromImage(img.read()));
                 widget->show();
             }
         }
             break;
         case Shared::Global::FileInfo::Preview::animation:{
             movie = new QMovie(path);
+            QObject::connect(movie, &QMovie::error, 
+                std::bind(&Preview::handleQMovieError, this, std::placeholders::_1)
+            );
             if (!movie->isValid()) {
                 fileReachable = false;
                 delete movie;
@@ -262,7 +272,7 @@ void Preview::initializeElements()
             label->setFont(font);
             int labelWidth = maxSize.width() - actualSize.width() - margin;
             QString elidedName = metrics.elidedText(info.name, Qt::ElideMiddle, labelWidth);
-            cachedLabelSize = metrics.size(0, elidedName);
+            cachedLabelSize = metrics.boundingRect(elidedName).size();
             label->setText(elidedName);
             label->show();
         }
@@ -301,4 +311,13 @@ QSize Preview::constrainAttachSize(QSize src, QSize bounds)
     }
     
     return src;
+}
+
+void Preview::handleQMovieError(QImageReader::ImageReaderError error)
+{
+    if (error == QImageReader::FileNotFoundError) {
+        fileReachable = false;
+        movie->deleteLater();
+        widget->deleteLater();
+    }
 }

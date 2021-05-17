@@ -128,12 +128,12 @@ Shared::Global::FileInfo Shared::Global::getFileInfo(const QString& path)
         QSize size;
         if (big == "image") {
             QMovie mov(path);
-            if (mov.isValid()) {
+            if (mov.isValid() && mov.frameCount() > 1) {
                 p = FileInfo::Preview::animation;
             } else {
                 p = FileInfo::Preview::picture;
             }
-            QImage img(path);
+            QImageReader img(path);
             size = img.size();
 //         } else if (big == "video") {
 //             p = FileInfo::Preview::movie;

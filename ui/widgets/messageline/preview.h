@@ -29,6 +29,7 @@
 #include <QMovie>
 #include <QFont>
 #include <QFontMetrics>
+#include <QImageReader>
 
 #include <shared/global.h>
 
@@ -47,9 +48,9 @@ public:
     bool isFileReachable() const;
     QSize size() const;
     
+    static void initializeFont(const QFont& newFont);
     static QSize constrainAttachSize(QSize src, QSize bounds);
     static QSize calculateAttachSize(const QString& path, const QRect& bounds);
-    static bool fontInitialized;
     static QFont font;
     static QFontMetrics metrics;
     
@@ -59,6 +60,7 @@ private:
     void clean();
     void applyNewSize();
     void applyNewMaxSize();
+    void handleQMovieError(QImageReader::ImageReaderError error);
     
 private:
     Shared::Global::FileInfo info;
