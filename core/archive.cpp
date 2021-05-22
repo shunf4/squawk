@@ -308,8 +308,9 @@ void Core::Archive::changeMessage(const QString& id, const QMap<QString, QVarian
             }
         }
         
-        if (msg.getStanzaId().size() > 0 && (idChange || !hadStanzaId)) {
-            const std::string& szid = msg.getStanzaId().toStdString();
+        QString qsid = msg.getStanzaId();
+        if (qsid.size() > 0 && (idChange || !hadStanzaId)) {
+            std::string szid = qsid.toStdString();
             
             lmdbData.mv_size = szid.size();
             lmdbData.mv_data = (char*)szid.c_str();

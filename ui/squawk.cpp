@@ -466,6 +466,15 @@ void Squawk::onConversationMessage(const Shared::Message& msg)
     emit sendMessage(acc, msg);
 }
 
+void Squawk::onConversationResend(const QString& id)
+{
+    Conversation* conv = static_cast<Conversation*>(sender());
+    QString acc = conv->getAccount();
+    QString jid = conv->getJid();
+    
+    emit resendMessage(acc, jid, id);
+}
+
 void Squawk::onRequestArchive(const QString& account, const QString& jid, const QString& before)
 {
     emit requestArchive(account, jid, 20, before); //TODO amount as a settings value
@@ -914,6 +923,7 @@ void Squawk::subscribeConversation(Conversation* conv)
 {
     connect(conv, &Conversation::destroyed, this, &Squawk::onConversationClosed);
     connect(conv, &Conversation::sendMessage, this, &Squawk::onConversationMessage);
+    connect(conv, &Conversation::resendMessage, this, &Squawk::onConversationResend);
     connect(conv, &Conversation::notifyableMessage, this, &Squawk::notify);
 }
 

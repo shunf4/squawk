@@ -923,3 +923,6 @@ void Core::Account::onContactHistoryResponse(const std::list<Shared::Message>& l
 
 void Core::Account::requestChangeMessage(const QString& jid, const QString& messageId, const QMap<QString, QVariant>& data){
     mh->requestChangeMessage(jid, messageId, data);}
+
+void Core::Account::resendMessage(const QString& jid, const QString& id) {
+    mh->resendMessage(jid, id);}

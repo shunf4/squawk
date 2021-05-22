@@ -414,6 +414,16 @@ void Conversation::onFeedContext(const QPoint& pos)
         
         contextMenu->clear();
         bool showMenu = false;
+        if (item->getState() == Shared::Message::State::error) {
+            showMenu = true;
+            QString id = item->getId();
+            QAction* resend = contextMenu->addAction(Shared::icon("view-refresh"), tr("Try sending again")); 
+            connect(resend, &QAction::triggered, [this, id]() {
+                element->feed->registerUpload(id);
+                emit resendMessage(id);
+            });
+        }
+        
         QString path = item->getAttachPath();
         if (path.size() > 0) {
             showMenu = true;

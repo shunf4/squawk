@@ -103,6 +103,7 @@ public:
     void removeRoomRequest(const QString& jid);
     void addRoomRequest(const QString& jid, const QString& nick, const QString& password, bool autoJoin);
     void uploadVCard(const Shared::VCard& card);
+    void resendMessage(const QString& jid, const QString& id);
     
 public slots:
     void connect();

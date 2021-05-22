@@ -73,8 +73,7 @@ void Core::MessageHandler::onMessageReceived(const QXmppMessage& msg)
 
 bool Core::MessageHandler::handleChatMessage(const QXmppMessage& msg, bool outgoing, bool forwarded, bool guessing)
 {
-    const QString& body(msg.body());
-    if (body.size() != 0) {
+    if (msg.body().size() != 0 || msg.outOfBandUrl().size() > 0) {
         Shared::Message sMsg(Shared::Message::chat);
         initializeMessage(sMsg, msg, outgoing, forwarded, guessing);
         QString jid = sMsg.getPenPalJid();
@@ -234,17 +233,17 @@ void Core::MessageHandler::onReceiptReceived(const QString& jid, const QString& 
         if (ri != 0) {
             ri->changeMessage(id, cData);
         }
-        pendingStateMessages.erase(itr);
         emit acc->changeMessage(itr->second, id, cData);
+        pendingStateMessages.erase(itr);
     }
 }
 
-void Core::MessageHandler::sendMessage(const Shared::Message& data)
+void Core::MessageHandler::sendMessage(const Shared::Message& data, bool newMessage)
 {
     if (data.getOutOfBandUrl().size() == 0 && data.getAttachPath().size() > 0) {
-        prepareUpload(data);
+        prepareUpload(data, newMessage);
     } else {
-        performSending(data);
+        performSending(data, newMessage);
     }
 }
 
@@ -256,6 +255,7 @@ void Core::MessageHandler::performSending(Shared::Message data, bool newMessage)
     RosterItem* ri = acc->rh->getRosterItem(jid);
     bool sent = false;
     QMap<QString, QVariant> changes;
+    QDateTime sendTime = QDateTime::currentDateTimeUtc();
     if (acc->state == Shared::ConnectionState::connected) {
         QXmppMessage msg(acc->getFullJid(), data.getTo(), data.getBody(), data.getThread());
         
@@ -266,8 +266,10 @@ void Core::MessageHandler::performSending(Shared::Message data, bool newMessage)
         msg.setType(static_cast<QXmppMessage::Type>(data.getType()));       //it is safe here, my type is compatible
         msg.setOutOfBandUrl(oob);
         msg.setReceiptRequested(true);
+        msg.setStamp(sendTime);
         
         sent = acc->client.sendPacket(msg);
+        //sent = false;
         
         if (sent) {
             data.setState(Shared::Message::State::sent);
@@ -289,9 +291,10 @@ void Core::MessageHandler::performSending(Shared::Message data, bool newMessage)
     if (oob.size() > 0) {
         changes.insert("outOfBandUrl", oob);
     }
-    if (!newMessage) {
-        changes.insert("stamp", data.getTime());
+    if (newMessage) {
+        data.setTime(sendTime);
     }
+    changes.insert("stamp", sendTime);
     
     if (ri != 0) {
         if (newMessage) {
@@ -309,7 +312,7 @@ void Core::MessageHandler::performSending(Shared::Message data, bool newMessage)
     emit acc->changeMessage(jid, id, changes);
 }
 
-void Core::MessageHandler::prepareUpload(const Shared::Message& data)
+void Core::MessageHandler::prepareUpload(const Shared::Message& data, bool newMessage)
 {
     if (acc->state == Shared::ConnectionState::connected) {
         QString jid = data.getPenPalJid();
@@ -322,16 +325,23 @@ void Core::MessageHandler::prepareUpload(const Shared::Message& data)
         QString path = data.getAttachPath();
         QString url = acc->network->getFileRemoteUrl(path);
         if (url.size() != 0) {
-            sendMessageWithLocalUploadedFile(data, url);
+            sendMessageWithLocalUploadedFile(data, url, newMessage);
         } else {
-            if (acc->network->checkAndAddToUploading(acc->getName(), jid, id, path)) {
+            pendingStateMessages.insert(std::make_pair(id, jid));
+            if (newMessage) {
                 ri->appendMessageToArchive(data);
-                pendingStateMessages.insert(std::make_pair(id, jid));
             } else {
+                QMap<QString, QVariant> changes({
+                    {"state", (uint)Shared::Message::State::pending}
+                });
+                ri->changeMessage(id, changes);
+                emit acc->changeMessage(jid, id, changes);
+            }
+            //this checks if the file is already uploading, and if so it subscribes to it's success, so, i need to do stuff only if the network knows nothing of this file
+            if (!acc->network->checkAndAddToUploading(acc->getName(), jid, id, path)) {
                 if (acc->um->serviceFound()) {
                     QFileInfo file(path);
                     if (file.exists() && file.isReadable()) {
-                        ri->appendMessageToArchive(data);
                         pendingStateMessages.insert(std::make_pair(id, jid));
                         uploadingSlotsQueue.emplace_back(path, id);
                         if (uploadingSlotsQueue.size() == 1) {
@@ -352,7 +362,6 @@ void Core::MessageHandler::prepareUpload(const Shared::Message& data)
         qDebug() << "An attempt to send message with not connected account " << acc->name << ", skipping";
     }
 }
-
 
 void Core::MessageHandler::onUploadSlotReceived(const QXmppHttpUploadSlotIq& slot)
 {
@@ -479,5 +488,24 @@ void Core::MessageHandler::requestChangeMessage(const QString& jid, const QStrin
             qDebug() << "A request to change message" << messageId << "of conversation" << jid << "with following data" << data;
             qDebug() << "only limited set of dataFields are supported yet here, and" << unsupportedString << "isn't one of them, skipping";
         }
+    }
+}
+
+void Core::MessageHandler::resendMessage(const QString& jid, const QString& id)
+{
+    RosterItem* cnt = acc->rh->getRosterItem(jid);
+    if (cnt != 0) {
+        try {
+            Shared::Message msg = cnt->getMessage(id);
+            if (msg.getState() == Shared::Message::State::error) {
+                sendMessage(msg, false);
+            } else {
+                qDebug() << "An attempt to resend a message to" << jid << "by account" << acc->getName() << ", but this message seems to have been normally sent, this method was made to retry sending failed to be sent messages, skipping";
+            }
+        } catch (const Archive::NotFound& err) {
+            qDebug() << "An attempt to resend a message to" << jid << "by account" << acc->getName() << ", but this message wasn't found in history, skipping";
+        }
+    } else {
+        qDebug() << "An attempt to resend a message to" << jid << "by account" << acc->getName() << ", but this jid isn't present in account roster, skipping";
     }
 }

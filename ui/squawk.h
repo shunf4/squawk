@@ -63,6 +63,7 @@ signals:
     void disconnectAccount(const QString&);
     void changeState(Shared::Availability state);
     void sendMessage(const QString& account, const Shared::Message& data);
+    void resendMessage(const QString& account, const QString& jid, const QString& id);
     void requestArchive(const QString& account, const QString& jid, int count, const QString& before);
     void subscribeContact(const QString& account, const QString& jid, const QString& reason);
     void unsubscribeContact(const QString& account, const QString& jid, const QString& reason);
@@ -148,6 +149,7 @@ private slots:
     void onComboboxActivated(int index);
     void onRosterItemDoubleClicked(const QModelIndex& item);
     void onConversationMessage(const Shared::Message& msg);
+    void onConversationResend(const QString& id);
     void onRequestArchive(const QString& account, const QString& jid, const QString& before);
     void onRosterContextMenu(const QPoint& point);
     void onItemCollepsed(const QModelIndex& index);
