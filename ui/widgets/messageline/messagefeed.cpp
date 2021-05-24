@@ -262,7 +262,7 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
                 answer = static_cast<unsigned int>(msg->getState());
                 break;
             case Correction: 
-                answer = msg->getEdited();
+                answer.setValue(fillCorrection(*msg));;
                 break;
             case SentByMe: 
                 answer = sentByMe(*msg);
@@ -311,7 +311,7 @@ QVariant Models::MessageFeed::data(const QModelIndex& index, int role) const
                 item.date = msg->getTime();
                 item.state = msg->getState();
                 item.error = msg->getErrorText();
-                item.correction = msg->getEdited();
+                item.correction = fillCorrection(*msg);
                 
                 QString body = msg->getBody();
                 if (body != msg->getOutOfBandUrl()) {
@@ -479,6 +479,14 @@ Models::Attachment Models::MessageFeed::fillAttach(const Shared::Message& msg) c
     
     return att;
 }
+
+Models::Edition Models::MessageFeed::fillCorrection(const Shared::Message& msg) const
+{
+    ::Models::Edition ed({msg.getEdited(), msg.getOriginalBody(), msg.getLastModified()});
+    
+    return ed;
+}
+
 
 void Models::MessageFeed::downloadAttachment(const QString& messageId)
 {

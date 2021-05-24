@@ -68,6 +68,7 @@ protected:
     QPushButton* getButton(const Models::FeedItem& data) const;
     QProgressBar* getBar(const Models::FeedItem& data) const;
     QLabel* getStatusIcon(const Models::FeedItem& data) const;
+    QLabel* getPencilIcon(const Models::FeedItem& data) const;
     QLabel* getBody(const Models::FeedItem& data) const;
     void clearHelperWidget(const Models::FeedItem& data) const;
     
@@ -93,6 +94,7 @@ private:
     std::map<QString, FeedButton*>* buttons;
     std::map<QString, QProgressBar*>* bars;
     std::map<QString, QLabel*>* statusIcons;
+    std::map<QString, QLabel*>* pencilIcons;
     std::map<QString, QLabel*>* bodies;
     std::map<QString, Preview*>* previews;
     std::set<QString>* idsToKeep;

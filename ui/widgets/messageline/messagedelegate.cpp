@@ -42,6 +42,7 @@ MessageDelegate::MessageDelegate(QObject* parent):
     buttons(new std::map<QString, FeedButton*>()),
     bars(new std::map<QString, QProgressBar*>()),
     statusIcons(new std::map<QString, QLabel*>()),
+    pencilIcons(new std::map<QString, QLabel*>()),
     bodies(new std::map<QString, QLabel*>()),
     previews(new std::map<QString, Preview*>()),
     idsToKeep(new std::set<QString>()),
@@ -68,6 +69,10 @@ MessageDelegate::~MessageDelegate()
         delete pair.second;
     }
     
+    for (const std::pair<const QString, QLabel*>& pair: *pencilIcons){
+        delete pair.second;
+    }
+    
     for (const std::pair<const QString, QLabel*>& pair: *bodies){
         delete pair.second;
     }
@@ -76,6 +81,8 @@ MessageDelegate::~MessageDelegate()
         delete pair.second;
     }
     
+    delete statusIcons;
+    delete pencilIcons;
     delete idsToKeep;
     delete buttons;
     delete bars;
@@ -128,6 +135,18 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
         if (senderSize.width() > messageSize.width()) {
             messageSize.setWidth(senderSize.width());
         }
+        QSize dateSize = dateMetrics.boundingRect(messageRect, 0, data.date.toLocalTime().toString()).size();
+        int addition = 0;
+        
+        if (data.correction.corrected) {
+            addition += margin + statusIconSize;
+        }
+        if (data.sentByMe) {
+            addition += margin + statusIconSize;
+        }
+        if (dateSize.width() + addition > messageSize.width()) {
+            messageSize.setWidth(dateSize.width() + addition);
+        }
     } else {
         messageSize.setWidth(opt.rect.width());
     }
@@ -170,6 +189,7 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     painter->restore();
     
     int messageLeft = INT16_MAX;
+    int messageRight = opt.rect.x() + messageSize.width();
     QWidget* vp = static_cast<QWidget*>(painter->device());
     if (data.text.size() > 0) {
         QLabel* body = getBody(data);
@@ -192,16 +212,33 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     q.setAlpha(180);
     painter->setPen(q);
     painter->drawText(opt.rect, opt.displayAlignment, data.date.toLocalTime().toString(), &rect);
+    int currentY = opt.rect.y();
     if (data.sentByMe) {
-        if (messageLeft > rect.x() - statusIconSize - margin) {
-            messageLeft = rect.x() - statusIconSize - margin;
-        }
         QLabel* statusIcon = getStatusIcon(data);
         
         statusIcon->setParent(vp);
-        statusIcon->move(messageLeft, opt.rect.y());
+        statusIcon->move(opt.rect.topRight().x() - messageSize.width(), currentY);
         statusIcon->show();
+        
         opt.rect.adjust(0, statusIconSize + textMargin, 0, 0);
+    }
+    
+    if (data.correction.corrected) {
+        QLabel* pencilIcon = getPencilIcon(data);
+        
+        pencilIcon->setParent(vp);
+        if (data.sentByMe) {
+            pencilIcon->move(opt.rect.topRight().x() - messageSize.width() + statusIconSize + margin, currentY);
+        } else {
+            pencilIcon->move(messageRight - statusIconSize - margin, currentY);
+        }
+        pencilIcon->show();
+    } else {
+        std::map<QString, QLabel*>::const_iterator itr = pencilIcons->find(data.id);
+        if (itr != pencilIcons->end()) {
+            delete itr->second;
+            pencilIcons->erase(itr);
+        }
     }
     
     painter->restore();
@@ -439,6 +476,26 @@ QLabel * MessageDelegate::getStatusIcon(const Models::FeedItem& data) const
     return result;
 }
 
+QLabel * MessageDelegate::getPencilIcon(const Models::FeedItem& data) const
+{
+    std::map<QString, QLabel*>::const_iterator itr = pencilIcons->find(data.id);
+    QLabel* result = 0;
+    
+    if (itr != pencilIcons->end()) {
+        result = itr->second;
+    } else {
+        result = new QLabel();
+        QIcon icon = Shared::icon("edit-rename");
+        result->setPixmap(icon.pixmap(statusIconSize));
+        pencilIcons->insert(std::make_pair(data.id, result));
+    }
+    
+    result->setToolTip("Last time edited: " + data.correction.lastCorrection.toLocalTime().toString() 
+    + "\nOriginal message: " + data.correction.original);
+    
+    return result;
+}
+
 QLabel * MessageDelegate::getBody(const Models::FeedItem& data) const
 {
     std::map<QString, QLabel*>::const_iterator itr = bodies->find(data.id);
@@ -486,6 +543,7 @@ void MessageDelegate::endClearWidgets()
         removeElements(buttons, idsToKeep);
         removeElements(bars, idsToKeep);
         removeElements(statusIcons, idsToKeep);
+        removeElements(pencilIcons, idsToKeep);
         removeElements(bodies, idsToKeep);
         removeElements(previews, idsToKeep);
         

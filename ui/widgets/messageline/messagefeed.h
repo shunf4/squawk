@@ -37,6 +37,7 @@
 namespace Models {
     class Element;
     struct Attachment;
+    struct Edition;
     
 class MessageFeed : public QAbstractListModel
 {
@@ -106,6 +107,7 @@ public:
 protected:
     bool sentByMe(const Shared::Message& msg) const;
     Attachment fillAttach(const Shared::Message& msg) const;
+    Edition fillCorrection(const Shared::Message& msg) const;
     QModelIndex modelIndexById(const QString& id) const;
     QModelIndex modelIndexByTime(const QString& id, const QDateTime& time) const;
     std::set<MessageRoles> detectChanges(const Shared::Message& msg, const QMap<QString, QVariant>& data) const;
@@ -180,6 +182,12 @@ struct Attachment {
     QString error;
 };
 
+struct Edition {
+    bool corrected;
+    QString original;
+    QDateTime lastCorrection;
+};
+
 struct FeedItem {
     QString id;
     QString text;
@@ -187,7 +195,7 @@ struct FeedItem {
     QString avatar;
     QString error;
     bool sentByMe;
-    bool correction;
+    Edition correction;
     QDateTime date;
     Shared::Message::State state;
     Attachment attach;
@@ -195,6 +203,7 @@ struct FeedItem {
 };
 
 Q_DECLARE_METATYPE(Models::Attachment);
+Q_DECLARE_METATYPE(Models::Edition);
 Q_DECLARE_METATYPE(Models::FeedItem);
 
 #endif // MESSAGEFEED_H
