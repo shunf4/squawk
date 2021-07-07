@@ -982,6 +982,7 @@ void Squawk::readSettings()
 void Squawk::writeSettings()
 {
     QSettings settings;
+    qDebug() << "settings.fileName: " << settings.fileName();
     settings.beginGroup("ui");
     settings.beginGroup("window");
     settings.setValue("geometry", saveGeometry());
@@ -1023,6 +1024,7 @@ void Squawk::writeSettings()
     }
     settings.endGroup();
     settings.endGroup();
+
 }
 
 void Squawk::onItemCollepsed(const QModelIndex& index)

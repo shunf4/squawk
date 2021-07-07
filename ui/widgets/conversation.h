@@ -52,6 +52,7 @@ protected:
     
 signals:
     void enterPressed();
+    void imagePasted();
 };
 
 class VisibilityCatcher : public QObject {
@@ -90,6 +91,7 @@ public:
     void changeMessage(const QString& id, const QMap<QString, QVariant>& data);
     void setFeedFrames(bool top, bool right, bool bottom, bool left);
     virtual void appendMessageWithUpload(const Shared::Message& data, const QString& path);
+    static bool checkClipboardImage();
     
 signals:
     void sendMessage(const Shared::Message& message);
@@ -113,6 +115,7 @@ protected:
     
 protected slots:
     void onEnterPressed();
+    void onImagePasted();
     void onMessagesResize(int amount);
     void onSliderValueChanged(int value);
     void onAttach();
@@ -151,6 +154,7 @@ protected:
     bool requestingHistory;
     bool everShown;
     bool tsb;           //transient scroll bars
+    QAction *pasteImageAction;
 };
 
 #endif // CONVERSATION_H

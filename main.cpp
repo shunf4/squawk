@@ -40,6 +40,7 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     SignalCatcher sc(&app);
     
+    QApplication::setOrganizationName("squawk");
     QApplication::setApplicationName("squawk");
     QApplication::setApplicationDisplayName("Squawk");
     QApplication::setApplicationVersion("0.1.5");

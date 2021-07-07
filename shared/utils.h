@@ -23,7 +23,6 @@
 #include <QColor>
 #include <QRegularExpression>
 
-#include <uuid/uuid.h>
 #include <vector>
 
 namespace Shared {

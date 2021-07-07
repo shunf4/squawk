@@ -171,7 +171,7 @@ private:
         Shared::AccountPassword passwordType
     );
     
-    static const quint64 passwordHash = 0x08d054225ac4871d;
+    static const quint64 passwordHash = 0x3c5bb27570f50e11;
 };
 
 }

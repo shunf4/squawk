@@ -36,6 +36,10 @@ set(squawkUI_SRC
   utils/dropshadoweffect.cpp
 )
 
+qt5_wrap_ui(squawkUI_SRC
+  squawk.ui
+)
+
 # Tell CMake to create the helloworld executable
 add_library(squawkUI ${squawkUI_SRC})
 

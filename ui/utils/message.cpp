@@ -203,16 +203,23 @@ void Message::showFile(const QString& path)
             file = new Image(path);
         } else {
             file = new QLabel();
-            file->setPixmap(QIcon::fromTheme(type.iconName()).pixmap(50));
+            QIcon qIcon = QIcon::fromTheme(type.iconName());
+            if (qIcon.isNull()) {
+                qIcon.addFile(QString::fromUtf8(":/images/fallback/dark/big/mail-attachment.svg"), QSize(), QIcon::Normal, QIcon::Off);
+            }
+            file->setPixmap(qIcon.pixmap(50));
             file->setAlignment(Qt::AlignCenter);
             showComment(info.fileName(), true);
         }
         file->setContextMenuPolicy(Qt::ActionsContextMenu);
-        QAction* openAction = new QAction(QIcon::fromTheme("document-new-from-template"), tr("Open"), file);
+        QAction* openAction = new QAction(QIcon::fromTheme("document-new-from-template"), tr("Open"), this);
         connect(openAction, &QAction::triggered, [path]() {             //TODO need to get rid of this shame
             QDesktopServices::openUrl(QUrl::fromLocalFile(path));
         });
         file->addAction(openAction);
+        fileComment->setContextMenuPolicy(Qt::ActionsContextMenu);
+        fileComment->addAction(openAction);
+
         bodyLayout->insertWidget(2, file);
         hasFile = true;
     }

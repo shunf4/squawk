@@ -33,6 +33,9 @@ Badge::Badge(const QString& p_id, const QString& p_text, const QIcon& icon, QWid
     
     image->setPixmap(icon.pixmap(25, 25));
     closeButton->setIcon(QIcon::fromTheme("tab-close"));
+    QIcon qIcon;
+    qIcon.addFile(QString::fromUtf8(":/images/fallback/dark/big/edit-none.svg"), QSize(), QIcon::Normal, QIcon::Off);
+    closeButton->setIcon(qIcon);
     closeButton->setMaximumHeight(25);
     closeButton->setMaximumWidth(25);
     

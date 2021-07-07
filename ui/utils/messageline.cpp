@@ -38,7 +38,8 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     downloading(),
     room(p_room),
     busyShown(false),
-    progress()
+    progress(),
+    lastHeight(0)
 {
     setContentsMargins(0, 0, 0, 0);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -163,6 +164,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
         emit requestLocalFile(msg.getId(), msg.getOutOfBandUrl());
         connect(message, &Message::buttonClicked, this, &MessageLine::onDownload);
     }
+    qDebug() << "inserted message " << id;
     
     return res;
 }
@@ -309,7 +311,11 @@ void MessageLine::movePalAvatarToEx(const QString& name)
 void MessageLine::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
-    emit resize(event->size().height() - event->oldSize().height());
+
+    qDebug() << "Resize(unordered): " << event->size().height() << event->oldSize().height();
+    qDebug() << "Resize: " << height() << lastHeight;
+    emit resize(height() - lastHeight);
+    lastHeight = height();
 }
 
 
@@ -328,6 +334,7 @@ void MessageLine::showBusyIndicator()
         layout->insertWidget(0, &progress);
         progress.start();
         busyShown = true;
+        qDebug() << "showBusyIndicator";
     }
 }
 
@@ -337,6 +344,7 @@ void MessageLine::hideBusyIndicator()
         progress.stop();
         layout->removeWidget(&progress);
         busyShown = false;
+        qDebug() << "hideBusyIndicator";
     }
 }
 

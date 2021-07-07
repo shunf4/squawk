@@ -21,6 +21,7 @@
 #include "ui/utils/dropshadoweffect.h"
 
 #include <QDebug>
+#include <QClipboard>
 #include <QScrollBar>
 #include <QTimer>
 #include <QFileDialog>
@@ -28,6 +29,9 @@
 #include <unistd.h>
 #include <QAbstractTextDocumentLayout>
 #include <QCoreApplication>
+#include <QTemporaryFile>
+#include <QDir>
+#include <QMenu>
 
 Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, const QString pRes, QWidget* parent):
     QWidget(parent),
@@ -50,7 +54,8 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     manualSliderChange(false),
     requestingHistory(false),
     everShown(false),
-    tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1)
+    tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1),
+    pasteImageAction(nullptr)
 {
     m_ui->setupUi(this);
     
@@ -63,6 +68,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     statusLabel = m_ui->statusLabel;
     
     connect(&ker, &KeyEnterReceiver::enterPressed, this, &Conversation::onEnterPressed);
+    connect(&ker, &KeyEnterReceiver::imagePasted, this, &Conversation::onImagePasted);
     connect(&scrollResizeCatcher, &Resizer::resized, this, &Conversation::onScrollResize);
     connect(&vis, &VisibilityCatcher::shown, this, &Conversation::onScrollResize);
     connect(&vis, &VisibilityCatcher::hidden, this, &Conversation::onScrollResize);
@@ -77,6 +83,17 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
             this, &Conversation::onTextEditDocSizeChanged);
     
     m_ui->messageEditor->installEventFilter(&ker);
+
+    QMenu *editorMenu = m_ui->messageEditor->createStandardContextMenu();
+    editorMenu->addSeparator();
+    QAction* pasteImageAction = new QAction(tr("Paste Image"), this);
+    connect(pasteImageAction, &QAction::triggered, this, &Conversation::onImagePasted);
+    editorMenu->addAction(pasteImageAction);
+    m_ui->messageEditor->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_ui->messageEditor, &QTextEdit::customContextMenuRequested, this, [this, pasteImageAction, editorMenu](const QPoint &pos) {
+        pasteImageAction->setEnabled(Conversation::checkClipboardImage());
+        editorMenu->exec(this->m_ui->messageEditor->mapToGlobal(pos));
+    });
     
     QScrollBar* vs = m_ui->scrollArea->verticalScrollBar();
     m_ui->scrollArea->setWidget(line);
@@ -204,8 +221,18 @@ bool KeyEnterReceiver::eventFilter(QObject* obj, QEvent* event)
                 }
             }
         }
+        if (k == Qt::Key_V && key->modifiers() & Qt::CTRL) {
+            if (Conversation::checkClipboardImage()) {
+                emit imagePasted();
+                return true;
+            }
+        }
     }
     return QObject::eventFilter(obj, event);
+}
+
+bool Conversation::checkClipboardImage() {
+    return !QApplication::clipboard()->image().isNull();
 }
 
 QString Conversation::getPalResource() const
@@ -239,6 +266,20 @@ void Conversation::onEnterPressed()
     }
 }
 
+void Conversation::onImagePasted()
+{
+    QImage image = QApplication::clipboard()->image();
+    if (image.isNull()) {
+        return;
+    }
+    QTemporaryFile *tempFile = new QTemporaryFile(QDir::tempPath() + QStringLiteral("/squawk_img_attach_XXXXXX.png"), QApplication::instance());
+    tempFile->open();
+    image.save(tempFile, "PNG");
+    tempFile->close();
+    qDebug() << "image on paste temp file: " << tempFile->fileName();
+    addAttachedFile(tempFile->fileName());
+}
+
 void Conversation::appendMessageWithUpload(const Shared::Message& data, const QString& path)
 {
     line->appendMessageWithUploadNoSiganl(data, path);
@@ -247,18 +288,28 @@ void Conversation::appendMessageWithUpload(const Shared::Message& data, const QS
 void Conversation::onMessagesResize(int amount)
 {
     manualSliderChange = true;
+    qDebug() << "Scroll: " << scroll;
     switch (scroll) {
         case down:
+            qDebug() << "setValue 1: " << m_ui->scrollArea->verticalScrollBar()->maximum();
             m_ui->scrollArea->verticalScrollBar()->setValue(m_ui->scrollArea->verticalScrollBar()->maximum());
             break;
         case keep: {
             int max = m_ui->scrollArea->verticalScrollBar()->maximum();
             int value = m_ui->scrollArea->verticalScrollBar()->value() + amount;
             m_ui->scrollArea->verticalScrollBar()->setValue(value);
+            qDebug() << "setValue 2 max: " << max;
+            qDebug() << "setValue 2 value: " << m_ui->scrollArea->verticalScrollBar()->value();
+            qDebug() << "setValue 2 amount: " << amount;
+            qDebug() << "setValue 2: " << value;
+            qDebug() << "isMax: " << (value > max);
             
-            if (value == max) {
+            if (value > max) {
+                qDebug() << "setValue 2 scroll = down";
                 scroll = down;
+                m_ui->scrollArea->verticalScrollBar()->setValue(max);
             } else {
+                qDebug() << "setValue 2 scroll = nothing";
                 scroll = nothing;
             }
         }
@@ -273,14 +324,17 @@ void Conversation::onSliderValueChanged(int value)
 {
     if (!manualSliderChange) {
         if (value == m_ui->scrollArea->verticalScrollBar()->maximum()) {
+            qDebug() << "onSliderValueChanged: scroll = down";
             scroll = down;
         } else {
             if (!requestingHistory && value == 0) {
                 requestingHistory = true;
                 line->showBusyIndicator();
                 emit requestArchive(line->firstMessageId());
+                qDebug() << "onSliderValueChanged: scroll = keep";
                 scroll = keep;
             } else {
+                qDebug() << "onSliderValueChanged: scroll = nothing";
                 scroll = nothing;
             }
         }
@@ -290,6 +344,7 @@ void Conversation::onSliderValueChanged(int value)
 void Conversation::responseArchive(const std::list<Shared::Message> list)
 {
     requestingHistory = false;
+    qDebug() << "responseArchive scroll = keep";
     scroll = keep;
     
     line->hideBusyIndicator();
@@ -304,6 +359,7 @@ void Conversation::showEvent(QShowEvent* event)
         everShown = true;
         line->showBusyIndicator();
         requestingHistory = true;
+        qDebug() << "showEvent scroll = keep";
         scroll = keep;
         emit requestArchive(line->firstMessageId());
     }

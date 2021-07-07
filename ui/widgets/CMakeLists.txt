@@ -21,6 +21,15 @@ set(squawkWidgets_SRC
   joinconference.cpp
 )
 
+qt5_wrap_ui(squawkWidgets_SRC
+  account.ui
+  accounts.ui
+  conversation.ui
+  joinconference.ui
+  newcontact.ui
+  vcard/vcard.ui
+)
+
 # Tell CMake to create the helloworld executable
 add_library(squawkWidgets ${squawkWidgets_SRC})
 

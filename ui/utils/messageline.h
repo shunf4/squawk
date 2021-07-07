@@ -103,6 +103,7 @@ private:
     bool room;
     bool busyShown;
     Progress progress;
+    int lastHeight;
 };
 
 #endif // MESSAGELINE_H
