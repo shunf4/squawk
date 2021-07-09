@@ -84,14 +84,17 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     
     m_ui->messageEditor->installEventFilter(&ker);
 
-    QMenu *editorMenu = m_ui->messageEditor->createStandardContextMenu();
-    editorMenu->addSeparator();
     QAction* pasteImageAction = new QAction(tr("Paste Image"), this);
     connect(pasteImageAction, &QAction::triggered, this, &Conversation::onImagePasted);
-    editorMenu->addAction(pasteImageAction);
+
     m_ui->messageEditor->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_ui->messageEditor, &QTextEdit::customContextMenuRequested, this, [this, pasteImageAction, editorMenu](const QPoint &pos) {
+    connect(m_ui->messageEditor, &QTextEdit::customContextMenuRequested, this, [this, pasteImageAction](const QPoint &pos) {
         pasteImageAction->setEnabled(Conversation::checkClipboardImage());
+
+        QMenu *editorMenu = m_ui->messageEditor->createStandardContextMenu();
+        editorMenu->addSeparator();
+        editorMenu->addAction(pasteImageAction);
+
         editorMenu->exec(this->m_ui->messageEditor->mapToGlobal(pos));
     });
     
