@@ -1,7 +1,7 @@
 image:
     - Visual Studio 2019
-    # - Ubuntu
-    # - macOS
+    - Ubuntu
+    - macOS
 
 branches:
     except:
@@ -47,3 +47,51 @@ for:
       - path: build/deploy
         name: Squawk deployment
     
+-
+  matrix:
+    only:
+      - image: macOS
+
+  environment:
+      QTDIR: $HOME/Qt/5.15.2/clang_64
+
+  install:
+      - brew install lmdb
+      - git submodule update --init --recursive
+
+  before_build:
+      - mkdir build
+      - cd build
+      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$QTDIR -DLMDB_DIR:PATH=/usr/local/opt/lmdb
+
+  build_script:
+      - cmake --build .
+
+  artifacts:
+      - path: build/squawk
+        name: Squawk executable (Qt 5.15.2)
+
+-
+  matrix:
+    only:
+      - image: Ubuntu
+
+  environment:
+      QTDIR: $HOME/Qt/5.15.2/gcc_64
+
+  install:
+      - apt install liblmdb-dev liblmdb0
+      - git submodule update --init --recursive
+
+  before_build:
+      - mkdir build
+      - cd build
+      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$QTDIR -DLMDB_DIR:PATH=/usr/
+
+  build_script:
+      - cmake --build .
+
+  artifacts:
+      - path: build/squawk.exe
+        name: Squawk executable (Qt 5.15.2)
+        
