@@ -24,7 +24,8 @@ for:
       - mkdir lmdb
       - cd lmdb
       - curl -O https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
-      - tar -I zstd -xvf ./mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
+      - C:\mingw-w64\x86_64-8.1.0-posix-seh-rt_v6-rev0\bin\zstd.exe -d ./mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
+      - tar -xvf ./mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar
       - cd ..
       - mkdir build
       - cd build
@@ -52,9 +53,6 @@ for:
     only:
       - image: macOS
 
-  environment:
-      QTDIR: $HOME/Qt/5.15.2/clang_64
-
   install:
       - brew install lmdb
       - git submodule update --init --recursive
@@ -62,7 +60,7 @@ for:
   before_build:
       - mkdir build
       - cd build
-      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$QTDIR -DLMDB_DIR:PATH=/usr/local/opt/lmdb ..
+      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.15.2/clang_64 -DLMDB_DIR:PATH=/usr/local/opt/lmdb ..
 
   build_script:
       - cmake --build .
@@ -76,17 +74,14 @@ for:
     only:
       - image: Ubuntu
 
-  environment:
-      QTDIR: $HOME/Qt/5.15.2/gcc_64
-
   install:
-      - sudo apt install liblmdb-dev liblmdb0
+      - sudo apt install -y liblmdb-dev liblmdb0
       - git submodule update --init --recursive
 
   before_build:
       - mkdir build
       - cd build
-      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$QTDIR -DLMDB_DIR:PATH=/usr/ ..
+      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.15.2/gcc_64 -DLMDB_DIR:PATH=/usr/ ..
 
   build_script:
       - cmake --build .
