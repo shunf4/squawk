@@ -1,0 +1,49 @@
+image:
+    - Visual Studio 2019
+    # - Ubuntu
+    # - macOS
+
+branches:
+    except:
+        - gh-pages
+
+for:
+-
+  martix:
+    only:
+      - image: Visual Studio 2019
+
+  environment:
+      QTDIR: C:\Qt\5.15.2\mingw81_64
+
+  install:
+      - set PATH=%QTDIR%\bin;%PATH%
+      - git submodule update --init --recursive
+
+  before_build:
+      - mkdir lmdb
+      - cd lmdb
+      - wget https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
+      - tar -I zstd -xvf ./mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
+      - cd ..
+      - mkdir build
+      - cd build
+      - cmake -GNinja -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=%QTDIR% -DLMDB_DIR:PATH=../lmdb/mingw64
+
+  build_script:
+      - cmake --build .
+      - mkdir deploy
+      - cd deploy
+      - copy ../squawk.exe ./
+      - copy ../external/qxmpp/src/libqxmpp.dll ./
+      - windeployqt ./squawk.exe
+      - windeployqt ./libqxmpp.dll
+      - cd ../..
+
+  artifacts:
+      - path: build/deploy/squawk.exe
+        name: Squawk executable (Qt 5.15.2)
+
+      - path: build/deploy
+        name: Squawk deployment
+    
