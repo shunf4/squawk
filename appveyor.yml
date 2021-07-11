@@ -9,7 +9,7 @@ branches:
 
 for:
 -
-  martix:
+  matrix:
     only:
       - image: Visual Studio 2019
 
