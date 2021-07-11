@@ -15,9 +15,11 @@ for:
 
   environment:
       QTDIR: C:\Qt\5.15.2\mingw81_64
+      QTTOOLDIR: C:\Qt\Tools\mingw810_64\bin
+      QTNINJADIR: C:\Qt\Tools\Ninja
 
   install:
-      - set PATH=%QTDIR%\bin;%PATH%
+      - set PATH=%QTTOOLDIR%;%QTNINJADIR%;%QTDIR%\bin;%PATH%
       - git submodule update --init --recursive
 
   before_build:
