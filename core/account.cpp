@@ -19,6 +19,7 @@
 #include "account.h"
 #include <QXmppMessage.h>
 #include <QDateTime>
+#include "shared/utils.h"
 
 using namespace Core;
 
@@ -405,9 +406,13 @@ void Core::Account::sendMessage(const Shared::Message& data) {
 void Core::Account::sendMessage(const Shared::Message& data, const QString& path) {
     mh->sendMessage(data, path);}
 
-void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMessage& msg)
+void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMessage& msgConst)
 {
-    if (msg.id().size() > 0 && (msg.body().size() > 0 || msg.outOfBandUrl().size() > 0)) {
+    QXmppMessage msg(msgConst);
+    if (msg.id().size() == 0) {
+        msg.setId(Shared::generateUUID() + QStringLiteral("-squawkgenerated"));
+    }
+    if ((msg.body().size() > 0 || msg.outOfBandUrl().size() > 0)) {
         std::map<QString, QString>::const_iterator itr = archiveQueries.find(queryId);
         if (itr != archiveQueries.end()) {
             QString jid = itr->second;
