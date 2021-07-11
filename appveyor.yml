@@ -24,7 +24,7 @@ for:
       - mkdir lmdb
       - cd lmdb
       - choco install --yes zstandard imagemagick.app
-      - curl -O https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
+      - curl -OL https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
       - zstd -d ./mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
       - tar -xvf ./mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar
       - cd ..
@@ -76,6 +76,7 @@ for:
       - image: Ubuntu
 
   install:
+      - sudo apt update
       - sudo apt install -y liblmdb-dev liblmdb0 imagemagick mesa-common-dev libglu1-mesa-dev
       - git submodule update --init --recursive
 
