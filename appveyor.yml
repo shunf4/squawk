@@ -26,6 +26,8 @@ for:
       - mkdir lmdb
       - cd lmdb
       - choco install --yes zstandard imagemagick.app
+      - choco install --yes --version=7.1.0.2 imagemagick.app
+      - set PATH=C:\Program Files\ImageMagick-7.1.0-Q16-HDRI;%PATH%
       - curl -OL https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
       - zstd -d ./mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
       - tar -xvf ./mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar
