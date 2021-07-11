@@ -34,7 +34,7 @@ for:
       - cd ..
       - mkdir build
       - cd build
-      - cmake -GNinja -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=%QTDIR% -DLMDB_DIR:PATH=../lmdb/mingw64 ..
+      - cmake -GNinja -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=%QTDIR% -DLMDB_DIR:PATH=C:/projects/squawk/lmdb/mingw64 ..
 
   build_script:
       - cmake --build .
@@ -73,6 +73,8 @@ for:
   artifacts:
       - path: build/squawk
         name: Squawk executable (Qt 5.15.2)
+      - path: build/external/qxmpp/src/
+        name: QXMPP
 
 -
   matrix:
@@ -93,5 +95,7 @@ for:
       - cmake --build .
 
   artifacts:
-      - path: build/squawk.exe
+      - path: build/squawk
         name: Squawk executable (Qt 5.15.2)
+      - path: build/external/qxmpp/src/
+        name: QXMPP
