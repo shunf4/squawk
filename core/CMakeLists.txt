@@ -11,7 +11,7 @@ find_package(Qt5Xml CONFIG REQUIRED)
 find_path(LMDB_INCLUDE_DIR NAMES  lmdb.h PATHS "${LMDB_DIR}/include")
 
 if (UNIX AND NOT APPLE)
-    find_library(LMDB_LIBRARIES NAMES liblmdb PATHS ${LMDB_DIR})
+    find_library(LMDB_LIBRARIES NAMES liblmdb.a PATHS ${LMDB_DIR})
 else (UNIX AND NOT APPLE)
     set(LMDB_LIBRARIES "${LMDB_DIR}/lib/liblmdb.a")
 endif (UNIX AND NOT APPLE)
