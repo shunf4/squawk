@@ -40,11 +40,11 @@ for:
       - cmake --build .
       - mkdir deploy
       - cd deploy
-      - copy ../squawk.exe ./
-      - copy ../external/qxmpp/src/libqxmpp.dll ./
-      - windeployqt ./squawk.exe
-      - windeployqt ./libqxmpp.dll
-      - cd ../..
+      - copy ..\squawk.exe .\
+      - copy ..\external/qxmpp/src/libqxmpp.dll .\
+      - windeployqt .\squawk.exe
+      - windeployqt .\libqxmpp.dll
+      - cd ..\..
 
   artifacts:
       - path: build/deploy/squawk.exe
