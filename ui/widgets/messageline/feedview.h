@@ -73,6 +73,7 @@ protected:
 private:
     bool tryToCalculateGeometriesWithNoScrollbars(const QStyleOptionViewItem& option, const QAbstractItemModel* model, uint32_t totalHeight);
     void positionProgress();
+    void drawDateDevider(int top, const QDateTime& date, QPainter& painter);
     
 private:
     struct Hint {
@@ -87,6 +88,8 @@ private:
     bool clearWidgetsMode;
     Models::MessageFeed::SyncState modelState;
     Progress progress;
+    QFont dividerFont;
+    QFontMetrics dividerMetrics;
     
     static const std::set<int> geometryChangingRoles;
     

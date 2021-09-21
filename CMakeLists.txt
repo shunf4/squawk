@@ -22,6 +22,16 @@ option(WITH_KIO "Build KIO support module" ON)
 # Dependencies
 ## Qt
 find_package(Qt5 COMPONENTS Widgets DBus Gui Xml Network Core REQUIRED)
+find_package(Boost COMPONENTS)
+
+target_include_directories(squawk PRIVATE ${Boost_INCLUDE_DIRS})
+target_include_directories(squawk PRIVATE ${Qt5_INCLUDE_DIRS})
+target_include_directories(squawk PRIVATE ${Qt5Widgets_INCLUDE_DIRS})
+target_include_directories(squawk PRIVATE ${Qt5DBus_INCLUDE_DIRS})
+target_include_directories(squawk PRIVATE ${Qt5Gui_INCLUDE_DIRS})
+target_include_directories(squawk PRIVATE ${Qt5Xml_INCLUDE_DIRS})
+target_include_directories(squawk PRIVATE ${Qt5Network_INCLUDE_DIRS})
+target_include_directories(squawk PRIVATE ${Qt5Core_INCLUDE_DIRS})
 
 ## QXmpp
 if (SYSTEM_QXMPP)

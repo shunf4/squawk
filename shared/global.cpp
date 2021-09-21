@@ -95,7 +95,7 @@ Shared::Global::Global():
     }
     
     instance = this;
-    
+
 #ifdef WITH_KIO
     openFileManagerWindowJob.load();
     if (openFileManagerWindowJob.isLoaded()) {

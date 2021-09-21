@@ -29,6 +29,7 @@
 constexpr int maxMessageHeight = 10000;
 constexpr int approximateSingleMessageHeight = 20;
 constexpr int progressSize = 70;
+constexpr int dateDeviderMargin = 10;
 
 const std::set<int> FeedView::geometryChangingRoles = {
     Models::MessageFeed::Attach,
@@ -46,7 +47,9 @@ FeedView::FeedView(QWidget* parent):
     specialModel(false),
     clearWidgetsMode(false),
     modelState(Models::MessageFeed::complete),
-    progress()
+    progress(),
+    dividerFont(),
+    dividerMetrics(dividerFont)
 {
     horizontalScrollBar()->setRange(0, 0);
     verticalScrollBar()->setSingleStep(approximateSingleMessageHeight);
@@ -56,6 +59,15 @@ FeedView::FeedView(QWidget* parent):
     
     progress.setParent(viewport());
     progress.resize(progressSize, progressSize);
+
+    dividerFont = getFont();
+    dividerFont.setBold(true);
+    float ndps = dividerFont.pointSizeF();
+    if (ndps != -1) {
+        dividerFont.setPointSizeF(ndps * 1.2);
+    } else {
+        dividerFont.setPointSize(dividerFont.pointSize() + 2);
+    }
 }
 
 FeedView::~FeedView()
@@ -187,8 +199,16 @@ void FeedView::updateGeometries()
         
         hints.clear();
         uint32_t previousOffset = 0;
+        QDateTime lastDate;
         for (int i = 0, size = m->rowCount(); i < size; ++i) {
             QModelIndex index = m->index(i, 0, rootIndex());
+            QDateTime currentDate = index.data(Models::MessageFeed::Date).toDateTime();
+            if (i > 0) {
+                if (currentDate.daysTo(lastDate) > 0) {
+                    previousOffset += dividerMetrics.height() + dateDeviderMargin * 2;
+                }
+            }
+            lastDate = currentDate;
             int height = itemDelegate(index)->sizeHint(option, index).height();
             hints.emplace_back(Hint({
                 false,
@@ -222,8 +242,16 @@ bool FeedView::tryToCalculateGeometriesWithNoScrollbars(const QStyleOptionViewIt
 {
     uint32_t previousOffset = 0;
     bool success = true;
+    QDateTime lastDate;
     for (int i = 0, size = m->rowCount(); i < size; ++i) {
         QModelIndex index = m->index(i, 0, rootIndex());
+        QDateTime currentDate = index.data(Models::MessageFeed::Date).toDateTime();
+        if (i > 0) {
+            if (currentDate.daysTo(lastDate) > 0) {
+                previousOffset += dateDeviderMargin * 2 + dividerMetrics.height();
+            }
+        }
+        lastDate = currentDate;
         int height = itemDelegate(index)->sizeHint(option, index).height();
         
         if (previousOffset + height > totalHeight) {
@@ -266,6 +294,7 @@ void FeedView::paintEvent(QPaintEvent* event)
             toRener.emplace_back(m->index(i, 0, rootIndex()));
         }
         if (y1 > relativeY1) {
+            inZone = false;
             break;
         }
     }
@@ -282,11 +311,32 @@ void FeedView::paintEvent(QPaintEvent* event)
         }
     }
     
+    QDateTime lastDate;
+    bool first = true;
     for (const QModelIndex& index : toRener) {
+        QDateTime currentDate = index.data(Models::MessageFeed::Date).toDateTime();
         option.rect = visualRect(index);
+        if (first) {
+            int ind = index.row() - 1;
+            if (ind > 0) {
+                QDateTime underDate = m->index(ind, 0, rootIndex()).data(Models::MessageFeed::Date).toDateTime();
+                if (currentDate.daysTo(underDate) > 0) {
+                    drawDateDevider(option.rect.bottom(), underDate, painter);
+                }
+            }
+            first = false;
+        }
         bool mouseOver = option.rect.contains(cursor) && vp->rect().contains(cursor);
         option.state.setFlag(QStyle::State_MouseOver, mouseOver);
         itemDelegate(index)->paint(&painter, option, index);
+
+        if (!lastDate.isNull() && currentDate.daysTo(lastDate) > 0) {
+            drawDateDevider(option.rect.bottom(), lastDate, painter);
+        }
+        lastDate = currentDate;
+    }
+    if (!lastDate.isNull() && inZone) {     //if after drawing all messages there is still space
+        drawDateDevider(option.rect.bottom(), lastDate, painter);
     }
     
     if (clearWidgetsMode && specialDelegate) {
@@ -298,6 +348,16 @@ void FeedView::paintEvent(QPaintEvent* event)
     if (event->rect().height() == vp->height()) {
         // draw the blurred drop shadow...
     }
+}
+
+void FeedView::drawDateDevider(int top, const QDateTime& date, QPainter& painter)
+{
+    int divisionHeight = dateDeviderMargin * 2 + dividerMetrics.height();
+    QRect r(QPoint(0, top), QSize(viewport()->width(), divisionHeight));
+    painter.save();
+    painter.setFont(dividerFont);
+    painter.drawText(r, Qt::AlignCenter, date.toString("d MMMM"));
+    painter.restore();
 }
 
 void FeedView::verticalScrollbarValueChanged(int value)

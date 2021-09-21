@@ -130,12 +130,13 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     }
     messageSize.rheight() += nickMetrics.lineSpacing();
     messageSize.rheight() += dateMetrics.height();
+    QString dateString = data.date.toLocalTime().toString("hh:mm");
     if (messageSize.width() < opt.rect.width()) {
         QSize senderSize = nickMetrics.boundingRect(messageRect, 0, data.sender).size();
         if (senderSize.width() > messageSize.width()) {
             messageSize.setWidth(senderSize.width());
         }
-        QSize dateSize = dateMetrics.boundingRect(messageRect, 0, data.date.toLocalTime().toString()).size();
+        QSize dateSize = dateMetrics.boundingRect(messageRect, 0, dateString).size();
         int addition = 0;
         
         if (data.correction.corrected) {
@@ -211,7 +212,7 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     QColor q = painter->pen().color();
     q.setAlpha(180);
     painter->setPen(q);
-    painter->drawText(opt.rect, opt.displayAlignment, data.date.toLocalTime().toString(), &rect);
+    painter->drawText(opt.rect, opt.displayAlignment, dateString, &rect);
     int currentY = opt.rect.y();
     if (data.sentByMe) {
         QLabel* statusIcon = getStatusIcon(data);
