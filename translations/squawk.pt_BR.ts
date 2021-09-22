@@ -5,6 +5,7 @@
     <name>Account</name>
     <message>
         <source>Account</source>
+        <translatorcomment>Window header</translatorcomment>
         <translation>Conta</translation>
     </message>
     <message>
@@ -61,6 +62,7 @@
     </message>
     <message>
         <source>QXmpp</source>
+        <translatorcomment>Default resource</translatorcomment>
         <translation>QXmpp</translation>
     </message>
     <message>
@@ -384,7 +386,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Error uploading file: %1
 You can try again</source>
-        <translation>Error fazendo upload do arquivo: %1
+        <translation>Error fazendo upload do arquivo:
+%1
 Você pode tentar novamente</translation>
     </message>
     <message>
@@ -394,7 +397,8 @@ Você pode tentar novamente</translation>
     <message>
         <source>Error downloading file: %1
 You can try again</source>
-        <translation>Erro baixando arquivo: %1
+        <translation>Erro baixando arquivo:
+%1
 Você pode tentar novamente</translation>
     </message>
     <message>
@@ -582,7 +586,8 @@ or leave it empty for the contact
 to be displayed as %1</source>
         <translation>Digite um novo nome para %1
 ou o deixe em branco para o contato
-ser exibido com %1</translation>
+ser exibido com
+%1</translation>
     </message>
     <message>
         <source>Renaming %1</source>
