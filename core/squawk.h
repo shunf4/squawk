@@ -118,6 +118,7 @@ private:
     Shared::Availability state;
     NetworkAccess network;
     uint8_t waitingForAccounts;
+    bool isInitialized;
 
 #ifdef WITH_KWALLET
     PSE::KWallet kwallet;

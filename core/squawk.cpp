@@ -27,7 +27,8 @@ Core::Squawk::Squawk(QObject* parent):
     accounts(),
     amap(),
     network(),
-    waitingForAccounts(0)
+    waitingForAccounts(0),
+    isInitialized(false)
 #ifdef WITH_KWALLET
     ,kwallet()
 #endif
@@ -67,37 +68,40 @@ void Core::Squawk::stop()
 {
     qDebug("Stopping squawk core..");
     network.stop();
+
     QSettings settings;
-    settings.beginGroup("core");
-    settings.beginWriteArray("accounts");
-    SimpleCrypt crypto(passwordHash);
-    for (std::deque<Account*>::size_type i = 0; i < accounts.size(); ++i) {
-        settings.setArrayIndex(i);
-        Account* acc = accounts[i];
-        
-        Shared::AccountPassword ap = acc->getPasswordType();
-        QString password;
-        
-        switch (ap) {
-            case Shared::AccountPassword::plain:
-                password = acc->getPassword();
-                break;
-            case Shared::AccountPassword::jammed:
-                password = crypto.encryptToString(acc->getPassword());
-                break;
-            default:
-                break;
+    if (isInitialized) {
+        settings.beginGroup("core");
+        settings.beginWriteArray("accounts");
+        SimpleCrypt crypto(passwordHash);
+        for (std::deque<Account*>::size_type i = 0; i < accounts.size(); ++i) {
+            settings.setArrayIndex(i);
+            Account* acc = accounts[i];
+
+            Shared::AccountPassword ap = acc->getPasswordType();
+            QString password;
+
+            switch (ap) {
+                case Shared::AccountPassword::plain:
+                    password = acc->getPassword();
+                    break;
+                case Shared::AccountPassword::jammed:
+                    password = crypto.encryptToString(acc->getPassword());
+                    break;
+                default:
+                    break;
+            }
+
+            settings.setValue("name", acc->getName());
+            settings.setValue("server", acc->getServer());
+            settings.setValue("login", acc->getLogin());
+            settings.setValue("password", password);
+            settings.setValue("resource", acc->getResource());
+            settings.setValue("passwordType", static_cast<int>(ap));
         }
-        
-        settings.setValue("name", acc->getName());
-        settings.setValue("server", acc->getServer());
-        settings.setValue("login", acc->getLogin());
-        settings.setValue("password", password);
-        settings.setValue("resource", acc->getResource());
-        settings.setValue("passwordType", static_cast<int>(ap));
+        settings.endArray();
+        settings.endGroup();
     }
-    settings.endArray();
-    settings.endGroup();
     
     settings.sync();
     
@@ -109,6 +113,7 @@ void Core::Squawk::start()
     qDebug("Starting squawk core..");
     
     readSettings();
+    isInitialized = true;
     network.start();
 }
 

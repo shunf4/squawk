@@ -150,11 +150,12 @@ protected:
     QWidget* overlay;
     W::Order<Badge*, Badge::Comparator> filesToAttach;
     Scroll scroll;
-    bool manualSliderChange;
     bool requestingHistory;
     bool everShown;
     bool tsb;           //transient scroll bars
     QAction *pasteImageAction;
+    int distToBottom;
+    bool justFinishedRequestingArchive;
 };
 
 #endif // CONVERSATION_H

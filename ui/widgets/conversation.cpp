@@ -51,11 +51,12 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     overlay(new QWidget()),
     filesToAttach(),
     scroll(down),
-    manualSliderChange(false),
     requestingHistory(false),
     everShown(false),
     tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1),
-    pasteImageAction(nullptr)
+    pasteImageAction(nullptr),
+    distToBottom(0),
+    justFinishedRequestingArchive(false)
 {
     m_ui->setupUi(this);
     
@@ -101,6 +102,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     QScrollBar* vs = m_ui->scrollArea->verticalScrollBar();
     m_ui->scrollArea->setWidget(line);
     vs->installEventFilter(&vis);
+    vs->setValue(vs->maximum());
     
     line->setAutoFillBackground(false);
     if (testAttribute(Qt::WA_TranslucentBackground)) {
@@ -290,56 +292,24 @@ void Conversation::appendMessageWithUpload(const Shared::Message& data, const QS
 
 void Conversation::onMessagesResize(int amount)
 {
-    manualSliderChange = true;
-    qDebug() << "Scroll: " << scroll;
-    switch (scroll) {
-        case down:
-            qDebug() << "setValue 1: " << m_ui->scrollArea->verticalScrollBar()->maximum();
-            m_ui->scrollArea->verticalScrollBar()->setValue(m_ui->scrollArea->verticalScrollBar()->maximum());
-            break;
-        case keep: {
-            int max = m_ui->scrollArea->verticalScrollBar()->maximum();
-            int value = m_ui->scrollArea->verticalScrollBar()->value() + amount;
-            m_ui->scrollArea->verticalScrollBar()->setValue(value);
-            qDebug() << "setValue 2 max: " << max;
-            qDebug() << "setValue 2 value: " << m_ui->scrollArea->verticalScrollBar()->value();
-            qDebug() << "setValue 2 amount: " << amount;
-            qDebug() << "setValue 2: " << value;
-            qDebug() << "isMax: " << (value > max);
-            
-            if (value > max) {
-                qDebug() << "setValue 2 scroll = down";
-                scroll = down;
-                m_ui->scrollArea->verticalScrollBar()->setValue(max);
-            } else {
-                qDebug() << "setValue 2 scroll = nothing";
-                scroll = nothing;
-            }
-        }
-            break;
-        default:
-            break;
-    }
-    manualSliderChange = false;
+    int newScrollVal = std::max(m_ui->scrollArea->verticalScrollBar()->maximum() - distToBottom, 0);
+
+    m_ui->scrollArea->verticalScrollBar()->setValue(newScrollVal);
 }
 
 void Conversation::onSliderValueChanged(int value)
 {
-    if (!manualSliderChange) {
-        if (value == m_ui->scrollArea->verticalScrollBar()->maximum()) {
-            qDebug() << "onSliderValueChanged: scroll = down";
-            scroll = down;
-        } else {
-            if (!requestingHistory && value == 0) {
-                requestingHistory = true;
-                line->showBusyIndicator();
-                emit requestArchive(line->firstMessageId());
-                qDebug() << "onSliderValueChanged: scroll = keep";
-                scroll = keep;
-            } else {
-                qDebug() << "onSliderValueChanged: scroll = nothing";
-                scroll = nothing;
-            }
+    distToBottom = std::max(m_ui->scrollArea->verticalScrollBar()->maximum() - value, 0);
+
+    if (value == 0) {
+        if (!justFinishedRequestingArchive && !requestingHistory) {
+            requestingHistory = true;
+            line->showBusyIndicator();
+            emit requestArchive(line->firstMessageId());
+        }
+    } else {
+        if (justFinishedRequestingArchive) {
+            justFinishedRequestingArchive = false;
         }
     }
 }
@@ -349,11 +319,12 @@ void Conversation::responseArchive(const std::list<Shared::Message> list)
     requestingHistory = false;
     qDebug() << "responseArchive scroll = keep";
     scroll = keep;
-    
+
     line->hideBusyIndicator();
     for (std::list<Shared::Message>::const_iterator itr = list.begin(), end = list.end(); itr != end; ++itr) {
         addMessage(*itr);
     }
+    justFinishedRequestingArchive = true;
 }
 
 void Conversation::showEvent(QShowEvent* event)
@@ -362,7 +333,6 @@ void Conversation::showEvent(QShowEvent* event)
         everShown = true;
         line->showBusyIndicator();
         requestingHistory = true;
-        qDebug() << "showEvent scroll = keep";
         scroll = keep;
         emit requestArchive(line->firstMessageId());
     }

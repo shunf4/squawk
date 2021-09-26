@@ -466,6 +466,11 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
         qDebug() << "Requesting remote history from empty for" << contact->jid;
     } else {
         if (before.size() > 0) {
+            if (before.endsWith("-squawkgenerated")) {
+                qDebug() << "Can't query history before an squawk-generated ID, making fake empty result";
+                contact->flushMessagesToArchive(true, before, before);
+                return;
+            }
             query.setBefore(before);
         }
         if (after.size() > 0) {     //there is some strange behavior of ejabberd server returning empty result set
@@ -474,6 +479,20 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
             } else {
                 query.setAfter(after);
             }
+
+            if (after.endsWith("-squawkgenerated")) {
+                qDebug() << "Can't query history after an squawk-generated ID, making fake empty result";
+                contact->flushMessagesToArchive(true, after, after);
+                return;
+            }
+        }
+        if (before.size() == 0 && after.size() == 0) {
+            // https://xmpp.org/extensions/xep-0313.html#sect-idm46556759682304
+            // To request the page at the end of the archive
+            // (i.e. the most recent messages), include just an
+            // empty <before/> element in the RSM part of the query.
+            // As defined by RSM, this will return the last page of the archive.
+            query.setBefore("");
         }
         qDebug() << "Remote query for" << contact->jid << "from" << after << ", to" << before;
     }

@@ -148,10 +148,13 @@ void Core::RosterItem::performRequest(int count, const QString& before)
     
     switch (archiveState) {
         case empty:
+            qDebug() << "performRequest: empty";
             emit needHistory(before, "");
             break;
         case chunk:
+            qDebug() << "performRequest: chunk";
         case beginning: {
+            qDebug() << "performRequest: chunk/beginning";
             if (count != -1) {
                 requestCache.emplace_back(requestedCount, before);
                 requestedCount = -1;
@@ -160,7 +163,8 @@ void Core::RosterItem::performRequest(int count, const QString& before)
             emit needHistory("", getId(msg), msg.getTime());
         }
             break;
-        case end: 
+        case end:
+            qDebug() << "performRequest: end";
             if (count != -1) {
                 QString lBefore;
                 if (responseCache.size() > 0) {
@@ -210,6 +214,7 @@ void Core::RosterItem::performRequest(int count, const QString& before)
             }
             break;
         case complete:
+            qDebug() << "performRequest: complete";
             try {
                 std::list<Shared::Message> arc = archive->getBefore(requestedCount - responseCache.size(), before);
                 responseCache.insert(responseCache.begin(), arc.begin(), arc.end());

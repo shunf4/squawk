@@ -38,8 +38,7 @@ MessageLine::MessageLine(bool p_room, QWidget* parent):
     downloading(),
     room(p_room),
     busyShown(false),
-    progress(),
-    lastHeight(0)
+    progress()
 {
     setContentsMargins(0, 0, 0, 0);
     layout->setContentsMargins(0, 0, 0, 0);
@@ -312,10 +311,7 @@ void MessageLine::resizeEvent(QResizeEvent* event)
 {
     QWidget::resizeEvent(event);
 
-    qDebug() << "Resize(unordered): " << event->size().height() << event->oldSize().height();
-    qDebug() << "Resize: " << height() << lastHeight;
-    emit resize(height() - lastHeight);
-    lastHeight = height();
+    emit resize(height() - event->oldSize().height());
 }
 
 
