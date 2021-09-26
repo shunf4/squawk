@@ -41,7 +41,7 @@ for:
       - mkdir deploy
       - cd deploy
       - copy ..\squawk.exe .\
-      - copy ..\external/qxmpp/src/libqxmpp.dll .\
+      - copy ..\external\qxmpp\src\libqxmpp.dll .\
       - windeployqt .\squawk.exe
       - windeployqt .\libqxmpp.dll
       - cd ..\..
