@@ -84,7 +84,7 @@ private:
             return a->getTime() < b->getTime();
         }
     };
-    typedef std::map<QDateTime, Message*> Order;
+    typedef std::multimap<QDateTime, Message*> Order;
     typedef std::map<QString, Message*> Index;
     Index messageIndex;
     Order messageOrder;

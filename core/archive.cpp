@@ -64,7 +64,7 @@ void Core::Archive::open(const QString& account)
         MDB_txn *txn;
         mdb_txn_begin(environment, NULL, 0, &txn);
         mdb_dbi_open(txn, "main", MDB_CREATE, &main);
-        mdb_dbi_open(txn, "order", MDB_CREATE | MDB_INTEGERKEY, &order);
+        mdb_dbi_open(txn, "order", MDB_CREATE | MDB_INTEGERKEY | MDB_INTEGERDUP | MDB_DUPSORT, &order);
         mdb_dbi_open(txn, "stats", MDB_CREATE, &stats);
         mdb_dbi_open(txn, "avatars", MDB_CREATE, &avatars);
         mdb_dbi_open(txn, "sid", MDB_CREATE, &sid);

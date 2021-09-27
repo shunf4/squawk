@@ -115,12 +115,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
     
     Message* message = new Message(msg, outgoing, sender, aPath);
     
-    std::pair<Order::const_iterator, bool> result = messageOrder.insert(std::make_pair(msg.getTime(), message));
-    if (!result.second) {
-        qDebug() << "Error appending a message into a message list - seems like the time of that message exactly matches the time of some other message, can't put them in order, skipping yet";
-        delete message;
-        return invalid;
-    }
+    auto result = messageOrder.insert(std::make_pair(msg.getTime(), message));
     if (outgoing) {
         myMessages.insert(std::make_pair(id, message));
     } else {
@@ -138,7 +133,7 @@ MessageLine::Position MessageLine::message(const Shared::Message& msg, bool forc
         pItr->second.insert(std::make_pair(id, message));
     }
     messageIndex.insert(std::make_pair(id, message));
-    unsigned long index = std::distance<Order::const_iterator>(messageOrder.begin(), result.first);   //need to make with binary indexed tree
+    unsigned long index = std::distance<Order::const_iterator>(messageOrder.begin(), result);   //need to make with binary indexed tree
     Position res = invalid;
     if (index == 0) {
         res = beggining;
