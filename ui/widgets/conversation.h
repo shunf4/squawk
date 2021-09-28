@@ -156,6 +156,7 @@ protected:
     QAction *pasteImageAction;
     int distToBottom;
     bool justFinishedRequestingArchive;
+    bool keepScrollPosition;
 };
 
 #endif // CONVERSATION_H

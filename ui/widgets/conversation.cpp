@@ -56,7 +56,8 @@ Conversation::Conversation(bool muc, Models::Account* acc, const QString pJid, c
     tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1),
     pasteImageAction(nullptr),
     distToBottom(0),
-    justFinishedRequestingArchive(false)
+    justFinishedRequestingArchive(false),
+    keepScrollPosition(true)
 {
     m_ui->setupUi(this);
     
@@ -187,9 +188,6 @@ QString Conversation::getJid() const
 
 void Conversation::addMessage(const Shared::Message& data)
 {
-    int pos = m_ui->scrollArea->verticalScrollBar()->sliderPosition();
-    int max = m_ui->scrollArea->verticalScrollBar()->maximum();
-    
     MessageLine::Position place = line->message(data);
     if (place == MessageLine::invalid) {
         return;
@@ -292,9 +290,10 @@ void Conversation::appendMessageWithUpload(const Shared::Message& data, const QS
 
 void Conversation::onMessagesResize(int amount)
 {
-    int newScrollVal = std::max(m_ui->scrollArea->verticalScrollBar()->maximum() - distToBottom, 0);
-
-    m_ui->scrollArea->verticalScrollBar()->setValue(newScrollVal);
+    if (!keepScrollPosition || distToBottom < 5) {
+        int newScrollVal = std::max(m_ui->scrollArea->verticalScrollBar()->maximum() - distToBottom, 0);
+        m_ui->scrollArea->verticalScrollBar()->setValue(newScrollVal);
+    }
 }
 
 void Conversation::onSliderValueChanged(int value)
@@ -317,14 +316,15 @@ void Conversation::onSliderValueChanged(int value)
 void Conversation::responseArchive(const std::list<Shared::Message> list)
 {
     requestingHistory = false;
-    qDebug() << "responseArchive scroll = keep";
     scroll = keep;
+    keepScrollPosition = false;
 
     line->hideBusyIndicator();
     for (std::list<Shared::Message>::const_iterator itr = list.begin(), end = list.end(); itr != end; ++itr) {
         addMessage(*itr);
     }
     justFinishedRequestingArchive = true;
+    keepScrollPosition = true;
 }
 
 void Conversation::showEvent(QShowEvent* event)
