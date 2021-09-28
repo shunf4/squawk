@@ -290,6 +290,7 @@ void Conversation::appendMessageWithUpload(const Shared::Message& data, const QS
 
 void Conversation::onMessagesResize(int amount)
 {
+    qDebug() << "onMessagesResize" << amount << line->height();
     if (!keepScrollPosition || distToBottom < 5) {
         int newScrollVal = std::max(m_ui->scrollArea->verticalScrollBar()->maximum() - distToBottom, 0);
         m_ui->scrollArea->verticalScrollBar()->setValue(newScrollVal);
@@ -318,13 +319,18 @@ void Conversation::responseArchive(const std::list<Shared::Message> list)
     requestingHistory = false;
     scroll = keep;
     keepScrollPosition = false;
+    qDebug() << "keepScrollPosition false";
 
     line->hideBusyIndicator();
     for (std::list<Shared::Message>::const_iterator itr = list.begin(), end = list.end(); itr != end; ++itr) {
         addMessage(*itr);
     }
     justFinishedRequestingArchive = true;
-    keepScrollPosition = true;
+    distToBottom += 20;
+    QTimer::singleShot(200, [this]{
+        qDebug() << "keepScrollPosition true";
+        keepScrollPosition = true;
+    });
 }
 
 void Conversation::showEvent(QShowEvent* event)

@@ -1,0 +1,1 @@
+To enable log on QXmpp, go to account.cpp and uncomment QXmppLogger.
