@@ -326,7 +326,10 @@ void Conversation::responseArchive(const std::list<Shared::Message> list)
         addMessage(*itr);
     }
     justFinishedRequestingArchive = true;
-    distToBottom += 20;
+    if (!everShown) {
+        distToBottom += 20;
+    }
+    everShown = true;
     QTimer::singleShot(200, [this]{
         qDebug() << "keepScrollPosition true";
         keepScrollPosition = true;
@@ -336,7 +339,7 @@ void Conversation::responseArchive(const std::list<Shared::Message> list)
 void Conversation::showEvent(QShowEvent* event)
 {
     if (!everShown) {
-        everShown = true;
+        // everShown = true; // We will delay this to responseArchive()
         line->showBusyIndicator();
         requestingHistory = true;
         scroll = keep;
