@@ -326,7 +326,7 @@ void Conversation::responseArchive(const std::list<Shared::Message> list)
         addMessage(*itr);
     }
     justFinishedRequestingArchive = true;
-    if (!everShown) {
+    if (everShown) {
         distToBottom += 20;
     }
     everShown = true;
