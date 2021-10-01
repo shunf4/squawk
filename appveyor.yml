@@ -1,6 +1,6 @@
 image:
     - "Previous Ubuntu2004"
-    - "Previous macOS"
+    - "macOS"
 
 branches:
     except:
@@ -11,7 +11,7 @@ for:
 -
   matrix:
     only:
-      - image: "Previous macOS"
+      - image: "macOS"
 
   install:
       - ls $HOME/Qt
@@ -46,7 +46,7 @@ for:
   before_build:
       - mkdir build
       - cd build
-      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.12.8/gcc_64 -DLMDB_DIR:PATH=/usr/ ..
+      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.12.10/gcc_64 -DLMDB_DIR:PATH=/usr/ ..
 
   build_script:
       - cmake --build .
