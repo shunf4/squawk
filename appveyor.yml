@@ -1,6 +1,5 @@
 image:
-    - "Previous Ubuntu1804"
-    - "Previous macOS-Mojave"
+    - "macos-mojave"
 
 branches:
     except:
@@ -11,7 +10,7 @@ for:
 -
   matrix:
     only:
-      - image: "Previous macOS-Mojave"
+      - image: "macos-mojave"
 
   install:
       - ls $HOME/Qt
