@@ -1,62 +1,17 @@
 image:
-    - Visual Studio 2019
-    - Ubuntu
-    - macOS
+    - "Previous Ubuntu2004"
+    - "Previous macos"
 
 branches:
     except:
         - gh-pages
 
 for:
--
-  matrix:
-    only:
-      - image: Visual Studio 2019
-
-  environment:
-      QTDIR: C:\Qt\5.15.2\mingw81_64
-      QTTOOLDIR: C:\Qt\Tools\mingw810_64\bin
-      QTNINJADIR: C:\Qt\Tools\Ninja
-
-  install:
-      - set PATH=%QTTOOLDIR%;%QTNINJADIR%;%QTDIR%\bin;%PATH%
-      - git submodule update --init --recursive
-
-  before_build:
-      - mkdir lmdb
-      - cd lmdb
-      - choco install --yes zstandard
-      - choco install --yes --version=7.1.0.2 imagemagick.app
-      - set PATH=C:\Program Files\ImageMagick-7.1.0-Q16-HDRI;%PATH%
-      - curl -OL https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
-      - zstd -d ./mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
-      - tar -xvf ./mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar
-      - cd ..
-      - mkdir build
-      - cd build
-      - cmake -GNinja -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=%QTDIR% -DLMDB_DIR:PATH=C:/projects/squawk/lmdb/mingw64 ..
-
-  build_script:
-      - cmake --build .
-      - mkdir deploy
-      - cd deploy
-      - copy ..\squawk.exe .\
-      - copy ..\external\qxmpp\src\libqxmpp.dll .\
-      - windeployqt .\squawk.exe
-      - windeployqt .\libqxmpp.dll
-      - cd ..\..
-
-  artifacts:
-      - path: build/deploy/squawk.exe
-        name: Squawk executable (Qt 5.15.2)
-
-      - path: build/deploy
-        name: Squawk deployment
     
 -
   matrix:
     only:
-      - image: macOS
+      - image: "Previous macos"
 
   install:
       - brew install lmdb imagemagick
@@ -79,7 +34,7 @@ for:
 -
   matrix:
     only:
-      - image: Previous Ubuntu2004
+      - image: "Previous Ubuntu2004"
 
   install:
       - sudo apt update
