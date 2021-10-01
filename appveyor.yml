@@ -30,28 +30,3 @@ for:
         name: Squawk executable (Qt 5.12)
       - path: build/external/qxmpp/src/
         name: QXMPP
-
--
-  matrix:
-    only:
-      - image: "Previous Ubuntu1804"
-
-  install:
-      - ls $HOME/Qt
-      - sudo apt update
-      - sudo apt install -y liblmdb-dev liblmdb0 imagemagick mesa-common-dev libglu1-mesa-dev
-      - git submodule update --init --recursive
-
-  before_build:
-      - mkdir build
-      - cd build
-      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.12.10/gcc_64 -DLMDB_DIR:PATH=/usr/ ..
-
-  build_script:
-      - cmake --build .
-
-  artifacts:
-      - path: build/squawk
-        name: Squawk executable (Qt 5.12)
-      - path: build/external/qxmpp/src/
-        name: QXMPP
