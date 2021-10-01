@@ -1,6 +1,6 @@
 image:
     - "Previous Ubuntu2004"
-    - "Previous macos"
+    - "Previous macOS"
 
 branches:
     except:
@@ -11,9 +11,10 @@ for:
 -
   matrix:
     only:
-      - image: "Previous macos"
+      - image: "Previous macOS"
 
   install:
+      - ls $HOME/Qt
       - brew install lmdb imagemagick
       - git submodule update --init --recursive
 
@@ -37,6 +38,7 @@ for:
       - image: "Previous Ubuntu2004"
 
   install:
+      - ls $HOME/Qt
       - sudo apt update
       - sudo apt install -y liblmdb-dev liblmdb0 imagemagick mesa-common-dev libglu1-mesa-dev
       - git submodule update --init --recursive
