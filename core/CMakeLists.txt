@@ -28,5 +28,7 @@ target_sources(squawk PRIVATE
   urlstorage.h
   )
 
+target_include_directories(squawk PRIVATE ${LMDB_INCLUDE_DIRS})
+
 add_subdirectory(handlers)
 add_subdirectory(passwordStorageEngines)
