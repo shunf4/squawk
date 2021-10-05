@@ -147,7 +147,6 @@ add_subdirectory(external/simpleCrypt)
 
 target_link_libraries(squawk squawkUI)
 target_link_libraries(squawk squawkCORE)
-target_link_libraries(squawk uuid)
 
 add_dependencies(${CMAKE_PROJECT_NAME} translations)
 
