@@ -1,0 +1,113 @@
+image:
+  - Visual Studio 2019
+  - "Previous Ubuntu1804"
+  - macOS
+
+branches:
+  except:
+    - gh-pages
+
+for:
+-
+  matrix:
+    only:
+      - image: Visual Studio 2019
+
+  environment:
+      QTDIR: C:\Qt\5.15.2\mingw81_64
+      QTTOOLDIR: C:\Qt\Tools\mingw810_64\bin
+      QTNINJADIR: C:\Qt\Tools\Ninja
+
+  install:
+      - set PATH=%QTTOOLDIR%;%QTNINJADIR%;%QTDIR%\bin;%PATH%
+      - git submodule update --init --recursive
+
+  before_build:
+      - choco install --yes zstandard
+      - choco install --yes --version=7.1.0.2 imagemagick.app
+      - set PATH=C:\Program Files\ImageMagick-7.1.0-Q16-HDRI;%PATH%
+
+      - mkdir lmdb
+      - cd lmdb
+      - curl -OL https://mirror.msys2.org/mingw/mingw64/mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
+      - zstd -d ./mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar.zst
+      - tar -xvf ./mingw-w64-x86_64-lmdb-0.9.27-1-any.pkg.tar
+      - cd ..
+
+      - mkdir boost
+      - cd boost
+      - curl -OL https://repo.msys2.org/mingw/mingw64/mingw-w64-x86_64-boost-1.77.0-2-any.pkg.tar.zst
+      - zstd -d ./mingw-w64-x86_64-boost-1.77.0-2-any.pkg.tar.zst
+      - tar -xvf ./mingw-w64-x86_64-boost-1.77.0-2-any.pkg.tar
+      - cd ..
+
+      - mkdir build
+      - cd build
+      - cmake -GNinja -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=%QTDIR% -DLMDB_ROOT_DIR:PATH=C:/projects/squawk/lmdb/mingw64  -DBOOST_ROOT:PATH=C:/projects/squawk/boost/mingw64 ..
+
+  build_script:
+      - cmake --build .
+      - mkdir deploy
+      - cd deploy
+      - copy ..\squawk.exe .\
+      - copy ..\external\qxmpp\src\libqxmpp.dll .\
+      - windeployqt .\squawk.exe
+      - windeployqt .\libqxmpp.dll
+      - cd ..\..
+
+  artifacts:
+      - path: build/deploy/squawk.exe
+        name: Squawk executable (Qt 5.15.2)
+
+      - path: build/deploy
+        name: Squawk deployment
+    
+-
+  matrix:
+    only:
+      - image: macOS
+
+  install:
+      - brew install lmdb imagemagick boost
+      - git submodule update --init --recursive
+
+  before_build:
+      - mkdir build
+      - cd build
+      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.15.2/clang_64 ..
+
+  build_script:
+      - cmake --build .
+
+  artifacts:
+      - path: build/squawk
+        name: Squawk executable (Qt 5.15.2)
+      - path: build/external/qxmpp/src/
+        name: QXMPP
+      - path: build/squawk.app
+        name: Squawk Bundle (Qt 5.15.2)
+
+-
+  matrix:
+    only:
+      - image: "Previous Ubuntu1804"
+
+  install:
+      - ls $HOME/Qt
+      - sudo apt update
+      - sudo apt install -y liblmdb-dev liblmdb0 imagemagick mesa-common-dev libglu1-mesa-dev libboost-all-dev
+      - git submodule update --init --recursive
+
+  before_build:
+      - mkdir build
+      - cd build
+      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.12.10/gcc_64 ..
+
+  build_script:
+      - cmake --build .
+
+  artifacts:
+      - path: build/squawk
+        name: Squawk executable (Qt 5.12)
+      - path: build/external/qxmpp/src/
+        name: QXMPP
