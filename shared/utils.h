@@ -24,9 +24,8 @@
 #include <QColor>
 #include <QRegularExpression>
 
-//#include "KIO/OpenFileManagerWindowJob"
+// #include "KIO/OpenFileManagerWindowJob"
 
-#include <uuid/uuid.h>
 #include <vector> 
 
 namespace Shared {

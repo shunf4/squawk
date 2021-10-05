@@ -1,3 +1,8 @@
+set(SIGNALCATCHER_SOURCE signalcatcher.cpp)
+if(WIN32)
+    set(SIGNALCATCHER_SOURCE signalcatcher_win32.cpp)
+endif(WIN32)
+
 target_sources(squawk PRIVATE
   account.cpp
   account.h
@@ -13,7 +18,7 @@ target_sources(squawk PRIVATE
   networkaccess.h
   rosteritem.cpp
   rosteritem.h
-  signalcatcher.cpp
+  ${SIGNALCATCHER_SOURCE}
   signalcatcher.h
   squawk.cpp
   squawk.h

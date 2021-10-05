@@ -9,7 +9,6 @@
 ### Prerequisites
 
 - QT 5.12 *(lower versions might work but it wasn't tested)*
-- uuid _(usually included in some other package, for example it's ***libutil-linux*** in archlinux)_
 - lmdb
 - CMake 3.0 or higher
 - qxmpp 1.1.0 or higher
@@ -45,7 +44,7 @@ $ git clone https://git.macaw.me/blue/squawk
 $ cd squawk
 $ mkdir build
 $ cd build
-$ cmake ..
+$ cmake .. [-DLMDB_DIR:PATH=/path/to/lmdb]
 $ cmake --build .
 ```
 
@@ -58,7 +57,7 @@ $ git clone --recurse-submodules https://git.macaw.me/blue/squawk
 $ cd squawk
 $ mkdir build
 $ cd build
-$ cmake .. -D SYSTEM_QXMPP=False
+$ cmake .. -D SYSTEM_QXMPP=False [-DLMDB_DIR:PATH=/path/to/lmdb]
 $ cmake --build .
 ```
 

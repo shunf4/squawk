@@ -25,9 +25,14 @@ find_path(LMDB_ROOT_DIR
   )
 
 find_library(LMDB_LIBRARIES
-  NAMES lmdb
+  NAMES liblmdb.a liblmdb.so liblmdb.so.a liblmdb.dll.a # We want lmdb to be static, if possible
   HINTS ${LMDB_ROOT_DIR}/lib
   )
+
+add_library(lmdb UNKNOWN IMPORTED)
+set_target_properties(lmdb PROPERTIES
+    IMPORTED_LOCATION ${LMDB_LIBRARIES}
+    )
 
 find_path(LMDB_INCLUDE_DIRS
   NAMES lmdb.h

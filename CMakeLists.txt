@@ -12,7 +12,13 @@ set(CMAKE_AUTORCC ON)
 include(GNUInstallDirs)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-add_executable(squawk)
+set(WIN32_FLAG "")
+if (WIN32)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        set(WIN32_FLAG WIN32)
+    endif()
+endif(WIN32)
+add_executable(squawk ${WIN32_FLAG})
 target_include_directories(squawk PRIVATE ${CMAKE_SOURCE_DIR})
 
 option(SYSTEM_QXMPP "Use system qxmpp lib" ON)
@@ -97,11 +103,13 @@ endif ()
 
 message("Build type: ${CMAKE_BUILD_TYPE}")
 
+if(CMAKE_COMPILER_IS_GNUCXX)
 target_compile_options(squawk PRIVATE
   "-Wall;-Wextra"
   "$<$<CONFIG:DEBUG>:-g>"
   "$<$<CONFIG:RELEASE>:-O3>"
   )
+endif(CMAKE_COMPILER_IS_GNUCXX)
 
 add_subdirectory(core)
 add_subdirectory(external/simpleCrypt)
@@ -114,3 +122,5 @@ add_subdirectory(ui)
 
 # Install the executable
 install(TARGETS squawk DESTINATION ${CMAKE_INSTALL_BINDIR})
+
+target_sources(squawk PRIVATE ${SQUAWK_WIN_RC} ${APP_ICON_MACOSX})
