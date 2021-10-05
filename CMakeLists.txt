@@ -109,6 +109,12 @@ find_package(LMDB REQUIRED)
 target_link_libraries(squawk PRIVATE Qt5::Core Qt5::Widgets Qt5::DBus Qt5::Network Qt5::Gui Qt5::Xml)
 target_link_libraries(squawk PRIVATE lmdb)
 target_link_libraries(squawk PRIVATE simpleCrypt)
+# Link thread libraries on Linux
+if(UNIX AND NOT APPLE)
+  set(THREADS_PREFER_PTHREAD_FLAG ON)
+  find_package(Threads REQUIRED)
+  target_link_libraries(squawk PRIVATE Threads::Threads)
+endif()
 
 # Build type
 if (NOT CMAKE_BUILD_TYPE)
