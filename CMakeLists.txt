@@ -29,9 +29,9 @@ if (CMAKE_BUILD_TYPE STREQUAL "Release")
   if (APPLE)
     set_target_properties(squawk PROPERTIES
       MACOSX_BUNDLE_EXECUTABLE_NAME "Squawk"
-      MACOSX_BUNDLE_ICON_FILE "" # TODO
+      MACOSX_BUNDLE_ICON_FILE "${MACOSX_BUNDLE_ICON_FILE}" # TODO
       MACOSX_BUNDLE_BUNDLE_NAME "Squawk"
-      MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/CMake/Info.plist.in)
+      MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/MacOSXBundleInfo.plist.in)
   endif(APPLE)
 endif()
 
