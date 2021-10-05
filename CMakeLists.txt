@@ -13,13 +13,27 @@ include(GNUInstallDirs)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 set(WIN32_FLAG "")
-if (WIN32)
-    if (CMAKE_BUILD_TYPE STREQUAL "Release")
-        set(WIN32_FLAG WIN32)
-    endif()
-endif(WIN32)
-add_executable(squawk ${WIN32_FLAG})
+set(MACOSX_BUNDLE_FLAG "")
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+  if (WIN32)
+    set(WIN32_FLAG WIN32)
+  endif(WIN32)
+  if (APPLE)
+    set(MACOSX_BUNDLE_FLAG MACOSX_BUNDLE)
+  endif(APPLE)
+endif()
+
+add_executable(squawk ${WIN32_FLAG} ${MACOSX_BUNDLE_FLAG})
 target_include_directories(squawk PRIVATE ${CMAKE_SOURCE_DIR})
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+  if (APPLE)
+    set_target_properties(squawk PROPERTIES
+      MACOSX_BUNDLE_EXECUTABLE_NAME "Squawk"
+      MACOSX_BUNDLE_ICON_FILE "" # TODO
+      MACOSX_BUNDLE_BUNDLE_NAME "Squawk"
+      MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/CMake/Info.plist.in)
+  endif(APPLE)
+endif()
 
 option(SYSTEM_QXMPP "Use system qxmpp lib" ON)
 option(WITH_KWALLET "Build KWallet support module" ON)
