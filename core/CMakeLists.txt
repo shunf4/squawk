@@ -13,7 +13,7 @@ find_path(LMDB_INCLUDE_DIR NAMES lmdb.h PATHS "${LMDB_DIR}/include")
 
 if (UNIX AND NOT APPLE)
     # Linux
-    find_library(LMDB_LIBRARIES NAMES liblmdb.a PATHS ${LMDB_DIR})
+    find_library(sudo rLMDB_LIBRARIES NAMES liblmdb.a liblmdb.so PATHS ${LMDB_DIR})
     set(THREADS_PREFER_PTHREAD_FLAG ON)
     find_package(Threads REQUIRED)
 else (UNIX AND NOT APPLE)
