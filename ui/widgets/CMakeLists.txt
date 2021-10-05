@@ -21,6 +21,16 @@ set(squawkWidgets_SRC
   joinconference.cpp
 )
 
+# Add to squawkUI_SRC so that the .ui files are displayed in Qt Creator
+qt5_wrap_ui(squawkWidgets_SRC
+  account.ui
+  accounts.ui
+  conversation.ui
+  joinconference.ui
+  newcontact.ui
+  vcard/vcard.ui
+)
+
 # Tell CMake to create the helloworld executable
 add_library(squawkWidgets ${squawkWidgets_SRC})
 
