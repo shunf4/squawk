@@ -52,6 +52,7 @@ target_include_directories(squawk PRIVATE ${Qt5Gui_INCLUDE_DIRS})
 target_include_directories(squawk PRIVATE ${Qt5Xml_INCLUDE_DIRS})
 target_include_directories(squawk PRIVATE ${Qt5Network_INCLUDE_DIRS})
 target_include_directories(squawk PRIVATE ${Qt5Core_INCLUDE_DIRS})
+target_include_directories(squawk PRIVATE ${LMDB_INCLUDE_DIRS})
 
 ## QXmpp
 if (SYSTEM_QXMPP)
