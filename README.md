@@ -14,6 +14,7 @@
 - qxmpp 1.1.0 or higher
 - KDE Frameworks: kwallet (optional)
 - KDE Frameworks: KIO (optional)
+- Boost
 
 ### Getting
 
@@ -33,6 +34,26 @@ You can also clone the repo and build it from source
 
 Squawk requires Qt with SSL enabled. It uses CMake as build system.
 
+Please check the prerequisites and install them before installation.
+
+#### For Windows (Mingw-w64) build
+
+You need Qt for mingw64 (MinGW 64-bit) platform when installing Qt.
+
+The best way to acquire library `lmdb` and `boost` is through Msys2.
+
+First install Msys2, and then install `mingw-w64-x86_64-lmdb` and `mingw-w64-x86_64-boost` by pacman.
+
+Then you need to provide the cmake cache entry when calling cmake for configuration:
+
+```
+cmake .. -D LMDB_ROOT_DIR:PATH=<Msys2 Mingw64 Root Directory> -D BOOST_ROOT:PATH=<Msys2 Mingw64 Root Directory>
+```
+
+`<Msys2 Mingw64 Root Directory>`: e.g. `C:/msys64/mingw64`.
+
+---
+
 There are two ways to build, it depends whether you have qxmpp installed in your system
 
 #### Building with system qxmpp
@@ -44,7 +65,7 @@ $ git clone https://git.macaw.me/blue/squawk
 $ cd squawk
 $ mkdir build
 $ cd build
-$ cmake .. [-DLMDB_DIR:PATH=/path/to/lmdb]
+$ cmake .. [-D LMDB_ROOT_DIR:PATH=...] [-D BOOST_ROOT:PATH=...]
 $ cmake --build .
 ```
 
@@ -57,9 +78,11 @@ $ git clone --recurse-submodules https://git.macaw.me/blue/squawk
 $ cd squawk
 $ mkdir build
 $ cd build
-$ cmake .. -D SYSTEM_QXMPP=False [-DLMDB_DIR:PATH=/path/to/lmdb]
+$ cmake .. -D SYSTEM_QXMPP=False [-D LMDB_ROOT_DIR:PATH=...] [-D BOOST_ROOT:PATH=...]
 $ cmake --build .
 ```
+
+You can always refer to `appveyor.yml` to see how AppVeyor build squawk.
 
 ### List of keys
 
