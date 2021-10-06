@@ -42,7 +42,16 @@ int main(int argc, char *argv[])
     
     QApplication app(argc, argv);
     SignalCatcher sc(&app);
-    
+#ifdef Q_OS_WIN
+    // Windows need an organization name for QSettings to work
+    // https://doc.qt.io/qt-5/qsettings.html#basic-usage
+    {
+        const QString& orgName = QApplication::organizationName();
+        if (orgName.isNull() || orgName.isEmpty()) {
+            QApplication::setOrganizationName("squawk");
+        }
+    }
+#endif
     QApplication::setApplicationName("squawk");
     QApplication::setApplicationDisplayName("Squawk");
     QApplication::setApplicationVersion("0.1.5");

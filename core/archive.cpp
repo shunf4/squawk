@@ -58,7 +58,15 @@ void Core::Archive::open(const QString& account)
         }
         
         mdb_env_set_maxdbs(environment, 5);
-        mdb_env_set_mapsize(environment, 512UL * 1024UL * 1024UL);
+        mdb_env_set_mapsize(environment,
+#ifdef Q_OS_WIN
+                            // On Windows, the file is immediately allocated.
+                            // So we have to limit the size.
+                            80UL * 1024UL * 1024UL
+#else
+                            512UL * 1024UL * 1024UL
+#endif
+        );
         mdb_env_open(environment, path.toStdString().c_str(), 0, 0664);
         
         MDB_txn *txn;
