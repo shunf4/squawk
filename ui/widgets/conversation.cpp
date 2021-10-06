@@ -20,6 +20,7 @@
 #include "ui_conversation.h"
 
 #include <QDebug>
+#include <QClipboard>
 #include <QScrollBar>
 #include <QTimer>
 #include <QFileDialog>
@@ -27,6 +28,9 @@
 #include <unistd.h>
 #include <QAbstractTextDocumentLayout>
 #include <QCoreApplication>
+#include <QTemporaryFile>
+#include <QDir>
+#include <QMenu>
 
 Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, const QString pJid, const QString pRes, QWidget* parent):
     QWidget(parent),
@@ -47,6 +51,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     delegate(new MessageDelegate(this)),
     manualSliderChange(false),
     tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1),
+    pasteImageAction(nullptr),
     shadow(10, 1, Qt::black, this),
     contextMenu(new QMenu())
 {
@@ -75,6 +80,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     statusLabel = m_ui->statusLabel;
     
     connect(&ker, &KeyEnterReceiver::enterPressed, this, &Conversation::onEnterPressed);
+    connect(&ker, &KeyEnterReceiver::imagePasted, this, &Conversation::onImagePasted);
     connect(m_ui->sendButton, &QPushButton::clicked, this, &Conversation::onEnterPressed);
     connect(m_ui->attachButton, &QPushButton::clicked, this, &Conversation::onAttach);
     connect(m_ui->clearButton, &QPushButton::clicked, this, &Conversation::onClearButton);
@@ -82,7 +88,20 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
             this, &Conversation::onTextEditDocSizeChanged);
     
     m_ui->messageEditor->installEventFilter(&ker);
-    
+
+    QAction* pasteImageAction = new QAction(tr("Paste Image"), this);
+    connect(pasteImageAction, &QAction::triggered, this, &Conversation::onImagePasted);
+
+    m_ui->messageEditor->setContextMenuPolicy(Qt::CustomContextMenu);
+    connect(m_ui->messageEditor, &QTextEdit::customContextMenuRequested, this, [this, pasteImageAction](const QPoint &pos) {
+        pasteImageAction->setEnabled(Conversation::checkClipboardImage());
+
+        QMenu *editorMenu = m_ui->messageEditor->createStandardContextMenu();
+        editorMenu->addSeparator();
+        editorMenu->addAction(pasteImageAction);
+
+        editorMenu->exec(this->m_ui->messageEditor->mapToGlobal(pos));
+    });
     
     //line->setAutoFillBackground(false);
     //if (testAttribute(Qt::WA_TranslucentBackground)) {
@@ -183,8 +202,18 @@ bool KeyEnterReceiver::eventFilter(QObject* obj, QEvent* event)
                 }
             }
         }
+        if (k == Qt::Key_V && key->modifiers() & Qt::CTRL) {
+            if (Conversation::checkClipboardImage()) {
+                emit imagePasted();
+                return true;
+            }
+        }
     }
     return QObject::eventFilter(obj, event);
+}
+
+bool Conversation::checkClipboardImage() {
+    return !QApplication::clipboard()->image().isNull();
 }
 
 QString Conversation::getPalResource() const
@@ -216,6 +245,20 @@ void Conversation::onEnterPressed()
         }
          clearAttachedFiles();
     }
+}
+
+void Conversation::onImagePasted()
+{
+    QImage image = QApplication::clipboard()->image();
+    if (image.isNull()) {
+        return;
+    }
+    QTemporaryFile *tempFile = new QTemporaryFile(QDir::tempPath() + QStringLiteral("/squawk_img_attach_XXXXXX.png"), QApplication::instance());
+    tempFile->open();
+    image.save(tempFile, "PNG");
+    tempFile->close();
+    qDebug() << "image on paste temp file: " << tempFile->fileName();
+    addAttachedFile(tempFile->fileName());
 }
 
 void Conversation::onAttach()
