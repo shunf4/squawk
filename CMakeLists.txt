@@ -25,15 +25,6 @@ endif()
 
 add_executable(squawk ${WIN32_FLAG} ${MACOSX_BUNDLE_FLAG})
 target_include_directories(squawk PRIVATE ${CMAKE_SOURCE_DIR})
-if (CMAKE_BUILD_TYPE STREQUAL "Release")
-  if (APPLE)
-    set_target_properties(squawk PROPERTIES
-      MACOSX_BUNDLE_EXECUTABLE_NAME "Squawk"
-      MACOSX_BUNDLE_ICON_FILE "${MACOSX_BUNDLE_ICON_FILE}" # TODO
-      MACOSX_BUNDLE_BUNDLE_NAME "Squawk"
-      MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/MacOSXBundleInfo.plist.in)
-  endif(APPLE)
-endif()
 
 option(SYSTEM_QXMPP "Use system qxmpp lib" ON)
 option(WITH_KWALLET "Build KWallet support module" ON)
@@ -142,4 +133,11 @@ add_subdirectory(ui)
 # Install the executable
 install(TARGETS squawk DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-target_sources(squawk PRIVATE ${SQUAWK_WIN_RC} ${APP_ICON_MACOSX})
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+  if (APPLE)
+    add_custom_command(TARGET squawk POST_BUILD COMMENT "Running macdeployqt..."
+      COMMAND "${Qt5Widgets_DIR}/../../../bin/macdeployqt" "${CMAKE_CURRENT_BINARY_DIR}/squawk.app"
+    )
+  endif(APPLE)
+endif()
+
