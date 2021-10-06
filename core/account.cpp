@@ -19,6 +19,7 @@
 #include "account.h"
 #include <QXmppMessage.h>
 #include <QDateTime>
+#include "shared/utils.h"
 
 using namespace Core;
 
@@ -404,9 +405,13 @@ QString Core::Account::getFullJid() const {
 void Core::Account::sendMessage(const Shared::Message& data) {
     mh->sendMessage(data);}
 
-void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMessage& msg)
+void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMessage& msgConst)
 {
-    if (msg.id().size() > 0 && (msg.body().size() > 0 || msg.outOfBandUrl().size() > 0)) {
+    QXmppMessage msg(msgConst);
+    if (msg.id().size() == 0) {
+        msg.setId(Shared::generateUUID() + QStringLiteral("-squawkgenerated"));
+    }
+    if ((msg.body().size() > 0 || msg.outOfBandUrl().size() > 0)) {
         std::map<QString, QString>::const_iterator itr = archiveQueries.find(queryId);
         if (itr != archiveQueries.end()) {
             QString jid = itr->second;
@@ -460,6 +465,11 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
         qDebug() << "Requesting remote history from empty for" << contact->jid;
     } else {
         if (before.size() > 0) {
+            if (before.endsWith("-squawkgenerated")) {
+                qDebug() << "Can't query history before an squawk-generated ID, making fake empty result";
+                contact->flushMessagesToArchive(true, before, before);
+                return;
+            }
             query.setBefore(before);
         }
         if (after.size() > 0) {     //there is some strange behavior of ejabberd server returning empty result set
@@ -467,6 +477,12 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
                 start = at;
             } else {
                 query.setAfter(after);
+            }
+
+            if (after.endsWith("-squawkgenerated")) {
+                qDebug() << "Can't query history after an squawk-generated ID, making fake empty result";
+                contact->flushMessagesToArchive(true, after, after);
+                return;
             }
         }
         qDebug() << "Remote query for" << contact->jid << "from" << after << ", to" << before;
