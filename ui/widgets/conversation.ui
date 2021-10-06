@@ -271,8 +271,8 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset theme="smiley-shape">
-             <normaloff>.</normaloff>.</iconset>
+            <iconset theme="smiley-shape" resource="../../resources/resources.qrc">
+             <normaloff>:/images/fallback/dark/big/unfavorite.svg</normaloff>:/images/fallback/dark/big/unfavorite.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -298,8 +298,8 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset theme="mail-attachment-symbolic">
-             <normaloff>.</normaloff>.</iconset>
+            <iconset theme="mail-attachment-symbolic" resource="../../resources/resources.qrc">
+             <normaloff>:/images/fallback/dark/big/mail-attachment.svg</normaloff>:/images/fallback/dark/big/mail-attachment.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -312,8 +312,8 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset theme="edit-clear-all">
-             <normaloff>.</normaloff>.</iconset>
+            <iconset theme="edit-clear-all" resource="../../resources/resources.qrc">
+             <normaloff>:/images/fallback/dark/big/clean.svg</normaloff>:/images/fallback/dark/big/clean.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -332,8 +332,8 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset theme="document-send">
-             <normaloff>.</normaloff>.</iconset>
+            <iconset theme="document-send" resource="../../resources/resources.qrc">
+             <normaloff>:/images/fallback/dark/big/send.svg</normaloff>:/images/fallback/dark/big/send.svg</iconset>
            </property>
            <property name="flat">
             <bool>true</bool>
@@ -419,6 +419,8 @@ p, li { white-space: pre-wrap; }
    </item>
   </layout>
  </widget>
- <resources/>
+ <resources>
+  <include location="../../resources/resources.qrc"/>
+ </resources>
  <connections/>
 </ui>

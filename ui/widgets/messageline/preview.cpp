@@ -164,6 +164,9 @@ void Preview::applyNewSize()
             break;
         default: {
             QIcon icon = QIcon::fromTheme(info.mime.iconName());
+            if (icon.isNull()) {
+                icon.addFile(QString::fromUtf8(":/images/fallback/dark/big/mail-attachment.svg"), QSize(), QIcon::Normal, QIcon::Off);
+            }
             widget->setPixmap(icon.pixmap(actualSize));
             widget->resize(actualSize);
         }
@@ -264,6 +267,10 @@ void Preview::initializeElements()
             break;
         default: {
             QIcon icon = QIcon::fromTheme(info.mime.iconName());
+            if (icon.isNull()) {
+                icon.addFile(QString::fromUtf8(":/images/fallback/dark/big/mail-attachment.svg"), QSize(), QIcon::Normal, QIcon::Off);
+            }
+
             widget = new QLabel(parent);
             widget->setPixmap(icon.pixmap(actualSize));
             widget->show();

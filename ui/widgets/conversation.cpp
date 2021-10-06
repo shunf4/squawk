@@ -255,8 +255,12 @@ void Conversation::addAttachedFile(const QString& path)
     QMimeDatabase db;
     QMimeType type = db.mimeTypeForFile(path);
     QFileInfo info(path);
-    
-    Badge* badge = new Badge(path, info.fileName(), QIcon::fromTheme(type.iconName()));
+
+    QIcon fileIcon = QIcon::fromTheme(type.iconName());
+    if (fileIcon.isNull()) {
+        fileIcon.addFile(QString::fromUtf8(":/images/fallback/dark/big/mail-attachment.svg"), QSize(), QIcon::Normal, QIcon::Off);
+    }
+    Badge* badge = new Badge(path, info.fileName(), fileIcon);
     
     connect(badge, &Badge::close, this, &Conversation::onBadgeClose);
     try {

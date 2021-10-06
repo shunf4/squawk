@@ -184,8 +184,8 @@
   </widget>
   <action name="actionAccounts">
    <property name="icon">
-    <iconset theme="system-users">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="system-users" resource="../resources/resources.qrc">
+     <normaloff>:/images/fallback/dark/big/group.svg</normaloff>:/images/fallback/dark/big/group.svg</iconset>
    </property>
    <property name="text">
     <string>Accounts</string>
@@ -193,8 +193,8 @@
   </action>
   <action name="actionQuit">
    <property name="icon">
-    <iconset theme="application-exit">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="application-exit" resource="../resources/resources.qrc">
+     <normaloff>:/images/fallback/dark/big/edit-none.svg</normaloff>:/images/fallback/dark/big/edit-none.svg</iconset>
    </property>
    <property name="text">
     <string>Quit</string>
@@ -205,8 +205,8 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset theme="list-add-user">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="list-add-user" resource="../resources/resources.qrc">
+     <normaloff>:/images/fallback/dark/big/add.svg</normaloff>:/images/fallback/dark/big/add.svg</iconset>
    </property>
    <property name="text">
     <string>Add contact</string>
@@ -217,14 +217,16 @@
     <bool>false</bool>
    </property>
    <property name="icon">
-    <iconset theme="resource-group-new">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="resource-group-new" resource="../resources/resources.qrc">
+     <normaloff>:/images/fallback/dark/big/group-new.svg</normaloff>:/images/fallback/dark/big/group-new.svg</iconset>
    </property>
    <property name="text">
     <string>Add conference</string>
    </property>
   </action>
  </widget>
- <resources/>
+ <resources>
+  <include location="../resources/resources.qrc"/>
+ </resources>
  <connections/>
 </ui>
