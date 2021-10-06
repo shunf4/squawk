@@ -118,8 +118,9 @@ void Core::Squawk::newAccountRequest(const QMap<QString, QVariant>& map)
     QString server = map.value("server").toString();
     QString password = map.value("password").toString();
     QString resource = map.value("resource").toString();
+    int passwordType = map.value("passwordType").toInt();
     
-    addAccount(login, server, password, name, resource, Shared::AccountPassword::plain);
+    addAccount(login, server, password, name, resource, Shared::Global::fromInt<Shared::AccountPassword>(passwordType));
 }
 
 void Core::Squawk::addAccount(
