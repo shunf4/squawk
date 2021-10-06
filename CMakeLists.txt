@@ -118,6 +118,7 @@ target_compile_options(squawk PRIVATE
   "-Wall;-Wextra"
   "$<$<CONFIG:DEBUG>:-g>"
   "$<$<CONFIG:RELEASE>:-O3>"
+  "-fno-sized-deallocation" # for eliminating _ZdlPvm
   )
 endif(CMAKE_COMPILER_IS_GNUCXX)
 
