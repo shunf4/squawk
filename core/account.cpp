@@ -469,6 +469,14 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
                 query.setAfter(after);
             }
         }
+        if (before.size() == 0 && after.size() == 0) {
+            // https://xmpp.org/extensions/xep-0313.html#sect-idm46556759682304
+            // To request the page at the end of the archive
+            // (i.e. the most recent messages), include just an
+            // empty <before/> element in the RSM part of the query.
+            // As defined by RSM, this will return the last page of the archive.
+            query.setBefore("");
+        }
         qDebug() << "Remote query for" << contact->jid << "from" << after << ", to" << before;
     }
     
