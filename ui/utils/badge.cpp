@@ -32,7 +32,12 @@ Badge::Badge(const QString& p_id, const QString& p_text, const QIcon& icon, QWid
     setFrameShadow(QFrame::Raised);
     
     image->setPixmap(icon.pixmap(25, 25));
-    closeButton->setIcon(QIcon::fromTheme("tab-close"));
+    QIcon tabCloseIcon = QIcon::fromTheme("tab-close");
+    if (tabCloseIcon.isNull()) {
+        tabCloseIcon.addFile(QString::fromUtf8(":/images/fallback/dark/big/edit-none.svg"), QSize(), QIcon::Normal, QIcon::Off);
+    }
+    closeButton->setIcon(tabCloseIcon);
+
     closeButton->setMaximumHeight(25);
     closeButton->setMaximumWidth(25);
     

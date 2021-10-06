@@ -482,8 +482,8 @@
             <string/>
            </property>
            <property name="icon">
-            <iconset theme="user">
-             <normaloff>.</normaloff>.</iconset>
+            <iconset theme="user" resource="../../../resources/resources.qrc">
+             <normaloff>:/images/fallback/dark/big/user.svg</normaloff>:/images/fallback/dark/big/user.svg</iconset>
            </property>
            <property name="iconSize">
             <size>
@@ -852,8 +852,8 @@
   </layout>
   <action name="actionSetAvatar">
    <property name="icon">
-    <iconset theme="photo">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="photo" resource="../../../resources/resources.qrc">
+     <normaloff>:/images/fallback/dark/big/edit-rename.svg</normaloff>:/images/fallback/dark/big/edit-rename.svg</iconset>
    </property>
    <property name="text">
     <string>Set avatar</string>
@@ -861,8 +861,8 @@
   </action>
   <action name="actionClearAvatar">
    <property name="icon">
-    <iconset theme="edit-clear-all">
-     <normaloff>.</normaloff>.</iconset>
+    <iconset theme="edit-clear-all" resource="../../../resources/resources.qrc">
+     <normaloff>:/images/fallback/dark/big/clean.svg</normaloff>:/images/fallback/dark/big/clean.svg</iconset>
    </property>
    <property name="text">
     <string>Clear avatar</string>
@@ -886,7 +886,7 @@
   <tabstop>description</tabstop>
  </tabstops>
  <resources>
-  <include location="../../resources/resources.qrc"/>
+  <include location="../../../resources/resources.qrc"/>
  </resources>
  <connections/>
 </ui>
