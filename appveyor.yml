@@ -1,7 +1,7 @@
 image:
   - Visual Studio 2019
   - "Previous Ubuntu1804"
-  - macOS
+  - macOS-Mojave
 
 branches:
   except:
@@ -60,7 +60,7 @@ for:
         name: Squawk executable (Qt 5.15.2)
 
       - path: build/deploy
-        name: Squawk deployment
+        name: Squawk deployment with Qt Framework
     
 -
   matrix:
@@ -79,13 +79,16 @@ for:
   build_script:
       - cmake --build .
 
+  after_build:
+      - zip -r squawk.app.zip squawk.app
+
   artifacts:
-      - path: build/squawk
+      - path: build/squawk.app/Contents/MacOS/squawk
         name: Squawk executable (Qt 5.15.2)
       - path: build/external/qxmpp/src/
         name: QXMPP
-      - path: build/squawk.app
-        name: Squawk Bundle (Qt 5.15.2)
+      - path: build/squawk.app.zip
+        name: Squawk Bundle with Qt Framework (Qt 5.15.2)
 
 -
   matrix:
@@ -101,13 +104,14 @@ for:
   before_build:
       - mkdir build
       - cd build
-      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.12.10/gcc_64 ..
+      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.12.10/gcc_64 -DCMAKE_BUILD_RPATH="\$ORIGIN" ..
 
   build_script:
       - cmake --build .
 
+  after_build:
+      - zip -r squawk.zip squawk -j external/qxmpp/src/libqxmpp*
+
   artifacts:
-      - path: build/squawk
-        name: Squawk executable (Qt 5.12)
-      - path: build/external/qxmpp/src/
-        name: QXMPP
+      - path: build/squawk.zip
+        name: Squawk executable and libraries (Qt 5.12)
