@@ -65,7 +65,7 @@ for:
 -
   matrix:
     only:
-      - image: macOS
+      - image: macOS-Mojave
 
   install:
       - brew install lmdb imagemagick boost
