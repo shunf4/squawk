@@ -40,5 +40,5 @@ QString Shared::processMessageBody(const QString& msg)
 {
     QString processed = msg.toHtmlEscaped();
     processed.replace(urlReg, "<a href=\"\\1\">\\1</a>");
-    return "<p style=\"white-space: pre-wrap;\">" + processed + "</p>";
+    return "<span style=\"white-space: pre-wrap;\">" + processed + "</span>";
 }

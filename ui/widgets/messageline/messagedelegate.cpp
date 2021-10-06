@@ -125,7 +125,8 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     QSize messageSize(0, 0);
     QSize bodySize(0, 0);
     if (data.text.size() > 0) {
-        messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWordWrap, data.text).size();
+        messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWrapAnywhere, data.text).size();
+        messageSize.rheight() *= 1.5;
         bodySize = messageSize;
     }
     messageSize.rheight() += nickMetrics.lineSpacing();
@@ -259,7 +260,8 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
     QString body = index.data(Models::MessageFeed::Text).toString();
     QSize messageSize(0, 0);
     if (body.size() > 0) {
-        messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWordWrap, body).size();
+        messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWrapAnywhere, body).size();
+        messageSize.rheight() *= 1.5;
         messageSize.rheight() += textMargin;
     }
     
