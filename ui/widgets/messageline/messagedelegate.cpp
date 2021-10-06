@@ -199,7 +199,7 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
         body->setMinimumWidth(bodySize.width());
         body->setMinimumHeight(bodySize.height());
         body->setMaximumHeight(bodySize.height());
-        body->setAlignment(opt.displayAlignment);
+        body->setAlignment((opt.displayAlignment & ~Qt::AlignRight) | Qt::AlignLeft);
         messageLeft = opt.rect.x();
         if (data.sentByMe) {
             messageLeft = opt.rect.topRight().x() - bodySize.width();
