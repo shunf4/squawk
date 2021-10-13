@@ -71,7 +71,7 @@ void Core::Squawk::stop()
     if (isInitialized) {
         QSettings settings;
         settings.beginGroup("core");
-        settings.beginWriteArray("accounts");
+        settings.beginWriteArray("accounts", accounts.size());
         SimpleCrypt crypto(passwordHash);
         for (std::deque<Account*>::size_type i = 0; i < accounts.size(); ++i) {
             settings.setArrayIndex(i);
