@@ -114,6 +114,7 @@ protected slots:
     void onFeedMessage(const Shared::Message& msg);
     void positionShadow();
     void onFeedContext(const QPoint &pos);
+    void onMessageEditorContext(const QPoint &pos);
     
 public:
     const bool isMuc;

@@ -51,7 +51,7 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     delegate(new MessageDelegate(this)),
     manualSliderChange(false),
     tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1),
-    pasteImageAction(nullptr),
+    pasteImageAction(new QAction(tr("Paste Image"), this)),
     shadow(10, 1, Qt::black, this),
     contextMenu(new QMenu())
 {
@@ -88,21 +88,11 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
             this, &Conversation::onTextEditDocSizeChanged);
     
     m_ui->messageEditor->installEventFilter(&ker);
+    m_ui->messageEditor->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    QAction* pasteImageAction = new QAction(tr("Paste Image"), this);
+    connect(m_ui->messageEditor, &QTextEdit::customContextMenuRequested, this, &Conversation::onMessageEditorContext);
     connect(pasteImageAction, &QAction::triggered, this, &Conversation::onImagePasted);
 
-    m_ui->messageEditor->setContextMenuPolicy(Qt::CustomContextMenu);
-    connect(m_ui->messageEditor, &QTextEdit::customContextMenuRequested, this, [this, pasteImageAction](const QPoint &pos) {
-        pasteImageAction->setEnabled(Conversation::checkClipboardImage());
-
-        QMenu *editorMenu = m_ui->messageEditor->createStandardContextMenu();
-        editorMenu->addSeparator();
-        editorMenu->addAction(pasteImageAction);
-
-        editorMenu->exec(this->m_ui->messageEditor->mapToGlobal(pos));
-    });
-    
     //line->setAutoFillBackground(false);
     //if (testAttribute(Qt::WA_TranslucentBackground)) {
         //m_ui->scrollArea->setAutoFillBackground(false);
@@ -489,4 +479,15 @@ void Conversation::onFeedContext(const QPoint& pos)
             contextMenu->popup(feed->viewport()->mapToGlobal(pos));
         }
     }
+}
+
+void Conversation::onMessageEditorContext(const QPoint& pos)
+{
+    pasteImageAction->setEnabled(Conversation::checkClipboardImage());
+
+    QMenu *editorMenu = m_ui->messageEditor->createStandardContextMenu();
+    editorMenu->addSeparator();
+    editorMenu->addAction(pasteImageAction);
+
+    editorMenu->exec(this->m_ui->messageEditor->mapToGlobal(pos));
 }
