@@ -378,7 +378,32 @@ void Core::NetworkAccess::onUploadFinished()
             qDebug() << "upload success for" << url;
             
             storage.addFile(upl->messages, upl->url, upl->path);
-            emit uploadFileComplete(upl->messages, upl->url);
+            emit uploadFileComplete(upl->messages, upl->url, upl->path);
+
+            // Copy file to Download folder if it is a temp file. See Conversation::onImagePasted.
+            if (upl->path.startsWith(QDir::tempPath() + QStringLiteral("/squawk_img_attach_")) && upl->path.endsWith(".png")) {
+                QString err = "";
+                QString downloadDirPath = prepareDirectory(upl->messages.front().jid);
+                if (downloadDirPath.size() > 0) {
+                    QString newPath = downloadDirPath + "/" + upl->path.mid(QDir::tempPath().length() + 1);
+
+                    // Copy {TEMPDIR}/squawk_img_attach_XXXXXX.png to Download folder
+                    bool copyResult = QFile::copy(upl->path, newPath);
+
+                    if (copyResult) {
+                        // Change storage
+                        storage.setPath(upl->url, newPath);
+                    } else {
+                        err = "copying to " + newPath + " failed";
+                    }
+                } else {
+                    err = "Couldn't prepare a directory for file";
+                }
+
+                if (err.size() != 0) {
+                    qDebug() << "failed to copy temporary upload file " << upl->path << " to download folder:" << err;
+                }
+            }
         }
         
         upl->reply->deleteLater();

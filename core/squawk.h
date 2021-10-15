@@ -82,7 +82,7 @@ signals:
     void fileError(const std::list<Shared::MessageInfo> msgs, const QString& error, bool up);
     void fileProgress(const std::list<Shared::MessageInfo> msgs, qreal value, bool up);
     void fileDownloadComplete(const std::list<Shared::MessageInfo> msgs, const QString& path);
-    void fileUploadComplete(const std::list<Shared::MessageInfo> msgs, const QString& path);
+    void fileUploadComplete(const std::list<Shared::MessageInfo> msgs, const QString& url, const QString& path);
     
     void responseVCard(const QString& jid, const Shared::VCard& card);
     void changeMessage(const QString& account, const QString& jid, const QString& id, const QMap<QString, QVariant>& data);

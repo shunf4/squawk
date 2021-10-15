@@ -249,6 +249,10 @@ void Conversation::onImagePasted()
     tempFile->close();
     qDebug() << "image on paste temp file: " << tempFile->fileName();
     addAttachedFile(tempFile->fileName());
+
+    // The file, if successfully uploaded, will be copied to Download folder.
+    // On application closing, this temporary file will be automatically removed by Qt.
+    // See Core::NetworkAccess::onUploadFinished.
 }
 
 void Conversation::onAttach()

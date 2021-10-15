@@ -58,7 +58,7 @@ public:
 signals:
     void loadFileProgress(const std::list<Shared::MessageInfo>& msgs, qreal value, bool up);
     void loadFileError(const std::list<Shared::MessageInfo>& msgs, const QString& text, bool up);
-    void uploadFileComplete(const std::list<Shared::MessageInfo>& msgs, const QString& url);
+    void uploadFileComplete(const std::list<Shared::MessageInfo>& msgs, const QString& url, const QString& path);
     void downloadFileComplete(const std::list<Shared::MessageInfo>& msgs, const QString& path);
     
 public slots:

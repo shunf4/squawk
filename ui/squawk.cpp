@@ -405,7 +405,7 @@ void Squawk::fileError(const std::list<Shared::MessageInfo> msgs, const QString&
     rosterModel.fileError(msgs, error, up);
 }
 
-void Squawk::fileUploadComplete(const std::list<Shared::MessageInfo> msgs, const QString& path)
+void Squawk::fileUploadComplete(const std::list<Shared::MessageInfo> msgs, const QString& url, const QString& path)
 {
     rosterModel.fileComplete(msgs, true);
 }
