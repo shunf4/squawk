@@ -351,7 +351,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QTextEdit" name="messageEditor">
+       <widget class="MessageTextEdit" name="messageEditor">
         <property name="enabled">
          <bool>true</bool>
         </property>
@@ -419,6 +419,13 @@ p, li { white-space: pre-wrap; }
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>MessageTextEdit</class>
+   <extends>QTextEdit</extends>
+   <header location="global">ui/widgets/conversation.h</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="../../resources/resources.qrc"/>
  </resources>

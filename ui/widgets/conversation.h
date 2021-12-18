@@ -60,7 +60,6 @@ protected:
     
 signals:
     void enterPressed();
-    void imagePasted();
 };
 
 class Conversation : public QWidget
@@ -78,7 +77,6 @@ public:
     void setPalResource(const QString& res);
     virtual void setAvatar(const QString& path);
     void setFeedFrames(bool top, bool right, bool bottom, bool left);
-    static bool checkClipboardImage();
     
 signals:
     void sendMessage(const Shared::Message& message);
@@ -104,7 +102,8 @@ protected:
     
 protected slots:
     void onEnterPressed();
-    void onImagePasted();
+    void onImageInserted(const QImage& image);
+    void onFileInserted(const QString& localPath);
     void onAttach();
     void onFileSelected();
     void onBadgeClose();
@@ -114,7 +113,6 @@ protected slots:
     void onFeedMessage(const Shared::Message& msg);
     void positionShadow();
     void onFeedContext(const QPoint &pos);
-    void onMessageEditorContext(const QPoint &pos);
     
 public:
     const bool isMuc;
@@ -136,8 +134,6 @@ protected:
     MessageDelegate* delegate;
     bool manualSliderChange;
     bool tsb;           //transient scroll bars
-    
-    QAction* pasteImageAction;
 
     ShadowOverlay shadow;
     QMenu* contextMenu;

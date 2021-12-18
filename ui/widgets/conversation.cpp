@@ -17,6 +17,7 @@
  */
 
 #include "conversation.h"
+#include "messagetextedit.h"
 #include "ui_conversation.h"
 
 #include <QDebug>
@@ -51,7 +52,6 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     delegate(new MessageDelegate(this)),
     manualSliderChange(false),
     tsb(QApplication::style()->styleHint(QStyle::SH_ScrollBar_Transient) == 1),
-    pasteImageAction(new QAction(tr("Paste Image"), this)),
     shadow(10, 1, Qt::black, this),
     contextMenu(new QMenu())
 {
@@ -80,7 +80,8 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
     statusLabel = m_ui->statusLabel;
     
     connect(&ker, &KeyEnterReceiver::enterPressed, this, &Conversation::onEnterPressed);
-    connect(&ker, &KeyEnterReceiver::imagePasted, this, &Conversation::onImagePasted);
+    connect(m_ui->messageEditor, &MessageTextEdit::imageInserted, this, &Conversation::onImageInserted);
+    connect(m_ui->messageEditor, &MessageTextEdit::fileInserted, this, &Conversation::onFileInserted);
     connect(m_ui->sendButton, &QPushButton::clicked, this, &Conversation::onEnterPressed);
     connect(m_ui->attachButton, &QPushButton::clicked, this, &Conversation::onAttach);
     connect(m_ui->clearButton, &QPushButton::clicked, this, &Conversation::onClearButton);
@@ -88,10 +89,8 @@ Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, 
             this, &Conversation::onTextEditDocSizeChanged);
     
     m_ui->messageEditor->installEventFilter(&ker);
-    m_ui->messageEditor->setContextMenuPolicy(Qt::CustomContextMenu);
 
-    connect(m_ui->messageEditor, &QTextEdit::customContextMenuRequested, this, &Conversation::onMessageEditorContext);
-    connect(pasteImageAction, &QAction::triggered, this, &Conversation::onImagePasted);
+
 
     //line->setAutoFillBackground(false);
     //if (testAttribute(Qt::WA_TranslucentBackground)) {
@@ -192,18 +191,8 @@ bool KeyEnterReceiver::eventFilter(QObject* obj, QEvent* event)
                 }
             }
         }
-        if (k == Qt::Key_V && key->modifiers() & Qt::CTRL) {
-            if (Conversation::checkClipboardImage()) {
-                emit imagePasted();
-                return true;
-            }
-        }
     }
     return QObject::eventFilter(obj, event);
-}
-
-bool Conversation::checkClipboardImage() {
-    return !QApplication::clipboard()->image().isNull();
 }
 
 QString Conversation::getPalResource() const
@@ -237,9 +226,8 @@ void Conversation::onEnterPressed()
     }
 }
 
-void Conversation::onImagePasted()
+void Conversation::onImageInserted(const QImage& image)
 {
-    QImage image = QApplication::clipboard()->image();
     if (image.isNull()) {
         return;
     }
@@ -253,6 +241,11 @@ void Conversation::onImagePasted()
     // The file, if successfully uploaded, will be copied to Download folder.
     // On application closing, this temporary file will be automatically removed by Qt.
     // See Core::NetworkAccess::onUploadFinished.
+}
+
+void Conversation::onFileInserted(const QString& localPath)
+{
+    addAttachedFile(localPath);
 }
 
 void Conversation::onAttach()
@@ -483,15 +476,4 @@ void Conversation::onFeedContext(const QPoint& pos)
             contextMenu->popup(feed->viewport()->mapToGlobal(pos));
         }
     }
-}
-
-void Conversation::onMessageEditorContext(const QPoint& pos)
-{
-    pasteImageAction->setEnabled(Conversation::checkClipboardImage());
-
-    QMenu *editorMenu = m_ui->messageEditor->createStandardContextMenu();
-    editorMenu->addSeparator();
-    editorMenu->addAction(pasteImageAction);
-
-    editorMenu->exec(this->m_ui->messageEditor->mapToGlobal(pos));
 }

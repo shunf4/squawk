@@ -18,6 +18,8 @@ target_sources(squawk PRIVATE
   newcontact.ui
   room.cpp
   room.h
+  messagetextedit.cpp
+  messagetextedit.h
   )
 
 add_subdirectory(vcard)
