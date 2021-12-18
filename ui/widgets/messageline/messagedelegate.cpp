@@ -28,6 +28,8 @@ constexpr int avatarHeight = 50;
 constexpr int margin = 6;
 constexpr int textMargin = 2;
 constexpr int statusIconSize = 16;
+constexpr qreal messageMaxWidthRatio = 0.64;
+constexpr int messageMinWidth = 420;
 
 MessageDelegate::MessageDelegate(QObject* parent):
     QStyledItemDelegate(parent),
@@ -114,6 +116,7 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     
     QStyleOptionViewItem opt = option;
     QRect messageRect = option.rect.adjusted(margin, margin / 2, -(avatarHeight + 2 * margin), -margin / 2);
+    QRect origMessageRect = messageRect;
     if (!data.sentByMe) {
         opt.displayAlignment = Qt::AlignLeft | Qt::AlignTop;
         messageRect.adjust(avatarHeight + margin, 0, avatarHeight + margin, 0);
@@ -125,8 +128,18 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
     QSize messageSize(0, 0);
     QSize bodySize(0, 0);
     if (data.text.size() > 0) {
-        messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWrapAnywhere, data.text).size();
-        messageSize.rheight() *= 1.5;
+        QRect widthLimited;
+        int widthAdjustment = qMin(
+                    qRound(static_cast<qreal>(origMessageRect.width()) * (1 - messageMaxWidthRatio)),
+                    origMessageRect.width() - qMin(messageMinWidth, origMessageRect.width()));
+        if (!data.sentByMe) {
+            widthLimited = messageRect.adjusted(0, 0, -widthAdjustment, 0);
+        } else {
+            widthLimited = messageRect.adjusted(+widthAdjustment, 0, 0, 0);
+        }
+
+        messageSize = bodyMetrics.boundingRect(widthLimited, Qt::TextWrapAnywhere, data.text).size();
+        messageSize.rheight() *= 1.35;
         bodySize = messageSize;
     }
     messageSize.rheight() += nickMetrics.lineSpacing();
@@ -253,15 +266,27 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
 QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModelIndex& index) const
 {
     QRect messageRect = option.rect.adjusted(0, margin / 2, -(avatarHeight + 3 * margin), -margin / 2);
+    QRect origMessageRect = messageRect;
     QStyleOptionViewItem opt = option;
     opt.rect = messageRect;
     QVariant va = index.data(Models::MessageFeed::Attach);
     Models::Attachment attach = qvariant_cast<Models::Attachment>(va);
     QString body = index.data(Models::MessageFeed::Text).toString();
+    bool sentByMe = index.data(Models::MessageFeed::SentByMe).toBool();
     QSize messageSize(0, 0);
     if (body.size() > 0) {
-        messageSize = bodyMetrics.boundingRect(messageRect, Qt::TextWrapAnywhere, body).size();
-        messageSize.rheight() *= 1.5;
+        QRect widthLimited;
+        int widthAdjustment = qMin(
+                    qRound(static_cast<qreal>(origMessageRect.width()) * (1 - messageMaxWidthRatio)),
+                    origMessageRect.width() - qMin(messageMinWidth, origMessageRect.width()));
+        if (!sentByMe) {
+            widthLimited = messageRect.adjusted(0, 0, -widthAdjustment, 0);
+        } else {
+            widthLimited = messageRect.adjusted(+widthAdjustment, 0, 0, 0);
+        }
+
+        messageSize = bodyMetrics.boundingRect(widthLimited, Qt::TextWrapAnywhere, body).size();
+        messageSize.rheight() *= 1.35;
         messageSize.rheight() += textMargin;
     }
     
