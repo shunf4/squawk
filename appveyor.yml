@@ -1,7 +1,7 @@
 image:
   - Visual Studio 2019
   - "Previous Ubuntu1804"
-  - macOS-Mojave
+  - macOS
 
 branches:
   except:
@@ -74,7 +74,7 @@ for:
   before_build:
       - mkdir build
       - cd build
-      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.15.*/clang_64 ..
+      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.15.2/clang_64 ..
 
   build_script:
       - cmake --build .
@@ -104,7 +104,7 @@ for:
   before_build:
       - mkdir build
       - cd build
-      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.12.*/gcc_64 -DCMAKE_BUILD_RPATH="\$ORIGIN" ..
+      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.15.2/gcc_64 -DCMAKE_BUILD_RPATH="\$ORIGIN" ..
 
   build_script:
       - cmake --build .
