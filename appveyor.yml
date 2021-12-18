@@ -65,7 +65,7 @@ for:
 -
   matrix:
     only:
-      - image: macOS-Mojave
+      - image: macOS
 
   install:
       - brew install lmdb imagemagick boost
@@ -74,7 +74,7 @@ for:
   before_build:
       - mkdir build
       - cd build
-      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.15.2/clang_64 ..
+      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.15.*/clang_64 ..
 
   build_script:
       - cmake --build .
@@ -84,11 +84,11 @@ for:
 
   artifacts:
       - path: build/squawk.app/Contents/MacOS/squawk
-        name: Squawk executable (Qt 5.15.2)
+        name: Squawk executable (Qt 5.15)
       - path: build/external/qxmpp/src/
         name: QXMPP
       - path: build/squawk.app.zip
-        name: Squawk Bundle with Qt Framework (Qt 5.15.2)
+        name: Squawk Bundle with Qt Framework (Qt 5.15)
 
 -
   matrix:
@@ -104,7 +104,7 @@ for:
   before_build:
       - mkdir build
       - cd build
-      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.12.10/gcc_64 -DCMAKE_BUILD_RPATH="\$ORIGIN" ..
+      - cmake -DCMAKE_BUILD_TYPE:String=Release -DCMAKE_PREFIX_PATH:STRING=$HOME/Qt/5.12.*/gcc_64 -DCMAKE_BUILD_RPATH="\$ORIGIN" ..
 
   build_script:
       - cmake --build .
