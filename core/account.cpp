@@ -408,13 +408,19 @@ void Core::Account::sendMessage(const Shared::Message& data) {
 void Core::Account::onMamMessageReceived(const QString& queryId, const QXmppMessage& msgConst)
 {
     QXmppMessage msg(msgConst);
-    if (msg.id().size() == 0) {
-        msg.setId(Shared::generateUUID() + QStringLiteral("-squawkgenerated"));
-    }
     if ((msg.body().size() > 0 || msg.outOfBandUrl().size() > 0)) {
-        std::map<QString, QString>::const_iterator itr = archiveQueries.find(queryId);
+        auto itr = archiveQueries.find(queryId);
         if (itr != archiveQueries.end()) {
-            QString jid = itr->second;
+            QString jid = std::get<0>(itr->second);
+            QDateTime startStamp = std::get<1>(itr->second);
+            QDateTime endStamp = std::get<2>(itr->second);
+            // Filter out messages whose datetime does't fall in range
+            if (startStamp.isValid() && msg.stamp() < startStamp) {
+                return;
+            }
+            if (endStamp.isValid() && msg.stamp() > endStamp) {
+                return;
+            }
             RosterItem* item = rh->getRosterItem(jid);
             
             Shared::Message sMsg(static_cast<Shared::Message::Type>(msg.type()));
@@ -450,7 +456,7 @@ void Core::Account::requestArchive(const QString& jid, int count, const QString&
     contact->requestHistory(count, before);
 }
 
-void Core::Account::onContactNeedHistory(const QString& before, const QString& after, const QDateTime& at)
+void Core::Account::onContactNeedHistory(const QString& before, const QString& after, const QDateTime& startStamp, const QDateTime& endStamp)
 {
     RosterItem* contact = static_cast<RosterItem*>(sender());
 
@@ -458,6 +464,7 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
     QString with;
     QXmppResultSetQuery query;
     QDateTime start;
+    QDateTime end;
     query.setMax(100);
     
     if (contact->getArchiveState() == RosterItem::empty) {
@@ -465,21 +472,28 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
         qDebug() << "Requesting remote history from empty for" << contact->jid;
     } else {
         if (before.size() > 0) {
-            if (before.endsWith("-squawkgenerated")) {
+            if (!before.endsWith("-squawkgenerated")) {
+                query.setBefore(before);
+            } else if (endStamp.isValid()) {
+                end = endStamp;
+                // https://xmpp.org/extensions/xep-0313.html#sect-idm46556759682304
+                // To request the page at the end of the archive
+                // (i.e. the most recent messages), include just an
+                // empty <before/> element in the RSM part of the query.
+                // As defined by RSM, this will return the last page of the archive.
+                query.setBefore("");
+            } else {
                 qDebug() << "Can't query history before an squawk-generated ID, making fake empty result";
                 contact->flushMessagesToArchive(true, before, before);
                 return;
             }
-            query.setBefore(before);
         }
         if (after.size() > 0) {     //there is some strange behavior of ejabberd server returning empty result set
-            if (at.isValid()) {     //there can be some useful information about it here https://github.com/processone/ejabberd/issues/2924
-                start = at;
-            } else {
+            if (!after.endsWith("-squawkgenerated")) {
                 query.setAfter(after);
-            }
-
-            if (after.endsWith("-squawkgenerated")) {
+            } else if (startStamp.isValid()) {
+                start = startStamp;
+            } else {
                 qDebug() << "Can't query history after an squawk-generated ID, making fake empty result";
                 contact->flushMessagesToArchive(true, after, after);
                 return;
@@ -493,7 +507,7 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
             // As defined by RSM, this will return the last page of the archive.
             query.setBefore("");
         }
-        qDebug() << "Remote query for" << contact->jid << "from" << after << ", to" << before;
+        qDebug() << "Remote query for" << contact->jid << "from" << after << ", to" << before << ", start" << startStamp << ", end" << endStamp;
     }
     
     if (contact->isMuc()) {
@@ -502,15 +516,15 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
         with = contact->jid;
     }
     
-    QString q = am->retrieveArchivedMessages(to, "", with, start, QDateTime(), query);
-    archiveQueries.insert(std::make_pair(q, contact->jid));
+    QString q = am->retrieveArchivedMessages(to, "", with, start, end, query);
+    archiveQueries.insert(std::make_pair(q, std::make_tuple(contact->jid, startStamp, endStamp)));
 }
 
 void Core::Account::onMamResultsReceived(const QString& queryId, const QXmppResultSetReply& resultSetReply, bool complete)
 {
-    std::map<QString, QString>::const_iterator itr = archiveQueries.find(queryId);
+    auto itr = archiveQueries.find(queryId);
     if (itr != archiveQueries.end()) {
-        QString jid = itr->second;
+        QString jid = std::get<0>(itr->second);
         archiveQueries.erase(itr);
         
         RosterItem* ri = rh->getRosterItem(jid);

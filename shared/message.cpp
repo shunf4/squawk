@@ -19,6 +19,11 @@
 #include "message.h"
 #include "utils.h"
 
+#include <QCryptographicHash>
+#include <QBuffer>
+#include <QDataStream>
+#include <QDebug>
+
 Shared::Message::Message(Shared::Message::Type p_type):
     jFrom(),
     rFrom(),
@@ -232,7 +237,34 @@ bool Shared::Message::getForwarded() const
 
 void Shared::Message::generateRandomId()
 {
-    id = generateUUID();
+    QCryptographicHash h(QCryptographicHash::Md4);
+    QBuffer b;
+    b.open(QBuffer::ReadWrite);
+    QDataStream d(&b);
+
+    d << getFromJid();
+    d << getFromResource();
+    d << getToJid();
+    d << getToResource();
+
+    d << getBody();
+    d << getTime();
+    d << getThread();
+    d << getType();
+
+    d << getOutgoing();
+    d << getForwarded();
+
+    d << getOutOfBandUrl();
+
+    d << getStanzaId();
+
+    b.seek(0);
+    h.addData(&b);
+
+    id = h.result().toHex() + QStringLiteral("-squawkgenerated");
+
+    qDebug() << "generateRandomId" << id;
 }
 
 QString Shared::Message::getThread() const

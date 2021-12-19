@@ -139,7 +139,7 @@ signals:
     
 private:
     QString name;
-    std::map<QString, QString> archiveQueries;
+    std::map<QString, std::tuple<QString, QDateTime, QDateTime>> archiveQueries;
     QXmppClient client;
     QXmppConfiguration config;
     QXmppPresence presence;
@@ -172,7 +172,7 @@ private slots:
     void onClientError(QXmppClient::Error err);
     
     void onPresenceReceived(const QXmppPresence& presence);
-    void onContactNeedHistory(const QString& before, const QString& after, const QDateTime& at);
+    void onContactNeedHistory(const QString& before, const QString& after, const QDateTime& startStamp, const QDateTime& endStamp);
 
     void onMamMessageReceived(const QString& bareJid, const QXmppMessage& message);
     void onMamResultsReceived(const QString &queryId, const QXmppResultSetReply &resultSetReply, bool complete);

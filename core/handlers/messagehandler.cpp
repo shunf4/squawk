@@ -155,22 +155,6 @@ bool Core::MessageHandler::handleGroupMessage(const QXmppMessage& msg, bool outg
 void Core::MessageHandler::initializeMessage(Shared::Message& target, const QXmppMessage& source, bool outgoing, bool forwarded, bool guessing) const
 {
     const QDateTime& time(source.stamp());
-    QString id;
-#if (QXMPP_VERSION) >= QT_VERSION_CHECK(1, 3, 0)
-    id = source.originId();
-    if (id.size() == 0) {
-        id = source.id();
-    }
-    target.setStanzaId(source.stanzaId());
-#else
-    id = source.id();
-#endif
-    target.setId(id);
-    QString messageId = target.getId();
-    if (messageId.size() == 0) {
-        target.generateRandomId();          //TODO out of desperation, I need at least a random ID
-        messageId = target.getId();
-    }
     target.setFrom(source.from());
     target.setTo(source.to());
     target.setBody(source.body());
@@ -191,10 +175,28 @@ void Core::MessageHandler::initializeMessage(Shared::Message& target, const QXmp
     }
     
     QString oob = source.outOfBandUrl();
+    target.setOutOfBandUrl(oob);
+
+    QString id;
+#if (QXMPP_VERSION) >= QT_VERSION_CHECK(1, 3, 0)
+    id = source.originId();
+    if (id.size() == 0) {
+        id = source.id();
+    }
+    target.setStanzaId(source.stanzaId());
+#else
+    id = source.id();
+#endif
+    target.setId(id);
+    QString messageId = target.getId();
+    if (messageId.size() == 0) {
+        target.generateRandomId();          //TODO out of desperation, I need at least a random ID
+        messageId = target.getId();
+    }
+
     if (oob.size() > 0) {
         target.setAttachPath(acc->network->addMessageAndCheckForPath(oob, acc->getName(), target.getPenPalJid(), messageId));
     }
-    target.setOutOfBandUrl(oob);
 }
 
 void Core::MessageHandler::logMessage(const QXmppMessage& msg, const QString& reason)

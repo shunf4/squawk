@@ -32,8 +32,9 @@ constexpr int textMargin = 2;
 constexpr int statusIconSize = 16;
 constexpr qreal messageMaxWidthRatio = 0.64;
 constexpr int messageMinWidth = 420;
-constexpr qreal inaccurateBodyMeasureHeightFix = 1.02;
-constexpr qreal inaccurateBodyMeasureWidthFix = 1.04;
+constexpr qreal inaccurateBodyMeasureHeightFix = 1.04;
+constexpr qreal inaccurateBodyMeasureWidthFix = 1.08;
+constexpr int bodyTextFlag = Qt::TextWrapAnywhere | Qt::TextExpandTabs | Qt::TextDontClip | Qt::TextIncludeTrailingSpaces;
 
 MessageDelegate::MessageDelegate(QObject* parent):
     QStyledItemDelegate(parent),
@@ -150,7 +151,7 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
 
         widthLimited.setWidth(qFloor(qreal(widthLimited.width())) / inaccurateBodyMeasureWidthFix);
 
-        messageSize = bodyMetrics.boundingRect(widthLimited, Qt::TextWrapAnywhere, data.text).size();
+        messageSize = bodyMetrics.boundingRect(widthLimited, bodyTextFlag, data.text).size();
         messageSize.rheight() = qCeil(qreal(messageSize.height()) * inaccurateBodyMeasureHeightFix);
         messageSize.rwidth() = qCeil(qreal(messageSize.width()) * inaccurateBodyMeasureWidthFix);
         bodySize = messageSize;
@@ -300,7 +301,7 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
 
         widthLimited.setWidth(qFloor(qreal(widthLimited.width())) / inaccurateBodyMeasureWidthFix);
 
-        messageSize = bodyMetrics.boundingRect(widthLimited, Qt::TextWrapAnywhere, body).size();
+        messageSize = bodyMetrics.boundingRect(widthLimited, bodyTextFlag, body).size();
         messageSize.rheight() = qCeil(qreal(messageSize.height()) * inaccurateBodyMeasureHeightFix);
         messageSize.rwidth() = qCeil(qreal(messageSize.width()) * inaccurateBodyMeasureWidthFix);
         messageSize.rheight() += textMargin;
