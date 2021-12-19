@@ -471,33 +471,30 @@ void Core::Account::onContactNeedHistory(const QString& before, const QString& a
         query.setBefore(before);
         qDebug() << "Requesting remote history from empty for" << contact->jid;
     } else {
-        if (before.size() > 0) {
-            if (!before.endsWith("-squawkgenerated")) {
-                query.setBefore(before);
-            } else if (endStamp.isValid()) {
-                end = endStamp;
-                // https://xmpp.org/extensions/xep-0313.html#sect-idm46556759682304
-                // To request the page at the end of the archive
-                // (i.e. the most recent messages), include just an
-                // empty <before/> element in the RSM part of the query.
-                // As defined by RSM, this will return the last page of the archive.
-                query.setBefore("");
-            } else {
-                qDebug() << "Can't query history before an squawk-generated ID, making fake empty result";
-                contact->flushMessagesToArchive(true, before, before);
-                return;
-            }
+        if (before.size() > 0 && !before.endsWith("-squawkgenerated")) {
+            query.setBefore(before);
+        } else if ((before.size() == 0 || before.endsWith("-squawkgenerated")) && endStamp.isValid()) {
+            end = endStamp;
+            // https://xmpp.org/extensions/xep-0313.html#sect-idm46556759682304
+            // To request the page at the end of the archive
+            // (i.e. the most recent messages), include just an
+            // empty <before/> element in the RSM part of the query.
+            // As defined by RSM, this will return the last page of the archive.
+            query.setBefore("");
+        } else if (before.endsWith("-squawkgenerated")) {
+            qDebug() << "Can't query history before an squawk-generated ID, making fake empty result";
+            contact->flushMessagesToArchive(true, before, before);
+            return;
         }
-        if (after.size() > 0) {     //there is some strange behavior of ejabberd server returning empty result set
-            if (!after.endsWith("-squawkgenerated")) {
-                query.setAfter(after);
-            } else if (startStamp.isValid()) {
-                start = startStamp;
-            } else {
-                qDebug() << "Can't query history after an squawk-generated ID, making fake empty result";
-                contact->flushMessagesToArchive(true, after, after);
-                return;
-            }
+        //there is some strange behavior of ejabberd server returning empty result set
+        if (after.size() > 0 && !after.endsWith("-squawkgenerated")) {
+            query.setAfter(after);
+        } else if ((after.size() == 0 || after.endsWith("-squawkgenerated")) && startStamp.isValid()) {
+            start = startStamp;
+        } else if (after.endsWith("-squawkgenerated")) {
+            qDebug() << "Can't query history after an squawk-generated ID, making fake empty result";
+            contact->flushMessagesToArchive(true, after, after);
+            return;
         }
         if (before.size() == 0 && after.size() == 0) {
             // https://xmpp.org/extensions/xep-0313.html#sect-idm46556759682304

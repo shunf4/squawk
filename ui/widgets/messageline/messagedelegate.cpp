@@ -511,6 +511,12 @@ QProgressBar * MessageDelegate::getBar(const Models::FeedItem& data) const
             delete itr->second;
             downloadButtons->erase(itr);
         }
+
+        auto clbItr = copyLinkButtons->find(data.id);
+        if (clbItr != copyLinkButtons->end()) {
+            delete clbItr->second;
+            copyLinkButtons->erase(clbItr);
+        }
     }
     
     if (result == 0) {
@@ -636,6 +642,12 @@ void MessageDelegate::onButtonPushed() const
 
 void MessageDelegate::clearHelperWidget(const Models::FeedItem& data) const
 {
+    auto clbItr = copyLinkButtons->find(data.id);
+    if (clbItr != copyLinkButtons->end()) {
+        delete clbItr->second;
+        copyLinkButtons->erase(clbItr);
+    }
+
     std::map<QString, FeedButton*>::const_iterator itr = downloadButtons->find(data.id);
     if (itr != downloadButtons->end()) {
         delete itr->second;
