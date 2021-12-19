@@ -32,6 +32,7 @@
 #include <QTemporaryFile>
 #include <QDir>
 #include <QMenu>
+#include <QClipboard>
 
 Conversation::Conversation(bool muc, Models::Account* acc, Models::Element* el, const QString pJid, const QString pRes, QWidget* parent):
     QWidget(parent),
@@ -459,6 +460,7 @@ void Conversation::onFeedContext(const QPoint& pos)
         }
         
         QString path = item->getAttachPath();
+        QString remotePath = item->getOutOfBandUrl();
         if (path.size() > 0) {
             showMenu = true;
             QAction* open = contextMenu->addAction(Shared::icon("document-preview"), tr("Open")); 
@@ -469,6 +471,11 @@ void Conversation::onFeedContext(const QPoint& pos)
             QAction* show = contextMenu->addAction(Shared::icon("folder"), tr("Show in folder")); 
             connect(show, &QAction::triggered, [path]() {
                 Shared::Global::highlightInFileManager(path);
+            });
+
+            QAction* copyLink = contextMenu->addAction(Shared::icon("copy"), tr("Copy link address"));
+            connect(copyLink, &QAction::triggered, [remotePath]() {
+                QApplication::clipboard()->setText(remotePath);
             });
         }
         

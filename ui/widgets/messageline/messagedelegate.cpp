@@ -20,6 +20,7 @@
 #include <QPainter>
 #include <QApplication>
 #include <QMouseEvent>
+#include <QClipboard>
 #include <QtMath>
 
 #include "messagedelegate.h"
@@ -44,7 +45,8 @@ MessageDelegate::MessageDelegate(QObject* parent):
     dateMetrics(dateFont),
     buttonHeight(0),
     barHeight(0),
-    buttons(new std::map<QString, FeedButton*>()),
+    downloadButtons(new std::map<QString, FeedButton*>()),
+    copyLinkButtons(new std::map<QString, FeedButton*>()),
     bars(new std::map<QString, QProgressBar*>()),
     statusIcons(new std::map<QString, QLabel*>()),
     pencilIcons(new std::map<QString, QLabel*>()),
@@ -62,7 +64,11 @@ MessageDelegate::MessageDelegate(QObject* parent):
 
 MessageDelegate::~MessageDelegate()
 {
-    for (const std::pair<const QString, FeedButton*>& pair: *buttons){
+    for (const std::pair<const QString, FeedButton*>& pair: *downloadButtons){
+        delete pair.second;
+    }
+
+    for (const std::pair<const QString, FeedButton*>& pair: *copyLinkButtons){
         delete pair.second;
     }
     
@@ -89,7 +95,8 @@ MessageDelegate::~MessageDelegate()
     delete statusIcons;
     delete pencilIcons;
     delete idsToKeep;
-    delete buttons;
+    delete downloadButtons;
+    delete copyLinkButtons;
     delete bars;
     delete bodies;
     delete previews;
@@ -187,7 +194,7 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
             paintBar(getBar(data), painter, data.sentByMe, opt);
             break;
         case Models::remote:
-            paintButton(getButton(data), painter, data.sentByMe, opt);
+            paintButtons(getDownloadButton(data), getCopyLinkButton(data), painter, data.sentByMe, opt);
             break;
         case Models::ready:
         case Models::local:
@@ -195,7 +202,7 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
             paintPreview(data, painter, opt);
             break;
         case Models::errorDownload: {
-            paintButton(getButton(data), painter, data.sentByMe, opt);
+            paintButtons(getDownloadButton(data), getCopyLinkButton(data), painter, data.sentByMe, opt);
             paintComment(data, painter, opt);
         }
             
@@ -376,19 +383,23 @@ bool MessageDelegate::editorEvent(QEvent* event, QAbstractItemModel* model, cons
     return QStyledItemDelegate::editorEvent(event, model, option, index);
 }
 
-void MessageDelegate::paintButton(QPushButton* btn, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const
+void MessageDelegate::paintButtons(QPushButton* btn1, QPushButton* btn2, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const
 {
+    static const int buttonGap = 10;
     QPoint start;
     if (sentByMe) {
-        start = {option.rect.width() - btn->width(), option.rect.top()};
+        start = {option.rect.width() - btn1->width() - buttonGap - btn2->width(), option.rect.top()};
     } else {
         start = option.rect.topLeft();
     }
     
     QWidget* vp = static_cast<QWidget*>(painter->device());
-    btn->setParent(vp);
-    btn->move(start);
-    btn->show();
+    btn1->setParent(vp);
+    btn1->move(start);
+    btn1->show();
+    btn2->setParent(vp);
+    btn2->move({start.x() + buttonGap + btn1->width(), start.y()});
+    btn2->show();
     
     option.rect.adjust(0, buttonHeight + textMargin, 0, 0);
 }
@@ -437,11 +448,11 @@ void MessageDelegate::paintPreview(const Models::FeedItem& data, QPainter* paint
     option.rect.adjust(0, preview->size().height() + textMargin, 0, 0);
 }
 
-QPushButton * MessageDelegate::getButton(const Models::FeedItem& data) const
+QPushButton * MessageDelegate::getDownloadButton(const Models::FeedItem& data) const
 {
-    std::map<QString, FeedButton*>::const_iterator itr = buttons->find(data.id);
+    std::map<QString, FeedButton*>::const_iterator itr = downloadButtons->find(data.id);
     FeedButton* result = 0;
-    if (itr != buttons->end()) {
+    if (itr != downloadButtons->end()) {
         result = itr->second;
     } else {
         std::map<QString, QProgressBar*>::const_iterator barItr = bars->find(data.id);
@@ -455,10 +466,35 @@ QPushButton * MessageDelegate::getButton(const Models::FeedItem& data) const
         result = new FeedButton();
         result->messageId = data.id;
         result->setText(QCoreApplication::translate("MessageLine", "Download"));
-        buttons->insert(std::make_pair(data.id, result));
+        downloadButtons->insert(std::make_pair(data.id, result));
         connect(result, &QPushButton::clicked, this, &MessageDelegate::onButtonPushed);
     }
     
+    return result;
+}
+
+QPushButton * MessageDelegate::getCopyLinkButton(const Models::FeedItem& data) const
+{
+    std::map<QString, FeedButton*>::const_iterator itr = copyLinkButtons->find(data.id);
+    FeedButton* result = 0;
+    if (itr != copyLinkButtons->end()) {
+        result = itr->second;
+    }
+
+    if (result == 0) {
+        const QString& remotePath = data.attach.remotePath;
+
+        result = new FeedButton();
+        result->setToolTip(remotePath);
+        result->messageId = data.id;
+        result->setText(QCoreApplication::translate("MessageLine", "Copy Link"));
+        copyLinkButtons->insert(std::make_pair(data.id, result));
+
+        connect(result, &QPushButton::clicked, this, [=](){
+            QApplication::clipboard()->setText(remotePath);
+        });
+    }
+
     return result;
 }
 
@@ -469,10 +505,10 @@ QProgressBar * MessageDelegate::getBar(const Models::FeedItem& data) const
     if (barItr != bars->end()) {
         result = barItr->second;
     } else {
-        std::map<QString, FeedButton*>::const_iterator itr = buttons->find(data.id);
-        if (itr != buttons->end()) {
+        std::map<QString, FeedButton*>::const_iterator itr = downloadButtons->find(data.id);
+        if (itr != downloadButtons->end()) {
             delete itr->second;
-            buttons->erase(itr);
+            downloadButtons->erase(itr);
         }
     }
     
@@ -578,7 +614,8 @@ void removeElements(std::map<QString, T*>* elements, std::set<QString>* idsToKee
 void MessageDelegate::endClearWidgets()
 {
     if (clearingWidgets) {
-        removeElements(buttons, idsToKeep);
+        removeElements(downloadButtons, idsToKeep);
+        removeElements(copyLinkButtons, idsToKeep);
         removeElements(bars, idsToKeep);
         removeElements(statusIcons, idsToKeep);
         removeElements(pencilIcons, idsToKeep);
@@ -598,10 +635,10 @@ void MessageDelegate::onButtonPushed() const
 
 void MessageDelegate::clearHelperWidget(const Models::FeedItem& data) const
 {
-    std::map<QString, FeedButton*>::const_iterator itr = buttons->find(data.id);
-    if (itr != buttons->end()) {
+    std::map<QString, FeedButton*>::const_iterator itr = downloadButtons->find(data.id);
+    if (itr != downloadButtons->end()) {
         delete itr->second;
-        buttons->erase(itr);
+        downloadButtons->erase(itr);
     } else {
         std::map<QString, QProgressBar*>::const_iterator barItr = bars->find(data.id);
         if (barItr != bars->end()) {

@@ -61,11 +61,12 @@ signals:
     void invalidPath(const QString& messageId) const;
     
 protected:
-    void paintButton(QPushButton* btn, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const;
+    void paintButtons(QPushButton* btn1, QPushButton* btn2, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const;
     void paintBar(QProgressBar* bar, QPainter* painter, bool sentByMe, QStyleOptionViewItem& option) const;
     void paintPreview(const Models::FeedItem& data, QPainter* painter, QStyleOptionViewItem& option) const;
     void paintComment(const Models::FeedItem& data, QPainter* painter, QStyleOptionViewItem& option) const;
-    QPushButton* getButton(const Models::FeedItem& data) const;
+    QPushButton* getDownloadButton(const Models::FeedItem& data) const;
+    QPushButton* getCopyLinkButton(const Models::FeedItem& data) const;
     QProgressBar* getBar(const Models::FeedItem& data) const;
     QLabel* getStatusIcon(const Models::FeedItem& data) const;
     QLabel* getPencilIcon(const Models::FeedItem& data) const;
@@ -91,7 +92,8 @@ private:
     int buttonHeight;
     int barHeight;
     
-    std::map<QString, FeedButton*>* buttons;
+    std::map<QString, FeedButton*>* downloadButtons;
+    std::map<QString, FeedButton*>* copyLinkButtons;
     std::map<QString, QProgressBar*>* bars;
     std::map<QString, QLabel*>* statusIcons;
     std::map<QString, QLabel*>* pencilIcons;
