@@ -110,6 +110,7 @@ public:
     QString getPenPalJid() const;
     QString getPenPalResource() const;
     void generateRandomId();
+    void generateFallbackId();
     bool serverStored() const;
     QDateTime getLastModified() const;
     QString getOriginalBody() const;

@@ -190,7 +190,7 @@ void Core::MessageHandler::initializeMessage(Shared::Message& target, const QXmp
     target.setId(id);
     QString messageId = target.getId();
     if (messageId.size() == 0) {
-        target.generateRandomId();          //TODO out of desperation, I need at least a random ID
+        target.generateFallbackId();          //TODO out of desperation, I need at least a random ID
         messageId = target.getId();
     }
 

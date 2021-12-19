@@ -237,6 +237,11 @@ bool Shared::Message::getForwarded() const
 
 void Shared::Message::generateRandomId()
 {
+    id = generateUUID();
+}
+
+void Shared::Message::generateFallbackId()
+{
     QCryptographicHash h(QCryptographicHash::Md4);
     QBuffer b;
     b.open(QBuffer::ReadWrite);
@@ -263,8 +268,6 @@ void Shared::Message::generateRandomId()
     h.addData(&b);
 
     id = h.result().toHex() + QStringLiteral("-squawkgenerated");
-
-    qDebug() << "generateRandomId" << id;
 }
 
 QString Shared::Message::getThread() const
