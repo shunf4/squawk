@@ -20,6 +20,7 @@
 #include <QPainter>
 #include <QApplication>
 #include <QMouseEvent>
+#include <QtMath>
 
 #include "messagedelegate.h"
 #include "messagefeed.h"
@@ -30,6 +31,8 @@ constexpr int textMargin = 2;
 constexpr int statusIconSize = 16;
 constexpr qreal messageMaxWidthRatio = 0.64;
 constexpr int messageMinWidth = 420;
+constexpr qreal inaccurateBodyMeasureHeightFix = 1.02;
+constexpr qreal inaccurateBodyMeasureWidthFix = 1.04;
 
 MessageDelegate::MessageDelegate(QObject* parent):
     QStyledItemDelegate(parent),
@@ -138,8 +141,11 @@ void MessageDelegate::paint(QPainter* painter, const QStyleOptionViewItem& optio
             widthLimited = messageRect.adjusted(+widthAdjustment, 0, 0, 0);
         }
 
+        widthLimited.setWidth(qFloor(qreal(widthLimited.width())) / inaccurateBodyMeasureWidthFix);
+
         messageSize = bodyMetrics.boundingRect(widthLimited, Qt::TextWrapAnywhere, data.text).size();
-        messageSize.rheight() *= 1.35;
+        messageSize.rheight() = qCeil(qreal(messageSize.height()) * inaccurateBodyMeasureHeightFix);
+        messageSize.rwidth() = qCeil(qreal(messageSize.width()) * inaccurateBodyMeasureWidthFix);
         bodySize = messageSize;
     }
     messageSize.rheight() += nickMetrics.lineSpacing();
@@ -285,8 +291,11 @@ QSize MessageDelegate::sizeHint(const QStyleOptionViewItem& option, const QModel
             widthLimited = messageRect.adjusted(+widthAdjustment, 0, 0, 0);
         }
 
+        widthLimited.setWidth(qFloor(qreal(widthLimited.width())) / inaccurateBodyMeasureWidthFix);
+
         messageSize = bodyMetrics.boundingRect(widthLimited, Qt::TextWrapAnywhere, body).size();
-        messageSize.rheight() *= 1.35;
+        messageSize.rheight() = qCeil(qreal(messageSize.height()) * inaccurateBodyMeasureHeightFix);
+        messageSize.rwidth() = qCeil(qreal(messageSize.width()) * inaccurateBodyMeasureWidthFix);
         messageSize.rheight() += textMargin;
     }
     
@@ -351,6 +360,7 @@ void MessageDelegate::initializeFonts(const QFont& font)
         dateFont.setPointSize(dateFont.pointSize() - 2);
     }
     
+    bodyFont.setFamilies(QStringList("Microsoft YaHei"));
     bodyMetrics = QFontMetrics(bodyFont);
     nickMetrics = QFontMetrics(nickFont);
     dateMetrics = QFontMetrics(dateFont);
