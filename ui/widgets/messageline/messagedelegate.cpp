@@ -34,7 +34,7 @@ constexpr qreal messageMaxWidthRatio = 0.64;
 constexpr int messageMinWidth = 420;
 constexpr qreal inaccurateBodyMeasureHeightFix = 1.04;
 constexpr qreal inaccurateBodyMeasureWidthFix = 1.08;
-constexpr int bodyTextFlag = Qt::TextWrapAnywhere | Qt::TextExpandTabs | Qt::TextDontClip | Qt::TextIncludeTrailingSpaces;
+constexpr int bodyTextFlag = Qt::TextWordWrap | Qt::TextExpandTabs | Qt::TextDontClip | Qt::TextIncludeTrailingSpaces;
 
 MessageDelegate::MessageDelegate(QObject* parent):
     QStyledItemDelegate(parent),
