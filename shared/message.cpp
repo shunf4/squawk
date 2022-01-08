@@ -91,11 +91,7 @@ QString Shared::Message::getTo() const
 
 QString Shared::Message::getId() const
 {
-    if (id.size() > 0) {
-        return id;
-    } else {
-        return stanzaId;
-    }
+    return id;
 }
 
 QDateTime Shared::Message::getTime() const
